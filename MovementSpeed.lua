@@ -41,7 +41,7 @@ function movSpeed:ADDON_LOADED(addon)
 		--First load
 		if MovementSpeedDB == nil then
 			MovementSpeedDB = defaultDB
-			PrintHelp()
+			PrintMoveHelp()
 		end
 		--Load the db
 		db = MovementSpeedDB
@@ -97,10 +97,10 @@ movSpeed:SetScript("OnMouseUp", function(self)
 end)
 
 --Set up slash commands
-SLASH_movSpeed1 = keyword
-function SlashCmdList.movSpeed(command)
+SLASH_MOVESPEED1 = keyword
+function SlashCmdList.MOVESPEED(command)
 	if command == "help" then
-		PrintCommands()
+		PrintMoveCommands()
 	elseif command == resetPosition then
 		movSpeed:ClearAllPoints()
 		movSpeed:SetUserPlaced(false)
@@ -122,17 +122,17 @@ function SlashCmdList.movSpeed(command)
 		text:Show()
 		print(sg .. "Movement Speed: " .. ly .. GetVisibility())
 	else
-		PrintHelp()
+		PrintMoveHelp()
 	end
 end
 
-function PrintHelp()
+function PrintMoveHelp()
 	print(sy .. "Thank you for using " .. sg .. "Movement Speed" .. sy .. "!")
 	print(ly .. "Type " .. lg .. keyword .. " help" .. ly .. " to see the full command list.")
 	print(ly .. "Hold " .. lg .. "SHIFT" .. ly .. " to drag the Movement Speed display anywhere you like.")
 end
 
-function PrintCommands()
+function PrintMoveCommands()
 	print(sg .. "Movement Speed: " .. ly .. GetVisibility())
 	print(sg .. "Movement Speed" .. ly ..  " chat command list:")
 	print("    " .. lg .. keyword .. " " .. resetPosition .. ly .. " - set location to the specified preset location")

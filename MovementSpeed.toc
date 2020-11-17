@@ -1,6 +1,6 @@
 ## Interface: 90001
 ## Title: Movement Speed
-## Version: 1.0
+## Version: 1.0.1
 ## Author: Barnabas Nagy (Arxareon)
 ## Notes: Shows the current movement speed of the player in percentage.
 ## SavedVariables: MovementSpeedDB
