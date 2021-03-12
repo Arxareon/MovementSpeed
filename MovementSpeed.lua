@@ -4,7 +4,7 @@ local sg = "|cFF" .. "4ED836" --strong green
 local ly = "|cFF" .. "FFFB99" --light yellow
 local sy = "|cFF" .. "FFDD47" --strong yellow
 
---Shash keywords and commands
+--Slash keywords and commands
 local keyword = "/movespeed"
 local resetPosition = "reset"
 local defaultPreset = "default"
@@ -34,34 +34,43 @@ local defaultDB = {
 	["hidden"] = false,
 }
 
---Initialization
-function movSpeed:ADDON_LOADED(addon)
-	if addon == "MovementSpeed" then
-		movSpeed:UnregisterEvent("ADDON_LOADED")
-		--First load
-		if MovementSpeedDB == nil then
-			MovementSpeedDB = defaultDB
-			PrintMoveHelp()
-		end
-		--Load the db
-		db = MovementSpeedDB
-		--Set up the UI
-		SetParameters()
+--Display visibility utilities
+local function GetVisibility()
+	if text:IsShown() then
+		return "The text display is visible."
+	else
+		return "The text display is hidden."
 	end
+	return ""
 end
-function movSpeed:PLAYER_LOGIN()
-	if not text:IsShown() then
-		print(sg .. "Movement Speed: " .. ly .. "The text display is hidden.")
+
+local function FlipVisibility(visible)
+	if visible then
+		text:Hide()
+	else
+		text:Show()
 	end
 end
 
---Updating the movement speed value value
-movSpeed:SetScript("OnUpdate", function(self)
-	UpdateSpeed()
-end)
+--Chat control utilities
+local function PrintHelp()
+	print(sy .. "Thank you for using " .. sg .. "Movement Speed" .. sy .. "!")
+	print(ly .. "Type " .. lg .. keyword .. " help" .. ly .. " to see the full command list.")
+	print(ly .. "Hold " .. lg .. "SHIFT" .. ly .. " to drag the Movement Speed display anywhere you like.")
+end
+
+local function PrintCommands()
+	print(sg .. "Movement Speed: " .. ly .. GetVisibility())
+	print(sg .. "Movement Speed" .. ly ..  " chat command list:")
+	print("    " .. lg .. keyword .. " " .. resetPosition .. ly .. " - set location to the specified preset location")
+	print("    " .. lg .. keyword .. " " .. savePreset .. ly .. " - save the current location as the preset location")
+	print("    " .. lg .. keyword .. " " .. defaultPreset .. ly .. " - set the preset location to the default location")
+	print("    " .. lg .. keyword .. " " .. hideDisplay .. ly .. " - hide the text display")
+	print("    " .. lg .. keyword .. " " .. showDisplay .. ly .. " - show the text display")
+end
 
 --Setting up the frame & text
-function SetParameters()
+local function SetParameters()
 	movSpeed:SetFrameStrata("HIGH")
 	movSpeed:SetFrameLevel(0)
 	movSpeed:SetSize(32, 10)
@@ -76,10 +85,39 @@ function SetParameters()
 	FlipVisibility(db["hidden"])
 end
 
---Recalculate the movement speed value and update the diplayed text
-function UpdateSpeed()
-	text:SetText(string.format("%d%%", math.floor(GetUnitSpeed("player") / 7 * 100 + .5)))
+--Initialization
+function movSpeed:ADDON_LOADED(addon)
+	if addon == "MovementSpeed" then
+		movSpeed:UnregisterEvent("ADDON_LOADED")
+		--First load
+		if MovementSpeedDB == nil then
+			MovementSpeedDB = defaultDB
+			PrintHelp()
+		end
+		--Load the db
+		db = MovementSpeedDB
+		--Set up the UI
+		SetParameters()
+	end
 end
+
+function movSpeed:PLAYER_LOGIN()
+	if not text:IsShown() then
+		print(sg .. "Movement Speed: " .. ly .. "The text display is hidden.")
+	end
+end
+
+--Recalculate the movement speed value and update the displayed text
+local function UpdateSpeed()
+	local unit = "player";
+	if  UnitInVehicle("player") then
+		unit = "vehicle"
+	end
+	text:SetText(string.format("%d%%", math.floor(GetUnitSpeed(unit) / 7 * 100 + .5)))
+end
+movSpeed:SetScript("OnUpdate", function(self)
+	UpdateSpeed()
+end)
 
 --Making the frame moveable
 movSpeed:SetMovable(true)
@@ -100,7 +138,7 @@ end)
 SLASH_MOVESPEED1 = keyword
 function SlashCmdList.MOVESPEED(command)
 	if command == "help" then
-		PrintMoveCommands()
+		PrintCommands()
 	elseif command == resetPosition then
 		movSpeed:ClearAllPoints()
 		movSpeed:SetUserPlaced(false)
@@ -122,41 +160,6 @@ function SlashCmdList.MOVESPEED(command)
 		text:Show()
 		print(sg .. "Movement Speed: " .. ly .. GetVisibility())
 	else
-		PrintMoveHelp()
+		PrintHelp()
 	end
-end
-
-function PrintMoveHelp()
-	print(sy .. "Thank you for using " .. sg .. "Movement Speed" .. sy .. "!")
-	print(ly .. "Type " .. lg .. keyword .. " help" .. ly .. " to see the full command list.")
-	print(ly .. "Hold " .. lg .. "SHIFT" .. ly .. " to drag the Movement Speed display anywhere you like.")
-end
-
-function PrintMoveCommands()
-	print(sg .. "Movement Speed: " .. ly .. GetVisibility())
-	print(sg .. "Movement Speed" .. ly ..  " chat command list:")
-	print("    " .. lg .. keyword .. " " .. resetPosition .. ly .. " - set location to the specified preset location")
-	print("    " .. lg .. keyword .. " " .. savePreset .. ly .. " - save the current location as the preset location")
-	print("    " .. lg .. keyword .. " " .. defaultPreset .. ly .. " - set the preset location to the default location")
-	print("    " .. lg .. keyword .. " " .. hideDisplay .. ly .. " - hide the text display")
-	print("    " .. lg .. keyword .. " " .. showDisplay .. ly .. " - show the text display")
-end
-
---Set the display visibility (flipped)
-function FlipVisibility(visible)
-	if visible then
-		text:Hide()
-	else
-		text:Show()
-	end
-end
-
---Get display toggle state
-function GetVisibility()
-	if text:IsShown() then
-		return "The text display is visible."
-	else
-		return "The text display is hidden."
-	end
-	return ""
 end
