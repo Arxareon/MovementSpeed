@@ -1,4 +1,4 @@
-## Interface: 90005
+## Interface: 90100
 ## Title: Movement Speed
 ## Version: 1.2
 ## Author: Barnabas Nagy (Arxareon)
