@@ -1,16 +1,22 @@
 --Colors
-local lg = "|cFF" .. "8FD36E" --light green
-local sg = "|cFF" .. "4ED836" --strong green
-local ly = "|cFF" .. "FFFB99" --light yellow
-local sy = "|cFF" .. "FFDD47" --strong yellow
+local colors= {
+	["lg"] = "|cFF" .. "8FD36E", --light green
+	["sg"] = "|cFF" .. "4ED836", --strong green
+	["ly"] = "|cFF" .. "FFFB99", --light yellow
+	["sy"] = "|cFF" .. "FFDD47", --strong yellow
+}
 
 --Slash keywords and commands
 local keyword = "/movespeed"
-local resetPosition = "reset"
-local defaultPreset = "default"
-local savePreset = "save"
-local hideDisplay = "hide"
-local showDisplay = "show"
+local helpCommand = { ["name"] = "help", ["description"] = "see the full command list", }
+local commands = {
+	["resetPosition"] = { ["name"] = "reset", ["description"] = "set location to the specified preset location" },
+	["savePreset"] = { ["name"] = "save", ["description"] = "save the current location as the preset location" },
+	["defaultPreset"] = { ["name"] = "default", ["description"] = "set the preset location to the default location" },
+	["hideDisplay"] = { ["name"] = "hide", ["description"] = "hide the text display" },
+	["showDisplay"] = { ["name"] = "show", ["description"] = "show the text display" },
+	["fontSize"] = { ["name"] = "size", ["description"] = "change the font size to the specified number: " .. colors["lg"] .. " size 11" },
+}
 
 --Creating the frame & text
 local movSpeed = CreateFrame("Frame", "MovementSpeed", UIParent)
@@ -32,6 +38,7 @@ local defaultDB = {
 		["offsetY"] = -179
 	},
 	["hidden"] = false,
+	["fontSize"] = 11,
 }
 
 --Display visibility utilities
@@ -54,19 +61,17 @@ end
 
 --Chat control utilities
 local function PrintHelp()
-	print(sy .. "Thank you for using " .. sg .. "Movement Speed" .. sy .. "!")
-	print(ly .. "Type " .. lg .. keyword .. " help" .. ly .. " to see the full command list.")
-	print(ly .. "Hold " .. lg .. "SHIFT" .. ly .. " to drag the Movement Speed display anywhere you like.")
+	print(colors["sy"] .. "Thank you for using " .. colors["sg"] .. "Movement Speed" .. colors["sy"] .. "!")
+	print(colors["ly"] .. "Type " .. colors["lg"] .. keyword .. " " .. helpCommand["name"] .. colors["ly"] .. " to " .. helpCommand["description"])
+	print(colors["ly"] .. "Hold " .. colors["lg"] .. "SHIFT" .. colors["ly"] .. " to drag the Movement Speed display anywhere you like.")
 end
 
 local function PrintCommands()
-	print(sg .. "Movement Speed: " .. ly .. GetVisibility())
-	print(sg .. "Movement Speed" .. ly ..  " chat command list:")
-	print("    " .. lg .. keyword .. " " .. resetPosition .. ly .. " - set location to the specified preset location")
-	print("    " .. lg .. keyword .. " " .. savePreset .. ly .. " - save the current location as the preset location")
-	print("    " .. lg .. keyword .. " " .. defaultPreset .. ly .. " - set the preset location to the default location")
-	print("    " .. lg .. keyword .. " " .. hideDisplay .. ly .. " - hide the text display")
-	print("    " .. lg .. keyword .. " " .. showDisplay .. ly .. " - show the text display")
+	print(colors["sg"] .. "Movement Speed: " .. colors["ly"] .. GetVisibility())
+	print(colors["sg"] .. "Movement Speed" .. colors["ly"] ..  " chat command list:")
+	for k,v in pairs(commands) do
+		print("    " .. colors["lg"] .. keyword .. " " .. v["name"] .. colors["ly"] .. " - " .. v["description"])
+	end
 end
 
 --Setting up the frame & text
@@ -80,7 +85,7 @@ local function SetParameters()
 		movSpeed:SetUserPlaced(true)
 	end
 	text:SetPoint("CENTER")
-	text:SetFont("Fonts\\FRIZQT__.TTF", 11, "THINOUTLINE")
+	text:SetFont("Fonts\\FRIZQT__.TTF", db["size"], "THINOUTLINE")
 	text:SetTextColor(1,1,1,1)
 	FlipVisibility(db["hidden"])
 end
@@ -103,7 +108,7 @@ end
 
 function movSpeed:PLAYER_LOGIN()
 	if not text:IsShown() then
-		print(sg .. "Movement Speed: " .. ly .. "The text display is hidden.")
+		print(colors["sg"] .. "Movement Speed: " .. colors["ly"] .. "The text display is hidden.")
 	end
 end
 
@@ -137,28 +142,31 @@ end)
 --Set up slash commands
 SLASH_MOVESPEED1 = keyword
 function SlashCmdList.MOVESPEED(command)
-	if command == "help" then
+	if command == helpCommand["name"] then
 		PrintCommands()
-	elseif command == resetPosition then
+	elseif command == commands["resetPosition"]["name"] then
 		movSpeed:ClearAllPoints()
 		movSpeed:SetUserPlaced(false)
 		movSpeed:SetPoint(db["preset"]["point"], db["preset"]["offsetX"], db["preset"]["offsetY"])
 		movSpeed:SetUserPlaced(true)
-		print(sg .. "Movement Speed:" .. ly .. " The location has been set to the preset location.")
-	elseif command == savePreset then
-		db["preset"]["point"], x, y, db["preset"]["offsetX"], db["preset"]["offsetY"] = movSpeed:GetPoint()
-		print(sg .. "Movement Speed:" .. ly .. " The current location was saved as the preset location.")
-	elseif command == defaultPreset then
+		print(colors["sg"] .. "Movement Speed:" .. colors["ly"] .. " The location has been set to the preset location.")
+	elseif command == commands["savePreset"]["name"] then
+		local x; local y; db["preset"]["point"], x, y, db["preset"]["offsetX"], db["preset"]["offsetY"] = movSpeed:GetPoint()
+		print(colors["sg"] .. "Movement Speed:" .. colors["ly"] .. " The current location was saved as the preset location.")
+	elseif command == commands["defaultPreset"]["name"] then
 		db["preset"] = defaultDB["preset"]
-		print(sg .. "Movement Speed:" .. ly .. " The preset location has been reset to the default location.")
-	elseif command == hideDisplay then
+		print(colors["sg"] .. "Movement Speed:" .. colors["ly"] .. " The preset location has been reset to the default location.")
+	elseif command == commands["hideDisplay"]["name"] then
 		db["hidden"] = true
 		text:Hide()
-		print(sg .. "Movement Speed: " .. ly .. GetVisibility())
-	elseif command == showDisplay then
+		print(colors["sg"] .. "Movement Speed: " .. colors["ly"] .. GetVisibility())
+	elseif command == commands["showDisplay"]["name"] then
 		db["hidden"] = false
 		text:Show()
-		print(sg .. "Movement Speed: " .. ly .. GetVisibility())
+		print(colors["sg"] .. "Movement Speed: " .. colors["ly"] .. GetVisibility())
+	elseif command == commands["fontSize"]["name"] .. ".*" then
+		local x, size = strsplit(" ", command)
+		db["fontSize"] = tonumber(size) or defaultDB["fontSize"]
 	else
 		PrintHelp()
 	end
