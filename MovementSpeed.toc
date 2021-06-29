@@ -1,6 +1,8 @@
+# Temporary file providing 9.0.5 support. It will be removed in the future after 9.1 has been rolled out globally.
+
 ## Interface: 90005
 ## Title: Movement Speed
-## Version: 1.2
+## Version: 1.3
 ## Author: Barnabas Nagy (Arxareon)
 ## Notes: Shows the current movement speed of the player in percentage.
 ## SavedVariables: MovementSpeedDB
