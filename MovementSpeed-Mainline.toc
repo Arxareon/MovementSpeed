@@ -1,6 +1,6 @@
-## Interface: 90100
+## Interface: 90105
 ## Title: Movement Speed
-## Version: 1.3
+## Version: 1.4
 ## Author: Barnabas Nagy (Arxareon)
 ## Notes: Shows the current movement speed of the player in percentage.
 ## SavedVariables: MovementSpeedDB
