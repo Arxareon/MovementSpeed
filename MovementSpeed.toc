@@ -1,4 +1,4 @@
-# Temporary file. It will be removed in the future after the CurseForge client has fully implemented multi-version support.
+# Fallback to MovementSpeed-Mainline.toc
 
 ## Interface: 90105
 ## Title: Movement Speed
@@ -7,4 +7,5 @@
 ## Notes: Shows the current movement speed of the player in percentage.
 ## SavedVariables: MovementSpeedDB
 
+MovementSpeedLocalizations.lua
 MovementSpeed.lua

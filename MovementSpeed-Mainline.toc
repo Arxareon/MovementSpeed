@@ -5,4 +5,5 @@
 ## Notes: Shows the current movement speed of the player in percentage.
 ## SavedVariables: MovementSpeedDB
 
+MovementSpeedLocalizations.lua
 MovementSpeed.lua

@@ -1,40 +1,24 @@
---DB tables, defaults & management utilities
-local db --account-wide
-local defaultDB = {
-	position = {
-		point = "TOPRIGHT",
-		offset = {
-			x = -68,
-			y = -179,
-		},
-	},
-	hidden = false,
-	font = {
-		family = "Fonts\\FRIZQT__.TTF",
-		size = 11,
-	},
-}
-local function dump(object)
-	if type(object) == "table" then
-		for k, v in pairs(object) do
-			dump(v)
-		end
-	else
-		print(object)
-	end
-end
-local function clone(table)
-	local copy = {}
-	for k, v in pairs(table) do
-		if type(v) == "table" then
-			v = clone(v)
-		end
-		copy[k] = v
-	end
-	return copy
-end
+--Addon namespace
+local addonName, ns = ...
 
---String Colors
+
+--[[ STRINGS & LOCALIZATION ]]
+
+local strings = {
+	addon = "Movement Speed",
+}
+--Load localization
+local function LoadLocale()
+	if (GetLocale() == "[N/A]") then
+		--TODO: add support for other languages (locales: https://wowwiki-archive.fandom.com/wiki/API_GetLocale#Locales)
+	else --English (UK & US)
+		strings.options = ns.english.options
+		strings.chat = ns.english.chat
+	end
+end
+LoadLocale()
+
+--Color palette for string formatting
 local colors = {
 	lg = "|cFF" .. "8FD36E", --light green
 	sg = "|cFF" .. "4ED836", --strong green
@@ -42,91 +26,54 @@ local colors = {
 	sy = "|cFF" .. "FFDD47", --strong yellow
 }
 
---Strings
-local strings = {
-	addon = "Movement Speed",
-	settingsDescription = "Customize Movement Speed to fit your needs. Type /movespeed for chat commands.",
+
+--[[ DB TABLES ]]
+
+local db --account-wide
+local defaultDB = {
 	position = {
-		title = "Position",
-		description = "Hold SHIFT to drag the text display anywhere on the screen.",
+		point = "TOPRIGHT",
+		offset = {x = -68, y = -179},
 	},
-	visibility = {
-		title = "Visibility",
-		description = "Set the visibility of Movement Speed.",
-	},
+	hidden = false,
 	font = {
-		title = "Font",
-		description = "Customize the font of the speed percentage text display.",
-	},
-	save = {
-		label = "Save position",
-		tooltip = "Save the current position of the text display as the preset location.",
-	},
-	reset = {
-		label = "Reset position",
-		tooltip = "Reset the position of the text display to the specified preset location.",
-	},
-	default = {
-		label = "Default preset",
-		tooltip = "Restore the default preset location of the text display.",
-	},
-	hidden = {
-		label = "Hidden",
-		tooltip = "Hide or show the Movement Speed text display.",
-	},
-	fontSize = {
-		label = "Font size",
-		tooltip = "Specify the font size of the displayed percentage value.\nDefault: 11",
+		family = "Fonts\\FRIZQT__.TTF",
+		size = 11,
 	},
 }
 
---Slash keyword and commands
-local keyword = "/movespeed"
-local commands = {
-	["0help"] = {
-		name = "help",
-		description = "see the full command list",
-	},
-	["1resetPosition"] = {
-		name = "reset",
-		description = "set location to the specified preset location",
-	},
-	["2savePreset"] = {
-		name = "save",
-		description = "save the current location as the preset location",
-	},
-	["3defaultPreset"] = {
-		name = "default",
-		description = "set the preset location to the default location",
-	},
-	["4hideDisplay"] = {
-		name = "hide",
-		description = "hide the text display",
-	},
-	["5showDisplay"] = {
-		name = "show",
-		description = "show the text display",
-	},
-	["6fontSize"] = {
-		name = "size",
-		description = "change the font size (e.g. " .. colors.lg .. "size " .. defaultDB.font.size .. colors.ly .. ")",
-	},
-}
+--Table management utilities
+local function Dump(object)
+	if type(object) == "table" then
+		for k, v in pairs(object) do
+			Dump(v)
+		end
+	else
+		print(object)
+	end
+end
+local function Clone(table)
+	local copy = {}
+	for k, v in pairs(table) do
+		if type(v) == "table" then
+			v = Clone(v)
+		end
+		copy[k] = v
+	end
+	return copy
+end
+
+
+--[[ FRAMES ]]
 
 --Create the main frame & options panel and their elements
 local movSpeed = CreateFrame("Frame", "MovementSpeed", UIParent)
 local textDisplay = movSpeed:CreateFontString("TextDisplay", "HIGH")
 local optionsPanel = CreateFrame("Frame", "MovementSpeedOptions", InterfaceOptionsFramePanelContainer)
 local options = {
-	position = {
-		frame = CreateFrame("Frame", "PositionOptions", optionsPanel, "OptionsBoxTemplate"),
-	},
-	visibility = {
-		frame = CreateFrame("Frame", "VisibilityOptions", optionsPanel, "OptionsBoxTemplate"),
-	},
-	font = {
-		frame = CreateFrame("Frame", "FontOptions", optionsPanel, "OptionsBoxTemplate"),
-	},
+	position = {frame = CreateFrame("Frame", "PositionOptions", optionsPanel, BackdropTemplateMixin and "BackdropTemplate" or nil)},
+	visibility = {frame = CreateFrame("Frame", "VisibilityOptions", optionsPanel, BackdropTemplateMixin and "BackdropTemplate" or nil)},
+	font = {frame = CreateFrame("Frame", "FontOptions", optionsPanel, BackdropTemplateMixin and "BackdropTemplate" or nil)},
 }
 options.position.save = CreateFrame("Button", "ButtonSave", options.position.frame, "OptionsButtonTemplate")
 options.position.reset = CreateFrame("Button", "ButtonReset", options.position.frame, "OptionsButtonTemplate")
@@ -137,9 +84,13 @@ options.font.size = CreateFrame("Slider", "SliderFontSize", options.font.frame, 
 --Register events
 movSpeed:RegisterEvent("ADDON_LOADED")
 movSpeed:RegisterEvent("PLAYER_LOGIN")
-movSpeed:SetScript("OnEvent", function(self, event, ...) --Event handler
+--Event handler
+movSpeed:SetScript("OnEvent", function(self, event, ...)
 	return self[event] and self[event](self, ...)
 end)
+
+
+--[[ OPTIONS SETTERS & UTILITIES ]]
 
 --Positioning utilities
 local function ResetPosition()
@@ -147,15 +98,15 @@ local function ResetPosition()
 	movSpeed:SetUserPlaced(false)
 	movSpeed:SetPoint(db.position.point, db.position.offset.x, db.position.offset.y)
 	movSpeed:SetUserPlaced(true)
-	print(colors.sg .. strings.addon .. ":" .. colors.ly .. " The location has been set to the preset location.")
+	print(colors.sg .. strings.addon .. ":" .. colors.ly .. " " .. strings.chat.reset.response)
 end
 local function SavePosition()
 	local x local y db.position.point, x, y, db.position.offset.x, db.position.offset.y = movSpeed:GetPoint()
-	print(colors.sg .. strings.addon .. ":" .. colors.ly .. " The current location was saved as the preset location.")
+	print(colors.sg .. strings.addon .. ":" .. colors.ly .. " " .. strings.chat.save.response)
 end
 local function DefaultPreset()
 	db.position = defaultDB.position
-	print(colors.sg .. strings.addon .. ":" .. colors.ly .. " The preset location has been reset to the default location.")
+	print(colors.sg .. strings.addon .. ":" .. colors.ly .. " " .. strings.chat.default.response)
 end
 
 --Display visibility and font utilities
@@ -172,53 +123,134 @@ local function SetDisplayValues()
 	textDisplay:SetTextColor(1,1,1,1)
 end
 
---Chat control utilities
+
+--[[ CHAT CONTROL ]]
+
+local keyword = "/movespeed"
+
+--Print utilities
 local function PrintStatus()
 	local visibility
-	if textDisplay:IsShown() then visibility = "The text display is visible." else visibility = "The text display is hidden." end
+	if textDisplay:IsShown() then
+		visibility = strings.chat.show.response
+	else
+		visibility = strings.chat.hide.response
+	end
 	print(colors.sg .. strings.addon .. ": " .. colors.ly .. visibility)
 end
 local function PrintHelp()
-	print(colors.sy .. "Thank you for using " .. colors.sg .. strings.addon .. colors.sy .. "!")
+	print(colors.sy .. strings.chat.help.thanks:gsub("#", colors.sg .. strings.addon .. colors.sy))
 	PrintStatus()
-	print(colors.ly .. "Type " .. colors.lg .. keyword .. " " .. commands["0help"].name .. colors.ly .. " to " .. commands["0help"].description)
-	print(colors.ly .. "Hold " .. colors.lg .. "SHIFT" .. colors.ly .. " to drag the Movement Speed display anywhere you like.")
+	print(colors.ly .. strings.chat.help.hint:gsub("#", colors.lg .. keyword .. " " .. strings.chat.help.command .. colors.ly))
+	print(colors.ly .. strings.chat.help.move:gsub("#", colors.lg .. "SHIFT" .. colors.ly))
 end
 local function PrintCommands()
 	PrintStatus()
-	print(colors.sg .. strings.addon .. colors.ly ..  " chat command list:")
-	local temp = {}
-	for key in pairs(commands) do table.insert(temp, key) end
-	table.sort(temp)
-	for n, key in ipairs(temp) do
-		if n > 1 then --skip the first item (help command)
-			print("    " .. colors.lg .. keyword .. " " .. commands[key].name .. colors.ly .. " - " .. commands[key]["description"])
-		end
+	print(colors.sg .. strings.addon .. colors.ly .. " ".. strings.chat.help.list .. ":")
+	--Index the commands (skipping the help command) and put replacement code segments in place
+	local commands = {
+		[0] = {
+			command = strings.chat.reset.command,
+			description = strings.chat.reset.description,
+		},
+		[1] = {
+			command = strings.chat.save.command,
+			description = strings.chat.save.description,
+		},
+		[2] = {
+			command = strings.chat.default.command,
+			description = strings.chat.default.description,
+		},
+		[3] = {
+			command = strings.chat.hide.command,
+			description = strings.chat.hide.description,
+		},
+		[4] = {
+			command = strings.chat.show.command,
+			description = strings.chat.show.description,
+		},
+		[5] = {
+			command = strings.chat.size.command,
+			description =  strings.chat.size.description:gsub("#", colors.lg .. strings.chat.size.command .. defaultDB.font.size .. colors.ly),
+		},
+	}
+	--Print the list
+	for i = 0, #commands do
+		print("    " .. colors.lg .. keyword .. " " .. commands[i].command .. colors.ly .. " - " .. commands[i].description)
 	end
 end
 
---GUI options utilities
-local function SetUpPanelTitle(panel, title, description)
-	--Title
-	local optionsTitle = panel:CreateFontString(panel:GetName() .. "Title", "ARTWORK", "GameFontNormalLarge")
-	optionsTitle:SetPoint("TOPLEFT", 16, -16)
-	optionsTitle:SetText(title)
-	--Description
-	local optionsDescription = panel:CreateFontString(panel:GetName() .. "Description", "ARTWORK", "GameFontHighlightSmall")
-	optionsDescription:SetPoint("TOPLEFT", optionsTitle, "BOTTOMLEFT", 0, -8)
-	optionsDescription:SetText(description)
-	return optionsTitle, optionsDescription
+--Slash command handler
+SLASH_MOVESPEED1 = keyword
+function SlashCmdList.MOVESPEED(line)
+	local command, parameter = strsplit(" ", line)
+	if command == strings.chat.help.command then
+		PrintCommands()
+	elseif command == strings.chat.reset.command then
+		ResetPosition()
+	elseif command == strings.chat.save.command then
+		SavePosition()
+	elseif command == strings.chat.default.command then
+		DefaultPreset()
+	elseif command == strings.chat.hide.command then
+		db.hidden = true
+		textDisplay:Hide()
+		PrintStatus()
+	elseif command == strings.chat.show.command then
+		db.hidden = false
+		textDisplay:Show()
+		PrintStatus()
+	elseif command == strings.chat.size.command then
+		local size = tonumber(parameter)
+		if size ~= nil then
+			db.font.size = size
+			textDisplay:SetFont(db.font.family, db.font.size, "THINOUTLINE")
+			print(colors.sg .. strings.addon .. ": " .. colors.ly .. strings.chat.size.response:gsub("#", size))
+		else
+			print(colors.sg .. strings.addon .. ": " .. colors.ly .. strings.chat.size.unchanged)
+			print(colors.ly .. strings.chat.size.error:gsub("#", colors.lg .. strings.chat.size.command .. defaultDB.font.size .. colors.ly))
+		end
+	else
+		PrintHelp()
+	end
 end
-local function SetUpCategoryTitle(panel, title, description)
+
+
+--[[ GUI ELEMENT SETTERS ]]
+
+--[[Parameters:
+frame panel --The frame to add title and optionally a description to
+table t
+	title
+		text --Text to be shown as the main title of the frame provided via the panel parameter
+		offset --The offset from the TOPLEFT point of the specified frame given in the panel parameter
+			x --Horizontal offset value
+			y --Vertical offset value
+		template --Template to be used for the FontString
+	description [optional]
+		text --Text to be shown as the subtitle/description of the frame provided via the panel parameter
+		offset --The offset from the BOTTOMLEFT point of the main title FontString
+			x --Horizontal offset value
+			y --Vertical offset value
+		template --Template to be used for the FontString
+]]
+local function SetUpTitle(panel, t)
 	--Title
-	local panelTitle = panel:CreateFontString(panel:GetName() .. "Title", "ARTWORK", "GameFontNormal")
-	panelTitle:SetPoint("TOPLEFT", panel, "TOPLEFT", 10, 14)
-	panelTitle:SetText(title)
+	local title = panel:CreateFontString(panel:GetName() .. "Title", "ARTWORK", t.title.template)
+	title:SetPoint("TOPLEFT", t.title.offset.x, t.title.offset.y)
+	title:SetText(t.title.text)
+	if t.description == nil then
+		return title
+	end
 	--Description
-	local panelDescription = panel:CreateFontString(panel:GetName() .. "Description", "ARTWORK", "GameFontHighlightSmall")
-	panelDescription:SetPoint("TOPLEFT", panel, "TOPLEFT", 10, -8)
-	panelDescription:SetText(description)
+	local description = panel:CreateFontString(panel:GetName() .. "Description", "ARTWORK", t.description.template)
+	description:SetPoint("TOPLEFT", title, "BOTTOMLEFT", t.description.offset.x, t.description.offset.y)
+	description:SetText(t.description.text)
+	return title, description
 end
+--[[Parameters:
+
+]]
 local function SetUpCategory(frame, anchor, relativeTo, relativePoint, offsetX, offsetY, width, height, title, description)
 	--Preferences
 	if relativeTo == nil then
@@ -228,16 +260,30 @@ local function SetUpCategory(frame, anchor, relativeTo, relativePoint, offsetX, 
 	end
 	frame:SetSize(width, height)
 	frame:SetBackdrop({
-		bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
-		edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-		edgeSize = 16,
-		insets = {left = 0, right = 0, top = 0, bottom = 0},
+		bgFile = "Interface/ChatFrame/ChatFrameBackground",
+		edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
+		tile = true, tileSize = 5, edgeSize = 16,
+		insets = {left = 4, right = 4, top = 4, bottom = 4},
 	})
-	frame:SetBackdropColor(0.4, 0.4, 0.4, 0.1)
-	frame:SetBackdropBorderColor(0.4, 0.4, 0.4, 1)
+	frame:SetBackdropColor(0, 0, 0, 0.3)
+	frame:SetBackdropBorderColor(0.4, 0.4, 0.4, 0.8)
 	--Add title and description
-	SetUpCategoryTitle(frame, title, description)
+	SetUpTitle(frame, {
+		title = {
+			text = title,
+			offset = {x = 10, y = 16},
+			template = "GameFontNormal",
+		},
+		description = {
+			text = description,
+			offset = {x = 4, y = -16},
+			template = "GameFontHighlightSmall",
+		},
+	})
 end
+--[[Parameters:
+
+]]
 local function SetUpButton(button, anchor, relativeTo, relativePoint, offsetX, offsetY, width, label, tooltip, onClick)
 	--Preferences
 	if relativeTo == nil then
@@ -257,27 +303,31 @@ local function SetUpButton(button, anchor, relativeTo, relativePoint, offsetX, o
 	--Event handlers
 	button:SetScript("OnClick", onClick)
 end
+--[[Parameters:
+
+]]
 local function SetUpSliderValueBox(valueBox, slider, valueMin, valueMax, valueStep)
 	--Preferences
 	valueBox:SetPoint("TOP", slider, "BOTTOM", 0, 0)
 	valueBox:SetSize(60, 14)
-	valueBox:SetBackdrop( { 
+	valueBox:SetBackdrop({
 		bgFile = "Interface/ChatFrame/ChatFrameBackground",
-		edgeFile = "Interface/ChatFrame/ChatFrameBackground", tile = true, tileSize = 5, edgeSize = 1,
+		edgeFile = "Interface/ChatFrame/ChatFrameBackground",
+		tile = true, tileSize = 5, edgeSize = 1,
 		insets = { left = 0, right = 0, top = 0, bottom = 0 }
-	  });
+	})
 	valueBox:SetBackdropColor(0, 0, 0, 0.5)
-	valueBox:SetBackdropBorderColor(0.3, 0.3, 0.3, 0.8)
+	valueBox:SetBackdropBorderColor(0.4, 0.4, 0.4, 0.8)
 	valueBox:SetFontObject("GameFontHighlightSmall")
-	valueBox:SetAutoFocus(false)
 	valueBox:SetJustifyH("CENTER")
 	valueBox:SetMaxLetters(string.len(tostring(valueMax))+2)
+	valueBox:SetAutoFocus(false)
 	--Event handlers
 	valueBox:SetScript("OnEnter", function(self)
-		self:SetBackdropBorderColor(0.6, 0.6, 0.6, 0.8)
+		self:SetBackdropBorderColor(0.7, 0.7, 0.7, 0.8)
 	end)
 	valueBox:SetScript("OnLeave", function(self)
-		self:SetBackdropBorderColor(0.3, 0.3, 0.3, 0.8)
+		self:SetBackdropBorderColor(0.4, 0.4, 0.4, 0.8)
 	end)
 	valueBox:SetScript("OnEscapePressed", function(self)
 		self:SetText(slider:GetValue())
@@ -300,6 +350,9 @@ local function SetUpSliderValueBox(valueBox, slider, valueMin, valueMax, valueSt
 		valueBox:SetText(value)
 	end)
 end
+--[[Parameters:
+
+]]
 local function SetUpSlider(slider, anchor, relativeTo, relativePoint, offsetX, offsetY, label, tooltip, valueMin, valueMax, valueStep, OnValueChanged)
 	--Preferences
 	if relativeTo == nil then
@@ -323,7 +376,72 @@ local function SetUpSlider(slider, anchor, relativeTo, relativePoint, offsetX, o
 	SetUpSliderValueBox(valueBox, slider, valueMin, valueMax, valueStep)
 end
 
---Initialization utilities
+
+--[[ GUI OPTIONS ]]
+
+--Set up GUI options
+local function SetUpInterfaceOptions()
+	local title local description = SetUpTitle(optionsPanel, {
+		title = {
+			text = strings.addon,
+			offset = {x = 16, y= -16},
+			template = "GameFontNormalLarge",
+		},
+		description = {
+			text = strings.options.description,
+			offset = {x = 0, y= -8},
+			template = "GameFontHighlightSmall",
+		},
+	})
+	--Category panels
+	local optionsWidth = InterfaceOptionsFramePanelContainer:GetWidth() - 32
+	SetUpCategory(options.position.frame, "TOPLEFT", description, "BOTTOMLEFT", 0, -48, optionsWidth, 64, strings.options.position.title, strings.options.position.description)
+	SetUpCategory(options.visibility.frame, "TOPLEFT", options.position.frame, "BOTTOMLEFT", 0, -32, optionsWidth, 64, strings.options.visibility.title, strings.options.visibility.description)
+	SetUpCategory(options.font.frame, "TOPLEFT", options.visibility.frame, "BOTTOMLEFT", 0, -32, optionsWidth, 86, strings.options.font.title, strings.options.font.description)
+	--Button Save position
+	SetUpButton(options.position.save, "TOPLEFT", nil, nil, 10, -32, 120, strings.options.position.save.label, strings.options.position.save.tooltip, function()
+		SavePosition()
+	end)
+	--Button: Reset position
+	SetUpButton(options.position.reset, "TOPRIGHT", nil, nil, -134, -32, 120, strings.options.position.reset.label, strings.options.position.reset.tooltip, function()
+		ResetPosition()
+	end)
+	--Button Reset default position
+	SetUpButton(options.position.default, "TOPRIGHT", nil, nil, -10, -32, 120, strings.options.position.default.label, strings.options.position.default.tooltip, function()
+		DefaultPreset()
+	end)
+	--Checkbox: Hidden
+	SetUpButton(options.visibility.hidden, "TOPLEFT", nil, nil, 10, -32, nil, strings.options.visibility.hidden.label, strings.options.visibility.hidden.tooltip, function()
+		FlipVisibility(options.visibility.hidden:GetChecked())
+	end)
+	--Slider: Font size
+	SetUpSlider(options.font.size, "TOPLEFT", nil, nil, 16, -44, strings.options.font.size.label, strings.options.font.size.tooltip, 8, 64, 1, function()
+		textDisplay:SetFont(db.font.family, options.font.size:GetValue(), "THINOUTLINE")
+	end)
+end
+--Interface options event handlers
+local function Save()
+	db.hidden = not textDisplay:IsShown();
+	db.font.size = options.font.size:GetValue();
+end
+local function Cancel()
+	SetDisplayValues()
+end
+local function Default()
+	MovementSpeedDB = defaultDB
+	db = Clone(defaultDB)
+	SetDisplayValues()
+	print(colors.sg .. strings.addon .. ": " .. colors.ly .. strings.options.defaults)
+end
+local function Refresh()
+	options.visibility.hidden:SetChecked(db.hidden)
+	options.font.size:SetValue(db.font.size)
+end
+
+
+--[[ DISPLAY FRAME SETUP ]]
+
+--Set frame parameters
 local function SetFrameParameters()
 	--Main frame
 	movSpeed:SetFrameStrata("HIGH")
@@ -338,53 +456,24 @@ local function SetFrameParameters()
 	textDisplay:SetPoint("CENTER")
 	SetDisplayValues()
 end
-local function SetUpOptions()
-	local title local description = SetUpPanelTitle(optionsPanel, strings.addon, strings.settingsDescription)
-	--Category panels
-	local optionsWidth = InterfaceOptionsFramePanelContainer:GetWidth() - 32
-	SetUpCategory(options.position.frame, "TOPLEFT", description, "BOTTOMLEFT", 0, -48, optionsWidth, 56, strings.position.title, strings.position.description)
-	SetUpCategory(options.visibility.frame, "TOPLEFT", options.position.frame, "BOTTOMLEFT", 0, -32, optionsWidth, 56, strings.visibility.title, strings.visibility.description)
-	SetUpCategory(options.font.frame, "TOPLEFT", options.visibility.frame, "BOTTOMLEFT", 0, -32, optionsWidth, 80, strings.font.title, strings.font.description)
-	--Button Save position
-	SetUpButton(options.position.save, "TOPLEFT", nil, nil, 10, -24, 120, strings.save.label, strings.save.tooltip, function ()
-		SavePosition()
-	end)
-	--Button: Reset position
-	SetUpButton(options.position.reset, "TOPRIGHT", nil, nil, -134, -24, 120, strings.reset.label, strings.reset.tooltip, function ()
-		ResetPosition()
-	end)
-	--Button Reset default position
-	SetUpButton(options.position.default, "TOPRIGHT", nil, nil, -10, -24, 120, strings.default.label, strings.default.tooltip, function ()
-		DefaultPreset()
-	end)
-	--Checkbox: Hidden
-	SetUpButton(options.visibility.hidden, "TOPLEFT", nil, nil, 10, -24, nil, strings.hidden.label, strings.hidden.tooltip, function ()
-		FlipVisibility(options.visibility.hidden:GetChecked())
-	end)
-	--Slider: Font size
-	SetUpSlider(options.font.size, "TOPLEFT", nil, nil, 16, -38, strings.fontSize.label, strings.fontSize.tooltip, 8, 64, 1, function ()
-		textDisplay:SetFont(db.font.family, options.font.size:GetValue(), "THINOUTLINE")
-	end)
-end
 
---Interface options utilities
-local function Save()
-	db.hidden = not textDisplay:IsShown();
-	db.font.size = options.font.size:GetValue();
-end
-local function Cancel() --Refresh() is called automatically
-	SetDisplayValues()
-end
-local function Default() --Refresh() is called automatically
-	MovementSpeedDB = defaultDB
-	db = clone(defaultDB)
-	SetDisplayValues()
-	print(colors.sg .. strings.addon .. ": " .. colors.ly .. "The default options have been reset.")
-end
-local function Refresh()
-	options.visibility.hidden:SetChecked(db.hidden)
-	options.font.size:SetValue(db.font.size)
-end
+--Making the frame moveable
+movSpeed:SetMovable(true)
+movSpeed:SetScript("OnMouseDown", function(self)
+	if (IsShiftKeyDown() and not self.isMoving) then
+		movSpeed:StartMoving()
+		self.isMoving = true
+	end
+end)
+movSpeed:SetScript("OnMouseUp", function(self)
+	if (self.isMoving) then
+		movSpeed:StopMovingOrSizing()
+		self.isMoving = false
+	end
+end)
+
+
+--[[ INITIALIZATION ]]
 
 --Check and fix the DB
 local oldData = {};
@@ -435,10 +524,10 @@ end
 local function LoadInterfaceOptions()
 	optionsPanel.name = strings.addon;
 	--Set event handlers
-	optionsPanel.okay = function () Save() end
-	optionsPanel.cancel = function () Cancel() end
-	optionsPanel.default = function () Default() end
-	optionsPanel.refresh = function () Refresh() end
+	optionsPanel.okay = function() Save() end
+	optionsPanel.cancel = function() Cancel() end --refresh is called automatically
+	optionsPanel.default = function() Default() end --refresh is called automatically
+	optionsPanel.refresh = function() Refresh() end
 	--Add the panel
 	InterfaceOptions_AddCategory(optionsPanel);
 end
@@ -451,14 +540,17 @@ function movSpeed:ADDON_LOADED(addon)
 		SetFrameParameters()
 		--Set up Interface options
 		LoadInterfaceOptions()
-		SetUpOptions()
+		SetUpInterfaceOptions()
 	end
 end
 function movSpeed:PLAYER_LOGIN()
 	if not textDisplay:IsShown() then
-		print(colors.sg .. strings.addon .. ": " .. colors.ly .. "The text display is hidden.")
+		print(colors.sg .. strings.addon .. ": " .. colors.ly .. strings.chat.hide.response)
 	end
 end
+
+
+--[[ DISPLAY UPDATE ]]
 
 --Recalculate the movement speed value and update the displayed text
 local function UpdateSpeed()
@@ -471,53 +563,3 @@ end
 movSpeed:SetScript("OnUpdate", function(self)
 	UpdateSpeed()
 end)
-
---Making the frame moveable
-movSpeed:SetMovable(true)
-movSpeed:SetScript("OnMouseDown", function(self)
-	if (IsShiftKeyDown() and not self.isMoving) then
-		movSpeed:StartMoving()
-		self.isMoving = true
-	end
-end)
-movSpeed:SetScript("OnMouseUp", function(self)
-	if (self.isMoving) then
-		movSpeed:StopMovingOrSizing()
-		self.isMoving = false
-	end
-end)
-
---Setting up slash commands
-SLASH_MOVESPEED1 = keyword
-function SlashCmdList.MOVESPEED(command)
-	local name, value = strsplit(" ", command)
-	if name == commands["0help"].name then
-		PrintCommands()
-	elseif name == commands["1resetPosition"].name then
-		ResetPosition()
-	elseif name == commands["2savePreset"].name then
-		SavePosition()
-	elseif name == commands["3defaultPreset"].name then
-		DefaultPreset()
-	elseif name == commands["4hideDisplay"].name then
-		db.hidden = true
-		textDisplay:Hide()
-		PrintStatus()
-	elseif name == commands["5showDisplay"].name then
-		db.hidden = false
-		textDisplay:Show()
-		PrintStatus()
-	elseif name == commands["6fontSize"].name then
-		local size = tonumber(value)
-		if size ~= nil then
-			db.font.size = size
-			textDisplay:SetFont(db.font.family, db.font.size, "THINOUTLINE")
-			print(colors.sg .. strings.addon .. ": " .. colors.ly .. "The font size has been set to " .. size .. ".")
-		else
-			print(colors.sg .. strings.addon .. ": " .. colors.ly .. "The font size was not changed.")
-			print(colors.ly .. "Please enter a valid number value (e.g. " .. colors.lg .. "/movespeed size 11" ..  colors.ly .. ").")
-		end
-	else
-		PrintHelp()
-	end
-end
