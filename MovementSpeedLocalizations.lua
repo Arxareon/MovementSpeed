@@ -1,5 +1,5 @@
 --Addon namespace
-local addonName, ns = ...
+local _, ns = ...
 
 
 --[[ ENGLISH ]] --(English support only, for now..)
@@ -14,14 +14,17 @@ ns.english = {
 			save = {
 				label = "Save position",
 				tooltip = "Save the current position of the text display as the preset location.",
+				warning = "Are you sure you want to override the saved preset with the current position?\n\nThe preset position is account-wide.", --\n represents the newline character
 			},
 			reset = {
 				label = "Reset position",
 				tooltip = "Reset the position of the text display to the specified preset location.",
+				warning = "Are you sure you want to reset the position to the current preset?",
 			},
 			default = {
 				label = "Default preset",
 				tooltip = "Restore the default preset location of the text display.",
+				warning = "Are you sure you want to reset the preset position to the defaults?\n\nThe preset position is account-wide.", --\n represents the newline character
 			},
 		},
 		visibility = {
@@ -82,4 +85,7 @@ ns.english = {
 			error = "Please enter a valid number value (e.g. #).", --# will be replaced with code
 		},
 	},
+	misc = {
+		cancel = "Cancel"
+	}
 }

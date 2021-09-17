@@ -3,30 +3,6 @@ local addonNameSpace, ns = ...
 local _, addon = GetAddOnInfo(addonNameSpace)
 
 
---[[ STRINGS & LOCALIZATION ]]
-
-local strings = {}
-
---Load localization
-local function LoadLocale()
-	if (GetLocale() == "[N/A]") then
-		--TODO: add support for other languages (locales: https://wowwiki-archive.fandom.com/wiki/API_GetLocale#Locales)
-	else --English (UK & US)
-		strings.options = ns.english.options
-		strings.chat = ns.english.chat
-	end
-end
-LoadLocale()
-
---Color palette for string formatting
-local colors = {
-	lg = "|cFF" .. "8FD36E", --light green
-	sg = "|cFF" .. "4ED836", --strong green
-	ly = "|cFF" .. "FFFB99", --light yellow
-	sy = "|cFF" .. "FFDD47", --strong yellow
-}
-
-
 --[[ DB TABLES ]]
 
 local db --account-wide
@@ -35,7 +11,10 @@ local defaultDB = {
 		point = "TOPRIGHT",
 		offset = { x = -68, y = -179 },
 	},
-	hidden = false,
+	visibility = {
+		hidden = false,
+		frameStrata = "MEDIUM",
+	},
 	font = {
 		family = "Fonts\\FRIZQT__.TTF",
 		size = 11,
@@ -45,7 +24,7 @@ local defaultDB = {
 --Table management utilities
 local function Dump(object)
 	if type(object) == "table" then
-		for k, v in pairs(object) do
+		for _, v in pairs(object) do
 			Dump(v)
 		end
 	else
@@ -64,13 +43,34 @@ local function Clone(table)
 end
 
 
+--[[ STRINGS & LOCALIZATION ]]
+
+local strings = { options = {}, chat = {}, misc = {} }
+
+--Load localization
+local function LoadLocale()
+	if (GetLocale() == "") then
+		--TODO: add support for other languages (locales: https://wowwiki-archive.fandom.com/wiki/API_GetLocale#Locales)
+	else strings = ns.english end--English (UK & US)
+end
+LoadLocale()
+
+--Color palette for string formatting
+local colors = {
+	lg = "|cFF" .. "8FD36E", --light green
+	sg = "|cFF" .. "4ED836", --strong green
+	ly = "|cFF" .. "FFFB99", --light yellow
+	sy = "|cFF" .. "FFDD47", --strong yellow
+}
+
+
 --[[ FRAMES & EVENTS ]]
 
 --Create the main frame, text display and options panel
 local movSpeed = CreateFrame("Frame", "MovementSpeed", UIParent)
-local textDisplay = movSpeed:CreateFontString("MovementSpeedTextDisplay", "HIGH")
+local textDisplay = movSpeed:CreateFontString("MovementSpeedTextDisplay", "OVERLAY")
 local optionsPanel = CreateFrame("Frame", "MovementSpeedOptions", InterfaceOptionsFramePanelContainer)
-local options = { visibility = {}, font =  {} }
+local options = { visibility = {}, font = {} }
 
 --Register events
 movSpeed:RegisterEvent("ADDON_LOADED")
@@ -92,15 +92,16 @@ local function ResetPosition()
 	print(colors.sg .. addon .. ":" .. colors.ly .. " " .. strings.chat.reset.response)
 end
 local function SavePosition()
-	local x local y db.position.point, x, y, db.position.offset.x, db.position.offset.y = movSpeed:GetPoint()
+	db.position.point, _, _, db.position.offset.x, db.position.offset.y = movSpeed:GetPoint()
 	print(colors.sg .. addon .. ":" .. colors.ly .. " " .. strings.chat.save.response)
 end
 local function DefaultPreset()
-	db.position = defaultDB.position
+	db.position = Clone(defaultDB.position)
 	print(colors.sg .. addon .. ":" .. colors.ly .. " " .. strings.chat.default.response)
 end
 
---Display visibility and font utilities
+---Set the visibility of the textDisplay based on the flipped value of the input parameter
+---@param visible boolean
 local function FlipVisibility(visible)
 	if visible then
 		textDisplay:Hide()
@@ -108,8 +109,9 @@ local function FlipVisibility(visible)
 		textDisplay:Show()
 	end
 end
+--Set the visibility and the font family, size and color of the textDisplay
 local function SetDisplayValues()
-	FlipVisibility(db.hidden)
+	FlipVisibility(db.visibility.hidden)
 	textDisplay:SetFont(db.font.family, db.font.size, "THINOUTLINE")
 	textDisplay:SetTextColor(1,1,1,1)
 end
@@ -184,11 +186,11 @@ function SlashCmdList.MOVESPEED(line)
 	elseif command == strings.chat.default.command then
 		DefaultPreset()
 	elseif command == strings.chat.hide.command then
-		db.hidden = true
+		db.visibility.hidden = true
 		textDisplay:Hide()
 		PrintStatus()
 	elseif command == strings.chat.show.command then
-		db.hidden = false
+		db.visibility.hidden = false
 		textDisplay:Show()
 		PrintStatus()
 	elseif command == strings.chat.size.command then
@@ -209,18 +211,36 @@ end
 
 --[[ GUI ELEMENT SETTERS ]]
 
+---Set the position and anchoring of a frame when it is unknown which parameters will be nil when calling [Region:SetPoint()](https://wowpedia.fandom.com/wiki/API_Region_SetPoint)
+---@param frame FrameType
+---@param anchor AnchorPoint Base anchor point
+---@param relativeTo FrameType (Default: parent frame or the entire screen)
+---@param relativePoint AnchorPoint (Default: *anchor*)
+---@param offsetX number (Default: 0)
+---@param offsetY number (Default: 0)
+local function PositionFrame(frame, anchor, relativeTo, relativePoint, offsetX, offsetY)
+	if (relativeTo == nil or relativePoint == nil) and (offsetX == nil or offsetY == nil) then
+		frame:SetPoint(anchor)
+	elseif relativeTo == nil or relativePoint == nil then
+		frame:SetPoint(anchor, offsetX, offsetY)
+	elseif offsetX == nil or offsetY == nil then
+		frame:SetPoint(anchor, relativeTo, relativePoint)
+	else
+		frame:SetPoint(anchor, relativeTo, relativePoint, offsetX, offsetY)
+	end
+end
 ---Add a title and an optional description to an options frame
 ---@param t table Parameters are to be provided in this table
---- - **frame**: *[Frame](https://wowpedia.fandom.com/wiki/UIOBJECT_Frame)* ― The frame panel to add the title and (optional) description to
+--- - **frame**: *[FrameType](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types)* ― The frame panel to add the title and (optional) description to
 --- - **title**: *table*
 --- 	- **text**: *string* ― Text to be shown as the main title of the frame
---- 	- **offset**: *table* ― The offset from the TOPLEFT point of the specified frame
+--- 	- **offset**?: *table* [optional] ― The offset from the TOPLEFT point of the specified frame
 --- 		- **x**: *number* ― Horizontal offset value
 --- 		- **y**: *number* ― Vertical offset value
 --- 	- **template**: *string* ― Template to be used for the [FontString](https://wowpedia.fandom.com/wiki/UIOBJECT_FontString)
 --- - **description**?: *table* [optional]
 --- 	- **text**: *string* ― Text to be shown as the subtitle/description of the frame
---- 	- **offset**: *table* ― The offset from the BOTTOMLEFT point of the main title [FontString](https://wowpedia.fandom.com/wiki/UIOBJECT_FontString)
+--- 	- **offset**?: *table* [optional] ― The offset from the BOTTOMLEFT point of the main title [FontString](https://wowpedia.fandom.com/wiki/UIOBJECT_FontString)
 --- 		- **x**: *number* ― Horizontal offset value
 --- 		- **y**: *number* ― Vertical offset value
 --- 	- **template**: *string* ― Template to be used for the [FontString](https://wowpedia.fandom.com/wiki/UIOBJECT_FontString)
@@ -229,25 +249,23 @@ end
 local function AddTitle(t)
 	--Title
 	local title = t.frame:CreateFontString(t.frame:GetName() .. "Title", "ARTWORK", t.title.template)
-	title:SetPoint("TOPLEFT", t.title.offset.x, t.title.offset.y)
+	title:SetPoint("TOPLEFT", (t.title.offset or _).x, (t.title.offset or _).y)
 	title:SetText(t.title.text)
-	if t.description == nil then
-		return title
-	end
+	if t.description == nil then return title end
 	--Description
 	local description = t.frame:CreateFontString(t.frame:GetName() .. "Description", "ARTWORK", t.description.template)
-	description:SetPoint("TOPLEFT", title, "BOTTOMLEFT", t.description.offset.x, t.description.offset.y)
+	description:SetPoint("TOPLEFT", title, "BOTTOMLEFT", (t.description.offset or _).x, (t.description.offset or _).y)
 	description:SetText(t.description.text)
 	return title, description
 end
 ---Create a new frame as an options category
 ---@param t table Parameters are to be provided in this table
---- - **parent**: *[Frame](https://wowpedia.fandom.com/wiki/UIOBJECT_Frame)* — The main options frame to set as the parent of the new category
---- - **position**: *table* — Collection of parameters to call [Frame:SetPoint](https://wowwiki-archive.fandom.com/wiki/API_Region_SetPoint#Arguments) with
+--- - **parent**: *[FrameType](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types)* — The main options frame to set as the parent of the new category
+--- - **position**: *table* — Collection of parameters to call [Region:SetPoint()](https://wowwiki-archive.fandom.com/wiki/API_Region_SetPoint#Arguments) with
 --- 	- **anchor**: *[AnchorPoint](https://wowwiki-archive.fandom.com/wiki/Widget_Anchor_Points#All_sides)*
---- 	- **relativeTo**?: *[Frame](https://wowpedia.fandom.com/wiki/UIOBJECT_Frame)* [optional]
+--- 	- **relativeTo**?: *[FrameType](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types)* [optional]
 --- 	- **relativePoint**?: *[AnchorPoint](https://wowwiki-archive.fandom.com/wiki/Widget_Anchor_Points#All_sides)* [optional]
---- 	- **offset**: *table*
+--- 	- **offset**?: *table* [optional]
 --- 		- **x**: *number*
 --- 		- **y**: *number*
 --- - **size**: *table*
@@ -259,11 +277,7 @@ end
 local function CreateCategory(t)
 	local category = CreateFrame("Frame", t.parent:GetName() .. t.title:gsub("%s+", ""), t.parent, BackdropTemplateMixin and "BackdropTemplate" or nil)
 	--Position & dimensions
-	if t.position.relativeTo == nil then
-		category:SetPoint(t.position.anchor, t.position.offset.x, t.position.offset.y)
-	else
-		category:SetPoint(t.position.anchor, t.position.relativeTo, t.position.relativePoint, t.position.offset.x, t.position.offset.y)
-	end
+	PositionFrame(category, t.position.anchor, t.position.relativeTo, t.position.relativePoint, (t.position.offset or _).x, (t.position.offset or _).y)
 	category:SetSize(t.size.width, t.size.height)
 	--Art
 	category:SetBackdrop({
@@ -292,13 +306,13 @@ local function CreateCategory(t)
 end
 ---Create a button or checkbox frame as a child of an options frame
 ---@param t table Parameters are to be provided in this table
---- - **parent**: *[Frame](https://wowpedia.fandom.com/wiki/UIOBJECT_Frame)* — The frame to set as the parent of the new button
+--- - **parent**: *[FrameType](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types)* — The frame to set as the parent of the new button
 --- - **checkbox**?: *any* [optional] — Set to any value when the frame type should be [CheckButton](https://wowpedia.fandom.com/wiki/UIOBJECT_CheckButton) insted of the default [Button](https://wowpedia.fandom.com/wiki/UIOBJECT_Button) when the value nil (not set)
---- - **position**: *table* — Collection of parameters to call [Frame:SetPoint](https://wowwiki-archive.fandom.com/wiki/API_Region_SetPoint#Arguments) with
+--- - **position**: *table* — Collection of parameters to call [Region:SetPoint()](https://wowwiki-archive.fandom.com/wiki/API_Region_SetPoint#Arguments) with
 --- 	- **anchor**: *[AnchorPoint](https://wowwiki-archive.fandom.com/wiki/Widget_Anchor_Points#All_sides)*
 --- 	- **relativeTo**?: *[Frame](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types)* [optional]
 --- 	- **relativePoint**?: *[AnchorPoint](https://wowwiki-archive.fandom.com/wiki/Widget_Anchor_Points#All_sides)* [optional]
---- 	- **offset**: *number*
+--- 	- **offset**?: *table* [optional]
 --- 		- **x**: *number*
 --- 		- **y**: *number*
 --- - **width**: *number* — Horizontal size for [Button](https://wowpedia.fandom.com/wiki/UIOBJECT_Button) type frames (not applicable for [CheckButton](https://wowpedia.fandom.com/wiki/UIOBJECT_CheckButton) types)
@@ -309,16 +323,12 @@ end
 local function CreateButton(t)
 	local button
 	if t.checkbox == nil then
-		button = CreateFrame("Button", t.parent:GetName() .. t.label:gsub("%s+", "") .. "Checkbox", t.parent, "UIPanelButtonTemplate")
+		button = CreateFrame("Button", t.parent:GetName() .. t.label:gsub("%s+", "") .. "Button", t.parent, "UIPanelButtonTemplate")
 	else
-		button = CreateFrame("CheckButton", t.parent:GetName() .. t.label:gsub("%s+", "") .. "Button", t.parent, "InterfaceOptionsCheckButtonTemplate")
+		button = CreateFrame("CheckButton", t.parent:GetName() .. t.label:gsub("%s+", "") .. "Checkbox", t.parent, "InterfaceOptionsCheckButtonTemplate")
 	end
 	--Position
-	if t.position.relativeTo == nil then
-		button:SetPoint(t.position.anchor, t.position.offset.x, t.position.offset.y)
-	else
-		button:SetPoint(t.position.anchor, t.position.relativeTo, t.position.relativePoint, t.position.offset.x, t.position.offset.y)
-	end
+	PositionFrame(button, t.position.anchor, t.position.relativeTo, t.position.relativePoint, (t.position.offset or _).x, (t.position.offset or _).y)
 	--Font & dimensions
 	getglobal(button:GetName() .. "Text"):SetText(t.label)
 	if button:GetObjectType() == "CheckButton" then
@@ -332,57 +342,115 @@ local function CreateButton(t)
 	button.tooltipText = t.label
 	--Event handlers
 	button:SetScript("OnClick", t.onClick)
-	button:HookScript("OnClick", function()
-		PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
-	end)
+	button:HookScript("OnClick", function() PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON) end)
 	return button
 end
+---Create a pupup dialogue with an accept function and cancel button
+---comment
+---@param t table Parameters are to be provided in this table
+--- - **name**: *string* — The name of the action which will call this popup. Each name must be unique between all popups!
+--- - **text**: *string* — The text to display as the message in the popup window
+--- - **accept**?: *string* [optional] — The text to display as the label of the accept button (Default: *name*)
+--- - **cancel**?: *string* [optional] — The text to display as the label of the cancel button (Default: *strings.misc.cancel*)
+--- - **onAccept**: *function* — The function to be called when the accept button is pressed and an OnAccept event happens
+---@return string key Used as the parameter when calling [StaticPopup_Show()](https://wowwiki-archive.fandom.com/wiki/Creating_simple_pop-up_dialog_boxes#Displaying_the_popup) or [StaticPopup_Hide()](https://wowwiki-archive.fandom.com/wiki/Creating_simple_pop-up_dialog_boxes#Hiding_the_popup)
+local function CreatePopup(t)
+	local key = "MOVESPEED_" .. string.upper(t.name:gsub("%s+", "_"))
+	StaticPopupDialogs[key] = {
+		text = t.text,
+		button1 = t.accept or t.name,
+		button2 = t.cancel or strings.misc.cancel,
+		OnAccept = t.onAccept,
+		timeout = 0,
+		whileDead = true,
+		hideOnEscape = true,
+		preferredIndex = STATICPOPUPS_NUMDIALOGS
+	}
+	return key
+end
+---Create an edit box frame as a child of an options frame
+---@param t table
+--- - **parent**: *[FrameType](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types)* — The frame to set as the parent of the edit box
+--- - **position**: *table* — Collection of parameters to call [Region:SetPoint()](https://wowwiki-archive.fandom.com/wiki/API_Region_SetPoint#Arguments) with
+--- 	- **anchor**: *[AnchorPoint](https://wowwiki-archive.fandom.com/wiki/Widget_Anchor_Points#All_sides)*
+--- 	- **relativeTo**?: *[Frame](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types)* [optional]
+--- 	- **relativePoint**?: *[AnchorPoint](https://wowwiki-archive.fandom.com/wiki/Widget_Anchor_Points#All_sides)* [optional]
+--- 	- **offset**?: *table* [optional]
+--- 		- **x**: *number*
+--- 		- **y**: *number*
+--- - **size**: *table*
+--- 	- **width**: *number*
+--- 	- **height**: *number*
+--- - **justify**?: *table* [optional] --Set the justification of the [FontInstance](https://wowwiki-archive.fandom.com/wiki/Widget_API#FontInstance)
+--- 	- **h**?: *string* [optional] --Horizontal: "LEFT"|"RIGHT"|"CENTER" (Default: "LEFT")
+--- 	- **v**?: *string* [optional] --Vertical: "TOP"|"BOTTOM"|"MIDDLE" (Default: "MIDDLE")
+--- - **maxLetters**?: *number* [optional] --The value to set by [EditBox:SetMaxLetters()](https://wowpedia.fandom.com/wiki/API_EditBox_SetMaxLetters) (Default: 0 [no limit])
+--- - **onEnterPressed**: *function* --The function to be called when an [OnEnterPressed](https://wowpedia.fandom.com/wiki/UIHANDLER_OnEnterPressed) event happens
+--- - **onEscapePressed**: *function* --The function to be called when an [OnEscapePressed](https://wowpedia.fandom.com/wiki/UIHANDLER_OnEscapePressed) event happens
+---@return EditBox editBox
+local function CreateEditBox(t)
+	local editBox = CreateFrame("EditBox", t.parent:GetName() .. "EditBox", t.parent, BackdropTemplateMixin and "BackdropTemplate")
+	--Position & dimensions
+	PositionFrame(editBox, t.position.anchor, t.position.relativeTo, t.position.relativePoint, (t.position.offset or _).x, (t.position.offset or _).y)
+	editBox:SetSize(t.size.width, t.size.height)
+	--Art
+	editBox:SetBackdrop({
+		bgFile = "Interface/ChatFrame/ChatFrameBackground",
+		edgeFile = "Interface/ChatFrame/ChatFrameBackground",
+		tile = true, tileSize = 5, edgeSize = 1,
+		insets = { left = 0, right = 0, top = 0, bottom = 0 }
+	})
+	editBox:SetBackdropColor(0, 0, 0, 0.5)
+	editBox:SetBackdropBorderColor(0.4, 0.4, 0.4, 0.8)
+	--Font & text
+	editBox:SetFontObject("GameFontHighlightSmall")
+	if t.justify ~= nil then
+		if t.justify.h ~= nil then editBox:SetJustifyH(t.justify.h) end
+		if t.justify.v ~= nil then editBox:SetJustifyV(t.justify.v) end
+	end
+	if t.maxLetters ~= nil then editBox:SetMaxLetters(t.maxLetters) end
+	--Events & behaviour
+	editBox:SetAutoFocus(false)
+	editBox:SetScript("OnEnter", function(self) self:SetBackdropBorderColor(0.7, 0.7, 0.7, 0.8) end)
+	editBox:SetScript("OnLeave", function(self) self:SetBackdropBorderColor(0.4, 0.4, 0.4, 0.8) end)
+	editBox:SetScript("OnEnterPressed", t.onEnterPressed)
+	editBox:HookScript("OnEnterPressed", function(self)
+		PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+		self:ClearFocus()
+	end)
+	editBox:SetScript("OnEscapePressed", t.onEscapePressed)
+	editBox:HookScript("OnEscapePressed", function(self) self:ClearFocus() end)
+	return editBox
+end
+--TODO: Add title, tooltip label and description
+--TODO: Fix the text being offset to the left on first load
+
 ---Add a value box as a child to an existing slider frame
 ---@param t table
---- - **parent**: *[Slider](https://wowpedia.fandom.com/wiki/UIOBJECT_Slider)* — The frame of "Slider" type to set as the parent frame
+--- - **slider**: *[Slider](https://wowpedia.fandom.com/wiki/UIOBJECT_Slider)* — The frame of "Slider" type to set as the parent frame
 --- - **value**: *table*
 --- 	- **min**: *number* — Lower numeric value limit of the slider
 --- 	- **max**: *number* — Uppare numeric value limit of the slider
 --- 	- **step**: *number* — Numeric value step of the slider
 ---@return EditBox valueBox
 local function AddSliderValueBox(t)
-	local valueBox = CreateFrame("EditBox", t.parent:GetName() .. "ValueBox", t.parent, BackdropTemplateMixin and "BackdropTemplate")
-	--Position & dimensions
-	valueBox:SetPoint("TOP", t.parent, "BOTTOM", 0, 0)
-	valueBox:SetSize(60, 14)
-	--Art
-	valueBox:SetBackdrop({
-		bgFile = "Interface/ChatFrame/ChatFrameBackground",
-		edgeFile = "Interface/ChatFrame/ChatFrameBackground",
-		tile = true, tileSize = 5, edgeSize = 1,
-		insets = { left = 0, right = 0, top = 0, bottom = 0 }
+	local valueBox = CreateEditBox({
+		parent = t.slider,
+		position = {
+			anchor = "TOP",
+			relativeTo = t.slider,
+			relativePoint = "BOTTOM"
+		},
+		size = { width = 60, height = 14 },
+		justify = { h = "CENTER" },
+		maxLetters = string.len(tostring(t.value.max)),
+		onEnterPressed = function(self)
+			local value = max(t.value.min, min(t.value.max, floor(self:GetNumber() * (1 / t.value.step) + 0.5) / (1 / t.value.step)))
+			t.slider:SetValue(value)
+			self:SetText(value)
+		end,
+		onEscapePressed = function(self) self:SetText(t.slider:GetValue()) end
 	})
-	valueBox:SetBackdropColor(0, 0, 0, 0.5)
-	valueBox:SetBackdropBorderColor(0.4, 0.4, 0.4, 0.8)
-	--Font
-	valueBox:SetFontObject("GameFontHighlightSmall")
-	valueBox:SetJustifyH("CENTER")
-	valueBox:SetMaxLetters(string.len(tostring(t.value.max)))
-	--Behaviour
-	valueBox:SetAutoFocus(false)
-	--Event handlers
-	valueBox:SetScript("OnEnter", function(self)
-		self:SetBackdropBorderColor(0.7, 0.7, 0.7, 0.8)
-	end)
-	valueBox:SetScript("OnLeave", function(self)
-		self:SetBackdropBorderColor(0.4, 0.4, 0.4, 0.8)
-	end)
-	valueBox:SetScript("OnEscapePressed", function(self)
-		self:SetText(t.parent:GetValue())
-		self:ClearFocus()
-	end)
-	valueBox:SetScript("OnEnterPressed", function(self)
-		PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
-		local value = max(t.value.min, min(t.value.max, floor(self:GetNumber() * (1 / t.value.step) + 0.5) / (1 / t.value.step)))
-		t.parent:SetValue(value)
-		self:SetText(value)
-		self:ClearFocus()
-	end)
 	valueBox:SetScript("OnChar", function(self)
 		if math.floor(t.value.min) == t.value.min and math.floor(t.value.max) == t.value.max and math.floor(t.value.step) == t.value.step then
 			self:SetText(self:GetText():gsub("[^%d]", ""))
@@ -390,19 +458,17 @@ local function AddSliderValueBox(t)
 			self:SetText(self:GetText():gsub("[^%.%d]+", ""):gsub("(%..*)%.", "%1"))
 		end
 	end)
-	t.parent:HookScript("OnValueChanged", function(self, value)
-		valueBox:SetText(value) --TODO: Fix text being out of bounds to the left on first text load
-	end)
+	t.slider:HookScript("OnValueChanged", function(_, value) valueBox:SetText(value) end) --TODO: Fix text being out of bounds to the left on first text load
 	return valueBox
 end
 ---Create a new slider frame as a child of an options frame
 ---@param t table
---- - **parent**: *[Frame](https://wowpedia.fandom.com/wiki/UIOBJECT_Frame)* — The frame to set as the parent of the new slider
---- - **position**: *table* — Collection of parameters to call [Frame:SetPoint](https://wowwiki-archive.fandom.com/wiki/API_Region_SetPoint#Arguments) with
+--- - **parent**: *[FrameType](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types)* — The frame to set as the parent of the new slider
+--- - **position**: *table* — Collection of parameters to call [Region:SetPoint()](https://wowwiki-archive.fandom.com/wiki/API_Region_SetPoint#Arguments) with
 --- 	- **anchor**: *[AnchorPoint](https://wowwiki-archive.fandom.com/wiki/Widget_Anchor_Points#All_sides)*
 --- 	- **relativeTo**?: *[Frame](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types)* [optional]
---- 	- **relativePoint**?: *[Frame](https://wowpedia.fandom.com/wiki/UIOBJECT_Frame)* [optional]
---- 	- **offset**: *table*
+--- 	- **relativePoint**?: *[FrameType](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types)* [optional]
+--- 	- **offset**?: *table* [optional]
 --- 		- **x**: *number*
 --- 		- **y**: *number*
 --- - **label**: *string* — Title text to be shown above the slider and as the the tooltip label
@@ -417,12 +483,8 @@ end
 ---@return EditBox? valueBox
 local function CreateSlider(t)
 	local slider = CreateFrame("Slider", t.parent:GetName() .. t.label:gsub("%s+", "") .. "Slider", t.parent, "OptionsSliderTemplate")
-	--Position & dimensions
-	if t.position.relativeTo == nil then
-		slider:SetPoint(t.position.anchor, t.position.offset.x, t.position.offset.y)
-	else
-		slider:SetPoint(t.position.anchor, t.position.relativeTo, t.position.relativePoint, t.position.offset.x, t.position.offset.y)
-	end
+	--Position
+	PositionFrame(slider, t.position.anchor, t.position.relativeTo, t.position.relativePoint, (t.position.offset or _).x, (t.position.offset or _).y)
 	--Font
 	getglobal(slider:GetName() .. "Text"):SetFontObject("GameFontNormal")
 	getglobal(slider:GetName() .. "Text"):SetText(t.label)
@@ -437,14 +499,10 @@ local function CreateSlider(t)
 	slider:SetObeyStepOnDrag(true)
 	--Event handlers
 	slider:SetScript("OnValueChanged", t.onValueChanged)
-	slider:HookScript("OnMouseUp", function()
-		PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
-	end)
+	slider:HookScript("OnMouseUp", function() PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON) end)
 	--Value box
-	if t.valueBox == false then
-		return slider
-	end
-	local valueBox = AddSliderValueBox({ parent = slider, value = { min = t.value.min, max = t.value.max, step = t.value.step } })
+	if t.valueBox == false then return slider end
+	local valueBox = AddSliderValueBox({ slider = slider, value = { min = t.value.min, max = t.value.max, step = t.value.step } })
 	return slider, valueBox
 end
 
@@ -453,7 +511,7 @@ end
 
 --Set up GUI options
 local function SetUpInterfaceOptions()
-	local title local description = AddTitle({
+	local _ local description = AddTitle({
 		frame = optionsPanel,
 		title = {
 			text = addon,
@@ -505,6 +563,11 @@ local function SetUpInterfaceOptions()
 		description = strings.options.font.description
 	})
 	--Button: Save preset position
+	local savePopup = CreatePopup({
+		name = strings.options.position.save.label,
+		text = strings.options.position.save.warning,
+		onAccept = function() SavePosition() end
+	})
 	CreateButton({
 		parent = positionOptions,
 		position = {
@@ -514,11 +577,14 @@ local function SetUpInterfaceOptions()
 		width = 120,
 		label = strings.options.position.save.label,
 		tooltip = strings.options.position.save.tooltip,
-		onClick = function()
-			SavePosition()
-		end
+		onClick = function() StaticPopup_Show(savePopup) end
 	})
 	--Button: Reset preset position
+	local resetPopup = CreatePopup({
+		name = strings.options.position.reset.label,
+		text = strings.options.position.reset.warning,
+		onAccept = function() ResetPosition() end
+	})
 	CreateButton({
 		parent = positionOptions,
 		position = {
@@ -528,11 +594,14 @@ local function SetUpInterfaceOptions()
 		width = 120,
 		label = strings.options.position.reset.label,
 		tooltip = strings.options.position.reset.tooltip,
-		onClick = function()
-			ResetPosition()
-		end
+		onClick = function() StaticPopup_Show(resetPopup) end
 	})
 	--Button: Reset default preset position
+	local defaultPopup = CreatePopup({
+		name = strings.options.position.default.label,
+		text = strings.options.position.default.warning,
+		onAccept = function() DefaultPreset() end
+	})
 	CreateButton({
 		parent = positionOptions,
 		position = {
@@ -542,9 +611,7 @@ local function SetUpInterfaceOptions()
 		width = 120,
 		label = strings.options.position.default.label,
 		tooltip = strings.options.position.default.tooltip,
-		onClick = function()
-			DefaultPreset()
-		end
+		onClick = function() StaticPopup_Show(defaultPopup) end
 	})
 	--Checkbox: Hidden
 	options.visibility.hidden = CreateButton({
@@ -557,9 +624,7 @@ local function SetUpInterfaceOptions()
 		width = 120,
 		label = strings.options.visibility.hidden.label,
 		tooltip = strings.options.visibility.hidden.tooltip,
-		onClick = function(self)
-			FlipVisibility(self:GetChecked())
-		end
+		onClick = function(self) FlipVisibility(self:GetChecked()) end
 	})
 	--Slider: Font size
 	options.font.size = CreateSlider({
@@ -571,15 +636,25 @@ local function SetUpInterfaceOptions()
 		label = strings.options.font.size.label,
 		tooltip = strings.options.font.size.tooltip,
 		value = { min = 8, max = 64, step = 1 },
-		onValueChanged = function(self)
-			textDisplay:SetFont(db.font.family, self:GetValue(), "THINOUTLINE")
-		end
+		onValueChanged = function(self) textDisplay:SetFont(db.font.family, self:GetValue(), "THINOUTLINE") end
+	})
+	--Dropdown: Font family
+	options.font.family = CreateEditBox({ --TODO: Create dropdowns and swap out the EditBox
+		parent = fontOptions,
+		position = {
+			anchor = "TOPRIGHT",
+			offset = { x = -10, y = -32 }
+		},
+		size = { width = 120, height = 16 },
+		maxLetters = 300,
+		onEnterPressed = function(self) db.font.family = self:GetText() end,
+		onEscapePressed = function(self) self:SetText(db.font.family) end
 	})
 end
 
 --Interface options event handlers
 local function Save()
-	db.hidden = not textDisplay:IsShown();
+	db.visibility.hidden = not textDisplay:IsShown();
 	db.font.size = options.font.size:GetValue();
 end
 local function Cancel()
@@ -592,8 +667,9 @@ local function Default()
 	print(colors.sg .. addon .. ": " .. colors.ly .. strings.options.defaults)
 end
 local function Refresh()
-	options.visibility.hidden:SetChecked(db.hidden)
+	options.visibility.hidden:SetChecked(db.visibility.hidden)
 	options.font.size:SetValue(db.font.size)
+	options.font.family:SetText(db.font.family)
 end
 
 --Add the options to the WoW Interface
@@ -614,8 +690,8 @@ end
 --Set frame parameters
 local function SetFrameParameters()
 	--Main frame
-	movSpeed:SetFrameStrata("HIGH")
-	movSpeed:SetFrameLevel(0)
+	movSpeed:SetFrameStrata(db.visibility.frameStrata)
+	movSpeed:SetToplevel(true)
 	movSpeed:SetSize(32, 10)
 	if not movSpeed:IsUserPlaced() then
 		movSpeed:ClearAllPoints()
@@ -648,8 +724,8 @@ end)
 --Check and fix the DB
 local oldData = {};
 local function AddItems(dbToCheck, dbToSample) --Check for and fill in missing data
-	if type(dbToCheck) ~= "table"  and type(dbToSample) ~= "table" then return end
-	for k,v in pairs(dbToSample) do
+	if type(dbToCheck) ~= "table" and type(dbToSample) ~= "table" then return end
+	for k, v in pairs(dbToSample) do
 		if dbToCheck[k] == nil then
 			dbToCheck[k] = v;
 		else
@@ -658,8 +734,8 @@ local function AddItems(dbToCheck, dbToSample) --Check for and fill in missing d
 	end
 end
 local function RemoveItems(dbToCheck, dbToSample) --Remove unused or outdated data while trying to keep any old data
-	if type(dbToCheck) ~= "table"  and type(dbToSample) ~= "table" then return end
-	for k,v in pairs(dbToCheck) do
+	if type(dbToCheck) ~= "table" and type(dbToSample) ~= "table" then return end
+	for k, v in pairs(dbToCheck) do
 		if dbToSample[k] == nil then
 			oldData[k] = v;
 			dbToCheck[k] = nil;
