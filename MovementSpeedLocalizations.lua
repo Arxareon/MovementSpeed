@@ -29,7 +29,7 @@ ns.english = {
 		},
 		visibility = {
 			title = "Visibility",
-			description = "Set the visibility of Movement Speed.",
+			description = "Set the visibility of Movement Speed percentage value.",
 			hidden = {
 				label = "Hidden",
 				tooltip = "Hide or show the Movement Speed text display.",
@@ -40,7 +40,12 @@ ns.english = {
 			description = "Customize the font of the speed percentage text display.",
 			size = {
 				label = "Font size",
-				tooltip = "Specify the font size of the displayed percentage value.\nDefault: 11",
+				tooltip = "Specify the font size of the displayed percentage value.\nDefault: 11", --\n represents the newline character
+			},
+			family = {
+				label = "Font family",
+				tooltip = "Select the font of the displayed percentage value.",
+				default = "Fonts/FRIZQT__.TTF", --Different locales: https://github.com/tomrus88/BlizzardInterfaceCode/blob/master/Interface/FrameXML/Fonts.xml
 			},
 		},
 	},
@@ -86,6 +91,6 @@ ns.english = {
 		},
 	},
 	misc = {
-		cancel = "Cancel"
+		cancel = "Cancel",
 	}
 }
