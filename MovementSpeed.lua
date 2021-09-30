@@ -49,21 +49,21 @@ local defaultDB = {
 
 --Table management utilities
 local function Dump(object)
-	if type(object) == "table" then
-		for _, v in pairs(object) do
-			Dump(v)
-		end
-	else
+	if type(object) ~= "table" then
 		print(object)
+		return
+	end
+	for _, v in pairs(object) do
+		Dump(v)
 	end
 end
-local function Clone(table)
+local function Clone(object)
+	if type(object) ~= "table" then
+		return object
+	end
 	local copy = {}
-	for k, v in pairs(table) do
-		if type(v) == "table" then
-			v = Clone(v)
-		end
-		copy[k] = v
+	for k, v in pairs(object) do
+		copy[k] = Clone(v)
 	end
 	return copy
 end
@@ -71,11 +71,9 @@ end
 
 --[[ FRAMES & EVENTS ]]
 
---Create the main frame, text display and options panel
+--Create the main frame and text display
 local movSpeed = CreateFrame("Frame", "MovementSpeed", UIParent)
 local textDisplay = movSpeed:CreateFontString("MovementSpeedTextDisplay", "OVERLAY")
-local optionsPanel = CreateFrame("Frame", "MovementSpeedOptions", InterfaceOptionsFramePanelContainer)
-local options = { visibility = {}, font = {} }
 
 --Register events
 movSpeed:RegisterEvent("ADDON_LOADED")
@@ -431,8 +429,7 @@ end
 local function CreateEditBox(t)
 	local editBox = CreateFrame("EditBox", t.parent:GetName() .. "EditBox", t.parent, "InputBoxTemplate") --This template doesn't have multiline art
 	--Position & dimensions
-	if (t.position.offset or _).y ~= nil then (t.position.offset or _).y = (t.position.offset or _).y - 18 end
-	PositionFrame(editBox, t.position.anchor, t.position.relativeTo, t.position.relativePoint, (t.position.offset or _).x, (t.position.offset or _).y)
+	PositionFrame(editBox, t.position.anchor, t.position.relativeTo, t.position.relativePoint, (t.position.offset or _).x, ((t.position.offset or _).y or 0) - 18)
 	editBox:SetSize(t.size.width, t.size.height or 17)
 	--Font & text
 	editBox:SetMultiLine(t.multiline or false)
@@ -448,7 +445,7 @@ local function CreateEditBox(t)
 		frame = editBox,
 		title = {
 			text = t.title,
-			offset = { x = 0, y = 18 },
+			offset = { x = -1, y = 18 },
 			template = "GameFontNormal"
 		}
 	})
@@ -544,7 +541,7 @@ end
 local function CreateSlider(t)
 	local slider = CreateFrame("Slider", t.parent:GetName() .. t.label:gsub("%s+", "") .. "Slider", t.parent, "OptionsSliderTemplate")
 	--Position
-	PositionFrame(slider, t.position.anchor, t.position.relativeTo, t.position.relativePoint, (t.position.offset or _).x, (t.position.offset or _).y)
+	PositionFrame(slider, t.position.anchor, t.position.relativeTo, t.position.relativePoint, (t.position.offset or _).x, ((t.position.offset or _).y or 0) - 12)
 	if t.width ~= nil then slider:SetWidth(t.width) end
 	--Font
 	getglobal(slider:GetName() .. "Text"):SetFontObject("GameFontNormal")
@@ -576,17 +573,17 @@ end
 --- 	- **offset**?: *table* [optional]
 --- 		- **x**: *number*
 --- 		- **y**: *number*
---- - **width**?: *number* [optional]
+--- - **width**?: *number* [optional] — (currently unsupported)
 --- - **label**: *string* — Title text to be shown above the dropdown and as the the tooltip label
 --- - **tooltip**: *string* — Text to be shown as the tooltip of the dropdown
---- - **items**: *table* — Table containing the dropdown items
+--- - **items**: *table* — Numbered/indexed table containing the dropdown items
 --- - **selected**: *number* — The currently selected item of the dropdown menu
 ---@return Frame dropdown
 local function CreateDropdown(t)
 	local dropdown = CreateFrame("Frame", t.parent:GetName() .. t.label:gsub("%s+", "") .. "Dropdown", t.parent, "UIDropDownMenuTemplate")
-	--Position
-	PositionFrame(dropdown, t.position.anchor, t.position.relativeTo, t.position.relativePoint, (t.position.offset or _).x, (t.position.offset or _).y)
-	if t.width ~= nil then dropdown:SetWidth(t.width) end
+	--Position & dimensions
+	PositionFrame(dropdown, t.position.anchor, t.position.relativeTo, t.position.relativePoint, (t.position.offset or _).x, ((t.position.offset or _).y or 0)- 16)
+	if t.width ~= nil then dropdown:SetWidth(t.width) end --FIXME: Check and fix why width change isn't happening (hint: templates)
 	--Tooltip
 	dropdown.tooltipText = t.label
 	dropdown.tooltipRequirement = t.tooltip
@@ -595,7 +592,7 @@ local function CreateDropdown(t)
 		frame = dropdown,
 		title = {
 			text = t.label,
-			offset = { x = 0, y = 16 },
+			offset = { x = 22, y = 16 },
 			template = "GameFontNormal"
 		}
 	})
@@ -612,15 +609,182 @@ local function CreateDropdown(t)
 			UIDropDownMenu_AddButton(info)
 		end
 	end)
-	UIDropDownMenu_SetSelectedValue(dropdown, t.selectedy)
+	UIDropDownMenu_SetSelectedValue(dropdown, t.selected)
+	-- getglobal(dropdown:GetName()):SetText(fonts[t.selected]) --FIXME: Fix "Custom" being shown in the dropdown instead of the currently selected item
 	return dropdown
 end
 
 
 --[[ GUI OPTIONS ]]
 
---Set up GUI options
-local function SetUpInterfaceOptions()
+--Options frame
+local options = { visibility = {}, font = {} }
+
+--GUI elements
+local function CreatePositionOptions(parentFrame)
+	--Button & Popup: Save preset position
+	local savePopup = CreatePopup({
+		name = strings.options.position.save.label,
+		text = strings.options.position.save.warning,
+		onAccept = function() SavePosition() end
+	})
+	CreateButton({
+		parent = parentFrame,
+		position = {
+			anchor = "TOPLEFT",
+			offset = { x = 10, y = -30 }
+		},
+		width = 120,
+		label = strings.options.position.save.label,
+		tooltip = strings.options.position.save.tooltip,
+		onClick = function() StaticPopup_Show(savePopup) end
+	})
+	--Button & Popup: Reset preset position
+	local resetPopup = CreatePopup({
+		name = strings.options.position.reset.label,
+		text = strings.options.position.reset.warning,
+		onAccept = function() ResetPosition() end
+	})
+	CreateButton({
+		parent = parentFrame,
+		position = {
+			anchor = "TOPRIGHT",
+			offset = { x = -134, y = -30 }
+		},
+		width = 120,
+		label = strings.options.position.reset.label,
+		tooltip = strings.options.position.reset.tooltip,
+		onClick = function() StaticPopup_Show(resetPopup) end
+	})
+	--Button & Popup: Reset default preset position
+	local defaultPopup = CreatePopup({
+		name = strings.options.position.default.label,
+		text = strings.options.position.default.warning,
+		onAccept = function() DefaultPreset() end
+	})
+	CreateButton({
+		parent = parentFrame,
+		position = {
+			anchor = "TOPRIGHT",
+			offset = { x = -10, y = -30 }
+		},
+		width = 120,
+		label = strings.options.position.default.label,
+		tooltip = strings.options.position.default.tooltip,
+		onClick = function() StaticPopup_Show(defaultPopup) end
+	})
+end
+local function CreateVisibilityOptions(parentFrame)
+	--Checkbox: Hidden
+	options.visibility.hidden = CreateCheckbox({
+		parent = parentFrame,
+		position = {
+			anchor = "TOPLEFT",
+			offset = { x = 8, y = -30 }
+		},
+		width = 120,
+		label = strings.options.visibility.hidden.label,
+		tooltip = strings.options.visibility.hidden.tooltip,
+		onClick = function(self) FlipVisibility(self:GetChecked()) end
+	})
+end
+local function CreateFontOptions(parentFrame)
+	--Dropdown: Font family
+	local fontItems = {}
+	for i = 0, #fonts do
+		fontItems[i] = fonts[i]
+		fontItems[i].onSelect = function()
+			textDisplay:SetFont(fonts[i].path, db.font.size, "THINOUTLINE")
+		end
+	end
+	options.font.family = CreateDropdown({
+		parent = parentFrame,
+		position = {
+			anchor = "TOPLEFT",
+			offset = { x = -6, y = -30 }
+		},
+		label = strings.options.font.family.label,
+		tooltip = strings.options.font.family.tooltip,
+		items = fontItems,
+		selected = GetFontID(db.font.family)
+	})
+	--Slider: Font size
+	options.font.size = CreateSlider({
+		parent = parentFrame,
+		position = {
+			anchor = "TOP",
+			offset = { x = 0, y = -30 }
+		},
+		label = strings.options.font.size.label,
+		tooltip = strings.options.font.size.tooltip,
+		value = { min = 8, max = 64, step = 1 },
+		onValueChanged = function(self) textDisplay:SetFont(db.font.family, self:GetValue(), "THINOUTLINE") end
+	})
+	--TEST
+	options.font.test = CreateEditBox({
+		parent = parentFrame,
+		position = {
+			anchor = "TOPRIGHT",
+			offset = { x = -12, y = -30 }
+		},
+		size = { width = 120 },
+		maxLetters = 300,
+		text = "TTTEEESSSTTTtest",
+		title = "[PH]Test edit box",
+		onEnterPressed = function(self) print(self:GetText()) end,
+		onEscapePressed = function(self) self:SetText("TTTEEESSSTTTtest") end
+	})
+end
+--Category frames
+local function CreateCategoryPanels(parentFrame, titleFrame)
+	--Position
+	local optionsWidth = InterfaceOptionsFramePanelContainer:GetWidth() - 32
+	local positionOptions = CreateCategory({
+		parent = parentFrame,
+		position = {
+			anchor = "TOPLEFT",
+			relativeTo = titleFrame,
+			relativePoint = "BOTTOMLEFT",
+			offset = { x = 0, y = -48 }
+		},
+		size = { width = optionsWidth, height = 64 },
+		title = strings.options.position.title,
+		description = strings.options.position.description
+	})
+	CreatePositionOptions(positionOptions)
+	--Visibility
+	local visibilityOptions = CreateCategory({
+		parent = parentFrame,
+		position = {
+			anchor = "TOPLEFT",
+			relativeTo = positionOptions,
+			relativePoint = "BOTTOMLEFT",
+			offset = { x = 0, y = -32 }
+		},
+		size = { width = optionsWidth, height = 64 },
+		title = strings.options.visibility.title,
+		description = strings.options.visibility.description
+	})
+	CreateVisibilityOptions(visibilityOptions)
+	--Font
+	local fontOptions = CreateCategory({
+		parent = parentFrame,
+		position = {
+			anchor = "TOPLEFT",
+			relativeTo = visibilityOptions,
+			relativePoint = "BOTTOMLEFT",
+			offset = { x = 0, y = -32 }
+		},
+		size = { width = optionsWidth, height = 86 },
+		title = strings.options.font.title,
+		description = strings.options.font.description
+	})
+	CreateFontOptions(fontOptions)
+end
+--Main options frame
+local function CreateOptionsPanel()
+	local optionsPanel = CreateFrame("Frame", "MovementSpeedOptions", InterfaceOptionsFramePanelContainer)
+	--Title & description
 	local _ local description = AddTitle({
 		frame = optionsPanel,
 		title = {
@@ -634,152 +798,9 @@ local function SetUpInterfaceOptions()
 			template = "GameFontHighlightSmall"
 		}
 	})
-	--Category panels
-	local optionsWidth = InterfaceOptionsFramePanelContainer:GetWidth() - 32
-	local positionOptions = CreateCategory({
-		parent = optionsPanel,
-		position = {
-			anchor = "TOPLEFT",
-			relativeTo = description,
-			relativePoint = "BOTTOMLEFT",
-			offset = { x = 0, y = -48 }
-		},
-		size = { width = optionsWidth, height = 64 },
-		title = strings.options.position.title,
-		description = strings.options.position.description
-	})
-	local visibilityOptions = CreateCategory({
-		parent = optionsPanel,
-		position = {
-			anchor = "TOPLEFT",
-			relativeTo = positionOptions,
-			relativePoint = "BOTTOMLEFT",
-			offset = { x = 0, y = -32 }
-		},
-		size = { width = optionsWidth, height = 64 },
-		title = strings.options.visibility.title,
-		description = strings.options.visibility.description
-	})
-	local fontOptions = CreateCategory({
-		parent = optionsPanel,
-		position = {
-			anchor = "TOPLEFT",
-			relativeTo = visibilityOptions,
-			relativePoint = "BOTTOMLEFT",
-			offset = { x = 0, y = -32 }
-		},
-		size = { width = optionsWidth, height = 86 },
-		title = strings.options.font.title,
-		description = strings.options.font.description
-	})
-	--Button: Save preset position
-	local savePopup = CreatePopup({
-		name = strings.options.position.save.label,
-		text = strings.options.position.save.warning,
-		onAccept = function() SavePosition() end
-	})
-	CreateButton({
-		parent = positionOptions,
-		position = {
-			anchor = "TOPLEFT",
-			offset = { x = 10, y = -32 }
-		},
-		width = 120,
-		label = strings.options.position.save.label,
-		tooltip = strings.options.position.save.tooltip,
-		onClick = function() StaticPopup_Show(savePopup) end
-	})
-	--Button: Reset preset position
-	local resetPopup = CreatePopup({
-		name = strings.options.position.reset.label,
-		text = strings.options.position.reset.warning,
-		onAccept = function() ResetPosition() end
-	})
-	CreateButton({
-		parent = positionOptions,
-		position = {
-			anchor = "TOPRIGHT",
-			offset = { x = -134, y = -32 }
-		},
-		width = 120,
-		label = strings.options.position.reset.label,
-		tooltip = strings.options.position.reset.tooltip,
-		onClick = function() StaticPopup_Show(resetPopup) end
-	})
-	--Button: Reset default preset position
-	local defaultPopup = CreatePopup({
-		name = strings.options.position.default.label,
-		text = strings.options.position.default.warning,
-		onAccept = function() DefaultPreset() end
-	})
-	CreateButton({
-		parent = positionOptions,
-		position = {
-			anchor = "TOPRIGHT",
-			offset = { x = -10, y = -32 }
-		},
-		width = 120,
-		label = strings.options.position.default.label,
-		tooltip = strings.options.position.default.tooltip,
-		onClick = function() StaticPopup_Show(defaultPopup) end
-	})
-	--Checkbox: Hidden
-	options.visibility.hidden = CreateCheckbox({
-		parent = visibilityOptions,
-		position = {
-			anchor = "TOPLEFT",
-			offset = { x = 8, y = -32 }
-		},
-		width = 120,
-		label = strings.options.visibility.hidden.label,
-		tooltip = strings.options.visibility.hidden.tooltip,
-		onClick = function(self) FlipVisibility(self:GetChecked()) end
-	})
-	--Dropdown: Font family
-	local fontItems = {}
-	for i = 0, #fonts do
-		fontItems[i] = fonts[i]
-		fontItems[i].onSelect = function()
-			textDisplay:SetFont(fonts[i].path, db.font.size, "THINOUTLINE")
-		end
-	end
-	options.font.family = CreateDropdown({
-		parent = fontOptions,
-		position = {
-			anchor = "TOPLEFT",
-			offset = { x = -6, y = -48 }
-		},
-		label = strings.options.font.family.label,
-		tooltip = strings.options.font.family.tooltip,
-		items = fontItems,
-		selected = GetFontID(db.font.family)
-	})
-	--Slider: Font size
-	options.font.size = CreateSlider({
-		parent = fontOptions,
-		position = {
-			anchor = "TOP",
-			offset = { x = 0, y = -44 }
-		},
-		label = strings.options.font.size.label,
-		tooltip = strings.options.font.size.tooltip,
-		value = { min = 8, max = 64, step = 1 },
-		onValueChanged = function(self) textDisplay:SetFont(db.font.family, self:GetValue(), "THINOUTLINE") end
-	})
-	--TEST
-	options.visibility.strata = CreateEditBox({
-		parent = fontOptions,
-		position = {
-			anchor = "TOPRIGHT",
-			offset = { x = -12, y = -32 }
-		},
-		size = { width = 120 },
-		maxLetters = 300,
-		text = "movSpeed:GetFrameStrata()",
-		title = strings.options.font.family.label,
-		onEnterPressed = function(self) print(self:GetText()) end,
-		onEscapePressed = function(self) self:SetText("movSpeed:GetFrameStrata()") end
-	})
+	--Add categories & GUI elements
+	CreateCategoryPanels(optionsPanel, description)
+	return optionsPanel
 end
 
 --Interface options event handlers
@@ -801,11 +822,15 @@ local function Refresh()
 	options.visibility.hidden:SetChecked(db.visibility.hidden)
 	options.font.size:SetValue(db.font.size)
 	UIDropDownMenu_SetSelectedValue(options.font.family, GetFontID(db.font.family))
-	options.visibility.strata:SetText("db.font.family")
+	-- getglobal(options.font.family:GetName()):SetText(db.font.family)
+	options.font.test:SetText("TEStestTESTtest")
 end
 
---Add the options to the WoW Interface
+--Add the options to the WoW interface
 local function LoadInterfaceOptions()
+	--Set up the GUI
+	local optionsPanel = CreateOptionsPanel()
+	--Set up the options panel
 	optionsPanel.name = addon;
 	--Set event handlers
 	optionsPanel.okay = function() Save() end
@@ -863,28 +888,46 @@ end
 
 --Check and fix the DB
 local oldData = {};
-local function AddItems(dbToCheck, dbToSample) --Check for and fill in missing data
-	if type(dbToCheck) ~= "table" and type(dbToSample) ~= "table" then return end
-	for k, v in pairs(dbToSample) do
-		if dbToCheck[k] == nil then
-			dbToCheck[k] = v;
-		else
-			AddItems(dbToCheck[k], dbToSample[k])
-		end
-	end
-end
-local function RemoveItems(dbToCheck, dbToSample) --Remove unused or outdated data while trying to keep any old data
-	if type(dbToCheck) ~= "table" and type(dbToSample) ~= "table" then return end
+local function RemoveEmpty(dbToCheck) --Remove all nil and empty items from the table
+	if type(dbToCheck) ~= "table" then return end
 	for k, v in pairs(dbToCheck) do
-		if dbToSample[k] == nil then
-			oldData[k] = v;
-			dbToCheck[k] = nil;
-		else
-			RemoveItems(dbToCheck[k], dbToSample[k])
+		if type(v) == "table" then
+			if next(v) == nil then --The subtable is empty
+				dbToCheck[k] = nil; --Remove the empty subtable
+			else
+				RemoveEmpty(v)
+			end
+		elseif v == nil or v == "" then --The value is empty or doesn't exist
+			dbToCheck[k] = nil; --Remove the key value pair
 		end
 	end
 end
-local function RestoreOldData() --Restore old data to the DB
+local function AddMissing(dbToCheck, dbToSample) --Check for and fill in missing data
+	if type(dbToCheck) ~= "table" and type(dbToSample) ~= "table" then return end
+	if next(dbToSample) == nil then return end --The sample table is empty
+	for k, v in pairs(dbToSample) do
+		if dbToCheck[k] == nil then --The sample key doesn't exist in the table to check
+			if v ~= nil and v ~= "" then
+				dbToCheck[k] = v; --Add the item if the value is not empty or nil
+			end
+		else
+			AddMissing(dbToCheck[k], dbToSample[k])
+		end
+	end
+end
+local function RemoveMismatch(dbToCheck, dbToSample) --Remove unused or outdated data while trying to keep any old data
+	if type(dbToCheck) ~= "table" and type(dbToSample) ~= "table" then return end
+	if next(dbToCheck) == nil then return end --The table to check is empty
+	for k, v in pairs(dbToCheck) do
+		if dbToSample[k] == nil then --The checked key doesn't exist in the sample table
+			oldData[k] = v; --Add the item to the old data to be restored
+			dbToCheck[k] = nil; --Remove the unneeded item
+		else
+			RemoveMismatch(dbToCheck[k], dbToSample[k])
+		end
+	end
+end
+local function RestoreOldData() --Restore old data to the DB by matching removed items to known old keys
 	for k,v in pairs(oldData) do
 		if k == "offsetX" then
 			db.position.offset.x = v
@@ -903,20 +946,21 @@ local function LoadDB()
 	end
 	--Load the DB
 	db = MovementSpeedDB
-	AddItems(db, defaultDB) --Check for missing data
-	RemoveItems(db, defaultDB) --Remove unneeded data
+	--DB checkup & fix
+	RemoveEmpty(db) --Strip empty and nil keys & items
+	AddMissing(db, defaultDB) --Check for missing data
+	RemoveMismatch(db, defaultDB) --Remove unneeded data
 	RestoreOldData() --Save old data
 end
 function movSpeed:ADDON_LOADED(addon)
 	if addon == "MovementSpeed" then
 		movSpeed:UnregisterEvent("ADDON_LOADED")
-		--Load and check the DB
+		--Load & check the DB
 		LoadDB()
-		--Set up the UI  frame & text
+		--Set up the main frame & text
 		SetFrameParameters()
-		--Set up Interface options
+		--Set up the interface options
 		LoadInterfaceOptions()
-		SetUpInterfaceOptions()
 	end
 end
 function movSpeed:PLAYER_LOGIN()
