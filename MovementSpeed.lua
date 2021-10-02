@@ -25,7 +25,16 @@ local colors = {
 
 --Fonts
 local fonts = {
-	[0] = { text = "Default", path = strings.options.font.family.default },
+	[0] = { text = strings.misc.default, path = strings.options.font.family.default },
+	[1] = { text = "Arbutus Slab", path = "Interface/AddOns/MovementSpeed/Fonts/ArbutusSlab.ttf" },
+	[2] = { text = "Caesar Dressing", path = "Interface/AddOns/MovementSpeed/Fonts/CaesarDressing.ttf" },
+	[3] = { text = "Germania One", path = "Interface/AddOns/MovementSpeed/Fonts/GermaniaOne.ttf" },
+	[4] = { text = "Mitr", path = "Interface/AddOns/MovementSpeed/Fonts/Mitr.ttf" },
+	[5] = { text = "Oxanium", path = "Interface/AddOns/MovementSpeed/Fonts/Oxanium.ttf" },
+	[6] = { text = "Pattaya", path = "Interface/AddOns/MovementSpeed/Fonts/Pattaya.ttf" },
+	[7] = { text = "Reem Kufi", path = "Interface/AddOns/MovementSpeed/Fonts/ReemKufi.ttf" },
+	[8] = { text = "Source Code Pro", path = "Interface/AddOns/MovementSpeed/Fonts/SourceCodePro.ttf" },
+	[9] = { text = strings.misc.custom, path = "Interface/AddOns/MovementSpeed/Fonts/CUSTOM.ttf" },
 }
 
 
@@ -148,10 +157,10 @@ local function PrintStatus()
 	print(colors.sg .. addon .. ": " .. colors.ly .. visibility)
 end
 local function PrintHelp()
-	print(colors.sy .. strings.chat.help.thanks:gsub("#", colors.sg .. addon .. colors.sy))
+	print(colors.sy .. strings.chat.help.thanks:gsub("#ADDON", colors.sg .. addon .. colors.sy))
 	PrintStatus()
-	print(colors.ly .. strings.chat.help.hint:gsub("#", colors.lg .. keyword .. " " .. strings.chat.help.command .. colors.ly))
-	print(colors.ly .. strings.chat.help.move:gsub("#", colors.lg .. "SHIFT" .. colors.ly))
+	print(colors.ly .. strings.chat.help.hint:gsub("#HELP_COMMAND", colors.lg .. keyword .. " " .. strings.chat.help.command .. colors.ly))
+	print(colors.ly .. strings.chat.help.move:gsub("#SHIFT", colors.lg .. "SHIFT" .. colors.ly))
 end
 local function PrintCommands()
 	PrintStatus()
@@ -180,7 +189,7 @@ local function PrintCommands()
 		},
 		[5] = {
 			command = strings.chat.size.command,
-			description =  strings.chat.size.description:gsub("#", colors.lg .. strings.chat.size.command .. defaultDB.font.size .. colors.ly),
+			description =  strings.chat.size.description:gsub("#SIZE_DEFAULT", colors.lg .. strings.chat.size.command .. " " .. defaultDB.font.size .. colors.ly),
 		},
 	}
 	--Print the list
@@ -214,10 +223,10 @@ function SlashCmdList.MOVESPEED(line)
 		if size ~= nil then
 			db.font.size = size
 			textDisplay:SetFont(db.font.family, db.font.size, "THINOUTLINE")
-			print(colors.sg .. addon .. ": " .. colors.ly .. strings.chat.size.response:gsub("#", size))
+			print(colors.sg .. addon .. ": " .. colors.ly .. strings.chat.size.response:gsub("#VALUE", size))
 		else
 			print(colors.sg .. addon .. ": " .. colors.ly .. strings.chat.size.unchanged)
-			print(colors.ly .. strings.chat.size.error:gsub("#", colors.lg .. strings.chat.size.command .. defaultDB.font.size .. colors.ly))
+			print(colors.ly .. strings.chat.size.error:gsub("#SIZE_DEFAULT", colors.lg .. strings.chat.size.command .. " " .. defaultDB.font.size .. colors.ly))
 		end
 	else
 		PrintHelp()
@@ -460,7 +469,7 @@ local function CreateEditBox(t)
 	editBox:HookScript("OnEscapePressed", function(self) self:ClearFocus() end)
 	return editBox
 end
---TODO: Fix the text being offset to the left on first load
+--FIXME: Fix the text being offset to the left on first load
 
 ---Add a value box as a child to an existing slider frame
 ---@param t table Parameters are to be provided in this table
@@ -585,7 +594,7 @@ local function CreateDropdown(t)
 	PositionFrame(dropdown, t.position.anchor, t.position.relativeTo, t.position.relativePoint, (t.position.offset or _).x, ((t.position.offset or _).y or 0)- 16)
 	if t.width ~= nil then dropdown:SetWidth(t.width) end --FIXME: Check and fix why width change isn't happening (hint: templates)
 	--Tooltip
-	dropdown.tooltipText = t.label
+	dropdown.tooltipText = t.label --FIXME: Fix tooltip not showing up
 	dropdown.tooltipRequirement = t.tooltip
 	--Title
 	AddTitle({
@@ -609,8 +618,7 @@ local function CreateDropdown(t)
 			UIDropDownMenu_AddButton(info)
 		end
 	end)
-	UIDropDownMenu_SetSelectedValue(dropdown, t.selected)
-	-- getglobal(dropdown:GetName()):SetText(fonts[t.selected]) --FIXME: Fix "Custom" being shown in the dropdown instead of the currently selected item
+	UIDropDownMenu_SetSelectedValue(dropdown, t.selected) --FIXME: Fix "Custom" being shown in the dropdown instead of the currently selected item
 	return dropdown
 end
 
@@ -694,7 +702,7 @@ local function CreateFontOptions(parentFrame)
 	for i = 0, #fonts do
 		fontItems[i] = fonts[i]
 		fontItems[i].onSelect = function()
-			textDisplay:SetFont(fonts[i].path, db.font.size, "THINOUTLINE")
+			textDisplay:SetFont(fonts[i].path, options.font.size:GetValue(), "THINOUTLINE")
 		end
 	end
 	options.font.family = CreateDropdown({
@@ -704,7 +712,7 @@ local function CreateFontOptions(parentFrame)
 			offset = { x = -6, y = -30 }
 		},
 		label = strings.options.font.family.label,
-		tooltip = strings.options.font.family.tooltip,
+		tooltip = strings.options.font.family.tooltip:gsub("#OPTION_CUSTOM", strings.misc.custom) :gsub("#FILE_CUSTOM", "CUSTOM.ttf"):gsub("#PATH_CUSTOM", "[WoW]\\Interface\\AddOns\\MovementSpeed\\Fonts\\"):gsub("#NAME_CUSTOM", "CUSTOM"),
 		items = fontItems,
 		selected = GetFontID(db.font.family)
 	})
@@ -718,7 +726,7 @@ local function CreateFontOptions(parentFrame)
 		label = strings.options.font.size.label,
 		tooltip = strings.options.font.size.tooltip,
 		value = { min = 8, max = 64, step = 1 },
-		onValueChanged = function(self) textDisplay:SetFont(db.font.family, self:GetValue(), "THINOUTLINE") end
+		onValueChanged = function(self) textDisplay:SetFont(textDisplay:GetFont(), self:GetValue(), "THINOUTLINE") end
 	})
 	--TEST
 	options.font.test = CreateEditBox({
@@ -732,7 +740,7 @@ local function CreateFontOptions(parentFrame)
 		text = "TTTEEESSSTTTtest",
 		title = "[PH]Test edit box",
 		onEnterPressed = function(self) print(self:GetText()) end,
-		onEscapePressed = function(self) self:SetText("TTTEEESSSTTTtest") end
+		onEscapePressed = function(self) self:SetText(strings.options.font.family.tooltip:gsub("#OPTION_CUSTOM", strings.misc.custom) :gsub("#FILE_CUSTOM", "CUSTOM.ttf"):gsub("#PATH_CUSTOM", "[WoW]\\Interface\\AddOns\\MovementSpeed\\Fonts\\"):gsub("#NAME_CUSTOM", "CUSTOM")) end
 	})
 end
 --Category frames
@@ -822,7 +830,6 @@ local function Refresh()
 	options.visibility.hidden:SetChecked(db.visibility.hidden)
 	options.font.size:SetValue(db.font.size)
 	UIDropDownMenu_SetSelectedValue(options.font.family, GetFontID(db.font.family))
-	-- getglobal(options.font.family:GetName()):SetText(db.font.family)
 	options.font.test:SetText("TEStestTESTtest")
 end
 

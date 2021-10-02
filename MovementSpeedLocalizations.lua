@@ -44,7 +44,7 @@ ns.english = {
 			},
 			family = {
 				label = "Font family",
-				tooltip = "Select the font of the displayed percentage value.",
+				tooltip = "Select the font of the displayed percentage value.\nDefault is the font used by Blizzard.\nYou may set the #OPTION_CUSTOM option to any font of your liking by replacing the #FILE_CUSTOM found in #PATH_CUSTOM with another TrueType Font file while keeping the #NAME_CUSTOM name. You may need to restart the game client after replacing the custom font.", --\n represents the newline character; # flags will be replaced with code
 				default = "Fonts/FRIZQT__.TTF", --Different locales: https://github.com/tomrus88/BlizzardInterfaceCode/blob/master/Interface/FrameXML/Fonts.xml
 			},
 		},
@@ -52,9 +52,9 @@ ns.english = {
 	chat = {
 		help = {
 			command = "help",
-			thanks = "Thank you for using #!", --# will be replaced with code
-			hint = "Type # to see the full command list.", --# will be replaced with code
-			move = "Hold # to drag the Movement Speed display anywhere you like.", --# will be replaced with code
+			thanks = "Thank you for using #ADDON!", --# flags will be replaced with code
+			hint = "Type #HELP_COMMAND to see the full command list.", --# flags will be replaced with code
+			move = "Hold #SHIFT to drag the Movement Speed display anywhere you like.", --# flags will be replaced with code
 			list = "chat command list",
 		},
 		reset = {
@@ -84,13 +84,15 @@ ns.english = {
 		},
 		size = {
 			command = "size",
-			description = "change the font size (e.g. #)", --# will be replaced with code
-			response = "The font size has been set to #.", --# will be replaced with code
+			description = "change the font size (e.g. #SIZE_DEFAULT)", --# flags will be replaced with code
+			response = "The font size has been set to #VALUE.", --# flags will be replaced with code
 			unchanged = "The font size was not changed.",
-			error = "Please enter a valid number value (e.g. #).", --# will be replaced with code
+			error = "Please enter a valid number value (e.g. #SIZE_DEFAULT).", --# flags will be replaced with code
 		},
 	},
 	misc = {
 		cancel = "Cancel",
+		default = "Default",
+		custom = "Custom (user set)",
 	}
 }
