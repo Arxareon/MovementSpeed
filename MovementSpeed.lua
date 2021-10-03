@@ -124,10 +124,10 @@ local function FlipVisibility(visible)
 	end
 end
 --Find the ID of the font provided
-local function GetFontID(font)
+local function GetFontID(fontPath)
 	local selectedFont = 0
 	for i = 0, #fonts do
-		if fonts[i] == font then
+		if fonts[i].path == fontPath then
 			selectedFont = i
 			break
 		end
@@ -352,9 +352,7 @@ local function CreateButton(t)
 	--Font
 	getglobal(button:GetName() .. "Text"):SetText(t.label)
 	--Tooltip
-	t.label = t.tooltip --TODO: Remove line and fix not showing up on the tooltip for regular buttons
-	button.tooltipText = t.label
-	button.tooltipRequirement = t.tooltip
+	button.tooltipText = t.tooltip
 	--Event handlers
 	button:SetScript("OnClick", t.onClick)
 	button:HookScript("OnClick", function() PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON) end)
@@ -586,16 +584,23 @@ end
 --- - **label**: *string* — Title text to be shown above the dropdown and as the the tooltip label
 --- - **tooltip**: *string* — Text to be shown as the tooltip of the dropdown
 --- - **items**: *table* — Numbered/indexed table containing the dropdown items
---- - **selected**: *number* — The currently selected item of the dropdown menu
+--- 	- **text**: *string* — Text to represent the items within the dropdown frame
+--- 	- **onSelect**: *function* — The function to be called when a dropdown item is selected
+--- - **selected?**: *number* [optional] — The currently selected item of the dropdown menu
 ---@return Frame dropdown
 local function CreateDropdown(t)
 	local dropdown = CreateFrame("Frame", t.parent:GetName() .. t.label:gsub("%s+", "") .. "Dropdown", t.parent, "UIDropDownMenuTemplate")
 	--Position & dimensions
 	PositionFrame(dropdown, t.position.anchor, t.position.relativeTo, t.position.relativePoint, (t.position.offset or _).x, ((t.position.offset or _).y or 0)- 16)
-	if t.width ~= nil then dropdown:SetWidth(t.width) end --FIXME: Check and fix why width change isn't happening (hint: templates)
+	if t.width ~= nil then UIDropDownMenu_SetWidth(dropdown, t.width) end
 	--Tooltip
-	dropdown.tooltipText = t.label --FIXME: Fix tooltip not showing up
-	dropdown.tooltipRequirement = t.tooltip
+	dropdown:HookScript("OnEnter", function(self)
+		if not self.isDisabled then
+			GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+			GameTooltip:SetText(t.tooltip, 1, 1, 1, 1, true)
+		end
+	end)
+	dropdown:HookScript("OnLeave", GameTooltip_Hide)
 	--Title
 	AddTitle({
 		frame = dropdown,
@@ -618,7 +623,10 @@ local function CreateDropdown(t)
 			UIDropDownMenu_AddButton(info)
 		end
 	end)
-	UIDropDownMenu_SetSelectedValue(dropdown, t.selected) --FIXME: Fix "Custom" being shown in the dropdown instead of the currently selected item
+	if t.selected ~= nil then
+		UIDropDownMenu_SetSelectedValue(dropdown, t.selected)
+		UIDropDownMenu_SetText(dropdown, t.items[t.selected].text)
+	end
 	return dropdown
 end
 
@@ -712,9 +720,8 @@ local function CreateFontOptions(parentFrame)
 			offset = { x = -6, y = -30 }
 		},
 		label = strings.options.font.family.label,
-		tooltip = strings.options.font.family.tooltip:gsub("#OPTION_CUSTOM", strings.misc.custom) :gsub("#FILE_CUSTOM", "CUSTOM.ttf"):gsub("#PATH_CUSTOM", "[WoW]\\Interface\\AddOns\\MovementSpeed\\Fonts\\"):gsub("#NAME_CUSTOM", "CUSTOM"),
+		tooltip = strings.options.font.family.tooltip:gsub("#OPTION_CUSTOM", strings.misc.custom):gsub("#FILE_CUSTOM", "CUSTOM.ttf"):gsub("#PATH_CUSTOM", "[WoW]\\Interface\\AddOns\\\nMovementSpeed\\Fonts\\"),
 		items = fontItems,
-		selected = GetFontID(db.font.family)
 	})
 	--Slider: Font size
 	options.font.size = CreateSlider({
@@ -724,7 +731,7 @@ local function CreateFontOptions(parentFrame)
 			offset = { x = 0, y = -30 }
 		},
 		label = strings.options.font.size.label,
-		tooltip = strings.options.font.size.tooltip,
+		tooltip = strings.options.font.size.tooltip .. "\n\n" .. strings.misc.default .. ": " .. defaultDB.font.size,
 		value = { min = 8, max = 64, step = 1 },
 		onValueChanged = function(self) textDisplay:SetFont(textDisplay:GetFont(), self:GetValue(), "THINOUTLINE") end
 	})
@@ -830,6 +837,7 @@ local function Refresh()
 	options.visibility.hidden:SetChecked(db.visibility.hidden)
 	options.font.size:SetValue(db.font.size)
 	UIDropDownMenu_SetSelectedValue(options.font.family, GetFontID(db.font.family))
+	UIDropDownMenu_SetText(options.font.family, fonts[GetFontID(db.font.family)].text)
 	options.font.test:SetText("TEStestTESTtest")
 end
 
@@ -838,14 +846,14 @@ local function LoadInterfaceOptions()
 	--Set up the GUI
 	local optionsPanel = CreateOptionsPanel()
 	--Set up the options panel
-	optionsPanel.name = addon;
+	optionsPanel.name = addon
 	--Set event handlers
 	optionsPanel.okay = function() Save() end
 	optionsPanel.cancel = function() Cancel() end --refresh is called automatically
 	optionsPanel.default = function() Default() end --refresh is called automatically
 	optionsPanel.refresh = function() Refresh() end
 	--Add the panel
-	InterfaceOptions_AddCategory(optionsPanel);
+	InterfaceOptions_AddCategory(optionsPanel)
 end
 
 
@@ -894,18 +902,18 @@ end
 --[[ INITIALIZATION ]]
 
 --Check and fix the DB
-local oldData = {};
+local oldData = {}
 local function RemoveEmpty(dbToCheck) --Remove all nil and empty items from the table
 	if type(dbToCheck) ~= "table" then return end
 	for k, v in pairs(dbToCheck) do
 		if type(v) == "table" then
 			if next(v) == nil then --The subtable is empty
-				dbToCheck[k] = nil; --Remove the empty subtable
+				dbToCheck[k] = nil --Remove the empty subtable
 			else
 				RemoveEmpty(v)
 			end
 		elseif v == nil or v == "" then --The value is empty or doesn't exist
-			dbToCheck[k] = nil; --Remove the key value pair
+			dbToCheck[k] = nil --Remove the key value pair
 		end
 	end
 end
@@ -915,7 +923,7 @@ local function AddMissing(dbToCheck, dbToSample) --Check for and fill in missing
 	for k, v in pairs(dbToSample) do
 		if dbToCheck[k] == nil then --The sample key doesn't exist in the table to check
 			if v ~= nil and v ~= "" then
-				dbToCheck[k] = v; --Add the item if the value is not empty or nil
+				dbToCheck[k] = v --Add the item if the value is not empty or nil
 			end
 		else
 			AddMissing(dbToCheck[k], dbToSample[k])
@@ -927,8 +935,8 @@ local function RemoveMismatch(dbToCheck, dbToSample) --Remove unused or outdated
 	if next(dbToCheck) == nil then return end --The table to check is empty
 	for k, v in pairs(dbToCheck) do
 		if dbToSample[k] == nil then --The checked key doesn't exist in the sample table
-			oldData[k] = v; --Add the item to the old data to be restored
-			dbToCheck[k] = nil; --Remove the unneeded item
+			oldData[k] = v --Add the item to the old data to be restored
+			dbToCheck[k] = nil --Remove the unneeded item
 		else
 			RemoveMismatch(dbToCheck[k], dbToSample[k])
 		end
@@ -981,7 +989,7 @@ end
 
 --Recalculate the movement speed value and update the displayed text
 local function UpdateSpeed()
-	local unit = "player";
+	local unit = "player"
 	if  UnitInVehicle("player") then
 		unit = "vehicle"
 	end

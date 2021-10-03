@@ -1,4 +1,4 @@
-## Interface: 11307
+## Interface: 11400
 #PTR ## Interface: 11400
 ## Title: Movement Speed
 ## Version: 1.4

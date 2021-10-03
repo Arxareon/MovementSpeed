@@ -40,11 +40,11 @@ ns.english = {
 			description = "Customize the font of the speed percentage text display.",
 			size = {
 				label = "Font size",
-				tooltip = "Specify the font size of the displayed percentage value.\nDefault: 11", --\n represents the newline character
+				tooltip = "Specify the font size of the displayed percentage value.",
 			},
 			family = {
 				label = "Font family",
-				tooltip = "Select the font of the displayed percentage value.\nDefault is the font used by Blizzard.\nYou may set the #OPTION_CUSTOM option to any font of your liking by replacing the #FILE_CUSTOM found in #PATH_CUSTOM with another TrueType Font file while keeping the #NAME_CUSTOM name. You may need to restart the game client after replacing the custom font.", --\n represents the newline character; # flags will be replaced with code
+				tooltip = "Select the font of the displayed percentage value.\n\nThe default option is the font used by Blizzard.\n\nYou may set the #OPTION_CUSTOM option to any font of your liking:\nReplace the #FILE_CUSTOM file found in the following folder:\n#PATH_CUSTOM\nwith another TrueType Font file while keeping the original #FILE_CUSTOM name.\nYou may need to restart the game client after replacing the custom font.", --\n represents the newline character; # flags will be replaced with code
 				default = "Fonts/FRIZQT__.TTF", --Different locales: https://github.com/tomrus88/BlizzardInterfaceCode/blob/master/Interface/FrameXML/Fonts.xml
 			},
 		},
@@ -93,6 +93,6 @@ ns.english = {
 	misc = {
 		cancel = "Cancel",
 		default = "Default",
-		custom = "Custom (user set)",
+		custom = "Custom",
 	}
 }
