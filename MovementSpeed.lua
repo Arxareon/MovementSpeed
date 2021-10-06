@@ -3,7 +3,7 @@ local addonNameSpace, ns = ...
 local _, addon = GetAddOnInfo(addonNameSpace)
 
 
---[[ STRINGS & LOCALIZATION ]]
+--[[ ASSETS, STRINGS & LOCALIZATION ]]
 
 local strings = { options = {}, chat = {}, misc = {} }
 
@@ -11,7 +11,11 @@ local strings = { options = {}, chat = {}, misc = {} }
 local function LoadLocale()
 	if (GetLocale() == "") then
 		--TODO: add support for other languages (locales: https://wowwiki-archive.fandom.com/wiki/API_GetLocale#Locales)
-	else strings = ns.english end--English (UK & US)
+		--Different font locales: https://github.com/tomrus88/BlizzardInterfaceCode/blob/master/Interface/FrameXML/Fonts.xml
+	else
+		strings = ns.english --English (UK & US)
+		strings.options.font.family.default = "Fonts/FRIZQT__.TTF"
+	end
 end
 LoadLocale()
 
@@ -21,7 +25,11 @@ local colors = {
 	sg = "|cFF" .. "4ED836", --strong green
 	ly = "|cFF" .. "FFFB99", --light yellow
 	sy = "|cFF" .. "FFDD47", --strong yellow
+	normal = { r = nil, g = nil, b = nil },
+	title = { r = nil, g = nil, b = nil },
 }
+colors.normal.r, colors.normal.g, colors.normal.b = HIGHLIGHT_FONT_COLOR:GetRGB()
+colors.title.r, colors.title.g, colors.title.b = NORMAL_FONT_COLOR:GetRGB()
 
 --Fonts
 local fonts = {
@@ -35,6 +43,11 @@ local fonts = {
 	[7] = { text = "Reem Kufi", path = "Interface/AddOns/MovementSpeed/Fonts/ReemKufi.ttf" },
 	[8] = { text = "Source Code Pro", path = "Interface/AddOns/MovementSpeed/Fonts/SourceCodePro.ttf" },
 	[9] = { text = strings.misc.custom, path = "Interface/AddOns/MovementSpeed/Fonts/CUSTOM.ttf" },
+}
+
+--Textures
+local textures = {
+	logo = "Interface/AddOns/MovementSpeed/Textures/Logo.tga"
 }
 
 
@@ -80,9 +93,10 @@ end
 
 --[[ FRAMES & EVENTS ]]
 
---Create the main frame and text display
+--Create the main frame, text display and tooltip
 local movSpeed = CreateFrame("Frame", "MovementSpeed", UIParent)
 local textDisplay = movSpeed:CreateFontString("MovementSpeedTextDisplay", "OVERLAY")
+local tooltip = CreateFrame("GameTooltip", "MovementSpeedTooltip", nil, "GameTooltipTemplate")
 
 --Register events
 movSpeed:RegisterEvent("ADDON_LOADED")
@@ -241,8 +255,8 @@ end
 ---@param anchor AnchorPoint Base anchor point
 ---@param relativeTo FrameType (Default: parent frame or the entire screen)
 ---@param relativePoint AnchorPoint (Default: *anchor*)
----@param offsetX number (Default: 0)
----@param offsetY number (Default: 0)
+---@param offsetX? number (Default: 0)
+---@param offsetY? number (Default: 0)
 local function PositionFrame(frame, anchor, relativeTo, relativePoint, offsetX, offsetY)
 	if (relativeTo == nil or relativePoint == nil) and (offsetX == nil or offsetY == nil) then
 		frame:SetPoint(anchor)
@@ -253,6 +267,39 @@ local function PositionFrame(frame, anchor, relativeTo, relativePoint, offsetX, 
 	else
 		frame:SetPoint(anchor, relativeTo, relativePoint, offsetX, offsetY)
 	end
+end
+---Set up the default GameTooltip to be shown for a frame
+---@param owner FrameType Owner frame the tooltip to be shown for
+---@param anchor string [GameTooltip anchor](https://wowpedia.fandom.com/wiki/API_GameTooltip_SetOwner)
+---@param title string String to be shown as the tooltip title
+---@param text string String to be shown as the first line of tooltip summary
+---@param textLines? table Numbered table containing additional string lines to be added to the tooltip text
+--- - **text**: *string* ― Text to be added to the line
+--- - **wrap**: boolean ― Append the text in a new line or not
+--- - **color**?: *table* [optional] ― RGB colors line
+--- 	- **r**: number ― Red
+--- 	- **g**: number ― Green
+--- 	- **b**: number ― Blue
+---@param offsetX? number (Default: 0)
+---@param offsetY? number (Default: 0)
+local function AddTooltip(owner, anchor, title, text, textLines, offsetX, offsetY)
+	--Position
+	tooltip:SetOwner(owner, anchor, offsetX, offsetY)
+	--Title
+	tooltip:AddLine(title, colors.title.r, colors.title.g, colors.title.b, true)
+	--Summary
+	tooltip:AddLine(text, colors.normal.r, colors.normal.g, colors.normal.b, true)
+	--Additional text lines
+	if textLines ~= nil then 
+		--Empty line after the summary
+		tooltip:AddLine(" ", nil, nil, nil, true) --TODO: Check why the third line has the title FontObject
+		for i = 0, #textLines do
+			--Add line
+			tooltip:AddLine(textLines[i].text, (textLines[i].color or {}).r or colors.normal.r, (textLines[i].color or {}).g or colors.normal.g, (textLines[i].color or {}).b or colors.normal.b, textLines[i].wrap)
+		end
+	end
+	--Show
+	tooltip:Show() --Don't forget to hide later!
 end
 ---Add a title and an optional description to an options frame
 ---@param t table Parameters are to be provided in this table
@@ -274,12 +321,12 @@ end
 local function AddTitle(t)
 	--Title
 	local title = t.frame:CreateFontString(t.frame:GetName() .. "Title", "ARTWORK", t.title.template)
-	title:SetPoint("TOPLEFT", (t.title.offset or _).x, (t.title.offset or _).y)
+	title:SetPoint("TOPLEFT", (t.title.offset or {}).x, (t.title.offset or {}).y)
 	title:SetText(t.title.text)
 	if t.description == nil then return title end
 	--Description
 	local description = t.frame:CreateFontString(t.frame:GetName() .. "Description", "ARTWORK", t.description.template)
-	description:SetPoint("TOPLEFT", title, "BOTTOMLEFT", (t.description.offset or _).x, (t.description.offset or _).y)
+	description:SetPoint("TOPLEFT", title, "BOTTOMLEFT", (t.description.offset or {}).x, (t.description.offset or {}).y)
 	description:SetText(t.description.text)
 	return title, description
 end
@@ -302,7 +349,7 @@ end
 local function CreateCategory(t)
 	local category = CreateFrame("Frame", t.parent:GetName() .. t.title:gsub("%s+", ""), t.parent, BackdropTemplateMixin and "BackdropTemplate" or nil)
 	--Position & dimensions
-	PositionFrame(category, t.position.anchor, t.position.relativeTo, t.position.relativePoint, (t.position.offset or _).x, (t.position.offset or _).y)
+	PositionFrame(category, t.position.anchor, t.position.relativeTo, t.position.relativePoint, (t.position.offset or {}).x, (t.position.offset or {}).y)
 	category:SetSize(t.size.width, t.size.height)
 	--Art
 	category:SetBackdrop({
@@ -329,9 +376,11 @@ local function CreateCategory(t)
 	})
 	return category
 end
----Create a button frame as a child of an options frame
+---Create a texture/image
 ---@param t table Parameters are to be provided in this table
 --- - **parent**: *[FrameType](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types)* — The frame to set as the parent of the new button
+--- - **name**: *string* — Used for a unique name, it will not be visible
+--- - **path**: *string* — Path to the texture file, filenamey
 --- - **position**: *table* — Collection of parameters to call [Region:SetPoint()](https://wowwiki-archive.fandom.com/wiki/API_Region_SetPoint#Arguments) with
 --- 	- **anchor**: *[AnchorPoint](https://wowwiki-archive.fandom.com/wiki/Widget_Anchor_Points#All_sides)*
 --- 	- **relativeTo**?: *[Frame](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types)* [optional]
@@ -339,53 +388,26 @@ end
 --- 	- **offset**?: *table* [optional]
 --- 		- **x**: *number*
 --- 		- **y**: *number*
---- - **width**?: *number* [optional]
---- - **label**: *string* — Title text to be shown on the button and as the the tooltip label
---- - **tooltip**: *string* — Text to be shown as the tooltip of the button
---- - **onClick**: *function* — The function to be called when an [OnClick](https://wowpedia.fandom.com/wiki/UIHANDLER_OnClick) event happens
----@return Button button
-local function CreateButton(t)
-	local button = CreateFrame("Button", t.parent:GetName() .. t.label:gsub("%s+", "") .. "Button", t.parent, "UIPanelButtonTemplate")
+--- - **size**: *table*
+--- 	- **width**: *number*
+--- 	- **height**: *number*
+--- - **tile**?: *number* [optional]
+---@return any
+local function CreateTexture(t)
+	local holder = CreateFrame("Frame", t.parent:GetName() .. t.name:gsub("%s+", ""), t.parent)
+	local texture = holder:CreateTexture(holder:GetName() .. "Texture")
 	--Position & dimensions
-	PositionFrame(button, t.position.anchor, t.position.relativeTo, t.position.relativePoint, (t.position.offset or _).x, (t.position.offset or _).y)
-	if t.width ~= nil then button:SetWidth(t.width) end
-	--Font
-	getglobal(button:GetName() .. "Text"):SetText(t.label)
-	--Tooltip
-	button.tooltipText = t.tooltip
-	--Event handlers
-	button:SetScript("OnClick", t.onClick)
-	button:HookScript("OnClick", function() PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON) end)
-	return button
-end
----Create a checkbox frame as a child of an options frame
----@param t table Parameters are to be provided in this table
---- - **parent**: *[FrameType](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types)* — The frame to set as the parent of the new checkbox
---- - **position**: *table* — Collection of parameters to call [Region:SetPoint()](https://wowwiki-archive.fandom.com/wiki/API_Region_SetPoint#Arguments) with
---- 	- **anchor**: *[AnchorPoint](https://wowwiki-archive.fandom.com/wiki/Widget_Anchor_Points#All_sides)*
---- 	- **relativeTo**?: *[Frame](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types)* [optional]
---- 	- **relativePoint**?: *[AnchorPoint](https://wowwiki-archive.fandom.com/wiki/Widget_Anchor_Points#All_sides)* [optional]
---- 	- **offset**?: *table* [optional]
---- 		- **x**: *number*
---- 		- **y**: *number*
---- - **label**: *string* — Title text to be shown on the button and as the the tooltip label
---- - **tooltip**: *string* — Text to be shown as the tooltip of the button
---- - **onClick**: *function* — The function to be called when an [OnClick](https://wowpedia.fandom.com/wiki/UIHANDLER_OnClick) event happens
----@return CheckButton checkbox
-local function CreateCheckbox(t)
-	local checkbox = CreateFrame("CheckButton", t.parent:GetName() .. t.label:gsub("%s+", "") .. "Checkbox", t.parent, "InterfaceOptionsCheckButtonTemplate")
-	--Position
-	PositionFrame(checkbox, t.position.anchor, t.position.relativeTo, t.position.relativePoint, (t.position.offset or _).x, (t.position.offset or _).y)
-	--Font
-	getglobal(checkbox:GetName() .. "Text"):SetFontObject("GameFontHighlight")
-	getglobal(checkbox:GetName() .. "Text"):SetText(t.label)
-	--Tooltip
-	checkbox.tooltipText = t.label
-	checkbox.tooltipRequirement = t.tooltip
-	--Event handlers
-	checkbox:SetScript("OnClick", t.onClick)
-	checkbox:HookScript("OnClick", function() PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON) end)
-	return checkbox
+	PositionFrame(holder, t.position.anchor, t.position.relativeTo, t.position.relativePoint, (t.position.offset or {}).x, (t.position.offset or {}).y)
+	holder:SetSize(t.size.width, t.size.height)
+	texture:SetPoint("CENTER")
+	texture:SetSize(t.size.width, t.size.height)
+	--Set asset
+	if t.tile ~= nil then
+		texture:SetTexture(t.path, t.tile)
+	else
+		texture:SetTexture(t.path)
+	end
+	return holder, texture
 end
 ---Create a popup dialogue with an accept function and cancel button
 ---comment
@@ -409,6 +431,72 @@ local function CreatePopup(t)
 		preferredIndex = STATICPOPUPS_NUMDIALOGS
 	}
 	return key
+end
+---Create a button frame as a child of an options frame
+---@param t table Parameters are to be provided in this table
+--- - **parent**: *[FrameType](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types)* — The frame to set as the parent of the new button
+--- - **position**: *table* — Collection of parameters to call [Region:SetPoint()](https://wowwiki-archive.fandom.com/wiki/API_Region_SetPoint#Arguments) with
+--- 	- **anchor**: *[AnchorPoint](https://wowwiki-archive.fandom.com/wiki/Widget_Anchor_Points#All_sides)*
+--- 	- **relativeTo**?: *[Frame](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types)* [optional]
+--- 	- **relativePoint**?: *[AnchorPoint](https://wowwiki-archive.fandom.com/wiki/Widget_Anchor_Points#All_sides)* [optional]
+--- 	- **offset**?: *table* [optional]
+--- 		- **x**: *number*
+--- 		- **y**: *number*
+--- - **width**?: *number* [optional]
+--- - **label**: *string* — Title text to be shown on the button and as the the tooltip label
+--- - **tooltip**: *string* — Text to be shown as the tooltip of the button
+--- - **tooltipExtra**?: *table* [optional] — Additional text lines to be added to the tooltip of the dropdown
+--- 	- **text**: *string* ― Text to be added to the line
+--- 	- **wrap**: boolean ― Append the text in a new line or not
+---	 	- **color**?: *table* [optional] ― RGB colors line
+--- 		- **r**: number ― Red
+--- 		- **g**: number ― Green
+--- 		- **b**: number ― Blue
+--- - **onClick**: *function* — The function to be called when an [OnClick](https://wowpedia.fandom.com/wiki/UIHANDLER_OnClick) event happens
+---@return Button button
+local function CreateButton(t)
+	local button = CreateFrame("Button", t.parent:GetName() .. t.label:gsub("%s+", "") .. "Button", t.parent, "UIPanelButtonTemplate")
+	--Position & dimensions
+	PositionFrame(button, t.position.anchor, t.position.relativeTo, t.position.relativePoint, (t.position.offset or {}).x, (t.position.offset or {}).y)
+	if t.width ~= nil then button:SetWidth(t.width) end
+	--Font
+	getglobal(button:GetName() .. "Text"):SetText(t.label)
+	--Tooltip
+	button:HookScript("OnEnter", function() AddTooltip(button, "ANCHOR_TOPLEFT", t.label, t.tooltip, t.tooltipExtra, 20, nil)	end)
+	button:HookScript("OnLeave", function() tooltip:Hide() end)
+	--Event handlers
+	button:SetScript("OnClick", t.onClick)
+	button:HookScript("OnClick", function() PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON) end)
+	return button
+end
+---Create a checkbox frame as a child of an options frame
+---@param t table Parameters are to be provided in this table
+--- - **parent**: *[FrameType](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types)* — The frame to set as the parent of the new checkbox
+--- - **position**: *table* — Collection of parameters to call [Region:SetPoint()](https://wowwiki-archive.fandom.com/wiki/API_Region_SetPoint#Arguments) with
+--- 	- **anchor**: *[AnchorPoint](https://wowwiki-archive.fandom.com/wiki/Widget_Anchor_Points#All_sides)*
+--- 	- **relativeTo**?: *[Frame](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types)* [optional]
+--- 	- **relativePoint**?: *[AnchorPoint](https://wowwiki-archive.fandom.com/wiki/Widget_Anchor_Points#All_sides)* [optional]
+--- 	- **offset**?: *table* [optional]
+--- 		- **x**: *number*
+--- 		- **y**: *number*
+--- - **label**: *string* — Title text to be shown on the button and as the the tooltip label
+--- - **tooltip**: *string* — Text to be shown as the tooltip of the button
+--- - **onClick**: *function* — The function to be called when an [OnClick](https://wowpedia.fandom.com/wiki/UIHANDLER_OnClick) event happens
+---@return CheckButton checkbox
+local function CreateCheckbox(t)
+	local checkbox = CreateFrame("CheckButton", t.parent:GetName() .. t.label:gsub("%s+", "") .. "Checkbox", t.parent, "InterfaceOptionsCheckButtonTemplate")
+	--Position
+	PositionFrame(checkbox, t.position.anchor, t.position.relativeTo, t.position.relativePoint, (t.position.offset or {}).x, (t.position.offset or {}).y)
+	--Font
+	getglobal(checkbox:GetName() .. "Text"):SetFontObject("GameFontHighlight")
+	getglobal(checkbox:GetName() .. "Text"):SetText(t.label)
+	--Tooltip
+	checkbox.tooltipText = t.label
+	checkbox.tooltipRequirement = t.tooltip
+	--Event handlers
+	checkbox:SetScript("OnClick", t.onClick)
+	checkbox:HookScript("OnClick", function() PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON) end)
+	return checkbox
 end
 ---Create an edit box frame as a child of an options frame
 ---@param t table Parameters are to be provided in this table
@@ -434,19 +522,18 @@ end
 --- - **onEscapePressed**: *function* — The function to be called when an [OnEscapePressed](https://wowpedia.fandom.com/wiki/UIHANDLER_OnEscapePressed) event happens
 ---@return EditBox editBox
 local function CreateEditBox(t)
-	local editBox = CreateFrame("EditBox", t.parent:GetName() .. "EditBox", t.parent, "InputBoxTemplate") --This template doesn't have multiline art
+	local editBox = CreateFrame("EditBox", t.parent:GetName() .. t.title:gsub("%s+", "") .. "EditBox", t.parent, "InputBoxTemplate") --This template doesn't have multiline art
 	--Position & dimensions
-	PositionFrame(editBox, t.position.anchor, t.position.relativeTo, t.position.relativePoint, (t.position.offset or _).x, ((t.position.offset or _).y or 0) - 18)
+	PositionFrame(editBox, t.position.anchor, t.position.relativeTo, t.position.relativePoint, (t.position.offset or {}).x, ((t.position.offset or {}).y or 0) - 18)
 	editBox:SetSize(t.size.width, t.size.height or 17)
 	--Font & text
-	editBox:SetMultiLine(t.multiline or false)
+	editBox:SetMultiLine(t.multiline or false) --TODO: Fix multiline support to be visible on the GUI (the EditBox is currently only one line tall)
 	editBox:SetFontObject("GameFontHighlight")
 	if t.justify ~= nil then
 		if t.justify.h ~= nil then editBox:SetJustifyH(t.justify.h) end
 		if t.justify.v ~= nil then editBox:SetJustifyV(t.justify.v) end
 	end
 	if t.maxLetters ~= nil then editBox:SetMaxLetters(t.maxLetters) end
-	editBox:SetText(t.text or "")
 	--Title
 	AddTitle({
 		frame = editBox,
@@ -458,6 +545,7 @@ local function CreateEditBox(t)
 	})
 	--Events & behavior
 	editBox:SetAutoFocus(false)
+	editBox:SetScript("OnShow", function(self) self:SetText(t.text or "") end)
 	editBox:SetScript("OnEnterPressed", t.onEnterPressed)
 	editBox:HookScript("OnEnterPressed", function(self)
 		PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
@@ -478,7 +566,7 @@ end
 --- 	- **step**: *number* — Numeric value step of the slider
 ---@return EditBox valueBox
 local function AddSliderValueBox(t)
-	local valueBox = CreateFrame("EditBox", t.slider:GetName() .. "EditBox", t.slider, BackdropTemplateMixin and "BackdropTemplate")
+	local valueBox = CreateFrame("EditBox", t.slider:GetName() .. "ValueBox", t.slider, BackdropTemplateMixin and "BackdropTemplate")
 	--Position & dimensions
 	valueBox:SetPoint("TOP", t.slider, "BOTTOM")
 	valueBox:SetSize(60, 14)
@@ -493,14 +581,11 @@ local function AddSliderValueBox(t)
 	valueBox:SetBackdropBorderColor(0.4, 0.4, 0.4, 0.8)
 	--Font & text
 	valueBox:SetFontObject("GameFontHighlightSmall")
-	valueBox:SetText("GameFontHighlightSmall")
 	valueBox:SetJustifyH("CENTER")
 	valueBox:SetMaxLetters(string.len(tostring(t.value.max)))
-	--Tooltip
-	valueBox.tooltipText = t.label
-	valueBox.tooltipRequirement = t.tooltip
 	--Events & behavior
 	valueBox:SetAutoFocus(false)
+	valueBox:SetScript("OnShow", function(self) self:SetText(t.slider:GetValue()) end)
 	valueBox:SetScript("OnEnter", function(self) self:SetBackdropBorderColor(0.7, 0.7, 0.7, 0.8) end)
 	valueBox:SetScript("OnLeave", function(self) self:SetBackdropBorderColor(0.4, 0.4, 0.4, 0.8) end)
 	valueBox:SetScript("OnEnterPressed", function(self)
@@ -548,7 +633,7 @@ end
 local function CreateSlider(t)
 	local slider = CreateFrame("Slider", t.parent:GetName() .. t.label:gsub("%s+", "") .. "Slider", t.parent, "OptionsSliderTemplate")
 	--Position
-	PositionFrame(slider, t.position.anchor, t.position.relativeTo, t.position.relativePoint, (t.position.offset or _).x, ((t.position.offset or _).y or 0) - 12)
+	PositionFrame(slider, t.position.anchor, t.position.relativeTo, t.position.relativePoint, (t.position.offset or {}).x, ((t.position.offset or {}).y or 0) - 12)
 	if t.width ~= nil then slider:SetWidth(t.width) end
 	--Font
 	getglobal(slider:GetName() .. "Text"):SetFontObject("GameFontNormal")
@@ -583,6 +668,13 @@ end
 --- - **width**?: *number* [optional] — (currently unsupported)
 --- - **label**: *string* — Title text to be shown above the dropdown and as the the tooltip label
 --- - **tooltip**: *string* — Text to be shown as the tooltip of the dropdown
+--- - **tooltipExtra**?: *table* [optional] — Additional text lines to be added to the tooltip of the dropdown
+--- 	- **text**: *string* ― Text to be added to the line
+--- 	- **wrap**: boolean ― Append the text in a new line or not
+--- 	- **color**?: *table* [optional] ― RGB colors line
+--- 		- **r**: number ― Red
+--- 		- **g**: number ― Green
+--- 		- **b**: number ― Blue
 --- - **items**: *table* — Numbered/indexed table containing the dropdown items
 --- 	- **text**: *string* — Text to represent the items within the dropdown frame
 --- 	- **onSelect**: *function* — The function to be called when a dropdown item is selected
@@ -591,16 +683,11 @@ end
 local function CreateDropdown(t)
 	local dropdown = CreateFrame("Frame", t.parent:GetName() .. t.label:gsub("%s+", "") .. "Dropdown", t.parent, "UIDropDownMenuTemplate")
 	--Position & dimensions
-	PositionFrame(dropdown, t.position.anchor, t.position.relativeTo, t.position.relativePoint, (t.position.offset or _).x, ((t.position.offset or _).y or 0)- 16)
+	PositionFrame(dropdown, t.position.anchor, t.position.relativeTo, t.position.relativePoint, (t.position.offset or {}).x, ((t.position.offset or {}).y or 0)- 16)
 	if t.width ~= nil then UIDropDownMenu_SetWidth(dropdown, t.width) end
 	--Tooltip
-	dropdown:HookScript("OnEnter", function(self)
-		if not self.isDisabled then
-			GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-			GameTooltip:SetText(t.tooltip, 1, 1, 1, 1, true)
-		end
-	end)
-	dropdown:HookScript("OnLeave", GameTooltip_Hide)
+	dropdown:HookScript("OnEnter", function() AddTooltip(dropdown, "ANCHOR_RIGHT", t.label, t.tooltip, t.tooltipExtra, nil, nil) end)
+	dropdown:HookScript("OnLeave", function() tooltip:Hide() end)
 	--Title
 	AddTitle({
 		frame = dropdown,
@@ -713,6 +800,13 @@ local function CreateFontOptions(parentFrame)
 			textDisplay:SetFont(fonts[i].path, options.font.size:GetValue(), "THINOUTLINE")
 		end
 	end
+	local tooltipLines = {
+		[0] = { text = strings.options.font.family.tooltip[1], wrap = true },
+		[1] = { text = strings.options.font.family.tooltip[2]:gsub("#OPTION_CUSTOM", strings.misc.custom):gsub("#FILE_CUSTOM", "CUSTOM.ttf"), wrap = true },
+		[2] = { text = "[WoW]\\Interface\\AddOns\\MovementSpeed\\Fonts\\", wrap = false, color = { r = 0.185, g = 0.72, b = 0.84 } },
+		[3] = { text = strings.options.font.family.tooltip[3]:gsub("#FILE_CUSTOM", "CUSTOM.ttf"), wrap = true },
+		[4] = { text = strings.options.font.family.tooltip[4], wrap = true, color = { r = 0.89, g = 0.65, b = 0.40 } },
+	}
 	options.font.family = CreateDropdown({
 		parent = parentFrame,
 		position = {
@@ -720,7 +814,8 @@ local function CreateFontOptions(parentFrame)
 			offset = { x = -6, y = -30 }
 		},
 		label = strings.options.font.family.label,
-		tooltip = strings.options.font.family.tooltip:gsub("#OPTION_CUSTOM", strings.misc.custom):gsub("#FILE_CUSTOM", "CUSTOM.ttf"):gsub("#PATH_CUSTOM", "[WoW]\\Interface\\AddOns\\\nMovementSpeed\\Fonts\\"),
+		tooltip = strings.options.font.family.tooltip[0],
+		tooltipExtra = tooltipLines,
 		items = fontItems,
 	})
 	--Slider: Font size
@@ -813,7 +908,18 @@ local function CreateOptionsPanel()
 			template = "GameFontHighlightSmall"
 		}
 	})
-	--Add categories & GUI elements
+	--Logo
+	CreateTexture({
+		parent = optionsPanel,
+		name = "Logo",
+		path = textures.logo,
+		position = {
+			anchor = "TOPRIGHT",
+			offset = { x = -16, y = -16 }
+		},
+		size = { width = 36, height = 36 }
+	})
+	--Categories & GUI elements
 	CreateCategoryPanels(optionsPanel, description)
 	return optionsPanel
 end
@@ -860,7 +966,7 @@ end
 --[[ DISPLAY FRAME SETUP ]]
 
 --Set frame parameters
-local function SetFrameParameters()
+local function SetUpMainDisplayFrame()
 	--Main frame
 	movSpeed:SetFrameStrata(db.visibility.frameStrata)
 	movSpeed:SetToplevel(true)
@@ -873,6 +979,24 @@ local function SetFrameParameters()
 	--Text display
 	textDisplay:SetPoint("CENTER")
 	SetDisplayValues()
+end
+local function SetUpTooltip()
+	tooltip:SetFrameStrata("DIALOG")
+	tooltip:SetScale(0.9)
+	--Title font
+	tooltip:AddFontStrings(
+		tooltip:CreateFontString(tooltip:GetName() .. "TextLeft1", nil, "GameTooltipHeaderText"),
+		tooltip:CreateFontString(tooltip:GetName() .. "TextRight1", nil, "GameTooltipHeaderText")
+	)
+	_G[tooltip:GetName() .. "TextLeft1"]:SetFontObject(GameTooltipHeaderText) --TODO: It's not the right font object (too big), find another one that mathces (or create a custom one)
+	_G[tooltip:GetName() .. "TextRight1"]:SetFontObject(GameTooltipHeaderText)
+	--Text font
+	tooltip:AddFontStrings(
+		tooltip:CreateFontString(tooltip:GetName() .. "TextLeft" .. 2, nil, "GameTooltipTextSmall"),
+		tooltip:CreateFontString(tooltip:GetName() .. "TextRight" .. 2, nil, "GameTooltipTextSmall")
+	)
+	_G[tooltip:GetName() .. "TextLeft" .. 2]:SetFontObject(GameTooltipTextSmall)
+	_G[tooltip:GetName() .. "TextRight" .. 2]:SetFontObject(GameTooltipTextSmall)
 end
 
 --Making the frame moveable
@@ -973,7 +1097,9 @@ function movSpeed:ADDON_LOADED(addon)
 		--Load & check the DB
 		LoadDB()
 		--Set up the main frame & text
-		SetFrameParameters()
+		SetUpMainDisplayFrame()
+		--Set up the addon tooltip
+		SetUpTooltip()
 		--Set up the interface options
 		LoadInterfaceOptions()
 	end
