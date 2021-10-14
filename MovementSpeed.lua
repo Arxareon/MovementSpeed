@@ -10,7 +10,7 @@ local strings = { options = {}, chat = {}, misc = {} }
 --Load localization
 local function LoadLocale()
 	if (GetLocale() == "") then
-		--TODO: add support for other languages (locales: https://wowwiki-archive.fandom.com/wiki/API_GetLocale#Locales)
+		--TODO: Add localization for other languages (locales: https://wowwiki-archive.fandom.com/wiki/API_GetLocale#Locales)
 		--Different font locales: https://github.com/tomrus88/BlizzardInterfaceCode/blob/master/Interface/FrameXML/Fonts.xml
 	else
 		strings = ns.english --English (UK & US)
@@ -57,10 +57,11 @@ local db --account-wide
 local defaultDB = {
 	position = {
 		point = "TOPRIGHT",
-		offset = { x = -68, y = -179 },
+		offset = { x = -67, y = -179 },
 	},
 	visibility = {
 		hidden = false,
+		backdrop = false,
 		frameStrata = "MEDIUM",
 	},
 	font = {
@@ -95,7 +96,8 @@ end
 
 --Create the main frame, text display and tooltip
 local movSpeed = CreateFrame("Frame", "MovementSpeed", UIParent)
-local textDisplay = movSpeed:CreateFontString("MovementSpeedTextDisplay", "OVERLAY")
+local movSpeedBackdrop = CreateFrame("Frame", "MovementSpeedBackdrop", movSpeed, BackdropTemplateMixin and "BackdropTemplate")
+local textDisplay = movSpeedBackdrop:CreateFontString("MovementSpeedTextDisplay", "OVERLAY")
 local tooltip = CreateFrame("GameTooltip", "MovementSpeedTooltip", nil, "GameTooltipTemplate")
 
 --Register events
@@ -128,15 +130,6 @@ local function DefaultPreset()
 	print(colors.sg .. addon .. ":" .. colors.ly .. " " .. strings.chat.default.response)
 end
 
----Set the visibility of the text display frame based on the flipped value of the input parameter
----@param visible boolean
-local function FlipVisibility(visible)
-	if visible then
-		movSpeed:Hide()
-	else
-		movSpeed:Show()
-	end
-end
 --Find the ID of the font provided
 local function GetFontID(fontPath)
 	local selectedFont = 0
@@ -148,9 +141,47 @@ local function GetFontID(fontPath)
 	end
 	return selectedFont
 end
---Set the visibility and the font family, size and color of the textDisplay
+---Set the visibility of the text display frame based on the flipped value of the input parameter
+---@param visible boolean
+local function FlipVisibility(visible)
+	if visible then
+		movSpeed:Hide()
+	else
+		movSpeed:Show()
+	end
+end
+---Set the size of the main display
+---@param height number
+local function SetDisplaySize(height)
+	--Set dimensions
+	height = math.ceil(height) + 2
+	local width = height * 3 - 4
+	movSpeedBackdrop:SetSize(width, height)
+end
+---Set the backdrop of the main display
+---@param toggle boolean
+local function SetDisplayBackdrop(toggle)
+	if toggle then 
+	movSpeedBackdrop:SetBackdrop({
+		bgFile = "Interface/ChatFrame/ChatFrameBackground",
+		edgeFile = "Interface/ChatFrame/ChatFrameBackground",
+		tile = true, tileSize = 5, edgeSize = 1,
+		insets = { left = 0, right = 0, top = 0, bottom = 0 }
+	})
+	movSpeedBackdrop:SetBackdropColor(0, 0, 0, 0.5)
+	movSpeedBackdrop:SetBackdropBorderColor(1, 1, 1, 0.4)
+	else
+		movSpeedBackdrop:SetBackdrop(nil)
+	end
+end
+--Set the visibility, backdrop, font family, size and color of the main display to the currently saved values
 local function SetDisplayValues()
+	--Visibility
 	FlipVisibility(db.visibility.hidden)
+	--Backdrop
+	SetDisplaySize(db.font.size)
+	SetDisplayBackdrop(db.visibility.backdrop)
+	--Font
 	textDisplay:SetFont(db.font.family, db.font.size, "THINOUTLINE")
 	textDisplay:SetTextColor(1,1,1,1)
 end
@@ -347,7 +378,7 @@ end
 --- - **description**?: *string* [optional] — Text to be shown as the subtitle/description of the category
 ---@return Frame category
 local function CreateCategory(t)
-	local category = CreateFrame("Frame", t.parent:GetName() .. t.title:gsub("%s+", ""), t.parent, BackdropTemplateMixin and "BackdropTemplate" or nil)
+	local category = CreateFrame("Frame", t.parent:GetName() .. t.title:gsub("%s+", ""), t.parent, BackdropTemplateMixin and "BackdropTemplate")
 	--Position & dimensions
 	PositionFrame(category, t.position.anchor, t.position.relativeTo, t.position.relativePoint, (t.position.offset or {}).x, (t.position.offset or {}).y)
 	category:SetSize(t.size.width, t.size.height)
@@ -591,7 +622,6 @@ local function AddSliderValueBox(t)
 	valueBox:SetScript("OnEnterPressed", function(self)
 		local value = max(t.value.min, min(t.value.max, floor(self:GetNumber() * (1 / t.value.step) + 0.5) / (1 / t.value.step)))
 		t.slider:SetValue(value)
-		self:SetText(value)
 	end)
 	valueBox:HookScript("OnEnterPressed", function(self)
 		PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
@@ -742,30 +772,13 @@ local function CreatePositionOptions(parentFrame)
 		tooltip = strings.options.position.save.tooltip,
 		onClick = function() StaticPopup_Show(savePopup) end
 	})
-	--Button & Popup: Reset preset position
-	local resetPopup = CreatePopup({
-		name = strings.options.position.reset.label,
-		text = strings.options.position.reset.warning,
-		onAccept = function() ResetPosition() end
-	})
-	CreateButton({
-		parent = parentFrame,
-		position = {
-			anchor = "TOPRIGHT",
-			offset = { x = -134, y = -30 }
-		},
-		width = 120,
-		label = strings.options.position.reset.label,
-		tooltip = strings.options.position.reset.tooltip,
-		onClick = function() StaticPopup_Show(resetPopup) end
-	})
 	--Button & Popup: Reset default preset position
 	local defaultPopup = CreatePopup({
 		name = strings.options.position.default.label,
 		text = strings.options.position.default.warning,
 		onAccept = function() DefaultPreset() end
 	})
-	CreateButton({
+	local default = CreateButton({
 		parent = parentFrame,
 		position = {
 			anchor = "TOPRIGHT",
@@ -775,6 +788,25 @@ local function CreatePositionOptions(parentFrame)
 		label = strings.options.position.default.label,
 		tooltip = strings.options.position.default.tooltip,
 		onClick = function() StaticPopup_Show(defaultPopup) end
+	})
+	--Button & Popup: Set to preset position
+	local resetPopup = CreatePopup({
+		name = strings.options.position.reset.label,
+		text = strings.options.position.reset.warning,
+		onAccept = function() ResetPosition() end
+	})
+	CreateButton({
+		parent = parentFrame,
+		position = {
+			anchor = "TOPRIGHT",
+			relativeTo = default,
+			relativePoint = "TOPLEFT",
+			offset = { x = -4, y = 0 }
+		},
+		width = 120,
+		label = strings.options.position.reset.label,
+		tooltip = strings.options.position.reset.tooltip,
+		onClick = function() StaticPopup_Show(resetPopup) end
 	})
 end
 local function CreateVisibilityOptions(parentFrame)
@@ -789,6 +821,20 @@ local function CreateVisibilityOptions(parentFrame)
 		label = strings.options.visibility.hidden.label,
 		tooltip = strings.options.visibility.hidden.tooltip,
 		onClick = function(self) FlipVisibility(self:GetChecked()) end
+	})
+	--Checkbox: Backdrop
+	options.visibility.backdrop = CreateCheckbox({
+		parent = parentFrame,
+		position = {
+			anchor = "TOPLEFT",
+			relativeTo = options.visibility.hidden,
+			relativePoint = "BOTTOMLEFT",
+			offset = { x = 0, y = -4 }
+		},
+		width = 120,
+		label = strings.options.visibility.backdrop.label,
+		tooltip = strings.options.visibility.backdrop.tooltip,
+		onClick = function(self) SetDisplayBackdrop(self:GetChecked()) end
 	})
 end
 local function CreateFontOptions(parentFrame)
@@ -828,7 +874,10 @@ local function CreateFontOptions(parentFrame)
 		label = strings.options.font.size.label,
 		tooltip = strings.options.font.size.tooltip .. "\n\n" .. strings.misc.default .. ": " .. defaultDB.font.size,
 		value = { min = 8, max = 64, step = 1 },
-		onValueChanged = function(self) textDisplay:SetFont(textDisplay:GetFont(), self:GetValue(), "THINOUTLINE") end
+		onValueChanged = function(self)
+			textDisplay:SetFont(textDisplay:GetFont(), self:GetValue(), "THINOUTLINE")
+			SetDisplaySize(self:GetValue())
+		end
 	})
 	--TEST
 	options.font.test = CreateEditBox({
@@ -871,7 +920,7 @@ local function CreateCategoryPanels(parentFrame, titleFrame)
 			relativePoint = "BOTTOMLEFT",
 			offset = { x = 0, y = -32 }
 		},
-		size = { width = optionsWidth, height = 64 },
+		size = { width = optionsWidth, height = 94 },
 		title = strings.options.visibility.title,
 		description = strings.options.visibility.description
 	})
@@ -895,7 +944,7 @@ end
 local function CreateOptionsPanel()
 	local optionsPanel = CreateFrame("Frame", "MovementSpeedOptions", InterfaceOptionsFramePanelContainer)
 	--Title & description
-	local _ local description = AddTitle({
+	local _, description = AddTitle({
 		frame = optionsPanel,
 		title = {
 			text = addon,
@@ -926,7 +975,10 @@ end
 
 --Interface options event handlers
 local function Save()
-	db.visibility.hidden = not movSpeed:IsShown()
+	--Visibility
+	db.visibility.hidden = options.visibility.hidden:GetChecked()
+	db.visibility.backdrop = options.visibility.backdrop:GetChecked()
+	--Font
 	db.font.size = options.font.size:GetValue()
 	db.font.family = textDisplay:GetFont()
 end
@@ -941,10 +993,10 @@ local function Default() --Refresh() is called automatically
 end
 local function Refresh()
 	options.visibility.hidden:SetChecked(db.visibility.hidden)
+	options.visibility.backdrop:SetChecked(db.visibility.backdrop)
 	options.font.size:SetValue(db.font.size)
 	UIDropDownMenu_SetSelectedValue(options.font.family, GetFontID(db.font.family))
 	UIDropDownMenu_SetText(options.font.family, fonts[GetFontID(db.font.family)].text)
-	options.font.test:SetText("TEStestTESTtest")
 end
 
 --Add the options to the WoW interface
@@ -970,14 +1022,18 @@ local function SetUpMainDisplayFrame()
 	--Main frame
 	movSpeed:SetFrameStrata(db.visibility.frameStrata)
 	movSpeed:SetToplevel(true)
-	movSpeed:SetSize(32, 10)
+	movSpeed:SetSize(33, 10)
 	if not movSpeed:IsUserPlaced() then
 		movSpeed:ClearAllPoints()
 		movSpeed:SetPoint(defaultDB.position.point, defaultDB.position.offset.x, defaultDB.position.offset.y)
 		movSpeed:SetUserPlaced(true)
 	end
-	--Text display
+	--Backdrop
+	SetDisplaySize(db.font.size)
+	movSpeedBackdrop:SetPoint("CENTER")
+	--Text
 	textDisplay:SetPoint("CENTER")
+	--Visual elements
 	SetDisplayValues()
 end
 local function SetUpTooltip()
@@ -1001,13 +1057,13 @@ end
 
 --Making the frame moveable
 movSpeed:SetMovable(true)
-movSpeed:SetScript("OnMouseDown", function(self)
+movSpeedBackdrop:SetScript("OnMouseDown", function(self)
 	if (IsShiftKeyDown() and not self.isMoving) then
 		movSpeed:StartMoving()
 		self.isMoving = true
 	end
 end)
-movSpeed:SetScript("OnMouseUp", function(self)
+movSpeedBackdrop:SetScript("OnMouseUp", function(self)
 	if (self.isMoving) then
 		movSpeed:StopMovingOrSizing()
 		self.isMoving = false
@@ -1016,10 +1072,10 @@ end)
 
 --Hide during Pet Battle
 function movSpeed:PET_BATTLE_OPENING_START()
-	movSpeed:Hide()
+	movSpeedBackdrop:Hide()
 end
 function movSpeed:PET_BATTLE_CLOSE()
-	if db.visibility.hidden == false then movSpeed:Show() end
+	movSpeedBackdrop:Show()
 end
 
 

@@ -34,6 +34,10 @@ ns.english = {
 				label = "Hidden",
 				tooltip = "Hide or show the Movement Speed text display.",
 			},
+			backdrop = {
+				label = "Background graphic",
+				tooltip = "Toggle the visibility of the backdrop element of the text display.",
+			},
 		},
 		font = {
 			title = "Font",
@@ -85,7 +89,7 @@ ns.english = {
 		show = {
 			command = "show",
 			description = "show the text display",
-			response = "The text display is visible.",
+			response = "The text display is not hidden.",
 		},
 		size = {
 			command = "size",
