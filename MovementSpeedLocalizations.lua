@@ -10,40 +10,43 @@ ns.english = {
 		defaults = "The default options have been reset.",
 		position = {
 			title = "Position",
-			description = "You may drag the text display while holding SHIFT to position it anywhere on the screen.",
+			description = "You may drag the main display while holding SHIFT to position it anywhere on the screen.",
 			save = {
-				label = "Save position",
-				tooltip = "Save the current position of the text display as the preset location.",
+				label = "Save Position",
+				tooltip = "Save the current position of the main display as the preset location.",
 				warning = "Are you sure you want to override the saved preset with the current position?\n\nThe preset position is account-wide.", --\n represents the newline character
 			},
 			reset = {
-				label = "Reset position",
-				tooltip = "Reset the position of the text display to the specified preset location.",
+				label = "Reset Position",
+				tooltip = "Reset the position of the main display to the specified preset location.",
 				warning = "Are you sure you want to reset the position to the current preset?",
 			},
 			default = {
-				label = "Default preset",
-				tooltip = "Restore the default preset location of the text display.",
+				label = "Default Preset",
+				tooltip = "Restore the default preset location of the main display.",
 				warning = "Are you sure you want to reset the preset position to the defaults?\n\nThe preset position is account-wide.", --\n represents the newline character
 			},
 		},
-		visibility = {
-			title = "Visibility",
-			description = "Set the visibility of Movement Speed percentage value.",
+		appearance = {
+			title = "Appearance",
+			description = "Set the visibility and look of the main Movement Speed percentage display elements.",
 			hidden = {
 				label = "Hidden",
-				tooltip = "Hide or show the Movement Speed text display.",
+				tooltip = "Hide or show the Movement Speed main display.",
 			},
 			backdrop = {
-				label = "Background graphic",
-				tooltip = "Toggle the visibility of the backdrop element of the text display.",
+				label = "Background Graphic",
+				tooltip = "Toggle the visibility of the backdrop element of the main display.",
+				color = {
+					label = "Background Color",
+				},
 			},
 		},
 		font = {
 			title = "Font",
-			description = "Customize the font of the speed percentage text display.",
+			description = "Customize the font of the main speed percentage display.",
 			family = {
-				label = "Font family",
+				label = "Font Family", --font family or type
 				tooltip = {
 					[0] = "Select the font of the displayed percentage value.",
 					[1] = "The default option is the font used by Blizzard.",
@@ -53,8 +56,11 @@ ns.english = {
 				},
 			},
 			size = {
-				label = "Font size",
+				label = "Font Size",
 				tooltip = "Specify the font size of the displayed percentage value.",
+			},
+			color = {
+				label = "Font Color",
 			},
 		},
 	},
@@ -83,13 +89,13 @@ ns.english = {
 		},
 		hide = {
 			command = "hide",
-			description = "hide the text display",
-			response = "The text display is hidden.",
+			description = "hide the main display",
+			response = "The main display is hidden.",
 		},
 		show = {
 			command = "show",
-			description = "show the text display",
-			response = "The text display is not hidden.",
+			description = "show the main display",
+			response = "The main display is not hidden.",
 		},
 		size = {
 			command = "size",
@@ -99,9 +105,13 @@ ns.english = {
 			error = "Please enter a valid number value (e.g. #SIZE_DEFAULT).", --# flags will be replaced with code
 		},
 	},
+	color = {
+		pick = "Pick a color",
+		tooltip = "Click to select the color and change opacity."
+	},
 	misc = {
 		cancel = "Cancel",
 		default = "Default",
 		custom = "Custom",
-	}
+	},
 }

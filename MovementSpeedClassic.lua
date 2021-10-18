@@ -59,7 +59,7 @@ local defaultDB = {
 		point = "TOPRIGHT",
 		offset = { x = -68, y = -179 },
 	},
-	visibility = {
+	appearance = {
 		hidden = false,
 		frameStrata = "MEDIUM",
 	},
@@ -148,7 +148,7 @@ local function GetFontID(fontPath)
 end
 --Set the visibility and the font family, size and color of the textDisplay
 local function SetDisplayValues()
-	FlipVisibility(db.visibility.hidden)
+	FlipVisibility(db.appearance.hidden)
 	textDisplay:SetFont(db.font.family, db.font.size, "THINOUTLINE")
 	textDisplay:SetTextColor(1,1,1,1)
 end
@@ -223,11 +223,11 @@ function SlashCmdList.MOVESPEED(line)
 	elseif command == strings.chat.default.command then
 		DefaultPreset()
 	elseif command == strings.chat.hide.command then
-		db.visibility.hidden = true
+		db.appearance.hidden = true
 		movSpeed:Hide()
 		PrintStatus()
 	elseif command == strings.chat.show.command then
-		db.visibility.hidden = false
+		db.appearance.hidden = false
 		movSpeed:Show()
 		PrintStatus()
 	elseif command == strings.chat.size.command then
@@ -924,7 +924,7 @@ end
 
 --Interface options event handlers
 local function Save()
-	db.visibility.hidden = not movSpeed:IsShown()
+	db.appearance.hidden = not movSpeed:IsShown()
 	db.font.size = options.font.size:GetValue()
 	db.font.family = textDisplay:GetFont()
 end
@@ -938,7 +938,7 @@ local function Default() --Refresh() is called automatically
 	print(colors.sg .. addon .. ": " .. colors.ly .. strings.options.defaults)
 end
 local function Refresh()
-	options.visibility.hidden:SetChecked(db.visibility.hidden)
+	options.visibility.hidden:SetChecked(db.appearance.hidden)
 	options.font.size:SetValue(db.font.size)
 	UIDropDownMenu_SetSelectedValue(options.font.family, GetFontID(db.font.family))
 	UIDropDownMenu_SetText(options.font.family, fonts[GetFontID(db.font.family)].text)
@@ -966,7 +966,7 @@ end
 --Set frame parameters
 local function SetUpMainDisplayFrame()
 	--Main frame
-	movSpeed:SetFrameStrata(db.visibility.frameStrata)
+	movSpeed:SetFrameStrata(db.appearance.frameStrata)
 	movSpeed:SetToplevel(true)
 	movSpeed:SetSize(32, 10)
 	if not movSpeed:IsUserPlaced() then
