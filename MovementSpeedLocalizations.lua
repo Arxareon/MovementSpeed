@@ -106,12 +106,20 @@ ns.english = {
 		},
 	},
 	color = {
-		pick = "Pick a color",
-		tooltip = "Click to select the color and change opacity."
+		picker = {
+			label = "Pick a color",
+			tooltip = "Click to open the color picker to customize the color#ALPHA.", --# flags will be replaced with code
+			alpha = " and change the opacity",
+		},
+		hex = {
+			label = "Add via HEX color code",
+			tooltip = "You may change the color via HEX code instead of using the color picker.",
+		}
 	},
 	misc = {
 		cancel = "Cancel",
 		default = "Default",
+		example = "Example",
 		custom = "Custom",
 	},
 }

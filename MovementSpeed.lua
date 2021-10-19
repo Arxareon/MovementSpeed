@@ -63,7 +63,7 @@ local defaultDB = {
 		hidden = false,
 		frameStrata = "MEDIUM",
 		backdrop = {
-			visible = false;
+			visible = false,
 			color = { r = 0, g = 0, b = 0, a = 0.5 },
 		},
 	},
@@ -102,7 +102,7 @@ end
 local movSpeed = CreateFrame("Frame", "MovementSpeed", UIParent)
 local movSpeedBackdrop = CreateFrame("Frame", "MovementSpeedBackdrop", movSpeed, BackdropTemplateMixin and "BackdropTemplate")
 local textDisplay = movSpeedBackdrop:CreateFontString("MovementSpeedTextDisplay", "OVERLAY")
-local tooltip = CreateFrame("GameTooltip", "MovementSpeedTooltip", nil, "GameTooltipTemplate")
+local movSpeedTooltip = CreateFrame("GameTooltip", "MovementSpeedTooltip", nil, "GameTooltipTemplate")
 
 --Register events
 movSpeed:RegisterEvent("ADDON_LOADED")
@@ -164,7 +164,11 @@ local function SetDisplaySize(height)
 end
 ---Set the backdrop of the main display
 ---@param toggle boolean
-local function SetDisplayBackdrop(toggle)
+---@param r? number Red (Range: 0 - 1, Default: db.appearance.backdrop.color.r)
+---@param g? number Green (Range: 0 - 1, Default: db.appearance.backdrop.color.g)
+---@param b? number Blue (Range: 0 - 1, Default: db.appearance.backdrop.color.b)
+---@param a? number Opacity (Range: 0 - 1, Default: db.appearance.backdrop.color.a or 1)
+local function SetDisplayBackdrop(toggle, r, g, b, a)
 	if toggle then
 		movSpeedBackdrop:SetBackdrop({
 			bgFile = "Interface/ChatFrame/ChatFrameBackground",
@@ -172,7 +176,12 @@ local function SetDisplayBackdrop(toggle)
 			tile = true, tileSize = 5, edgeSize = 1,
 			insets = { left = 0, right = 0, top = 0, bottom = 0 }
 		})
-		movSpeedBackdrop:SetBackdropColor(db.appearance.backdrop.color.r, db.appearance.backdrop.color.g, db.appearance.backdrop.color.b, db.appearance.backdrop.color.a)
+		movSpeedBackdrop:SetBackdropColor(
+			r or db.appearance.backdrop.color.r,
+			g or db.appearance.backdrop.color.g,
+			b or db.appearance.backdrop.color.b,
+			a or db.appearance.backdrop.color.a or 1
+		)
 		movSpeedBackdrop:SetBackdropBorderColor(1, 1, 1, 0.4)
 	else
 		movSpeedBackdrop:SetBackdrop(nil)
@@ -303,7 +312,7 @@ local function PositionFrame(frame, anchor, relativeTo, relativePoint, offsetX, 
 		frame:SetPoint(anchor, relativeTo, relativePoint, offsetX, offsetY)
 	end
 end
----Set up the default GameTooltip to be shown for a frame
+---Set up a GameTooltip frame to be shown for a frame
 ---@param owner FrameType Owner frame the tooltip to be shown for
 ---@param anchor string [GameTooltip anchor](https://wowpedia.fandom.com/wiki/API_GameTooltip_SetOwner)
 ---@param title string String to be shown as the tooltip title
@@ -317,7 +326,7 @@ end
 --- 	- **b** number ― Blue (Range: 0 - 1)
 ---@param offsetX? number (Default: 0)
 ---@param offsetY? number (Default: 0)
-local function AddTooltip(owner, anchor, title, text, textLines, offsetX, offsetY)
+local function AddTooltip(tooltip, owner, anchor, title, text, textLines, offsetX, offsetY)
 	--Position
 	tooltip:SetOwner(owner, anchor, offsetX, offsetY)
 	--Title
@@ -325,7 +334,7 @@ local function AddTooltip(owner, anchor, title, text, textLines, offsetX, offset
 	--Summary
 	tooltip:AddLine(text, colors.normal.r, colors.normal.g, colors.normal.b, true)
 	--Additional text lines
-	if textLines ~= nil then 
+	if textLines ~= nil then
 		--Empty line after the summary
 		tooltip:AddLine(" ", nil, nil, nil, true) --TODO: Check why the third line has the title FontObject
 		for i = 0, #textLines do
@@ -501,8 +510,8 @@ local function CreateButton(t)
 	--Font
 	getglobal(button:GetName() .. "Text"):SetText(t.label)
 	--Tooltip
-	button:HookScript("OnEnter", function() AddTooltip(button, "ANCHOR_TOPLEFT", t.label, t.tooltip, t.tooltipExtra, 20, nil)	end)
-	button:HookScript("OnLeave", function() tooltip:Hide() end)
+	button:HookScript("OnEnter", function() AddTooltip(movSpeedTooltip, button, "ANCHOR_TOPLEFT", t.label, t.tooltip, t.tooltipExtra, 20, nil)	end)
+	button:HookScript("OnLeave", function() movSpeedTooltip:Hide() end)
 	--Event handlers
 	button:SetScript("OnClick", t.onClick)
 	button:HookScript("OnClick", function() PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON) end)
@@ -550,23 +559,32 @@ end
 --- - **size** table
 --- 	- **width** number
 --- 	- **height**? number *optional* — (Default: 17)
---- - **multiline**? boolean *optional* — Set to true if the edit box should be support multiple lines for the string input (false if nil)
+--- - **multiline**? boolean *optional* — Set to true if the edit box should be support multiple lines for the string input (Default: false)
 --- - **justify**? table *optional* — Set the justification of the [FontInstance](https://wowwiki-archive.fandom.com/wiki/Widget_API#FontInstance)
 --- 	- **h**? string *optional* — Horizontal: "LEFT"|"RIGHT"|"CENTER" (Default: "LEFT")
 --- 	- **v**? string *optional* — Vertical: "TOP"|"BOTTOM"|"MIDDLE" (Default: "MIDDLE")
 --- - **maxLetters**? number *optional* — The value to set by [EditBox:SetMaxLetters()](https://wowpedia.fandom.com/wiki/API_EditBox_SetMaxLetters) (Default: 0 [no limit])
 --- - **text**? string *optional* — Text to be shown inside edit box on load
---- - **title** string — Title text to be shown above the edit box
+--- - **label** string — Name of the edit box to be shown as the tooltip title and optionally as the title text
+--- - **title**? boolean *optional* — Wether ot not to add a title above the edit box (Default: true)
+--- - **tooltip** string — Text to be shown as the tooltip of the button
+--- - **tooltipExtra**? table *optional* — Additional text lines to be added to the tooltip of the button
+--- 	- **text** string ― Text to be added to the line
+--- 	- **wrap** boolean ― Append the text in a new line or not
+---	 	- **color**? table *optional* ― RGB colors line
+--- 		- **r** number ― Red (Range: 0 - 1)
+--- 		- **g** number ― Green (Range: 0 - 1)
+--- 		- **b** number ― Blue (Range: 0 - 1)
 --- - **onEnterPressed** function — The function to be called when an [OnEnterPressed](https://wowpedia.fandom.com/wiki/UIHANDLER_OnEnterPressed) event happens
 --- - **onEscapePressed** function — The function to be called when an [OnEscapePressed](https://wowpedia.fandom.com/wiki/UIHANDLER_OnEscapePressed) event happens
 ---@return EditBox editBox
 local function CreateEditBox(t)
-	local editBox = CreateFrame("EditBox", t.parent:GetName() .. t.title:gsub("%s+", "") .. "EditBox", t.parent, "InputBoxTemplate") --This template doesn't have multiline art
+	local editBox = CreateFrame("EditBox", t.parent:GetName() .. t.label:gsub("%s+", "") .. "EditBox", t.parent, "InputBoxTemplate")
 	--Position & dimensions
 	PositionFrame(editBox, t.position.anchor, t.position.relativeTo, t.position.relativePoint, (t.position.offset or {}).x, ((t.position.offset or {}).y or 0) - 18)
 	editBox:SetSize(t.size.width, t.size.height or 17)
 	--Font & text
-	editBox:SetMultiLine(t.multiline or false) --TODO: Fix multiline support to be visible on the GUI (the EditBox is currently only one line tall)
+	editBox:SetMultiLine(t.multiline or false) --TODO: Fix multiline support to be visible on the GUI (the current art template doesn't have multiline support)
 	editBox:SetFontObject("GameFontHighlight")
 	if t.justify ~= nil then
 		if t.justify.h ~= nil then editBox:SetJustifyH(t.justify.h) end
@@ -574,14 +592,19 @@ local function CreateEditBox(t)
 	end
 	if t.maxLetters ~= nil then editBox:SetMaxLetters(t.maxLetters) end
 	--Title
-	AddTitle({
-		frame = editBox,
-		title = {
-			text = t.title,
-			offset = { x = -1, y = 18 },
-			template = "GameFontNormal"
-		}
-	})
+	if t.title ~= false then
+		AddTitle({
+			frame = editBox,
+			title = {
+				text = t.label,
+				offset = { x = -1, y = 18 },
+				template = "GameFontNormal"
+			}
+		})
+	end
+	--Tooltip
+	editBox:HookScript("OnEnter", function() AddTooltip(movSpeedTooltip, editBox, "ANCHOR_RIGHT", t.label, t.tooltip, t.tooltipExtra, nil, nil) end)
+	editBox:HookScript("OnLeave", function() movSpeedTooltip:Hide() end)
 	--Events & behavior
 	editBox:SetAutoFocus(false)
 	editBox:SetScript("OnShow", function(self) self:SetText(t.text or "") end)
@@ -702,7 +725,8 @@ end
 --- 		- **x** number
 --- 		- **y** number
 --- - **width**? number *optional* — (currently unsupported)
---- - **label** string — Title text to be shown above the dropdown and as the the tooltip label
+--- - **label** string — Name of the dropdown shown as the tooltip title and optionally as the title text
+--- - **title**? boolean *optional* — Wether ot not to add a title above the dropdown menu (Default: true)
 --- - **tooltip** string — Text to be shown as the tooltip of the dropdown
 --- - **tooltipExtra**? table *optional* — Additional text lines to be added to the tooltip of the dropdown
 --- 	- **text** string ― Text to be added to the line
@@ -722,17 +746,19 @@ local function CreateDropdown(t)
 	PositionFrame(dropdown, t.position.anchor, t.position.relativeTo, t.position.relativePoint, (t.position.offset or {}).x, ((t.position.offset or {}).y or 0) - 16)
 	if t.width ~= nil then UIDropDownMenu_SetWidth(dropdown, t.width) end
 	--Tooltip
-	dropdown:HookScript("OnEnter", function() AddTooltip(dropdown, "ANCHOR_RIGHT", t.label, t.tooltip, t.tooltipExtra, nil, nil) end)
-	dropdown:HookScript("OnLeave", function() tooltip:Hide() end)
+	dropdown:HookScript("OnEnter", function() AddTooltip(movSpeedTooltip, dropdown, "ANCHOR_RIGHT", t.label, t.tooltip, t.tooltipExtra, nil, nil) end)
+	dropdown:HookScript("OnLeave", function() movSpeedTooltip:Hide() end)
 	--Title
-	AddTitle({
-		frame = dropdown,
-		title = {
-			text = t.label,
-			offset = { x = 22, y = 16 },
-			template = "GameFontNormal"
-		}
-	})
+	if t.title ~= false then
+		AddTitle({
+			frame = dropdown,
+			title = {
+				text = t.label,
+				offset = { x = 22, y = 16 },
+				template = "GameFontNormal"
+			}
+		})
+	end
 	--Initialize
 	UIDropDownMenu_Initialize(dropdown, function()
 		for i = 0, #t.items do
@@ -751,6 +777,109 @@ local function CreateDropdown(t)
 		UIDropDownMenu_SetText(dropdown, t.items[t.selected].text)
 	end
 	return dropdown
+end
+--Addon-scope data bust be used to stop the separate color pickers from interfering with each other through the global Blizzard Color Picker frame
+local colorPickerData = {}
+---Set up and open the built-in Color Picker frame
+---
+---Using **colorPickerData** table, it must be set before call:
+--- - **activeColorPicker** Button
+--- - **startColors** table ― Color values are to be provided in this table
+--- 	- **r** number ― Red (Range: 0 - 1)
+--- 	- **g** number ― Green (Range: 0 - 1)
+--- 	- **b** number ― Blue (Range: 0 - 1)
+--- 	- **a**? number *optional* ― Opacity (Range: 0 - 1, Default: 1)
+--- - **onColorUpdate** function
+--- - **onOpacityUpdate**? function *optional*
+--- - **onCancel** function
+local function OpenColorPicker()
+	--Color picker button background update function
+	local function PickerButtonUpdate()
+		local r, g, b = ColorPickerFrame:GetColorRGB()
+		colorPickerData.activeColorPicker:SetBackdropColor(r, g, b, OpacitySliderFrame:GetValue() or 1)
+	end
+	--RGB
+	ColorPickerFrame:SetColorRGB(colorPickerData.startColors.r, colorPickerData.startColors.g, colorPickerData.startColors.b)
+	ColorPickerFrame.func = function()
+		PickerButtonUpdate()
+		colorPickerData.onColorUpdate()
+	end
+	--Alpha
+	ColorPickerFrame.hasOpacity = colorPickerData.onOpacityUpdate ~= nil and colorPickerData.startColors.a ~= nil
+	if ColorPickerFrame.hasOpacity then
+		ColorPickerFrame.opacity = colorPickerData.startColors.a
+		ColorPickerFrame.opacityFunc = function()
+			PickerButtonUpdate()
+			colorPickerData.onOpacityUpdate()
+		end
+	end
+	--Reset
+	ColorPickerFrame.cancelFunc = function() --Using colorPickerData.startColors instead of ColorPickerFrame.previousValues[i]
+		colorPickerData.activeColorPicker:SetBackdropColor(
+			colorPickerData.startColors.r,
+			colorPickerData.startColors.g,
+			colorPickerData.startColors.b,
+			colorPickerData.startColors.a or 1
+		)
+		colorPickerData.onCancel()
+	end
+	--Ready
+	ColorPickerFrame:Show()
+end
+---Add a color picker button child to a custom color picker frame
+---@param t table Parameters are to be provided in this table
+--- - **picker** [FrameType](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types) — The frame to set as the parent of the new color picker button
+--- - **setColors** function — The function to be called to set the colors of the color picker on load or update
+--- 	- @*return* **r** number ― Red (Range: 0 - 1)
+--- 	- @*return* **g** number ― Green (Range: 0 - 1)
+--- 	- @*return* **b** number ― Blue (Range: 0 - 1)
+--- 	- @*return* **a**? number *optional* ― Opacity (Range: 0 - 1, Default: 1)
+--- - **onColorUpdate** function — The function to be called when the color has been changed
+--- - **onOpacityUpdate**? function *optinal* — The function to be called when the opacity is changed
+--- - **onCancel** function — The function to be called when the color change is cancelled
+---@return Button pickerButton
+local function AddColorPickerButton(t)
+	local pickerButton = CreateFrame("Button", t.picker:GetName() .. "ColorPicker", t.picker, BackdropTemplateMixin and "BackdropTemplate")
+	--Position & dimensions
+	pickerButton:SetPoint("TOPLEFT", 0, -18)
+	pickerButton:SetSize(34, 18)
+	--Art
+	local r, g, b, a = t.setColors()
+	pickerButton:SetBackdrop({
+		bgFile = "Interface/ChatFrame/ChatFrameBackground",
+		edgeFile = "Interface/ChatFrame/ChatFrameBackground",
+		tile = true, tileSize = 5, edgeSize = 1,
+		insets = { left = 0, right = 0, top = 0, bottom = 0 }
+	})
+	pickerButton:SetBackdropColor(r, g, b, a or 1)
+	pickerButton:SetBackdropBorderColor(0.4, 0.4, 0.4, 0.8)
+	--Events & behaviour
+	pickerButton:SetScript("OnEnter", function(self) self:SetBackdropBorderColor(0.7, 0.7, 0.7, 0.8) end)
+	pickerButton:SetScript("OnLeave", function(self) self:SetBackdropBorderColor(0.4, 0.4, 0.4, 0.8) end)
+	pickerButton:SetScript("OnClick", function()
+		local red, green, blue, alpha = t.setColors()
+		colorPickerData = {
+			activeColorPicker = pickerButton,
+			startColors = { r = red, g = green, b = blue, a = alpha },
+			onColorUpdate = t.onColorUpdate,
+			onOpacityUpdate = t.onOpacityUpdate,
+			onCancel = t.onCancel
+		}
+		OpenColorPicker()
+	end)
+	pickerButton:HookScript("OnClick", function() PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON) end)
+	--Tooltip
+	pickerButton:HookScript("OnEnter", function()
+		local tooltip = strings.color.picker.tooltip
+		if a ~= nil and t.onOpacityUpdate ~= nil then
+			tooltip = strings.color.picker.tooltip:gsub("#ALPHA", strings.color.picker.alpha)
+		else
+			tooltip = strings.color.picker.tooltip:gsub("#ALPHA", "")
+		end
+		AddTooltip(movSpeedTooltip, pickerButton, "ANCHOR_TOPLEFT", strings.color.picker.label, tooltip, nil, 20, nil)
+	end)
+	pickerButton:HookScript("OnLeave", function() movSpeedTooltip:Hide() end)
+	return pickerButton
 end
 ---Set up the built-in Color Picker and create a button as a child of an options frame to open it
 ---@param t table Parameters are to be provided in this table
@@ -773,7 +902,6 @@ end
 --- 		- **r** number ― Red (Range: 0 - 1)
 --- 		- **g** number ― Green (Range: 0 - 1)
 --- 		- **b** number ― Blue (Range: 0 - 1)
---- - **opacity** boolean ― Whether the Color Picker should have an opacity slider or not
 --- - **setColors** function — The function to be called to set the colors of the color picker on load or update
 --- 	- @*return* **r** number ― Red (Range: 0 - 1)
 --- 	- @*return* **g** number ― Green (Range: 0 - 1)
@@ -782,71 +910,62 @@ end
 --- - **onColorUpdate** function — The function to be called when the color has been changed
 --- - **onOpacityUpdate**? function *optinal* — The function to be called when the opacity is changed
 --- - **onCancel** function — The function to be called when the color change is cancelled
+---@return Frame pickerFrame
 ---@return Button pickerButton
+---@return EditBox pickerBox
 local function CreateColorPicker(t)
-	local pickerButton = CreateFrame("Button", t.parent:GetName() .. t.label:gsub("%s+", "") .. "ColorPicker", t.parent, BackdropTemplateMixin and "BackdropTemplate")
+	local pickerFrame = CreateFrame("Frame", t.parent:GetName() .. t.label:gsub("%s+", "") .. "PickerFrame", t.parent)
 	--Position & dimensions
-	PositionFrame(pickerButton, t.position.anchor, t.position.relativeTo, t.position.relativePoint, (t.position.offset or {}).x, (t.position.offset or {}).y - 16)
-	pickerButton:SetSize((t.size or {}).width or 16, (t.size or {}).height or 16)
-	local r, g, b, a = t.setColors()
-	--Art
-	pickerButton:SetBackdrop({
-		bgFile = "Interface/ChatFrame/ChatFrameBackground",
-		edgeFile = "Interface/ChatFrame/ChatFrameBackground",
-		tile = true, tileSize = 5, edgeSize = 1,
-		insets = { left = 0, right = 0, top = 0, bottom = 0 }
-	})
-	pickerButton:SetBackdropColor(r, g, b, a or 1)
-	pickerButton:SetBackdropBorderColor(0.4, 0.4, 0.4, 0.8)
+	local frameWidth = (t.size or {}).width or 120
+	PositionFrame(pickerFrame, t.position.anchor, t.position.relativeTo, t.position.relativePoint, (t.position.offset or {}).x, (t.position.offset or {}).y)
+	pickerFrame:SetSize(frameWidth, (t.size or {}).height or 36)
 	--Title
 	AddTitle({
-		frame = pickerButton,
+		frame = pickerFrame,
 		title = {
 			text = t.label,
-			offset = { x = 4, y = 16 },
+			offset = { x = 4, y = 0 },
 			template = "GameFontNormal"
 		}
 	})
-	--Tooltip
-	pickerButton:HookScript("OnEnter", function() AddTooltip(pickerButton, "ANCHOR_TOPLEFT", strings.color.pick, strings.color.tooltip, t.tooltip, 20, nil)	end)
-	pickerButton:HookScript("OnLeave", function() tooltip:Hide() end)
-	--Events & behaviour
-	pickerButton:SetScript("OnEnter", function(self) self:SetBackdropBorderColor(0.7, 0.7, 0.7, 0.8) end)
-	pickerButton:SetScript("OnLeave", function(self) self:SetBackdropBorderColor(0.4, 0.4, 0.4, 0.8) end)
-	pickerButton:SetScript("OnClick", function() --Set up & open Blizzard Color Picker
-		local function PickerButtonUpdate() --Update the color picker background color
-			local red, green, blue = ColorPickerFrame:GetColorRGB()
-			pickerButton:SetBackdropColor(red, green, blue, OpacitySliderFrame:GetValue() or 1)
+	--Add color picker button to open the Blizzard Color Picker
+	local pickerButton = AddColorPickerButton({
+		picker = pickerFrame,
+		setColors = t.setColors,
+		onColorUpdate = t.onColorUpdate,
+		onOpacityUpdate = t.onOpacityUpdate,
+		onCancel = t.onCancel
+	})
+	--Add edit box to change the color via HEX code
+	local _, _, x, aa = t.setColors()
+	if aa ~= nil and t.onOpacityUpdate ~= nil then
+		x = 2
+		aa = "AA"
+	else
+		x = 0
+		aa = ""
+	end
+	local pickedBox = CreateEditBox({
+		parent = pickerFrame,
+		position = {
+			anchor = "TOPLEFT",
+			offset = { x = 44, y = 0 }
+		},
+		size = { width = frameWidth - 44 },
+		maxLetters = 7 + x,
+		text = "#" .. "", --TODO: Set the text to the current color
+		label = strings.color.hex.label,
+		title = false,
+		tooltip = strings.color.hex.tooltip .. "\n\n" .. strings.misc.example .. ": #2266BB" .. aa,
+		onEnterPressed = function(self)
+			--TODO: Update the color with the code entered
+		end,
+		onEscapePressed = function(self)
+			self:SetText("") --TODO: Update text with the current color
 		end
-		r, g, b, a = t.setColors()
-		--RGB
-		ColorPickerFrame:SetColorRGB(r, g, b)
-		ColorPickerFrame.previousValues = {r, g, b, a or 1}
-		ColorPickerFrame.func = function()
-			PickerButtonUpdate()
-			t.onColorUpdate()
-		end
-		--Alpha
-		ColorPickerFrame.hasOpacity = t.opacity
-		if ColorPickerFrame.hasOpacity then
-			ColorPickerFrame.opacity = a or 1
-			ColorPickerFrame.opacityFunc = function()
-				PickerButtonUpdate()
-				if t.onOpacityUpdate ~= nil then t.onOpacityUpdate() end
-			end
-		end
-		--Reset
-		ColorPickerFrame.cancelFunc = function()
-			pickerButton:SetBackdropColor(ColorPickerFrame.previousValues[1], ColorPickerFrame.previousValues[2], ColorPickerFrame.previousValues[3], ColorPickerFrame.previousValues[4])
-			t.onCancel()
-		end
-		--Ready
-		ColorPickerFrame:Show()
-	end)
-	pickerButton:HookScript("OnClick", function() PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON) end)
-	return pickerButton
+	})
+	return pickerFrame, pickerButton, pickedBox
 end
---FIXME: Stop the separate color pickers from interfering with each other
 
 --[[ GUI OPTIONS ]]
 
@@ -921,19 +1040,6 @@ local function CreateAppearanceOptions(parentFrame)
 		tooltip = strings.options.appearance.hidden.tooltip,
 		onClick = function(self) FlipVisibility(self:GetChecked()) end
 	})
-	--Checkbox: Backdrop
-	options.appearance.backdrop.visible = CreateCheckbox({
-		parent = parentFrame,
-		position = {
-			anchor = "TOPLEFT",
-			relativeTo = options.appearance.hidden,
-			relativePoint = "BOTTOMLEFT",
-			offset = { x = 0, y = -4 }
-		},
-		label = strings.options.appearance.backdrop.label,
-		tooltip = strings.options.appearance.backdrop.tooltip,
-		onClick = function(self) SetDisplayBackdrop(self:GetChecked()) end
-	})
 	--Color Picker: Background color
 	local function UpdateFontColor()
 		if movSpeedBackdrop:GetBackdrop() ~= nil then
@@ -941,7 +1047,7 @@ local function CreateAppearanceOptions(parentFrame)
 			movSpeedBackdrop:SetBackdropColor(r, g, b, OpacitySliderFrame:GetValue() or 1)
 		end
 	end
-	options.appearance.backdrop.color = CreateColorPicker({
+	_, options.appearance.backdrop.color = CreateColorPicker({
 		parent = parentFrame,
 		position = {
 			anchor = "TOP",
@@ -955,7 +1061,29 @@ local function CreateAppearanceOptions(parentFrame)
 		end,
 		onColorUpdate = UpdateFontColor,
 		onOpacityUpdate = UpdateFontColor,
-		onCancel = function() if movSpeedBackdrop:GetBackdrop() ~= nil then movSpeedBackdrop:SetBackdropColor(ColorPickerFrame.previousValues[1], ColorPickerFrame.previousValues[2], ColorPickerFrame.previousValues[3], ColorPickerFrame.previousValues[4]) end end
+		onCancel = function()
+			if movSpeedBackdrop:GetBackdrop() ~= nil then
+				movSpeedBackdrop:SetBackdropColor(
+					db.appearance.backdrop.color.r,
+					db.appearance.backdrop.color.g,
+					db.appearance.backdrop.color.b,
+					db.appearance.backdrop.color.a
+				)
+			end
+		end
+	})
+	--Checkbox: Backdrop
+	options.appearance.backdrop.visible = CreateCheckbox({
+		parent = parentFrame,
+		position = {
+			anchor = "TOPLEFT",
+			relativeTo = options.appearance.hidden,
+			relativePoint = "BOTTOMLEFT",
+			offset = { x = 0, y = -4 }
+		},
+		label = strings.options.appearance.backdrop.label,
+		tooltip = strings.options.appearance.backdrop.tooltip,
+		onClick = function(self) SetDisplayBackdrop(self:GetChecked(), options.appearance.backdrop.color:GetBackdropColor()) end
 	})
 end
 local function CreateFontOptions(parentFrame)
@@ -1005,7 +1133,7 @@ local function CreateFontOptions(parentFrame)
 		local r, g, b = ColorPickerFrame:GetColorRGB()
 		textDisplay:SetTextColor(r, g, b, OpacitySliderFrame:GetValue() or 1)
 	end
-	options.font.color = CreateColorPicker({
+	_, options.font.color = CreateColorPicker({
 		parent = parentFrame,
 		position = {
 			anchor = "TOPRIGHT",
@@ -1016,7 +1144,7 @@ local function CreateFontOptions(parentFrame)
 		setColors = function() return textDisplay:GetTextColor() end,
 		onColorUpdate = UpdateFontColor,
 		onOpacityUpdate = UpdateFontColor,
-		onCancel = function() textDisplay:SetTextColor(ColorPickerFrame.previousValues[1], ColorPickerFrame.previousValues[2], ColorPickerFrame.previousValues[3], ColorPickerFrame.previousValues[4]) end
+		onCancel = function() textDisplay:SetTextColor(db.font.color.r, db.font.color.g, db.font.color.b, db.font.color.a) end
 	})
 end
 --Category frames
@@ -1042,7 +1170,7 @@ local function CreateCategoryPanels(parentFrame)
 			relativePoint = "BOTTOMLEFT",
 			offset = { x = 0, y = -32 }
 		},
-		size = { height = 116 },
+		size = { height = 112 },
 		title = strings.options.appearance.title,
 		description = strings.options.appearance.description
 	})
@@ -1122,7 +1250,12 @@ local function Refresh()
 	--Appearance
 	options.appearance.hidden:SetChecked(db.appearance.hidden)
 	options.appearance.backdrop.visible:SetChecked(db.appearance.backdrop.visible)
-	options.appearance.backdrop.color:GetBackdropColor(db.appearance.backdrop.color.r, db.appearance.backdrop.color.g, db.appearance.backdrop.color.b, db.appearance.backdrop.color.a)
+	options.appearance.backdrop.color:SetBackdropColor(
+		db.appearance.backdrop.color.r,
+		db.appearance.backdrop.color.g,
+		db.appearance.backdrop.color.b,
+		db.appearance.backdrop.color.a
+	)
 	--Font
 	UIDropDownMenu_SetSelectedValue(options.font.family, GetFontID(db.font.family))
 	UIDropDownMenu_SetText(options.font.family, fonts[GetFontID(db.font.family)].text)
@@ -1163,27 +1296,27 @@ local function SetUpMainDisplayFrame()
 	SetDisplaySize(db.font.size)
 	movSpeedBackdrop:SetPoint("CENTER")
 	--Text
-	textDisplay:SetPoint("CENTER")
+	textDisplay:SetPoint("CENTER") --TODO: Add font offset option to fine-tune the position (AND/OR, ad pre-tested offsets to keep each font in the center)
 	--Visual elements
 	SetDisplayValues()
 end
 local function SetUpTooltip()
-	tooltip:SetFrameStrata("DIALOG")
-	tooltip:SetScale(0.9)
+	movSpeedTooltip:SetFrameStrata("DIALOG")
+	movSpeedTooltip:SetScale(0.9)
 	--Title font
-	tooltip:AddFontStrings(
-		tooltip:CreateFontString(tooltip:GetName() .. "TextLeft1", nil, "GameTooltipHeaderText"),
-		tooltip:CreateFontString(tooltip:GetName() .. "TextRight1", nil, "GameTooltipHeaderText")
+	movSpeedTooltip:AddFontStrings(
+		movSpeedTooltip:CreateFontString(movSpeedTooltip:GetName() .. "TextLeft1", nil, "GameTooltipHeaderText"),
+		movSpeedTooltip:CreateFontString(movSpeedTooltip:GetName() .. "TextRight1", nil, "GameTooltipHeaderText")
 	)
-	_G[tooltip:GetName() .. "TextLeft1"]:SetFontObject(GameTooltipHeaderText) --TODO: It's not the right font object (too big), find another one that mathces (or create a custom one)
-	_G[tooltip:GetName() .. "TextRight1"]:SetFontObject(GameTooltipHeaderText)
+	_G[movSpeedTooltip:GetName() .. "TextLeft1"]:SetFontObject(GameTooltipHeaderText) --TODO: It's not the right font object (too big), find another one that mathces (or create a custom one)
+	_G[movSpeedTooltip:GetName() .. "TextRight1"]:SetFontObject(GameTooltipHeaderText)
 	--Text font
-	tooltip:AddFontStrings(
-		tooltip:CreateFontString(tooltip:GetName() .. "TextLeft" .. 2, nil, "GameTooltipTextSmall"),
-		tooltip:CreateFontString(tooltip:GetName() .. "TextRight" .. 2, nil, "GameTooltipTextSmall")
+	movSpeedTooltip:AddFontStrings(
+		movSpeedTooltip:CreateFontString(movSpeedTooltip:GetName() .. "TextLeft" .. 2, nil, "GameTooltipTextSmall"),
+		movSpeedTooltip:CreateFontString(movSpeedTooltip:GetName() .. "TextRight" .. 2, nil, "GameTooltipTextSmall")
 	)
-	_G[tooltip:GetName() .. "TextLeft" .. 2]:SetFontObject(GameTooltipTextSmall)
-	_G[tooltip:GetName() .. "TextRight" .. 2]:SetFontObject(GameTooltipTextSmall)
+	_G[movSpeedTooltip:GetName() .. "TextLeft" .. 2]:SetFontObject(GameTooltipTextSmall)
+	_G[movSpeedTooltip:GetName() .. "TextRight" .. 2]:SetFontObject(GameTooltipTextSmall)
 end
 
 --Making the frame moveable
