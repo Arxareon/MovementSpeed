@@ -50,7 +50,7 @@ ns.english = {
 				tooltip = {
 					[0] = "Select the font of the displayed percentage value.",
 					[1] = "The default option is the font used by Blizzard.",
-					[2] = "\nYou may set the #OPTION_CUSTOM option to any font of your liking by replacing the #FILE_CUSTOM file with another TrueType Font file found in:", --\n represents the newline character, and # flags will be replaced with code
+					[2] = "You may set the #OPTION_CUSTOM option to any font of your liking by replacing the #FILE_CUSTOM file with another TrueType Font file found in:", --# flags will be replaced with code
 					[3] = "while keeping the original #FILE_CUSTOM name.", --# flags will be replaced with code
 					[4] = "You may need to restart the game client after replacing the Custom font.",
 				},
@@ -62,6 +62,19 @@ ns.english = {
 			color = {
 				label = "Font Color",
 			},
+		},
+		backup = {
+			title = "Backup",
+			description = "Import or export MovementSpeed options to save, share or apply them between your accounts.",
+			box = {
+				label = "Import & Export",
+				tooltip = {
+					[0] = "The string in this box contains the currently saved addon preferences and frame positions.",
+					[1] = "Copy it to save, share or use it for another account.",
+					[2] = "If you have a string, just override the text inside this box. Select it, and paste your string here. Press #ENTER to load the data stored in it.", --# flags will be replaced with code
+					[3] = "Note: If you are using a custom font file, that file can not carry over with this string. It will need to be inserted into the addon folder to be applied.",
+				}
+			}
 		},
 	},
 	chat = {

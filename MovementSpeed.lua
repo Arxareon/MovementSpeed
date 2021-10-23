@@ -134,11 +134,11 @@ local function GetFontID(fontPath)
 	return selectedFont
 end
 
----Convert RGB(A) color values (Range 0 - 1) to HEX color code
----@param r number Red (Range 0 - 1)
----@param g number Green (Randem 0 - 1)
----@param b number Blue (Range 0 - 1)
----@param a? number Alpha (Range 0 - 1)
+---Convert RGB(A) color values (Range: 0 - 1) to HEX color code
+---@param r number Red (Range: 0 - 1)
+---@param g number Green (Range: 0 - 1)
+---@param b number Blue (Range: 0 - 1)
+---@param a? number Alpha (Range: 0 - 1)
 ---@return string hex Color code in HEX format (Examples: RGB - "#2266BB", RGBA - "#2266BBAA")
 local function ConvertColorToHex(r, g, b, a)
 	local hex = "#" .. string.format("%02x", math.ceil(r * 255)) .. string.format("%02x", math.ceil(g * 255)) .. string.format("%02x", math.ceil(b * 255))
@@ -366,11 +366,11 @@ end
 ---@param text string String to be shown as the first line of tooltip summary
 ---@param textLines? table Numbered table containing additional string lines to be added to the tooltip text
 --- - **text** string ― Text to be added to the line
---- - **wrap** boolean ― Append the text in a new line or not
 --- - **color**? table *optional* ― RGB colors line
 --- 	- **r** number ― Red (Range: 0 - 1)
 --- 	- **g** number ― Green (Range: 0 - 1)
 --- 	- **b** number ― Blue (Range: 0 - 1)
+--- - **wrap**? boolean *optional* ― Allow wrapping the line (Default: true)
 ---@param offsetX? number (Default: 0)
 ---@param offsetY? number (Default: 0)
 local function AddTooltip(tooltip, owner, anchor, title, text, textLines, offsetX, offsetY)
@@ -389,7 +389,7 @@ local function AddTooltip(tooltip, owner, anchor, title, text, textLines, offset
 			local r = (textLines[i].color or {}).r or colors.ui.normal.r
 			local g = (textLines[i].color or {}).g or colors.ui.normal.g
 			local b = (textLines[i].color or {}).b or colors.ui.normal.b
-			tooltip:AddLine(textLines[i].text, r, g, b, textLines[i].wrap)
+			tooltip:AddLine(textLines[i].text, r, g, b, textLines[i].wrap == nil and true or textLines[i].wrap)
 		end
 	end
 	--Show
@@ -484,7 +484,7 @@ end
 ---@param t table Parameters are to be provided in this table
 --- - **parent** [FrameType](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types) — The frame to set as the parent of the new button
 --- - **name** string — Used for a unique name, it will not be visible
---- - **path** string — Path to the texture file, filenamey
+--- - **path** string — Path to the texture file, filename
 --- - **position** table — Collection of parameters to call [Region:SetPoint()](https://wowwiki-archive.fandom.com/wiki/API_Region_SetPoint#Arguments) with
 --- 	- **anchor** [AnchorPoint](https://wowwiki-archive.fandom.com/wiki/Widget_Anchor_Points#All_sides)
 --- 	- **relativeTo**? [Frame](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types) *optional*
@@ -514,7 +514,7 @@ local function CreateTexture(t)
 	return holder, texture
 end
 
---[ Popup Dialogie Box ]
+--[ Popup Dialogue Box ]
 
 ---Create a popup dialogue with an accept function and cancel button
 ---comment
@@ -557,11 +557,11 @@ end
 --- - **tooltip** string — Text to be shown as the tooltip of the button
 --- - **tooltipExtra**? table *optional* — Additional text lines to be added to the tooltip of the button
 --- 	- **text** string ― Text to be added to the line
---- 	- **wrap** boolean ― Append the text in a new line or not
----	 	- **color**? table *optional* ― RGB colors line
+--- 	- **color**? table *optional* ― RGB colors line
 --- 		- **r** number ― Red (Range: 0 - 1)
 --- 		- **g** number ― Green (Range: 0 - 1)
 --- 		- **b** number ― Blue (Range: 0 - 1)
+--- 	- **wrap**? boolean *optional* ― Allow wrapping the line (Default: true)
 --- - **onClick** function — The function to be called when an [OnClick](https://wowpedia.fandom.com/wiki/UIHANDLER_OnClick) event happens
 ---@return Button button
 local function CreateButton(t)
@@ -612,7 +612,43 @@ local function CreateCheckbox(t)
 	return checkbox
 end
 
---[[ Editbox ]]
+--[[ EditBox ]]
+
+---Create an edit box frame as a child of an options frame
+---@param editBox EditBox Parent frame of [EditBox](https://wowpedia.fandom.com/wiki/UIOBJECT_EditBox) type
+---@param t table Parameters are to be provided in this table
+--- - **multiline** boolean — Set to true if the edit box should be support multiple lines for the string input
+--- - **justify**? table *optional* — Set the justification of the [FontInstance](https://wowwiki-archive.fandom.com/wiki/Widget_API#FontInstance)
+--- 	- **h**? string *optional* — Horizontal: "LEFT"|"RIGHT"|"CENTER" (Default: "LEFT")
+--- 	- **v**? string *optional* — Vertical: "TOP"|"BOTTOM"|"MIDDLE" (Default: "MIDDLE")
+--- - **maxLetters**? number *optional* — The value to set by [EditBox:SetMaxLetters()](https://wowpedia.fandom.com/wiki/API_EditBox_SetMaxLetters) (Default: 0 [no limit])
+--- - **fontObject**? FontString *optional*— Font template object to use (Default: default font template based on the frame template)
+--- - **text**? string *optional* — Text to be shown inside edit box on load
+--- - **onChar**? function *optional* — The function to be called when a character is entered. Can be used for excluding characters via pattern matching.
+--- - **onEnterPressed** function — The function to be called when an [OnEnterPressed](https://wowpedia.fandom.com/wiki/UIHANDLER_OnEnterPressed) event happens
+--- - **onEscapePressed** function — The function to be called when an [OnEscapePressed](https://wowpedia.fandom.com/wiki/UIHANDLER_OnEscapePressed) event happens
+---@return EditBox editBox
+local function SetEditBox(editBox, t)
+	--Font & text
+	editBox:SetMultiLine(t.multiline)
+	if t.fontObject ~= nil then editBox:SetFontObject(t.fontObject) end
+	if t.justify ~= nil then
+		if t.justify.h ~= nil then editBox:SetJustifyH(t.justify.h) end
+		if t.justify.v ~= nil then editBox:SetJustifyV(t.justify.v) end
+	end
+	if t.maxLetters ~= nil then editBox:SetMaxLetters(t.maxLetters) end
+	--Events & behavior
+	editBox:SetAutoFocus(false)
+	editBox:SetScript("OnShow", function(self) self:SetText(t.text or "") end)
+	editBox:SetScript("OnChar", t.onChar)
+	editBox:SetScript("OnEnterPressed", t.onEnterPressed)
+	editBox:HookScript("OnEnterPressed", function(self)
+		PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+		self:ClearFocus()
+	end)
+	editBox:SetScript("OnEscapePressed", t.onEscapePressed)
+	editBox:HookScript("OnEscapePressed", function(self) self:ClearFocus() end)
+end
 
 ---Create an edit box frame as a child of an options frame
 ---@param t table Parameters are to be provided in this table
@@ -624,10 +660,7 @@ end
 --- 	- **offset**? table *optional*
 --- 		- **x** number
 --- 		- **y** number
---- - **size** table
---- 	- **width** number
---- 	- **height**? number *optional* — (Default: 17)
---- - **multiline**? boolean *optional* — Set to true if the edit box should be support multiple lines for the string input (Default: false)
+--- - **width** number
 --- - **justify**? table *optional* — Set the justification of the [FontInstance](https://wowwiki-archive.fandom.com/wiki/Widget_API#FontInstance)
 --- 	- **h**? string *optional* — Horizontal: "LEFT"|"RIGHT"|"CENTER" (Default: "LEFT")
 --- 	- **v**? string *optional* — Vertical: "TOP"|"BOTTOM"|"MIDDLE" (Default: "MIDDLE")
@@ -635,36 +668,24 @@ end
 --- - **fontObject**? FontString *optional*— Font template object to use (Default: default font template based on the frame template)
 --- - **text**? string *optional* — Text to be shown inside edit box on load
 --- - **label** string — Name of the edit box to be shown as the tooltip title and optionally as the title text
---- - **title**? boolean *optional* — Wether ot not to add a title above the edit box (Default: true)
+--- - **title**? boolean *optional* — Whether or not to add a title above the edit box (Default: true)
 --- - **tooltip** string — Text to be shown as the tooltip of the button
 --- - **tooltipExtra**? table *optional* — Additional text lines to be added to the tooltip of the button
 --- 	- **text** string ― Text to be added to the line
---- 	- **wrap** boolean ― Append the text in a new line or not
----	 	- **color**? table *optional* ― RGB colors line
+--- 	- **color**? table *optional* ― RGB colors line
 --- 		- **r** number ― Red (Range: 0 - 1)
 --- 		- **g** number ― Green (Range: 0 - 1)
 --- 		- **b** number ― Blue (Range: 0 - 1)
---- - **onChar**? function *optional* — The function to be challed when a character is entered. Can be used for excluding characters via pattern matching.
+--- 	- **wrap**? boolean *optional* ― Allow wrapping the line (Default: true)
+--- - **onChar**? function *optional* — The function to be called when a character is entered. Can be used for excluding characters via pattern matching.
 --- - **onEnterPressed** function — The function to be called when an [OnEnterPressed](https://wowpedia.fandom.com/wiki/UIHANDLER_OnEnterPressed) event happens
 --- - **onEscapePressed** function — The function to be called when an [OnEscapePressed](https://wowpedia.fandom.com/wiki/UIHANDLER_OnEscapePressed) event happens
 ---@return EditBox editBox
 local function CreateEditBox(t)
-	local frameTemplate = "InputBoxTemplate"
-	if t.multiline then frameTemplate = "InputScrollFrameTemplate" end
-	print(t.multiline, frameTemplate)
-	local editBox = CreateFrame("EditBox", t.parent:GetName() .. t.label:gsub("%s+", "") .. "EditBox", t.parent, frameTemplate)
+	local editBox = CreateFrame("EditBox", t.parent:GetName() .. t.label:gsub("%s+", "") .. "EditBox", t.parent, "InputBoxTemplate")
 	--Position & dimensions
 	PositionFrame(editBox, t.position.anchor, t.position.relativeTo, t.position.relativePoint, (t.position.offset or {}).x, ((t.position.offset or {}).y or 0) - 18)
-	editBox:SetSize(t.size.width, t.size.height or 17)
-	--Font & text
-	editBox:SetMultiLine(t.multiline or false)
-	if t.fontObject ~= nil then editBox:SetFontObject(t.fontObject) end
-	if t.justify ~= nil then
-		if t.justify.h ~= nil then editBox:SetJustifyH(t.justify.h) end
-		if t.justify.v ~= nil then editBox:SetJustifyV(t.justify.v) end
-	end
-	if t.maxLetters ~= nil then editBox:SetMaxLetters(t.maxLetters) end
-	print(editBox:GetSize())
+	editBox:SetSize(t.size.width, 17)
 	--Title
 	if t.title ~= false then
 		AddTitle({
@@ -679,40 +700,119 @@ local function CreateEditBox(t)
 	--Tooltip
 	editBox:HookScript("OnEnter", function() AddTooltip(movSpeedTooltip, editBox, "ANCHOR_RIGHT", t.label, t.tooltip, t.tooltipExtra, nil, nil) end)
 	editBox:HookScript("OnLeave", function() movSpeedTooltip:Hide() end)
-	--Events & behavior
-	editBox:SetAutoFocus(false)
-	editBox:SetScript("OnShow", function(self) self:SetText(t.text or "") end)
-	editBox:SetScript("OnChar", t.onChar)
-	editBox:SetScript("OnEnterPressed", t.onEnterPressed)
-	editBox:HookScript("OnEnterPressed", function(self)
-		PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
-		self:ClearFocus()
-	end)
-	editBox:SetScript("OnEscapePressed", t.onEscapePressed)
-	editBox:HookScript("OnEscapePressed", function(self) self:ClearFocus() end)
+	--Set up the edit box
+	SetEditBox(editBox, {
+		multiline = false,
+		justify = t.justify,
+		maxLetters = t.maxLetters,
+		fontObject = t.fontObject,
+		text = t.text,
+		onChar = t.onChar,
+		onEnterPressed = t.onEnterPressed,
+		onEscapePressed = t.onEscapePressed
+	})
 	return editBox
+end
+
+---Create an edit box frame as a child of an options frame
+---@param t table Parameters are to be provided in this table
+--- - **parent** [FrameType](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types) — The frame to set as the parent of the edit box
+--- - **position** table — Collection of parameters to call [Region:SetPoint()](https://wowwiki-archive.fandom.com/wiki/API_Region_SetPoint#Arguments) with
+--- 	- **anchor** [AnchorPoint](https://wowwiki-archive.fandom.com/wiki/Widget_Anchor_Points#All_sides)
+--- 	- **relativeTo**? [Frame](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types) *optional*
+--- 	- **relativePoint**? [AnchorPoint](https://wowwiki-archive.fandom.com/wiki/Widget_Anchor_Points#All_sides) *optional*
+--- 	- **offset**? table *optional*
+--- 		- **x** number
+--- 		- **y** number
+--- - **size** table
+--- 	- **width** number
+--- 	- **height**? number *optional* — (Default: 17)
+--- - **justify**? table *optional* — Set the justification of the [FontInstance](https://wowwiki-archive.fandom.com/wiki/Widget_API#FontInstance)
+--- 	- **h**? string *optional* — Horizontal: "LEFT"|"RIGHT"|"CENTER" (Default: "LEFT")
+--- 	- **v**? string *optional* — Vertical: "TOP"|"BOTTOM"|"MIDDLE" (Default: "MIDDLE")
+--- - **maxLetters**? number *optional* — The value to set by [EditBox:SetMaxLetters()](https://wowpedia.fandom.com/wiki/API_EditBox_SetMaxLetters) (Default: 0 [no limit])
+--- - **charCount**? boolean — Show or hide the remaining number of characters (Default: true)
+--- - **fontObject**? FontString *optional*— Font template object to use (Default: default font template based on the frame template)
+--- - **text**? string *optional* — Text to be shown inside edit box on load
+--- - **label** string — Name of the edit box to be shown as the tooltip title and optionally as the title text
+--- - **title**? boolean *optional* — Whether or not to add a title above the edit box (Default: true)
+--- - **tooltip** string — Text to be shown as the tooltip of the button
+--- - **tooltipExtra**? table *optional* — Additional text lines to be added to the tooltip of the button
+--- 	- **text** string ― Text to be added to the line
+--- 	- **color**? table *optional* ― RGB colors line
+--- 		- **r** number ― Red (Range: 0 - 1)
+--- 		- **g** number ― Green (Range: 0 - 1)
+--- 		- **b** number ― Blue (Range: 0 - 1)
+--- 	- **wrap**? boolean *optional* ― Allow wrapping the line (Default: true)
+--- - **onChar**? function *optional* — The function to be called when a character is entered. Can be used for excluding characters via pattern matching.
+--- - **onEnterPressed** function — The function to be called when an [OnEnterPressed](https://wowpedia.fandom.com/wiki/UIHANDLER_OnEnterPressed) event happens
+--- - **onEscapePressed** function — The function to be called when an [OnEscapePressed](https://wowpedia.fandom.com/wiki/UIHANDLER_OnEscapePressed) event happens
+---@return EditBox
+---@return Frame scrollFrame
+local function CreateEditScrollBox(t)
+	local scrollFrame = CreateFrame("ScrollFrame", t.parent:GetName() .. t.label:gsub("%s+", "") .. "EditBox", t.parent, "InputScrollFrameTemplate")
+	--Position & dimensions
+	PositionFrame(scrollFrame, t.position.anchor, t.position.relativeTo, t.position.relativePoint, (t.position.offset or {}).x, ((t.position.offset or {}).y or 0) - 20)
+	scrollFrame:SetSize(t.size.width, t.size.height)
+	local function ResizeEditBox()
+		local scrollBarOffset = _G[scrollFrame:GetName().."ScrollBar"]:IsShown() and 16 or 0
+		local counterOffset = t.charCount ~= false and tostring(t.maxLetters - scrollFrame.EditBox:GetText():len()):len() * 6 + 3 or 0
+		scrollFrame.EditBox:SetWidth(scrollFrame:GetWidth() - scrollBarOffset - counterOffset)
+	end
+	ResizeEditBox()
+	--Character counter
+	if t.charCount == false then scrollFrame.CharCount:Hide() end
+	scrollFrame.CharCount:SetFontObject("GameFontDisableTiny2")
+	--Title
+	if t.title ~= false then
+		AddTitle({
+			frame = scrollFrame,
+			title = {
+				text = t.label,
+				offset = { x = -1, y = 20 },
+				template = "GameFontNormal"
+			}
+		})
+	end
+	--Tooltip
+	scrollFrame.EditBox:HookScript("OnEnter", function() AddTooltip(movSpeedTooltip, scrollFrame, "ANCHOR_RIGHT", t.label, t.tooltip, t.tooltipExtra, nil, nil) end)
+	scrollFrame.EditBox:HookScript("OnLeave", function() movSpeedTooltip:Hide() end)
+	--Set up the EditBox
+	SetEditBox(scrollFrame.EditBox, {
+		multiline = true,
+		justify = t.justify,
+		maxLetters = t.maxLetters,
+		fontObject = t.fontObject or "ChatFontNormal",
+		text = t.text,
+		onChar = t.onChar,
+		onEnterPressed = t.onEnterPressed,
+		onEscapePressed = t.onEscapePressed
+	})
+	scrollFrame.EditBox:HookScript("OnTextChanged", ResizeEditBox)
+	scrollFrame.EditBox:HookScript("OnEditFocusGained", function(self) self:HighlightText() end)
+	scrollFrame.EditBox:HookScript("OnEditFocusLost", function(self) self:HighlightText(0, 0) end)
+	return scrollFrame.EditBox, scrollFrame
 end
 
 --[ Value Slider ]
 
 ---Add a value box as a child to an existing slider frame
----@param t table Parameters are to be provided in this table
---- - **slider** [Slider](https://wowpedia.fandom.com/wiki/UIOBJECT_Slider) — The frame of "Slider" type to set as the parent frame
---- - **value** table
---- 	- **min** number — Lower numeric value limit of the slider
---- 	- **max** number — Upper numeric value limit of the slider
---- 	- **step** number — Numeric value step of the slider
+---@param slider Slider Parent frame of [Slider](https://wowpedia.fandom.com/wiki/UIOBJECT_Slider) type
+---@param value table Parameters are to be provided in this table
+--- - **min** number — Lower numeric value limit of the slider
+--- - **max** number — Upper numeric value limit of the slider
+--- - **step** number — Numeric value step of the slider
 ---@return EditBox valueBox
-local function AddSliderValueBox(t)
-	local valueBox = CreateFrame("EditBox", t.slider:GetName() .. "ValueBox", t.slider, BackdropTemplateMixin and "BackdropTemplate")
+local function AddSliderValueBox(slider, value)
+	local valueBox = CreateFrame("EditBox", slider:GetName() .. "ValueBox", slider, BackdropTemplateMixin and "BackdropTemplate")
 	--Calculate the required number of fractal digits
 	local fractionalDigits = max(
-		tostring(t.value.min - math.floor(t.value.min)):gsub("0%.*([%d]*)", "%1"):len(),
-		tostring(t.value.max - math.floor(t.value.max)):gsub("0%.*([%d]*)", "%1"):len(),
-		tostring(t.value.step - math.floor(t.value.step)):gsub("0%.*([%d]*)", "%1"):len()
+		tostring(value.min - math.floor(value.min)):gsub("0%.*([%d]*)", "%1"):len(),
+		tostring(value.max - math.floor(value.max)):gsub("0%.*([%d]*)", "%1"):len(),
+		tostring(value.step - math.floor(value.step)):gsub("0%.*([%d]*)", "%1"):len()
 	)
 	--Position & dimensions
-	valueBox:SetPoint("TOP", t.slider, "BOTTOM")
+	valueBox:SetPoint("TOP", slider, "BOTTOM")
 	valueBox:SetSize(60, 14)
 	--Art
 	valueBox:SetBackdrop({
@@ -726,22 +826,22 @@ local function AddSliderValueBox(t)
 	--Font & text
 	valueBox:SetFontObject("GameFontHighlightSmall")
 	valueBox:SetJustifyH("CENTER")
-	valueBox:SetMaxLetters(tostring(math.floor(t.value.max)):len() + (fractionalDigits + (fractionalDigits > 0 and 1 or 0))) --(+ 1) for the decimal point (if it's fractional)
+	valueBox:SetMaxLetters(tostring(math.floor(value.max)):len() + (fractionalDigits + (fractionalDigits > 0 and 1 or 0))) --(+ 1) for the decimal point (if it's fractional)
 	--Events & behavior
 	valueBox:SetAutoFocus(false)
-	valueBox:SetScript("OnShow", function(self) self:SetText(t.slider:GetValue()) end)
+	valueBox:SetScript("OnShow", function(self) self:SetText(slider:GetValue()) end)
 	valueBox:SetScript("OnEnter", function(self) self:SetBackdropBorderColor(0.7, 0.7, 0.7, 0.8) end)
 	valueBox:SetScript("OnLeave", function(self) self:SetBackdropBorderColor(0.4, 0.4, 0.4, 0.8) end)
 	valueBox:SetScript("OnEnterPressed", function(self)
-		local value = max(t.value.min, min(t.value.max, floor(self:GetNumber() * (1 / t.value.step) + 0.5) / (1 / t.value.step)))
+		local value = max(value.min, min(value.max, floor(self:GetNumber() * (1 / value.step) + 0.5) / (1 / value.step)))
 		self:SetText(value)
-		t.slider:SetValue(value)
+		slider:SetValue(value)
 	end)
 	valueBox:HookScript("OnEnterPressed", function(self)
 		PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
 		self:ClearFocus()
 	end)
-	valueBox:SetScript("OnEscapePressed", function(self) self:SetText(t.slider:GetValue()) end)
+	valueBox:SetScript("OnEscapePressed", function(self) self:SetText(slider:GetValue()) end)
 	valueBox:HookScript("OnEscapePressed", function(self) self:ClearFocus() end)
 	valueBox:SetScript("OnChar", function(self)
 		if fractionalDigits > 0 then
@@ -750,7 +850,7 @@ local function AddSliderValueBox(t)
 			self:SetText(self:GetText():gsub("%D", ""))
 		end
 	end)
-	t.slider:HookScript("OnValueChanged", function(_, value) valueBox:SetText(value) end)
+	slider:HookScript("OnValueChanged", function(_, value) valueBox:SetText(value) end)
 	return valueBox
 end
 
@@ -797,7 +897,7 @@ local function CreateSlider(t)
 	slider:HookScript("OnMouseUp", function() PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON) end)
 	--Value box
 	if t.valueBox == false then return slider end
-	local valueBox = AddSliderValueBox({ slider = slider, value = { min = t.value.min, max = t.value.max, step = t.value.step } })
+	local valueBox = AddSliderValueBox(slider, { min = t.value.min, max = t.value.max, step = t.value.step })
 	return slider, valueBox
 end
 
@@ -815,15 +915,15 @@ end
 --- 		- **y** number
 --- - **width**? number *optional* — (currently unsupported)
 --- - **label** string — Name of the dropdown shown as the tooltip title and optionally as the title text
---- - **title**? boolean *optional* — Wether ot not to add a title above the dropdown menu (Default: true)
+--- - **title**? boolean *optional* — Whether or not to add a title above the dropdown menu (Default: true)
 --- - **tooltip** string — Text to be shown as the tooltip of the dropdown
 --- - **tooltipExtra**? table *optional* — Additional text lines to be added to the tooltip of the dropdown
 --- 	- **text** string ― Text to be added to the line
---- 	- **wrap** boolean ― Append the text in a new line or not
 --- 	- **color**? table *optional* ― RGB colors line
 --- 		- **r** number ― Red (Range: 0 - 1)
 --- 		- **g** number ― Green (Range: 0 - 1)
 --- 		- **b** number ― Blue (Range: 0 - 1)
+--- 	- **wrap**? boolean *optional* ― Allow wrapping the line (Default: true)
 --- - **items** table — Numbered/indexed table containing the dropdown items
 --- 	- **text** string — Text to represent the items within the dropdown frame
 --- 	- **onSelect** function — The function to be called when a dropdown item is selected
@@ -911,13 +1011,13 @@ local function OpenColorPicker()
 		end
 	end
 	--Reset
-	ColorPickerFrame.cancelFunc = function() --Using colorPickerData.startColors instead of ColorPickerFrame.previousValues[i]
+	ColorPickerFrame.cancelFunc = function()
 		colorPickerData.activeColorPicker:SetBackdropColor(
 			colorPickerData.startColors.r,
 			colorPickerData.startColors.g,
 			colorPickerData.startColors.b,
 			colorPickerData.startColors.a or 1
-		)
+		) --Using colorPickerData.startColors[k] instead of ColorPickerFrame.previousValues[i]
 		colorPickerData.onCancel()
 	end
 	--Ready
@@ -933,7 +1033,7 @@ end
 --- 	- @*return* **b** number ― Blue (Range: 0 - 1)
 --- 	- @*return* **a**? number *optional* ― Opacity (Range: 0 - 1, Default: 1)
 --- - **onColorUpdate** function — The function to be called when the color has been changed
---- - **onOpacityUpdate**? function *optinal* — The function to be called when the opacity is changed
+--- - **onOpacityUpdate**? function *optional* — The function to be called when the opacity is changed
 --- - **onCancel** function — The function to be called when the color change is cancelled
 ---@return Button pickerButton
 local function AddColorPickerButton(t)
@@ -951,11 +1051,11 @@ local function AddColorPickerButton(t)
 	})
 	pickerButton:SetBackdropColor(r, g, b, a or 1)
 	pickerButton:SetBackdropBorderColor(0.4, 0.4, 0.4, 0.8)
-	--Events & behaviour
+	--Events & behavior
 	pickerButton:SetScript("OnEnter", function(self) self:SetBackdropBorderColor(0.7, 0.7, 0.7, 0.8) end)
 	pickerButton:SetScript("OnLeave", function(self) self:SetBackdropBorderColor(0.4, 0.4, 0.4, 0.8) end)
 	pickerButton:SetScript("OnClick", function()
-		local red, green, blue, alpha = t.setColors()
+		local red, green, blue, alpha = pickerButton:GetBackdropColor()
 		colorPickerData = {
 			activeColorPicker = pickerButton,
 			startColors = { r = red, g = green, b = blue, a = alpha },
@@ -996,18 +1096,18 @@ end
 --- - **label** string — Title text to be shown above the color picker button and as the the tooltip label
 --- - **tooltip**? table *optional* — Additional text lines to be added to the tooltip of the color picker button
 --- 	- **text** string ― Text to be added to the line
---- 	- **wrap** boolean ― Append the text in a new line or not
----	 	- **color**? table *optional* ― RGB colors line
+--- 	- **color**? table *optional* ― RGB colors line
 --- 		- **r** number ― Red (Range: 0 - 1)
 --- 		- **g** number ― Green (Range: 0 - 1)
 --- 		- **b** number ― Blue (Range: 0 - 1)
+--- 	- **wrap**? boolean *optional* ― Allow wrapping the line (Default: true)
 --- - **setColors** function — The function to be called to set the colors of the color picker on load or update
 --- 	- @*return* **r** number ― Red (Range: 0 - 1)
 --- 	- @*return* **g** number ― Green (Range: 0 - 1)
 --- 	- @*return* **b** number ― Blue (Range: 0 - 1)
 --- 	- @*return* **a**? number *optional* ― Opacity (Range: 0 - 1, Default: 1)
 --- - **onColorUpdate** function — The function to be called when the color has been changed
---- - **onOpacityUpdate**? function *optinal* — The function to be called when the opacity is changed
+--- - **onOpacityUpdate**? function *optional* — The function to be called when the opacity is changed
 --- - **onCancel** function — The function to be called when the color change is cancelled
 ---@return Frame pickerFrame
 ---@return Button pickerButton
@@ -1044,7 +1144,7 @@ local function CreateColorPicker(t)
 		x = 0
 		a = ""
 	end
-	local pickedBox = CreateEditBox({
+	local hexBox = CreateEditBox({
 		parent = pickerFrame,
 		position = {
 			anchor = "TOPLEFT",
@@ -1066,7 +1166,7 @@ local function CreateColorPicker(t)
 		end,
 		onEscapePressed = function(self) self:SetText(ConvertColorToHex(pickerButton:GetBackdropColor())) end
 	})
-	return pickerFrame, pickerButton, pickedBox
+	return pickerFrame, pickerButton, hexBox
 end
 
 --[[ GUI OPTIONS ]]
@@ -1143,7 +1243,7 @@ local function CreateAppearanceOptions(parentFrame)
 		onClick = function(self) FlipVisibility(self:GetChecked()) end
 	})
 	--Color Picker: Background color
-	local function UpdateFontColor()
+	local function UpdateBackdropColor()
 		if movSpeedBackdrop:GetBackdrop() ~= nil then
 			local r, g, b = ColorPickerFrame:GetColorRGB()
 			movSpeedBackdrop:SetBackdropColor(r, g, b, OpacitySliderFrame:GetValue() or 1)
@@ -1161,8 +1261,8 @@ local function CreateAppearanceOptions(parentFrame)
 			if movSpeedBackdrop:GetBackdrop() ~= nil then return movSpeedBackdrop:GetBackdropColor() end
 			return db.appearance.backdrop.color.r, db.appearance.backdrop.color.g, db.appearance.backdrop.color.b, db.appearance.backdrop.color.a
 		end,
-		onColorUpdate = UpdateFontColor,
-		onOpacityUpdate = UpdateFontColor,
+		onColorUpdate = UpdateBackdropColor,
+		onOpacityUpdate = UpdateBackdropColor,
 		onCancel = function()
 			if movSpeedBackdrop:GetBackdrop() ~= nil then
 				movSpeedBackdrop:SetBackdropColor(
@@ -1197,13 +1297,6 @@ local function CreateFontOptions(parentFrame)
 			textDisplay:SetFont(fonts[i].path, options.font.size:GetValue(), "THINOUTLINE")
 		end
 	end
-	local tooltipLines = {
-		[0] = { text = strings.options.font.family.tooltip[1], wrap = true },
-		[1] = { text = strings.options.font.family.tooltip[2]:gsub("#OPTION_CUSTOM", strings.misc.custom):gsub("#FILE_CUSTOM", "CUSTOM.ttf"), wrap = true },
-		[2] = { text = "[WoW]\\Interface\\AddOns\\MovementSpeed\\Fonts\\", wrap = false, color = { r = 0.185, g = 0.72, b = 0.84 } },
-		[3] = { text = strings.options.font.family.tooltip[3]:gsub("#FILE_CUSTOM", "CUSTOM.ttf"), wrap = true },
-		[4] = { text = strings.options.font.family.tooltip[4], wrap = true, color = { r = 0.89, g = 0.65, b = 0.40 } },
-	}
 	options.font.family = CreateDropdown({
 		parent = parentFrame,
 		position = {
@@ -1212,7 +1305,13 @@ local function CreateFontOptions(parentFrame)
 		},
 		label = strings.options.font.family.label,
 		tooltip = strings.options.font.family.tooltip[0],
-		tooltipExtra = tooltipLines,
+		tooltipExtra = {
+			[0] = { text = strings.options.font.family.tooltip[1] },
+			[1] = { text = "\n" .. strings.options.font.family.tooltip[2]:gsub("#OPTION_CUSTOM", strings.misc.custom):gsub("#FILE_CUSTOM", "CUSTOM.ttf") },
+			[2] = { text = "[WoW]\\Interface\\AddOns\\MovementSpeed\\Fonts\\", color = { r = 0.185, g = 0.72, b = 0.84 }, wrap = false },
+			[3] = { text = strings.options.font.family.tooltip[3]:gsub("#FILE_CUSTOM", "CUSTOM.ttf") },
+			[4] = { text = strings.options.font.family.tooltip[4], color = { r = 0.89, g = 0.65, b = 0.40 } },
+		},
 		items = fontItems,
 	})
 	--Slider: Font size
@@ -1248,24 +1347,30 @@ local function CreateFontOptions(parentFrame)
 		onOpacityUpdate = UpdateFontColor,
 		onCancel = function() textDisplay:SetTextColor(db.font.color.r, db.font.color.g, db.font.color.b, db.font.color.a) end
 	})
-	--TEST
-	-- CreateEditBox({
-	-- 	parent = parentFrame,
-	-- 	position = {
-	-- 		anchor = "TOPLEFT",
-	-- 		offset = { x = 44, y = -100 }
-	-- 	},
-	-- 	size = { width = 200, height = 100 },
-	-- 	multiline = true,
-	-- 	maxLetters = 400,
-	-- 	text = "ConvertColorToHex(t.setColors())ConvertColorToHex(t.setColors())\nConvertColorToHex(t.setColors())\nConvertColorToHex(t.setColors())\nConvertColorToHex(t.setColors())ConvertColorToHex(t.setColors())ConvertColorToHex(t.setColors())\nConvertColorToHex(t.setColors())",
-	-- 	label = "TESTtestTESTtest",
-	-- 	tooltip = strings.color.hex.tooltip .. "\n\n" .. strings.misc.example .. ": #2266BB",
-	-- 	onEnterPressed = function(self)
-	-- 		print(self:GetText():upper())
-	-- 	end,
-	-- 	onEscapePressed = function(self) self:SetText("TWETWTWETW\nTWETWE") end
-	-- })
+end
+local function CreateBackupOptions(parentFrame)
+	--Import & Export Box
+	CreateEditScrollBox({ --TODO: Finish implementing Import & Export
+		parent = parentFrame,
+		position = {
+			anchor = "TOPLEFT",
+			offset = { x = 18, y = -30 }
+		},
+		size = { width = 272, height = 40 },
+		maxLetters = 999,
+		charCount = false,
+		fontObject = "GameFontWhiteSmall",
+		text = "NYI",
+		label = strings.options.backup.box.label,
+		tooltip = strings.options.backup.box.tooltip[0],
+		tooltipExtra = {
+			[0] = { text = strings.options.backup.box.tooltip[1] },
+			[1] = { text = "\n" .. strings.options.backup.box.tooltip[2]:gsub("#ENTER", "ENTER") },
+			[2] = { text = strings.options.backup.box.tooltip[3], color = { r = 0.89, g = 0.65, b = 0.40 } },
+		},
+		onEnterPressed = function(self) print("NYI") end,
+		onEscapePressed = function(self) self:SetText("") end
+	})
 end
 --Category frames
 local function CreateCategoryPanels(parentFrame)
@@ -1309,6 +1414,20 @@ local function CreateCategoryPanels(parentFrame)
 		description = strings.options.font.description
 	})
 	CreateFontOptions(fontOptions)
+	---Backup
+	local backupOptions = CreateCategory({
+		parent = parentFrame,
+		position = {
+			anchor = "TOPLEFT",
+			relativeTo = fontOptions,
+			relativePoint = "BOTTOMLEFT",
+			offset = { x = 0, y = -32 }
+		},
+		size = { height = 106 },
+		title = strings.options.backup.title,
+		description = strings.options.backup.description
+	})
+	CreateBackupOptions(backupOptions)
 end
 --Main options frame
 local function CreateOptionsPanel()
@@ -1435,7 +1554,7 @@ local function SetUpTooltip()
 		movSpeedTooltip:CreateFontString(movSpeedTooltip:GetName() .. "TextLeft1", nil, "GameTooltipHeaderText"),
 		movSpeedTooltip:CreateFontString(movSpeedTooltip:GetName() .. "TextRight1", nil, "GameTooltipHeaderText")
 	)
-	_G[movSpeedTooltip:GetName() .. "TextLeft1"]:SetFontObject(GameTooltipHeaderText) --TODO: It's not the right font object (too big), find another one that mathces (or create a custom one)
+	_G[movSpeedTooltip:GetName() .. "TextLeft1"]:SetFontObject(GameTooltipHeaderText) --TODO: It's not the right font object (too big), find another one that matches (or create a custom one)
 	_G[movSpeedTooltip:GetName() .. "TextRight1"]:SetFontObject(GameTooltipHeaderText)
 	--Text font
 	movSpeedTooltip:AddFontStrings(
@@ -1448,16 +1567,16 @@ end
 
 --Making the frame moveable
 movSpeed:SetMovable(true)
-movSpeedBackdrop:SetScript("OnMouseDown", function(self)
-	if (IsShiftKeyDown() and not self.isMoving) then
+movSpeedBackdrop:SetScript("OnMouseDown", function()
+	if (IsShiftKeyDown() and not movSpeed.isMoving) then
 		movSpeed:StartMoving()
-		self.isMoving = true
+		movSpeed.isMoving = true
 	end
 end)
-movSpeedBackdrop:SetScript("OnMouseUp", function(self)
-	if (self.isMoving) then
+movSpeedBackdrop:SetScript("OnMouseUp", function()
+	if (movSpeed.isMoving) then
 		movSpeed:StopMovingOrSizing()
-		self.isMoving = false
+		movSpeed.isMoving = false
 	end
 end)
 
@@ -1541,17 +1660,16 @@ local function LoadDB()
 	RestoreOldData() --Save old data
 end
 function movSpeed:ADDON_LOADED(addon)
-	if addon == "MovementSpeed" then
-		movSpeed:UnregisterEvent("ADDON_LOADED")
-		--Load & check the DB
-		LoadDB()
-		--Set up the main frame & text
-		SetUpMainDisplayFrame()
-		--Set up the addon tooltip
-		SetUpTooltip()
-		--Set up the interface options
-		LoadInterfaceOptions()
-	end
+	if addon ~= "MovementSpeed" then return end
+	movSpeed:UnregisterEvent("ADDON_LOADED")
+	--Load & check the DB
+	LoadDB()
+	--Set up the main frame & text
+	SetUpMainDisplayFrame()
+	--Set up the addon tooltip
+	SetUpTooltip()
+	--Set up the interface options
+	LoadInterfaceOptions()
 end
 function movSpeed:PLAYER_LOGIN()
 	if not movSpeed:IsShown() then
