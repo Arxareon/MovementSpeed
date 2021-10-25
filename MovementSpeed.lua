@@ -101,7 +101,6 @@ end)
 
 --[[ UTILITIES ]]
 
---Table management utilities
 local function Dump(object)
 	if type(object) ~= "table" then
 		print(object)
@@ -111,6 +110,8 @@ local function Dump(object)
 		Dump(v)
 	end
 end
+
+--Make a new deep copy (not reference) of a table
 local function Clone(object)
 	if type(object) ~= "table" then
 		return object
@@ -120,6 +121,86 @@ local function Clone(object)
 		copy[k] = Clone(v)
 	end
 	return copy
+end
+
+---Convert table to string chunk
+--- - Note: append "return " to the start when loading via [load()](https://www.lua.org/manual/5.2/manual.html#lua_load).
+---@param table table
+---@param compact boolean
+---@return string
+local function TableToString(table, compact)
+	local s = ((compact ~= true) and " " or "")
+	local chunk = "{" .. s
+	for k, v in pairs(table) do
+		--Key
+		chunk = chunk .. "[" .. (type(k) == "string" and "\"" or "") .. k .. (type(k) == "string" and "\"" or "") .. "]"
+		--Add =
+		chunk = chunk .. s .. "=" .. s
+		--Value
+		if type(v) == "table" then
+			chunk = chunk .. TableToString(v, compact)
+		elseif type(v) == "string" then
+			chunk = chunk .. "\"" .. v .. "\""
+		else
+			chunk = chunk .. tostring(v)
+		end
+		--Add separator
+		chunk = chunk .. "," .. s
+	end
+	return ((chunk .. "}"):gsub("," .. s .. "}",  s .. "}"))
+end
+
+--DB checkup and fix
+local oldData = {}
+local function RemoveEmpty(dbToCheck) --Remove all nil and empty items from the table
+	if type(dbToCheck) ~= "table" then return end
+	for k, v in pairs(dbToCheck) do
+		if type(v) == "table" then
+			if next(v) == nil then --The subtable is empty
+				dbToCheck[k] = nil --Remove the empty subtable
+			else
+				RemoveEmpty(v)
+			end
+		elseif v == nil or v == "" then --The value is empty or doesn't exist
+			dbToCheck[k] = nil --Remove the key value pair
+		end
+	end
+end
+local function AddMissing(dbToCheck, dbToSample) --Check for and fill in missing data
+	if type(dbToCheck) ~= "table" and type(dbToSample) ~= "table" then return end
+	if next(dbToSample) == nil then return end --The sample table is empty
+	for k, v in pairs(dbToSample) do
+		if dbToCheck[k] == nil then --The sample key doesn't exist in the table to check
+			if v ~= nil and v ~= "" then
+				dbToCheck[k] = v --Add the item if the value is not empty or nil
+			end
+		else
+			AddMissing(dbToCheck[k], dbToSample[k])
+		end
+	end
+end
+local function RemoveMismatch(dbToCheck, dbToSample) --Remove unused or outdated data while trying to keep any old data
+	if type(dbToCheck) ~= "table" and type(dbToSample) ~= "table" then return end
+	if next(dbToCheck) == nil then return end --The table to check is empty
+	for k, v in pairs(dbToCheck) do
+		if dbToSample[k] == nil then --The checked key doesn't exist in the sample table
+			oldData[k] = v --Add the item to the old data to be restored
+			dbToCheck[k] = nil --Remove the unneeded item
+		else
+			RemoveMismatch(dbToCheck[k], dbToSample[k])
+		end
+	end
+end
+local function RestoreOldData(dbToSaveTo) --Restore old data to the DB by matching removed items to known old keys
+	for k,v in pairs(oldData) do
+		if k == "offsetX" then
+			dbToSaveTo.position.offset.x = v
+		elseif k == "offsetY" then
+			dbToSaveTo.position.offset.y = v
+		elseif k == "hidden" then
+			dbToSaveTo.appearance.hidden = v
+		end
+	end
 end
 
 --Find the ID of the font provided
@@ -140,7 +221,7 @@ end
 ---@param b number Blue (Range: 0 - 1)
 ---@param a? number Alpha (Range: 0 - 1)
 ---@return string hex Color code in HEX format (Examples: RGB - "#2266BB", RGBA - "#2266BBAA")
-local function ConvertColorToHex(r, g, b, a)
+local function ColorToHex(r, g, b, a)
 	local hex = "#" .. string.format("%02x", math.ceil(r * 255)) .. string.format("%02x", math.ceil(g * 255)) .. string.format("%02x", math.ceil(b * 255))
 	if a ~= nil then hex = hex .. string.format("%02x", math.ceil(a * 255)) end
 	return hex:upper()
@@ -151,7 +232,7 @@ end
 ---@return number g Green value (Range: 0 - 1)
 ---@return number b Blue value (Range: 0 - 1)
 ---@return number? a Alpha value (Range: 0 - 1)
-local function ConvertHexToColor(hex)
+local function HexToColor(hex)
 	hex = hex:gsub("#", "")
 	if hex:len() ~= 6 and hex:len() ~= 8 then return nil end
 	local r = tonumber(hex:sub(1, 2), 16) / 255
@@ -230,109 +311,23 @@ local function SetDisplayBackdrop(toggle, r, g, b, a)
 	end
 end
 
---Set the visibility, backdrop, font family, size and color of the main display to the currently saved values
-local function SetDisplayValues()
+---Set the visibility, backdrop, font family, size and color of the main display to the currently saved values
+---@param data table DB table to set the main display values from
+local function SetDisplayValues(data)
 	--Visibility
-	FlipVisibility(db.appearance.hidden)
+	FlipVisibility(data.appearance.hidden)
 	--Backdrop
-	SetDisplaySize(db.font.size)
-	SetDisplayBackdrop(db.appearance.backdrop.visible)
+	SetDisplaySize(data.font.size)
+	SetDisplayBackdrop(
+		data.appearance.backdrop.visible,
+		data.appearance.backdrop.color.r,
+		data.appearance.backdrop.color.g,
+		data.appearance.backdrop.color.b,
+		data.appearance.backdrop.color.a
+	)
 	--Font
-	textDisplay:SetFont(db.font.family, db.font.size, "THINOUTLINE")
-	textDisplay:SetTextColor(db.font.color.r, db.font.color.g, db.font.color.b, db.font.color.a)
-end
-
-
---[[ CHAT CONTROL ]]
-
-local keyword = "/movespeed"
-
---Print utilities
-local function PrintStatus()
-	local visibility
-	if movSpeed:IsShown() then
-		visibility = strings.chat.show.response
-	else
-		visibility = strings.chat.hide.response
-	end
-	print(colors.sg .. addon .. ": " .. colors.ly .. visibility)
-end
-local function PrintHelp()
-	print(colors.sy .. strings.chat.help.thanks:gsub("#ADDON", colors.sg .. addon .. colors.sy))
-	PrintStatus()
-	print(colors.ly .. strings.chat.help.hint:gsub("#HELP_COMMAND", colors.lg .. keyword .. " " .. strings.chat.help.command .. colors.ly))
-	print(colors.ly .. strings.chat.help.move:gsub("#SHIFT", colors.lg .. "SHIFT" .. colors.ly))
-end
-local function PrintCommands()
-	PrintStatus()
-	print(colors.sg .. addon .. colors.ly .. " ".. strings.chat.help.list .. ":")
-	--Index the commands (skipping the help command) and put replacement code segments in place
-	local commands = {
-		[0] = {
-			command = strings.chat.reset.command,
-			description = strings.chat.reset.description,
-		},
-		[1] = {
-			command = strings.chat.save.command,
-			description = strings.chat.save.description,
-		},
-		[2] = {
-			command = strings.chat.default.command,
-			description = strings.chat.default.description,
-		},
-		[3] = {
-			command = strings.chat.hide.command,
-			description = strings.chat.hide.description,
-		},
-		[4] = {
-			command = strings.chat.show.command,
-			description = strings.chat.show.description,
-		},
-		[5] = {
-			command = strings.chat.size.command,
-			description =  strings.chat.size.description:gsub("#SIZE_DEFAULT", colors.lg .. strings.chat.size.command .. " " .. defaultDB.font.size .. colors.ly),
-		},
-	}
-	--Print the list
-	for i = 0, #commands do
-		print("    " .. colors.lg .. keyword .. " " .. commands[i].command .. colors.ly .. " - " .. commands[i].description)
-	end
-end
-
---Slash command handler
-SLASH_MOVESPEED1 = keyword
-function SlashCmdList.MOVESPEED(line)
-	local command, parameter = strsplit(" ", line)
-	if command == strings.chat.help.command then
-		PrintCommands()
-	elseif command == strings.chat.reset.command then
-		ResetPosition()
-	elseif command == strings.chat.save.command then
-		SavePosition()
-	elseif command == strings.chat.default.command then
-		DefaultPreset()
-	elseif command == strings.chat.hide.command then
-		db.appearance.hidden = true
-		movSpeed:Hide()
-		PrintStatus()
-	elseif command == strings.chat.show.command then
-		db.appearance.hidden = false
-		movSpeed:Show()
-		PrintStatus()
-	elseif command == strings.chat.size.command then
-		local size = tonumber(parameter)
-		if size ~= nil then
-			db.font.size = size
-			textDisplay:SetFont(db.font.family, db.font.size, "THINOUTLINE")
-			SetDisplaySize(size)
-			print(colors.sg .. addon .. ": " .. colors.ly .. strings.chat.size.response:gsub("#VALUE", size))
-		else
-			print(colors.sg .. addon .. ": " .. colors.ly .. strings.chat.size.unchanged)
-			print(colors.ly .. strings.chat.size.error:gsub("#SIZE_DEFAULT", colors.lg .. strings.chat.size.command .. " " .. defaultDB.font.size .. colors.ly))
-		end
-	else
-		PrintHelp()
-	end
+	textDisplay:SetFont(data.font.family, data.font.size, "THINOUTLINE")
+	textDisplay:SetTextColor(data.font.color.r, data.font.color.g, data.font.color.b, data.font.color.a)
 end
 
 
@@ -682,7 +677,7 @@ end
 --- - **onEscapePressed** function — The function to be called when an [OnEscapePressed](https://wowpedia.fandom.com/wiki/UIHANDLER_OnEscapePressed) event happens
 ---@return EditBox editBox
 local function CreateEditBox(t)
-	local editBox = CreateFrame("EditBox", t.parent:GetName() .. t.label:gsub("%s+", "") .. "EditBox", t.parent, "InputBoxTemplate")
+	local editBox = CreateFrame("EditBox", t.parent:GetName() .. (t.title and t.label:gsub("%s+", "") or "") .. "EditBox", t.parent, "InputBoxTemplate")
 	--Position & dimensions
 	PositionFrame(editBox, t.position.anchor, t.position.relativeTo, t.position.relativePoint, (t.position.offset or {}).x, ((t.position.offset or {}).y or 0) - 18)
 	editBox:SetSize(t.size.width, 17)
@@ -991,14 +986,15 @@ local colorPickerData = {}
 --- - **onCancel** function
 local function OpenColorPicker()
 	--Color picker button background update function
-	local function PickerButtonUpdate()
+	local function ColorUpdate()
 		local r, g, b = ColorPickerFrame:GetColorRGB()
 		colorPickerData.activeColorPicker:SetBackdropColor(r, g, b, OpacitySliderFrame:GetValue() or 1)
+		_G[colorPickerData.activeColorPicker:GetName():gsub("Button", "EditBox")]:SetText(ColorToHex(r, g, b, OpacitySliderFrame:GetValue() or 1))
 	end
 	--RGB
 	ColorPickerFrame:SetColorRGB(colorPickerData.startColors.r, colorPickerData.startColors.g, colorPickerData.startColors.b)
 	ColorPickerFrame.func = function()
-		PickerButtonUpdate()
+		ColorUpdate()
 		colorPickerData.onColorUpdate()
 	end
 	--Alpha
@@ -1006,7 +1002,7 @@ local function OpenColorPicker()
 	if ColorPickerFrame.hasOpacity then
 		ColorPickerFrame.opacity = colorPickerData.startColors.a
 		ColorPickerFrame.opacityFunc = function()
-			PickerButtonUpdate()
+			ColorUpdate()
 			colorPickerData.onOpacityUpdate()
 		end
 	end
@@ -1037,7 +1033,7 @@ end
 --- - **onCancel** function — The function to be called when the color change is cancelled
 ---@return Button pickerButton
 local function AddColorPickerButton(t)
-	local pickerButton = CreateFrame("Button", t.picker:GetName() .. "ColorPicker", t.picker, BackdropTemplateMixin and "BackdropTemplate")
+	local pickerButton = CreateFrame("Button", t.picker:GetName() .. "Button", t.picker, BackdropTemplateMixin and "BackdropTemplate")
 	--Position & dimensions
 	pickerButton:SetPoint("TOPLEFT", 0, -18)
 	pickerButton:SetSize(34, 18)
@@ -1113,7 +1109,7 @@ end
 ---@return Button pickerButton
 ---@return EditBox pickerBox
 local function CreateColorPicker(t)
-	local pickerFrame = CreateFrame("Frame", t.parent:GetName() .. t.label:gsub("%s+", "") .. "PickerFrame", t.parent)
+	local pickerFrame = CreateFrame("Frame", t.parent:GetName() .. t.label:gsub("%s+", "") .. "ColorPicker", t.parent)
 	--Position & dimensions
 	local frameWidth = (t.size or {}).width or 120
 	PositionFrame(pickerFrame, t.position.anchor, t.position.relativeTo, t.position.relativePoint, (t.position.offset or {}).x, (t.position.offset or {}).y)
@@ -1136,14 +1132,8 @@ local function CreateColorPicker(t)
 		onCancel = t.onCancel
 	})
 	--Add edit box to change the color via HEX code
-	local _, _, x, a = t.setColors()
-	if a ~= nil and t.onOpacityUpdate ~= nil then
-		x = 2
-		a = "AA"
-	else
-		x = 0
-		a = ""
-	end
+	local r, g, b, a = t.setColors()
+	local alpha = a ~= nil and t.onOpacityUpdate ~= nil
 	local hexBox = CreateEditBox({
 		parent = pickerFrame,
 		position = {
@@ -1151,28 +1141,31 @@ local function CreateColorPicker(t)
 			offset = { x = 44, y = 0 }
 		},
 		size = { width = frameWidth - 44 },
-		maxLetters = 7 + x,
+		maxLetters = 7 + (alpha and 2 or 0),
 		fontObject = "GameFontWhiteSmall",
-		text = ConvertColorToHex(t.setColors()),
+		text = ColorToHex(r, g, b, a),
 		label = strings.color.hex.label,
 		title = false,
-		tooltip = strings.color.hex.tooltip .. "\n\n" .. strings.misc.example .. ": #2266BB" .. a,
+		tooltip = strings.color.hex.tooltip .. "\n\n" .. strings.misc.example .. ": #2266BB" .. (alpha and "AA" or ""),
 		onChar = function(self) self:SetText(self:GetText():gsub("^(#?)([%x]*).*", "%1%2")) end,
 		onEnterPressed = function(self)
-			pickerButton:SetBackdropColor(ConvertHexToColor(self:GetText()))
-			t.onColorUpdate()
+			pickerButton:SetBackdropColor(HexToColor(self:GetText()))
+			t.onColorUpdate() --FIXME: Fix display element not chanign color on ENTER
 			if t.onOpacityUpdate ~= nil then t.onOpacityUpdate() end
 			self:SetText(self:GetText():upper())
 		end,
-		onEscapePressed = function(self) self:SetText(ConvertColorToHex(pickerButton:GetBackdropColor())) end
+		onEscapePressed = function(self) self:SetText(ColorToHex(pickerButton:GetBackdropColor())) end
 	})
 	return pickerFrame, pickerButton, hexBox
 end
 
 --[[ GUI OPTIONS ]]
 
---Options frame
-local options = { appearance = { backdrop = { color = {} } }, font = { color = {} } }
+--Options frame references
+local options = { appearance = { backdrop = { color = {} } }, font = { color = {} }, backup = {} }
+
+--Backup management
+local LoadData --Defined after interface options definitions
 
 --GUI elements
 local function CreatePositionOptions(parentFrame)
@@ -1350,17 +1343,16 @@ local function CreateFontOptions(parentFrame)
 end
 local function CreateBackupOptions(parentFrame)
 	--Import & Export Box
-	CreateEditScrollBox({ --TODO: Finish implementing Import & Export
+	options.backup.string = CreateEditScrollBox({
 		parent = parentFrame,
 		position = {
 			anchor = "TOPLEFT",
 			offset = { x = 18, y = -30 }
 		},
-		size = { width = 272, height = 40 },
-		maxLetters = 999,
-		charCount = false,
-		fontObject = "GameFontWhiteSmall",
-		text = "NYI",
+		size = { width = 556, height = 38 },
+		maxLetters = 512,
+		fontObject = "GameFontDisableSmall",
+		text = TableToString(db, true),
 		label = strings.options.backup.box.label,
 		tooltip = strings.options.backup.box.tooltip[0],
 		tooltipExtra = {
@@ -1368,8 +1360,8 @@ local function CreateBackupOptions(parentFrame)
 			[1] = { text = "\n" .. strings.options.backup.box.tooltip[2]:gsub("#ENTER", "ENTER") },
 			[2] = { text = strings.options.backup.box.tooltip[3], color = { r = 0.89, g = 0.65, b = 0.40 } },
 		},
-		onEnterPressed = function(self) print("NYI") end,
-		onEscapePressed = function(self) self:SetText("") end
+		onEnterPressed = function(self) LoadData(self:GetText()) end,
+		onEscapePressed = function(self) self:SetText(TableToString(db, true)) end
 	})
 end
 --Category frames
@@ -1423,7 +1415,7 @@ local function CreateCategoryPanels(parentFrame)
 			relativePoint = "BOTTOMLEFT",
 			offset = { x = 0, y = -32 }
 		},
-		size = { height = 106 },
+		size = { height = 104 },
 		title = strings.options.backup.title,
 		description = strings.options.backup.description
 	})
@@ -1477,36 +1469,57 @@ local function Save()
 	db.font.color.r, db.font.color.g, db.font.color.b, db.font.color.a = options.font.color.picker:GetBackdropColor()
 end
 local function Cancel() --Refresh() is called automatically
-	SetDisplayValues()
+	SetDisplayValues(db)
 end
 local function Default() --Refresh() is called automatically
 	MovementSpeedDB = Clone(defaultDB)
 	db = Clone(defaultDB)
-	SetDisplayValues()
+	SetDisplayValues(db)
 	print(colors.sg .. addon .. ": " .. colors.ly .. strings.options.defaults)
 end
-local function Refresh()
+---Update the interface option frames
+---@param data table DB table to load the interface options from
+local function Refresh(data)
 	--Appearance
-	options.appearance.hidden:SetChecked(db.appearance.hidden)
-	options.appearance.backdrop.visible:SetChecked(db.appearance.backdrop.visible)
+	options.appearance.hidden:SetChecked(data.appearance.hidden)
+	options.appearance.backdrop.visible:SetChecked(data.appearance.backdrop.visible)
 	options.appearance.backdrop.color.picker:SetBackdropColor(
-		db.appearance.backdrop.color.r,
-		db.appearance.backdrop.color.g,
-		db.appearance.backdrop.color.b,
-		db.appearance.backdrop.color.a
+		data.appearance.backdrop.color.r,
+		data.appearance.backdrop.color.g,
+		data.appearance.backdrop.color.b,
+		data.appearance.backdrop.color.a
 	)
-	options.appearance.backdrop.color.hex:SetText(ConvertColorToHex(
-		db.appearance.backdrop.color.r,
-		db.appearance.backdrop.color.g,
-		db.appearance.backdrop.color.b,
-		db.appearance.backdrop.color.a
+	options.appearance.backdrop.color.hex:SetText(ColorToHex(
+		data.appearance.backdrop.color.r,
+		data.appearance.backdrop.color.g,
+		data.appearance.backdrop.color.b,
+		data.appearance.backdrop.color.a
 	))
 	--Font
-	UIDropDownMenu_SetSelectedValue(options.font.family, GetFontID(db.font.family))
-	UIDropDownMenu_SetText(options.font.family, fonts[GetFontID(db.font.family)].text)
-	options.font.size:SetValue(db.font.size)
-	options.font.color.picker:SetBackdropColor(db.font.color.r, db.font.color.g, db.font.color.b, db.font.color.a)
-	options.font.color.hex:SetText(ConvertColorToHex(db.font.color.r, db.font.color.g, db.font.color.b, db.font.color.a))
+	UIDropDownMenu_SetSelectedValue(options.font.family, GetFontID(data.font.family))
+	UIDropDownMenu_SetText(options.font.family, fonts[GetFontID(data.font.family)].text)
+	options.font.size:SetValue(data.font.size)
+	options.font.color.picker:SetBackdropColor(data.font.color.r, data.font.color.g, data.font.color.b, data.font.color.a)
+	options.font.color.hex:SetText(ColorToHex(data.font.color.r, data.font.color.g, data.font.color.b, data.font.color.a))
+	--Backup
+	options.backup.string:SetText(TableToString(data, true))
+end
+
+--Definition for loading data from an import string
+LoadData = function(chunk)
+	--Load from string to a temporary table
+	local success, returned = pcall(loadstring("return " .. chunk))
+	if success and type(returned) == "table" then
+		local loadDB = returned
+		--Run DB ckeckup on the loaded table
+		RemoveEmpty(loadDB) --Strip empty and nil keys & items
+		AddMissing(loadDB, db) --Check for missing data
+		RemoveMismatch(loadDB, db) --Remove unneeded data
+		RestoreOldData(loadDB) --Save old data
+		--Update the interface options and the main display
+		Refresh(loadDB)
+		SetDisplayValues(loadDB)
+	else print(colors.sg .. addon .. ": " .. colors.ly .. strings.options.backup.box.error) end
 end
 
 --Add the options to the WoW interface
@@ -1519,9 +1532,101 @@ local function LoadInterfaceOptions()
 	optionsPanel.okay = function() Save() end
 	optionsPanel.cancel = function() Cancel() end --refresh is called automatically
 	optionsPanel.default = function() Default() end --refresh is called automatically
-	optionsPanel.refresh = function() Refresh() end
+	optionsPanel.refresh = function() Refresh(db) end
 	--Add the panel
 	InterfaceOptions_AddCategory(optionsPanel)
+end
+
+
+--[[ CHAT CONTROL ]]
+
+local keyword = "/movespeed"
+
+--Print utilities
+local function PrintStatus()
+	print(colors.sg .. addon .. ": " .. colors.ly .. strings.chat.toggle.response:gsub("#HIDDEN", movSpeed:IsShown() and strings.chat.toggle.shown or strings.chat.toggle.hidden))
+end
+local function PrintHelp()
+	print(colors.sy .. strings.chat.help.thanks:gsub("#ADDON", colors.sg .. addon .. colors.sy))
+	PrintStatus()
+	print(colors.ly .. strings.chat.help.hint:gsub("#HELP_COMMAND", colors.lg .. keyword .. " " .. strings.chat.help.command .. colors.ly))
+	print(colors.ly .. strings.chat.help.move:gsub("#SHIFT", colors.lg .. "SHIFT" .. colors.ly))
+end
+local function PrintCommands()
+	PrintStatus()
+	print(colors.sg .. addon .. colors.ly .. " ".. strings.chat.help.list .. ":")
+	--Index the commands (skipping the help command) and put replacement code segments in place
+	local commands = {
+		[0] = {
+			command = strings.chat.options.command,
+			description = strings.chat.options.description
+		},
+		[1] = {
+			command = strings.chat.save.command,
+			description = strings.chat.save.description
+		},
+		[2] = {
+			command = strings.chat.preset.command,
+			description = strings.chat.preset.description
+		},
+		[3] = {
+			command = strings.chat.reset.command,
+			description = strings.chat.reset.description
+		},
+		[4] = {
+			command = strings.chat.toggle.command,
+			description = strings.chat.toggle.description
+		},
+		[5] = {
+			command = strings.chat.size.command,
+			description =  strings.chat.size.description:gsub("#SIZE_DEFAULT", colors.lg .. strings.chat.size.command .. " " .. defaultDB.font.size .. colors.ly)
+		},
+	}
+	--Print the list
+	for i = 0, #commands do
+		print("    " .. colors.lg .. keyword .. " " .. commands[i].command .. colors.ly .. " - " .. commands[i].description)
+	end
+end
+
+--Slash command handler
+SLASH_MOVESPEED1 = keyword
+function SlashCmdList.MOVESPEED(line)
+	local command, parameter = strsplit(" ", line)
+	if command == strings.chat.help.command then
+		PrintCommands()
+	elseif command == strings.chat.options.command then
+		InterfaceOptionsFrame_OpenToCategory(addon)
+	elseif command == strings.chat.save.command then
+		SavePosition()
+	elseif command == strings.chat.preset.command then
+		ResetPosition()
+	elseif command == strings.chat.reset.command then
+		DefaultPreset()
+	elseif command == strings.chat.toggle.command then
+		FlipVisibility(movSpeed:IsVisible())
+		db.appearance.hidden = not movSpeed:IsVisible()
+		--Update the GUI option in case it was open
+		options.appearance.hidden:SetChecked(db.appearance.hidden)
+		--Response
+		PrintStatus()
+	elseif command == strings.chat.size.command then
+		local size = tonumber(parameter)
+		if size ~= nil then
+			db.font.size = size
+			textDisplay:SetFont(db.font.family, db.font.size, "THINOUTLINE")
+			SetDisplaySize(size)
+			--Update the GUI option in case it was open
+			options.font.size:SetValue(size)
+			--Response
+			print(colors.sg .. addon .. ": " .. colors.ly .. strings.chat.size.response:gsub("#VALUE", size))
+		else
+			--Error
+			print(colors.sg .. addon .. ": " .. colors.ly .. strings.chat.size.unchanged)
+			print(colors.ly .. strings.chat.size.error:gsub("#SIZE_DEFAULT", colors.lg .. strings.chat.size.command .. " " .. defaultDB.font.size .. colors.ly))
+		end
+	else
+		PrintHelp()
+	end
 end
 
 
@@ -1544,7 +1649,7 @@ local function SetUpMainDisplayFrame()
 	--Text
 	textDisplay:SetPoint("CENTER") --TODO: Add font offset option to fine-tune the position (AND/OR, ad pre-tested offsets to keep each font in the center)
 	--Visual elements
-	SetDisplayValues()
+	SetDisplayValues(db)
 end
 local function SetUpTooltip()
 	movSpeedTooltip:SetFrameStrata("DIALOG")
@@ -1581,70 +1686,12 @@ movSpeedBackdrop:SetScript("OnMouseUp", function()
 end)
 
 --Hide during Pet Battle
-function movSpeed:PET_BATTLE_OPENING_START()
-	movSpeedBackdrop:Hide()
-end
-function movSpeed:PET_BATTLE_CLOSE()
-	movSpeedBackdrop:Show()
-end
+function movSpeed:PET_BATTLE_OPENING_START() movSpeedBackdrop:Hide() end
+function movSpeed:PET_BATTLE_CLOSE() movSpeedBackdrop:Show() end
 
 
 --[[ INITIALIZATION ]]
 
---Check and fix the DB
-local oldData = {}
-local function RemoveEmpty(dbToCheck) --Remove all nil and empty items from the table
-	if type(dbToCheck) ~= "table" then return end
-	for k, v in pairs(dbToCheck) do
-		if type(v) == "table" then
-			if next(v) == nil then --The subtable is empty
-				dbToCheck[k] = nil --Remove the empty subtable
-			else
-				RemoveEmpty(v)
-			end
-		elseif v == nil or v == "" then --The value is empty or doesn't exist
-			dbToCheck[k] = nil --Remove the key value pair
-		end
-	end
-end
-local function AddMissing(dbToCheck, dbToSample) --Check for and fill in missing data
-	if type(dbToCheck) ~= "table" and type(dbToSample) ~= "table" then return end
-	if next(dbToSample) == nil then return end --The sample table is empty
-	for k, v in pairs(dbToSample) do
-		if dbToCheck[k] == nil then --The sample key doesn't exist in the table to check
-			if v ~= nil and v ~= "" then
-				dbToCheck[k] = v --Add the item if the value is not empty or nil
-			end
-		else
-			AddMissing(dbToCheck[k], dbToSample[k])
-		end
-	end
-end
-local function RemoveMismatch(dbToCheck, dbToSample) --Remove unused or outdated data while trying to keep any old data
-	if type(dbToCheck) ~= "table" and type(dbToSample) ~= "table" then return end
-	if next(dbToCheck) == nil then return end --The table to check is empty
-	for k, v in pairs(dbToCheck) do
-		if dbToSample[k] == nil then --The checked key doesn't exist in the sample table
-			oldData[k] = v --Add the item to the old data to be restored
-			dbToCheck[k] = nil --Remove the unneeded item
-		else
-			RemoveMismatch(dbToCheck[k], dbToSample[k])
-		end
-	end
-end
-local function RestoreOldData() --Restore old data to the DB by matching removed items to known old keys
-	for k,v in pairs(oldData) do
-		if k == "offsetX" then
-			db.position.offset.x = v
-		elseif k == "offsetY" then
-			db.position.offset.y = v
-		elseif k == "hidden" then
-			db.appearance.hidden = v
-		end
-	end
-end
-
---Initialization
 local function LoadDB()
 	--First load
 	if MovementSpeedDB == nil then
@@ -1657,7 +1704,7 @@ local function LoadDB()
 	RemoveEmpty(db) --Strip empty and nil keys & items
 	AddMissing(db, defaultDB) --Check for missing data
 	RemoveMismatch(db, defaultDB) --Remove unneeded data
-	RestoreOldData() --Save old data
+	RestoreOldData(db) --Save old data
 end
 function movSpeed:ADDON_LOADED(addon)
 	if addon ~= "MovementSpeed" then return end
@@ -1672,22 +1719,17 @@ function movSpeed:ADDON_LOADED(addon)
 	LoadInterfaceOptions()
 end
 function movSpeed:PLAYER_LOGIN()
-	if not movSpeed:IsShown() then
-		print(colors.sg .. addon .. ": " .. colors.ly .. strings.chat.hide.response)
-	end
+	if not movSpeed:IsShown() then PrintStatus() end
 end
 
 
 --[[ DISPLAY UPDATE ]]
 
 --Recalculate the movement speed value and update the displayed text
-local function UpdateSpeed()
+movSpeed:SetScript("OnUpdate", function()
 	local unit = "player"
 	if  UnitInVehicle("player") then
 		unit = "vehicle"
 	end
 	textDisplay:SetText(string.format("%d%%", math.floor(GetUnitSpeed(unit) / 7 * 100 + .5)))
-end
-movSpeed:SetScript("OnUpdate", function(self)
-	UpdateSpeed()
 end)

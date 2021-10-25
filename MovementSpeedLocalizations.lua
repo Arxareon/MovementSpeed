@@ -69,12 +69,13 @@ ns.english = {
 			box = {
 				label = "Import & Export",
 				tooltip = {
-					[0] = "The string in this box contains the currently saved addon preferences and frame positions.",
+					[0] = "The backup string in this box contains the currently saved addon data and frame positions.",
 					[1] = "Copy it to save, share or use it for another account.",
 					[2] = "If you have a string, just override the text inside this box. Select it, and paste your string here. Press #ENTER to load the data stored in it.", --# flags will be replaced with code
 					[3] = "Note: If you are using a custom font file, that file can not carry over with this string. It will need to be inserted into the addon folder to be applied.",
-				}
-			}
+				},
+				error = "The provided backup string could not be validated and no data was loaded. It might be missing some characters or errors may heve been introduced if it was edited.",
+			},
 		},
 	},
 	chat = {
@@ -85,30 +86,31 @@ ns.english = {
 			move = "Hold #SHIFT to drag the Movement Speed display anywhere you like.", --# flags will be replaced with code
 			list = "chat command list",
 		},
-		reset = {
-			command = "reset",
-			description = "set location to the specified preset location",
-			response = "The location has been set to the preset location.",
+		options = {
+			command = "options",
+			description = "open the Movement Speed options",
 		},
 		save = {
 			command = "save",
 			description = "save the current location as the preset location",
 			response = "The current location was saved as the preset location.",
 		},
-		default = {
-			command = "default",
-			description = "save the current location as the preset location",
+		preset = {
+			command = "preset",
+			description = "set the location to the specified preset location",
+			response = "The location has been set to the preset location.",
+		},
+		reset = {
+			command = "reset",
+			description = "reset the preset location to the default location",
 			response = "The preset location has been reset to the default location.",
 		},
-		hide = {
-			command = "hide",
-			description = "hide the main display",
-			response = "The main display is hidden.",
-		},
-		show = {
-			command = "show",
-			description = "show the main display",
-			response = "The main display is not hidden.",
+		toggle = {
+			command = "toggle",
+			description = "show or hide the main display",
+			response = "The main display is #HIDDEN.", --# flags will be replaced with code
+			hidden = "hidden",
+			shown = "not hidden",
 		},
 		size = {
 			command = "size",
