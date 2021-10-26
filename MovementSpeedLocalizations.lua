@@ -16,12 +16,12 @@ ns.english = {
 				tooltip = "Save the current position of the main display as the preset location.",
 				warning = "Are you sure you want to override the saved preset with the current position?\n\nThe preset position is account-wide.", --\n represents the newline character
 			},
-			reset = {
+			preset = {
 				label = "Reset Position",
 				tooltip = "Reset the position of the main display to the specified preset location.",
 				warning = "Are you sure you want to reset the position to the current preset?",
 			},
-			default = {
+			reset = {
 				label = "Default Preset",
 				tooltip = "Restore the default preset location of the main display.",
 				warning = "Are you sure you want to reset the preset position to the defaults?\n\nThe preset position is account-wide.", --\n represents the newline character

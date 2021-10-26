@@ -250,12 +250,12 @@ end
 --[[ OPTIONS SETTERS ]]
 
 --Main frame positioning
-local function ResetPosition()
+local function MoveToPreset()
 	movSpeed:ClearAllPoints()
 	movSpeed:SetUserPlaced(false)
 	movSpeed:SetPoint(db.position.point, db.position.offset.x, db.position.offset.y)
 	movSpeed:SetUserPlaced(true)
-	print(colors.sg .. addon .. ":" .. colors.ly .. " " .. strings.chat.reset.response)
+	print(colors.sg .. addon .. ":" .. colors.ly .. " " .. strings.chat.preset.response)
 end
 local function SavePosition()
 	db.position.point, _, _, db.position.offset.x, db.position.offset.y = movSpeed:GetPoint()
@@ -263,7 +263,7 @@ local function SavePosition()
 end
 local function DefaultPreset()
 	db.position = Clone(defaultDB.position)
-	print(colors.sg .. addon .. ":" .. colors.ly .. " " .. strings.chat.default.response)
+	print(colors.sg .. addon .. ":" .. colors.ly .. " " .. strings.chat.reset.response)
 end
 
 ---Set the visibility of the main display frame based on the flipped value of the input parameter
@@ -982,29 +982,24 @@ local colorPickerData = {}
 --- 	- **b** number ― Blue (Range: 0 - 1)
 --- 	- **a**? number *optional* ― Opacity (Range: 0 - 1, Default: 1)
 --- - **onColorUpdate** function
---- - **onOpacityUpdate**? function *optional*
 --- - **onCancel** function
 local function OpenColorPicker()
 	--Color picker button background update function
 	local function ColorUpdate()
 		local r, g, b = ColorPickerFrame:GetColorRGB()
-		colorPickerData.activeColorPicker:SetBackdropColor(r, g, b, OpacitySliderFrame:GetValue() or 1)
-		_G[colorPickerData.activeColorPicker:GetName():gsub("Button", "EditBox")]:SetText(ColorToHex(r, g, b, OpacitySliderFrame:GetValue() or 1))
+		local a = OpacitySliderFrame:GetValue() or 1
+		colorPickerData.activeColorPicker:SetBackdropColor(r, g, b, a)
+		_G[colorPickerData.activeColorPicker:GetName():gsub("Button", "EditBox")]:SetText(ColorToHex(r, g, b, a))
+		colorPickerData.onColorUpdate(r, g, b, a)
 	end
 	--RGB
 	ColorPickerFrame:SetColorRGB(colorPickerData.startColors.r, colorPickerData.startColors.g, colorPickerData.startColors.b)
-	ColorPickerFrame.func = function()
-		ColorUpdate()
-		colorPickerData.onColorUpdate()
-	end
+	ColorPickerFrame.func = function() ColorUpdate() end
 	--Alpha
-	ColorPickerFrame.hasOpacity = colorPickerData.onOpacityUpdate ~= nil and colorPickerData.startColors.a ~= nil
+	ColorPickerFrame.hasOpacity = colorPickerData.startColors.a ~= nil
 	if ColorPickerFrame.hasOpacity then
 		ColorPickerFrame.opacity = colorPickerData.startColors.a
-		ColorPickerFrame.opacityFunc = function()
-			ColorUpdate()
-			colorPickerData.onOpacityUpdate()
-		end
+		ColorPickerFrame.opacityFunc = function() ColorUpdate() end
 	end
 	--Reset
 	ColorPickerFrame.cancelFunc = function()
@@ -1027,9 +1022,8 @@ end
 --- 	- @*return* **r** number ― Red (Range: 0 - 1)
 --- 	- @*return* **g** number ― Green (Range: 0 - 1)
 --- 	- @*return* **b** number ― Blue (Range: 0 - 1)
---- 	- @*return* **a**? number *optional* ― Opacity (Range: 0 - 1, Default: 1)
---- - **onColorUpdate** function — The function to be called when the color has been changed
---- - **onOpacityUpdate**? function *optional* — The function to be called when the opacity is changed
+--- 	- @*return* **a**? number *optional* ― Opacity (Range: 0 - 1)
+--- - **onColorUpdate** function — The function to be called when the color is changed
 --- - **onCancel** function — The function to be called when the color change is cancelled
 ---@return Button pickerButton
 local function AddColorPickerButton(t)
@@ -1056,7 +1050,6 @@ local function AddColorPickerButton(t)
 			activeColorPicker = pickerButton,
 			startColors = { r = red, g = green, b = blue, a = alpha },
 			onColorUpdate = t.onColorUpdate,
-			onOpacityUpdate = t.onOpacityUpdate,
 			onCancel = t.onCancel
 		}
 		OpenColorPicker()
@@ -1065,7 +1058,7 @@ local function AddColorPickerButton(t)
 	--Tooltip
 	pickerButton:HookScript("OnEnter", function()
 		local tooltip = strings.color.picker.tooltip
-		if a ~= nil and t.onOpacityUpdate ~= nil then
+		if a ~= nil then
 			tooltip = strings.color.picker.tooltip:gsub("#ALPHA", strings.color.picker.alpha)
 		else
 			tooltip = strings.color.picker.tooltip:gsub("#ALPHA", "")
@@ -1101,9 +1094,12 @@ end
 --- 	- @*return* **r** number ― Red (Range: 0 - 1)
 --- 	- @*return* **g** number ― Green (Range: 0 - 1)
 --- 	- @*return* **b** number ― Blue (Range: 0 - 1)
---- 	- @*return* **a**? number *optional* ― Opacity (Range: 0 - 1, Default: 1)
---- - **onColorUpdate** function — The function to be called when the color has been changed
---- - **onOpacityUpdate**? function *optional* — The function to be called when the opacity is changed
+--- 	- @*return* **a**? number *optional* ― Opacity (Range: 0 - 1)
+--- - **onColorUpdate** function — The function to be called when the color is changed
+--- 	- @*param* **r** number ― Red (Range: 0 - 1)
+--- 	- @*param* **g** number ― Green (Range: 0 - 1)
+--- 	- @*param* **b** number ― Blue (Range: 0 - 1)
+--- 	- @*param* **a** number ― Opacity (Range: 0 - 1)
 --- - **onCancel** function — The function to be called when the color change is cancelled
 ---@return Frame pickerFrame
 ---@return Button pickerButton
@@ -1128,12 +1124,10 @@ local function CreateColorPicker(t)
 		picker = pickerFrame,
 		setColors = t.setColors,
 		onColorUpdate = t.onColorUpdate,
-		onOpacityUpdate = t.onOpacityUpdate,
 		onCancel = t.onCancel
 	})
 	--Add edit box to change the color via HEX code
-	local r, g, b, a = t.setColors()
-	local alpha = a ~= nil and t.onOpacityUpdate ~= nil
+	local red, green, blue, alpha = t.setColors()
 	local hexBox = CreateEditBox({
 		parent = pickerFrame,
 		position = {
@@ -1141,17 +1135,17 @@ local function CreateColorPicker(t)
 			offset = { x = 44, y = 0 }
 		},
 		size = { width = frameWidth - 44 },
-		maxLetters = 7 + (alpha and 2 or 0),
+		maxLetters = 7 + (alpha ~= nil and 2 or 0),
 		fontObject = "GameFontWhiteSmall",
-		text = ColorToHex(r, g, b, a),
+		text = ColorToHex(red, green, blue, alpha),
 		label = strings.color.hex.label,
 		title = false,
-		tooltip = strings.color.hex.tooltip .. "\n\n" .. strings.misc.example .. ": #2266BB" .. (alpha and "AA" or ""),
+		tooltip = strings.color.hex.tooltip .. "\n\n" .. strings.misc.example .. ": #2266BB" .. (alpha ~= nil and "AA" or ""),
 		onChar = function(self) self:SetText(self:GetText():gsub("^(#?)([%x]*).*", "%1%2")) end,
 		onEnterPressed = function(self)
-			pickerButton:SetBackdropColor(HexToColor(self:GetText()))
-			t.onColorUpdate() --FIXME: Fix display element not chanign color on ENTER
-			if t.onOpacityUpdate ~= nil then t.onOpacityUpdate() end
+			local r, g, b, a = HexToColor(self:GetText())
+			pickerButton:SetBackdropColor(r, g, b, a or 1)
+			t.onColorUpdate(r, g, b, a or 1)
 			self:SetText(self:GetText():upper())
 		end,
 		onEscapePressed = function(self) self:SetText(ColorToHex(pickerButton:GetBackdropColor())) end
@@ -1187,40 +1181,40 @@ local function CreatePositionOptions(parentFrame)
 		onClick = function() StaticPopup_Show(savePopup) end
 	})
 	--Button & Popup: Reset default preset position
-	local defaultPopup = CreatePopup({
-		name = strings.options.position.default.label,
-		text = strings.options.position.default.warning,
+	local resetPopup = CreatePopup({
+		name = strings.options.position.reset.label,
+		text = strings.options.position.reset.warning,
 		onAccept = function() DefaultPreset() end
 	})
-	local default = CreateButton({
+	local reset = CreateButton({
 		parent = parentFrame,
 		position = {
 			anchor = "TOPRIGHT",
 			offset = { x = -10, y = -30 }
 		},
 		width = 120,
-		label = strings.options.position.default.label,
-		tooltip = strings.options.position.default.tooltip,
-		onClick = function() StaticPopup_Show(defaultPopup) end
+		label = strings.options.position.reset.label,
+		tooltip = strings.options.position.reset.tooltip,
+		onClick = function() StaticPopup_Show(resetPopup) end
 	})
 	--Button & Popup: Set to preset position
-	local resetPopup = CreatePopup({
-		name = strings.options.position.reset.label,
-		text = strings.options.position.reset.warning,
-		onAccept = function() ResetPosition() end
+	local presetPopup = CreatePopup({
+		name = strings.options.position.preset.label,
+		text = strings.options.position.preset.warning,
+		onAccept = function() MoveToPreset() end
 	})
 	CreateButton({
 		parent = parentFrame,
 		position = {
 			anchor = "TOPRIGHT",
-			relativeTo = default,
+			relativeTo = reset,
 			relativePoint = "TOPLEFT",
 			offset = { x = -4, y = 0 }
 		},
 		width = 120,
-		label = strings.options.position.reset.label,
-		tooltip = strings.options.position.reset.tooltip,
-		onClick = function() StaticPopup_Show(resetPopup) end
+		label = strings.options.position.preset.label,
+		tooltip = strings.options.position.preset.tooltip,
+		onClick = function() StaticPopup_Show(presetPopup) end
 	})
 end
 local function CreateAppearanceOptions(parentFrame)
@@ -1236,12 +1230,6 @@ local function CreateAppearanceOptions(parentFrame)
 		onClick = function(self) FlipVisibility(self:GetChecked()) end
 	})
 	--Color Picker: Background color
-	local function UpdateBackdropColor()
-		if movSpeedBackdrop:GetBackdrop() ~= nil then
-			local r, g, b = ColorPickerFrame:GetColorRGB()
-			movSpeedBackdrop:SetBackdropColor(r, g, b, OpacitySliderFrame:GetValue() or 1)
-		end
-	end
 	_, options.appearance.backdrop.color.picker, options.appearance.backdrop.color.hex = CreateColorPicker({
 		parent = parentFrame,
 		position = {
@@ -1254,8 +1242,11 @@ local function CreateAppearanceOptions(parentFrame)
 			if movSpeedBackdrop:GetBackdrop() ~= nil then return movSpeedBackdrop:GetBackdropColor() end
 			return db.appearance.backdrop.color.r, db.appearance.backdrop.color.g, db.appearance.backdrop.color.b, db.appearance.backdrop.color.a
 		end,
-		onColorUpdate = UpdateBackdropColor,
-		onOpacityUpdate = UpdateBackdropColor,
+		onColorUpdate = function(r, g, b, a)
+			if movSpeedBackdrop:GetBackdrop() ~= nil then
+				movSpeedBackdrop:SetBackdropColor(r, g, b, a)
+			end
+		end,
 		onCancel = function()
 			if movSpeedBackdrop:GetBackdrop() ~= nil then
 				movSpeedBackdrop:SetBackdropColor(
@@ -1286,9 +1277,7 @@ local function CreateFontOptions(parentFrame)
 	local fontItems = {}
 	for i = 0, #fonts do
 		fontItems[i] = fonts[i]
-		fontItems[i].onSelect = function()
-			textDisplay:SetFont(fonts[i].path, options.font.size:GetValue(), "THINOUTLINE")
-		end
+		fontItems[i].onSelect = function() textDisplay:SetFont(fonts[i].path, options.font.size:GetValue(), "THINOUTLINE") end
 	end
 	options.font.family = CreateDropdown({
 		parent = parentFrame,
@@ -1323,10 +1312,6 @@ local function CreateFontOptions(parentFrame)
 		end
 	})
 	--Color Picker: Font color
-	local function UpdateFontColor()
-		local r, g, b = ColorPickerFrame:GetColorRGB()
-		textDisplay:SetTextColor(r, g, b, OpacitySliderFrame:GetValue() or 1)
-	end
 	_, options.font.color.picker, options.font.color.hex = CreateColorPicker({
 		parent = parentFrame,
 		position = {
@@ -1336,8 +1321,7 @@ local function CreateFontOptions(parentFrame)
 		label = strings.options.font.color.label,
 		opacity = true,
 		setColors = function() return textDisplay:GetTextColor() end,
-		onColorUpdate = UpdateFontColor,
-		onOpacityUpdate = UpdateFontColor,
+		onColorUpdate = function(r, g, b, a) textDisplay:SetTextColor(r, g, b, a) end,
 		onCancel = function() textDisplay:SetTextColor(db.font.color.r, db.font.color.g, db.font.color.b, db.font.color.a) end
 	})
 end
@@ -1511,7 +1495,7 @@ LoadData = function(chunk)
 	local success, returned = pcall(loadstring("return " .. chunk))
 	if success and type(returned) == "table" then
 		local loadDB = returned
-		--Run DB ckeckup on the loaded table
+		--Run DB checkup on the loaded table
 		RemoveEmpty(loadDB) --Strip empty and nil keys & items
 		AddMissing(loadDB, db) --Check for missing data
 		RemoveMismatch(loadDB, db) --Remove unneeded data
@@ -1599,7 +1583,7 @@ function SlashCmdList.MOVESPEED(line)
 	elseif command == strings.chat.save.command then
 		SavePosition()
 	elseif command == strings.chat.preset.command then
-		ResetPosition()
+		MoveToPreset()
 	elseif command == strings.chat.reset.command then
 		DefaultPreset()
 	elseif command == strings.chat.toggle.command then
