@@ -2,15 +2,21 @@
 local _, ns = ...
 
 
---[[ ENGLISH ]] --(English support only, for now..)
+--[[ LOCALIZATIONS ]]
 
-ns.english = {
+local english = {
 	options = {
-		description = "Customize Movement Speed to fit your needs. Type /movespeed for chat commands.",
 		defaults = "The default options have been reset.",
+		main = {
+			description = "Customize #ADDON to fit your needs. Type #KEYWORD for chat commands.", --# flags will be replaced with code
+		},
+		advanced = {
+			title = "Advanced",
+			description = "Configure #ADDON settings further, change options manually or backup your data by importing, exporting settings." --# flags will be replaced with code
+		},
 		position = {
 			title = "Position",
-			description = "You may drag the main display while holding SHIFT to position it anywhere on the screen.",
+			description = "You may drag the main display while holding #SHIFT to position it anywhere on the screen.", --# flags will be replaced with code
 			save = {
 				label = "Save Position",
 				tooltip = "Save the current position of the main display as the preset location.",
@@ -29,10 +35,10 @@ ns.english = {
 		},
 		appearance = {
 			title = "Appearance",
-			description = "Set the visibility and look of the main Movement Speed percentage display elements.",
+			description = "Set the visibility and look of the main #ADDON percentage display elements.", --# flags will be replaced with code
 			hidden = {
 				label = "Hidden",
-				tooltip = "Hide or show the Movement Speed main display.",
+				tooltip = "Hide or show the main #ADDON display.", --# flags will be replaced with code
 			},
 			backdrop = {
 				label = "Background Graphic",
@@ -65,7 +71,7 @@ ns.english = {
 		},
 		backup = {
 			title = "Backup",
-			description = "Import or export MovementSpeed options to save, share or apply them between your accounts.",
+			description = "Import or export #ADDON options to save, share or apply them between your accounts.", --# flags will be replaced with code
 			box = {
 				label = "Import & Export",
 				tooltip = {
@@ -73,7 +79,10 @@ ns.english = {
 					[1] = "Copy it to save, share or use it for another account.",
 					[2] = "If you have a string, just override the text inside this box. Select it, and paste your string here. Press #ENTER to load the data stored in it.", --# flags will be replaced with code
 					[3] = "Note: If you are using a custom font file, that file can not carry over with this string. It will need to be inserted into the addon folder to be applied.",
+					[4] = "Only load strings that you have verified yourself or trust the source of!",
 				},
+				import = "Import & Load",
+				warning = "Are you sure you want to attempt to load the currently inserted string?\n\nIf you've copied it from an online source or someone else has sent it to you, only load it after you've checked the code inside and you know what you are doing.\n\nIf don't trust the source, you may want to cancel to prevent any unwanted actions.", --\n represents the newline character
 				error = "The provided backup string could not be validated and no data was loaded. It might be missing some characters or errors may heve been introduced if it was edited.",
 			},
 		},
@@ -83,12 +92,12 @@ ns.english = {
 			command = "help",
 			thanks = "Thank you for using #ADDON!", --# flags will be replaced with code
 			hint = "Type #HELP_COMMAND to see the full command list.", --# flags will be replaced with code
-			move = "Hold #SHIFT to drag the Movement Speed display anywhere you like.", --# flags will be replaced with code
+			move = "Hold #SHIFT to drag the #ADDON display anywhere you like.", --# flags will be replaced with code
 			list = "chat command list",
 		},
 		options = {
 			command = "options",
-			description = "open the Movement Speed options",
+			description = "open the #ADDON options",
 		},
 		save = {
 			command = "save",
@@ -131,6 +140,10 @@ ns.english = {
 			tooltip = "You may change the color via HEX code instead of using the color picker.",
 		}
 	},
+	keys = {
+		shift = "SHIFT",
+		enter = "ENTER",
+	},
 	misc = {
 		cancel = "Cancel",
 		default = "Default",
@@ -138,3 +151,19 @@ ns.english = {
 		custom = "Custom",
 	},
 }
+
+
+--[[ Load Localization ]]
+
+--Load the proper localization table based on the client language
+ns.LoadLocale = function()
+	local strings
+	if (GetLocale() == "") then
+		--TODO: Add localization for other languages (locales: https://wowwiki-archive.fandom.com/wiki/API_GetLocale#Locales)
+		--Different font locales: https://github.com/tomrus88/BlizzardInterfaceCode/blob/master/Interface/FrameXML/Fonts.xml
+	else --Default: English (UK & US)
+		strings = english
+		strings.options.font.family.default = "Fonts/FRIZQT__.TTF"
+	end
+	return strings
+end

@@ -2,10 +2,11 @@
 
 ## Interface: 90105
 ## Title: Movement Speed
-## Version: 1.4
+## Version: 2.0
 ## Author: Barnabas Nagy (Arxareon)
 ## Notes: Shows the current movement speed of the player in percentage.
 ## SavedVariables: MovementSpeedDB
 
+WidgetTools.lua
 MovementSpeedLocalizations.lua
 MovementSpeed.lua
