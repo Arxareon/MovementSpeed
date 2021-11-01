@@ -43,7 +43,7 @@ local textures = {
 --[[ DB TABLES ]]
 
 local db --account-wide
-local defaultDB = {
+local dbDefault = {
 	position = {
 		point = "TOPRIGHT",
 		offset = { x = -67, y = -179 },
@@ -66,14 +66,15 @@ local defaultDB = {
 
 --[[ FRAMES & EVENTS ]]
 
---Create the main frame, text display and tooltip
-local movSpeed = CreateFrame("Frame", "MovementSpeed", UIParent)
-local movSpeedBackdrop = CreateFrame("Frame", "MovementSpeedBackdrop", movSpeed, BackdropTemplateMixin and "BackdropTemplate")
-local textDisplay = movSpeedBackdrop:CreateFontString("MovementSpeedTextDisplay", "OVERLAY")
+--Create the main frame & text display
+local movSpeed = CreateFrame("Frame", addon:gsub("%s+", ""), UIParent)
+local mainDisplay = CreateFrame("Frame", movSpeed:GetName() .. "MainDisplay", movSpeed, BackdropTemplateMixin and "BackdropTemplate")
+local mainDisplayText = mainDisplay:CreateFontString(mainDisplay:GetName() .. "Text", "OVERLAY")
 
 --Register events
 movSpeed:RegisterEvent("ADDON_LOADED")
 movSpeed:RegisterEvent("PLAYER_LOGIN")
+
 --Event handler
 movSpeed:SetScript("OnEvent", function(self, event, ...)
 	return self[event] and self[event](self, ...)
@@ -217,7 +218,7 @@ local function SavePosition()
 	print(colors.sg .. addon .. ":" .. colors.ly .. " " .. strings.chat.save.response)
 end
 local function DefaultPreset()
-	db.position = Clone(defaultDB.position)
+	db.position = Clone(dbDefault.position)
 	print(colors.sg .. addon .. ":" .. colors.ly .. " " .. strings.chat.reset.response)
 end
 
@@ -237,32 +238,32 @@ local function SetDisplaySize(height)
 	--Set dimensions
 	height = math.ceil(height) + 2
 	local width = height * 3 - 4
-	movSpeedBackdrop:SetSize(width, height)
+	mainDisplay:SetSize(width, height)
 end
 
 ---Set the backdrop of the main display
----@param toggle boolean Set or remove backdrop
+---@param enabled boolean Set or remove backdrop
 ---@param r? number Red (Range: 0 - 1, Default: db.appearance.backdrop.color.r)
 ---@param g? number Green (Range: 0 - 1, Default: db.appearance.backdrop.color.g)
 ---@param b? number Blue (Range: 0 - 1, Default: db.appearance.backdrop.color.b)
 ---@param a? number Opacity (Range: 0 - 1, Default: db.appearance.backdrop.color.a or 1)
-local function SetDisplayBackdrop(toggle, r, g, b, a)
-	if toggle then
-		movSpeedBackdrop:SetBackdrop({
+local function SetDisplayBackdrop(enabled, r, g, b, a)
+	if enabled then
+		mainDisplay:SetBackdrop({
 			bgFile = "Interface/ChatFrame/ChatFrameBackground",
 			edgeFile = "Interface/ChatFrame/ChatFrameBackground",
 			tile = true, tileSize = 5, edgeSize = 1,
 			insets = { left = 0, right = 0, top = 0, bottom = 0 }
 		})
-		movSpeedBackdrop:SetBackdropColor(
+		mainDisplay:SetBackdropColor(
 			r or db.appearance.backdrop.color.r,
 			g or db.appearance.backdrop.color.g,
 			b or db.appearance.backdrop.color.b,
 			a or db.appearance.backdrop.color.a or 1
 		)
-		movSpeedBackdrop:SetBackdropBorderColor(1, 1, 1, 0.4)
+		mainDisplay:SetBackdropBorderColor(1, 1, 1, 0.4)
 	else
-		movSpeedBackdrop:SetBackdrop(nil)
+		mainDisplay:SetBackdrop(nil)
 	end
 end
 
@@ -281,8 +282,8 @@ local function SetDisplayValues(data)
 		data.appearance.backdrop.color.a
 	)
 	--Font
-	textDisplay:SetFont(data.font.family, data.font.size, "THINOUTLINE")
-	textDisplay:SetTextColor(data.font.color.r, data.font.color.g, data.font.color.b, data.font.color.a)
+	mainDisplayText:SetFont(data.font.family, data.font.size, "THINOUTLINE")
+	mainDisplayText:SetTextColor(data.font.color.r, data.font.color.g, data.font.color.b, data.font.color.a)
 end
 
 
@@ -373,17 +374,17 @@ local function CreateAppearanceOptions(parentFrame)
 		label = strings.options.appearance.backdrop.color.label,
 		opacity = true,
 		setColors = function()
-			if movSpeedBackdrop:GetBackdrop() ~= nil then return movSpeedBackdrop:GetBackdropColor() end
+			if mainDisplay:GetBackdrop() ~= nil then return mainDisplay:GetBackdropColor() end
 			return db.appearance.backdrop.color.r, db.appearance.backdrop.color.g, db.appearance.backdrop.color.b, db.appearance.backdrop.color.a
 		end,
 		onColorUpdate = function(r, g, b, a)
-			if movSpeedBackdrop:GetBackdrop() ~= nil then
-				movSpeedBackdrop:SetBackdropColor(r, g, b, a)
+			if mainDisplay:GetBackdrop() ~= nil then
+				mainDisplay:SetBackdropColor(r, g, b, a)
 			end
 		end,
 		onCancel = function(r, g, b, a)
-			if movSpeedBackdrop:GetBackdrop() ~= nil then
-				movSpeedBackdrop:SetBackdropColor(r, g, b, a)
+			if mainDisplay:GetBackdrop() ~= nil then
+				mainDisplay:SetBackdropColor(r, g, b, a)
 			end
 		end
 	})
@@ -406,7 +407,7 @@ local function CreateFontOptions(parentFrame)
 	local fontItems = {}
 	for i = 0, #fonts do
 		fontItems[i] = fonts[i]
-		fontItems[i].onSelect = function() textDisplay:SetFont(fonts[i].path, options.font.size:GetValue(), "THINOUTLINE") end
+		fontItems[i].onSelect = function() mainDisplayText:SetFont(fonts[i].path, options.font.size:GetValue(), "THINOUTLINE") end
 	end
 	options.font.family = wt.CreateDropdown({
 		parent = parentFrame,
@@ -433,10 +434,10 @@ local function CreateFontOptions(parentFrame)
 			offset = { x = 0, y = -30 }
 		},
 		label = strings.options.font.size.label,
-		tooltip = strings.options.font.size.tooltip .. "\n\n" .. strings.misc.default .. ": " .. defaultDB.font.size,
+		tooltip = strings.options.font.size.tooltip .. "\n\n" .. strings.misc.default .. ": " .. dbDefault.font.size,
 		value = { min = 8, max = 64, step = 1 },
 		onValueChanged = function(self)
-			textDisplay:SetFont(textDisplay:GetFont(), self:GetValue(), "THINOUTLINE")
+			mainDisplayText:SetFont(mainDisplayText:GetFont(), self:GetValue(), "THINOUTLINE")
 			SetDisplaySize(self:GetValue())
 		end
 	})
@@ -449,9 +450,9 @@ local function CreateFontOptions(parentFrame)
 		},
 		label = strings.options.font.color.label,
 		opacity = true,
-		setColors = function() return textDisplay:GetTextColor() end,
-		onColorUpdate = function(r, g, b, a) textDisplay:SetTextColor(r, g, b, a) end,
-		onCancel = function(r, g, b, a)textDisplay:SetTextColor(r, g, b, a) end
+		setColors = function() return mainDisplayText:GetTextColor() end,
+		onColorUpdate = function(r, g, b, a) mainDisplayText:SetTextColor(r, g, b, a) end,
+		onCancel = function(r, g, b, a)mainDisplayText:SetTextColor(r, g, b, a) end
 	})
 end
 local function CreateBackupOptions(parentFrame)
@@ -549,13 +550,13 @@ local function SaveMain()
 	db.appearance.backdrop.visible = options.appearance.backdrop.visible:GetChecked()
 	db.appearance.backdrop.color.r, db.appearance.backdrop.color.g, db.appearance.backdrop.color.b, db.appearance.backdrop.color.a = options.appearance.backdrop.color.picker:GetBackdropColor()
 	--Font
-	db.font.family = textDisplay:GetFont()
+	db.font.family = mainDisplayText:GetFont()
 	db.font.size = options.font.size:GetValue()
 	db.font.color.r, db.font.color.g, db.font.color.b, db.font.color.a = options.font.color.picker:GetBackdropColor()
 end
 local function DefaultMain() --Refresh() is called automatically
-	MovementSpeedDB = Clone(defaultDB)
-	db = Clone(defaultDB)
+	MovementSpeedDB = Clone(dbDefault)
+	db = Clone(dbDefault)
 	SetDisplayValues(db)
 	print(colors.sg .. addon .. ": " .. colors.ly .. strings.options.defaults)
 end
@@ -653,17 +654,17 @@ end
 --[[ CHAT CONTROL ]]
 
 --Print utilities
-local function PrintStatus()
+local function PrintVisibility()
 	print(colors.sg .. addon .. ": " .. colors.ly .. strings.chat.toggle.response:gsub("#HIDDEN", movSpeed:IsShown() and strings.chat.toggle.shown or strings.chat.toggle.hidden))
 end
 local function PrintInfo()
 	print(colors.sy .. strings.chat.help.thanks:gsub("#ADDON", colors.sg .. addon .. colors.sy))
-	PrintStatus()
+	PrintVisibility()
 	print(colors.ly .. strings.chat.help.hint:gsub("#HELP_COMMAND", colors.lg .. strings.chat.keyword .. " " .. strings.chat.help.command .. colors.ly))
 	print(colors.ly .. strings.chat.help.move:gsub("#SHIFT", colors.lg .. strings.keys.shift .. colors.ly):gsub("#ADDON", addon))
 end
 local function PrintCommands()
-	PrintStatus()
+	PrintVisibility()
 	print(colors.sg .. addon .. colors.ly .. " ".. strings.chat.help.list .. ":")
 	--Index the commands (skipping the help command) and put replacement code segments in place
 	local commands = {
@@ -689,7 +690,7 @@ local function PrintCommands()
 		},
 		[5] = {
 			command = strings.chat.size.command,
-			description =  strings.chat.size.description:gsub("#SIZE_DEFAULT", colors.lg .. strings.chat.size.command .. " " .. defaultDB.font.size .. colors.ly)
+			description =  strings.chat.size.description:gsub("#SIZE_DEFAULT", colors.lg .. strings.chat.size.command .. " " .. dbDefault.font.size .. colors.ly)
 		},
 	}
 	--Print the list
@@ -719,12 +720,12 @@ function SlashCmdList.MOVESPEED(line)
 		--Update the GUI option in case it was open
 		options.appearance.hidden:SetChecked(db.appearance.hidden)
 		--Response
-		PrintStatus()
+		PrintVisibility()
 	elseif command == strings.chat.size.command then
 		local size = tonumber(parameter)
 		if size ~= nil then
 			db.font.size = size
-			textDisplay:SetFont(db.font.family, db.font.size, "THINOUTLINE")
+			mainDisplayText:SetFont(db.font.family, db.font.size, "THINOUTLINE")
 			SetDisplaySize(size)
 			--Update the GUI option in case it was open
 			options.font.size:SetValue(size)
@@ -733,7 +734,7 @@ function SlashCmdList.MOVESPEED(line)
 		else
 			--Error
 			print(colors.sg .. addon .. ": " .. colors.ly .. strings.chat.size.unchanged)
-			print(colors.ly .. strings.chat.size.error:gsub("#SIZE_DEFAULT", colors.lg .. strings.chat.size.command .. " " .. defaultDB.font.size .. colors.ly))
+			print(colors.ly .. strings.chat.size.error:gsub("#SIZE_DEFAULT", colors.lg .. strings.chat.size.command .. " " .. dbDefault.font.size .. colors.ly))
 		end
 	else
 		PrintInfo()
@@ -751,27 +752,27 @@ local function SetUpMainDisplayFrame()
 	movSpeed:SetSize(33, 10)
 	if not movSpeed:IsUserPlaced() then
 		movSpeed:ClearAllPoints()
-		movSpeed:SetPoint(defaultDB.position.point, defaultDB.position.offset.x, defaultDB.position.offset.y)
+		movSpeed:SetPoint(dbDefault.position.point, dbDefault.position.offset.x, dbDefault.position.offset.y)
 		movSpeed:SetUserPlaced(true)
 	end
 	--Backdrop
 	SetDisplaySize(db.font.size)
-	movSpeedBackdrop:SetPoint("CENTER")
+	mainDisplay:SetPoint("CENTER")
 	--Text
-	textDisplay:SetPoint("CENTER") --TODO: Add font offset option to fine-tune the position (AND/OR, ad pre-tested offsets to keep each font in the center)
+	mainDisplayText:SetPoint("CENTER") --TODO: Add font offset option to fine-tune the position (AND/OR, ad pre-tested offsets to keep each font in the center)
 	--Visual elements
 	SetDisplayValues(db)
 end
 
 --Making the frame moveable
 movSpeed:SetMovable(true)
-movSpeedBackdrop:SetScript("OnMouseDown", function()
+mainDisplay:SetScript("OnMouseDown", function()
 	if (IsShiftKeyDown() and not movSpeed.isMoving) then
 		movSpeed:StartMoving()
 		movSpeed.isMoving = true
 	end
 end)
-movSpeedBackdrop:SetScript("OnMouseUp", function()
+mainDisplay:SetScript("OnMouseUp", function()
 	if (movSpeed.isMoving) then
 		movSpeed:StopMovingOrSizing()
 		movSpeed.isMoving = false
@@ -784,15 +785,15 @@ end)
 local function LoadDB()
 	--First load
 	if MovementSpeedDB == nil then
-		MovementSpeedDB = defaultDB
+		MovementSpeedDB = dbDefault
 		PrintInfo()
 	end
 	--Load the DB
 	db = MovementSpeedDB
 	--DB checkup & fix
 	RemoveEmpty(db) --Strip empty and nil keys & items
-	AddMissing(db, defaultDB) --Check for missing data
-	RemoveMismatch(db, defaultDB) --Remove unneeded data
+	AddMissing(db, dbDefault) --Check for missing data
+	RemoveMismatch(db, dbDefault) --Remove unneeded data
 	RestoreOldData(db) --Save old data
 end
 function movSpeed:ADDON_LOADED(addon)
@@ -806,7 +807,7 @@ function movSpeed:ADDON_LOADED(addon)
 	LoadInterfaceOptions()
 end
 function movSpeed:PLAYER_LOGIN()
-	if not movSpeed:IsShown() then PrintStatus() end
+	if not movSpeed:IsShown() then PrintVisibility() end
 end
 
 
@@ -814,5 +815,5 @@ end
 
 --Recalculate the movement speed value and update the displayed text
 movSpeed:SetScript("OnUpdate", function()
-	textDisplay:SetText(string.format("%d%%", math.floor(GetUnitSpeed("player") / 7 * 100 + .5)))
+	mainDisplayText:SetText(string.format("%d%%", math.floor(GetUnitSpeed("player") / 7 * 100 + .5)))
 end)

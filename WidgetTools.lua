@@ -1,6 +1,3 @@
-local addon, _ = ...
-print(addon, not WidgetToolsTable, WidgetToolsTable)
-
 if not WidgetToolsTable then
 	--Global Reference Table
 	WidgetToolsTable = {}
@@ -22,9 +19,7 @@ if not WidgetToolsTable then
 		},
 		misc = {
 			cancel = "Cancel",
-			default = "Default",
 			example = "Example",
-			custom = "Custom",
 		},
 	}
 
@@ -170,7 +165,7 @@ if not WidgetToolsTable then
 		return title, description
 	end
 
-	--[ Interface Options Category Frame ]
+	--[ Settings Category Frame ]
 
 	---Create a new frame as an options category
 	---@param t table Parameters are to be provided in this table
@@ -952,7 +947,7 @@ if not WidgetToolsTable then
 		return pickerFrame, pickerButton, hexBox
 	end
 
-	--[[ Interface Options Panel ]]
+	--[[ Interface Options Category Panel ]]
 
 	---Create an new Interface Options Panel frame
 	--- - Note: The new panel will need to be added to the Interface options via WidgetToolsTable.AddOptionsPanel()
@@ -960,7 +955,7 @@ if not WidgetToolsTable then
 	--- - **title** string — Title text to be shown as the title of the options panel
 	--- - **description** string — Title text to be shown as the description below the title of the options panel
 	--- - **icon**? string *optional* — Path to the texture file to be added as an icon to the top right corner of the panel
-	---@return Frame optionspanel
+	---@return Frame optionsPanel
 	WidgetToolsTable.CreateOptionsPanel = function(t)
 		local optionsPanel = CreateFrame("Frame", t.title:gsub("%s+", "") .. "Options", InterfaceOptionsFramePanelContainer)
 		optionsPanel:SetSize(InterfaceOptionsFramePanelContainer:GetSize())
@@ -1005,7 +1000,7 @@ if not WidgetToolsTable then
 	--- - **cancel**? function *optional* — The function to be called then the "Cancel" button is clicked
 	--- - **default**? function *optional* — The function to be called then the "Default" button is clicked (refresh will be called automatically afterwards)
 	--- - **refresh**? function *optional* — The function to be called then the interface panel is loaded
-	---@return Frame optionspanel
+	---@return Frame optionsPanel
 	WidgetToolsTable.AddOptionsPanel = function(optionsPanel, t)
 		--Set up the options panel
 		optionsPanel.name = t.name

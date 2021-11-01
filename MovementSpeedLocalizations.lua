@@ -81,7 +81,7 @@ local english = {
 					[3] = "Note: If you are using a custom font file, that file can not carry over with this string. It will need to be inserted into the addon folder to be applied.",
 					[4] = "Only load strings that you have verified yourself or trust the source of!",
 				},
-				import = "Import & Load",
+				import = "Load the string",
 				warning = "Are you sure you want to attempt to load the currently inserted string?\n\nIf you've copied it from an online source or someone else has sent it to you, only load it after you've checked the code inside and you know what you are doing.\n\nIf don't trust the source, you may want to cancel to prevent any unwanted actions.", --\n represents the newline character
 				error = "The provided backup string could not be validated and no data was loaded. It might be missing some characters or errors may heve been introduced if it was edited.",
 			},
@@ -97,7 +97,7 @@ local english = {
 		},
 		options = {
 			command = "options",
-			description = "open the #ADDON options",
+			description = "open the #ADDON options", --# flags will be replaced with code
 		},
 		save = {
 			command = "save",
@@ -128,17 +128,6 @@ local english = {
 			unchanged = "The font size was not changed.",
 			error = "Please enter a valid number value (e.g. #SIZE_DEFAULT).", --# flags will be replaced with code
 		},
-	},
-	color = {
-		picker = {
-			label = "Pick a color",
-			tooltip = "Click to open the color picker to customize the color#ALPHA.", --# flags will be replaced with code
-			alpha = " and change the opacity",
-		},
-		hex = {
-			label = "Add via HEX color code",
-			tooltip = "You may change the color via HEX code instead of using the color picker.",
-		}
 	},
 	keys = {
 		shift = "SHIFT",
