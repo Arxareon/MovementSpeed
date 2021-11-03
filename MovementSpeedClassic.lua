@@ -212,6 +212,10 @@ end
 --[[ OPTIONS SETTERS ]]
 
 --Main frame positioning
+local function SavePreset()
+	db.position.point, _, _, db.position.offset.x, db.position.offset.y = movSpeed:GetPoint()
+	print(colors.sg .. addon .. ":" .. colors.ly .. " " .. strings.chat.save.response)
+end
 local function MoveToPreset()
 	movSpeed:ClearAllPoints()
 	movSpeed:SetUserPlaced(false)
@@ -219,13 +223,10 @@ local function MoveToPreset()
 	movSpeed:SetUserPlaced(true)
 	print(colors.sg .. addon .. ":" .. colors.ly .. " " .. strings.chat.preset.response)
 end
-local function SavePosition()
-	db.position.point, _, _, db.position.offset.x, db.position.offset.y = movSpeed:GetPoint()
-	print(colors.sg .. addon .. ":" .. colors.ly .. " " .. strings.chat.save.response)
-end
 local function DefaultPreset()
 	db.position = Clone(dbDefault.position)
 	print(colors.sg .. addon .. ":" .. colors.ly .. " " .. strings.chat.reset.response)
+	MoveToPreset()
 end
 
 ---Set the visibility of the main display frame based on the flipped value of the input parameter
@@ -309,7 +310,7 @@ local function CreatePositionOptions(parentFrame)
 	local savePopup = wt.CreatePopup({
 		name = strings.options.position.save.label,
 		text = strings.options.position.save.warning,
-		onAccept = function() SavePosition() end
+		onAccept = function() SavePreset() end
 	})
 	wt.CreateButton({
 		parent = parentFrame,
@@ -579,6 +580,7 @@ local function DefaultMain() --Refresh() is called automatically
 	MovementSpeedDB = Clone(dbDefault)
 	db = Clone(dbDefault)
 	SetDisplayValues(db)
+	MoveToPreset()
 	print(colors.sg .. addon .. ": " .. colors.ly .. strings.options.defaults)
 end
 ---Update the main interface option panel GUI frames
@@ -730,7 +732,7 @@ function SlashCmdList.MOVESPEED(line)
 		InterfaceOptionsFrame_OpenToCategory(addon)
 		InterfaceOptionsFrame_OpenToCategory(addon) --Load twice to make sure the proper page and category is loaded
 	elseif command == strings.chat.save.command then
-		SavePosition()
+		SavePreset()
 	elseif command == strings.chat.preset.command then
 		MoveToPreset()
 	elseif command == strings.chat.reset.command then
