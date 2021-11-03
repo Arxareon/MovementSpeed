@@ -139,28 +139,36 @@ if not WidgetToolsTable then
 	--- - **frame** [FrameType](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types) ― The frame panel to add the title and (optional) description to
 	--- - **title** table
 	--- 	- **text** string ― Text to be shown as the main title of the frame
+	--- 	- **template** string ― Template to be used for the [FontString](https://wowpedia.fandom.com/wiki/UIOBJECT_FontString)
 	--- 	- **anchor**? [AnchorPoint](https://wowwiki-archive.fandom.com/wiki/Widget_Anchor_Points#All_sides) *optional* ― (Default: "TOPLEFT")
 	--- 	- **offset**? table *optional* ― The offset from the anchor point relative to the specified frame
 	--- 		- **x** number ― Horizontal offset value
 	--- 		- **y** number ― Vertical offset value
-	--- 	- **template** string ― Template to be used for the [FontString](https://wowpedia.fandom.com/wiki/UIOBJECT_FontString)
+	--- 	- **width**? number *optional*
+	--- 	- **justify**? table *optional* — Set the horizontal justification of the [FontInstance](https://wowwiki-archive.fandom.com/wiki/Widget_API#FontInstance): "LEFT"|"RIGHT"|"CENTER"
 	--- - **description**? table *optional*
 	--- 	- **text** string ― Text to be shown as the subtitle/description of the frame
+	--- 	- **template** string ― Template to be used for the [FontString](https://wowpedia.fandom.com/wiki/UIOBJECT_FontString)
 	--- 	- **offset**? table *optional* ― The offset from the BOTTOMLEFT point of the main title [FontString](https://wowpedia.fandom.com/wiki/UIOBJECT_FontString)
 	--- 		- **x** number ― Horizontal offset value
 	--- 		- **y** number ― Vertical offset value
-	--- 	- **template** string ― Template to be used for the [FontString](https://wowpedia.fandom.com/wiki/UIOBJECT_FontString)
+	--- 	- **width**? number *optional*
+	--- 	- **justify**? table *optional* — Set the horizontal justification of the [FontInstance](https://wowwiki-archive.fandom.com/wiki/Widget_API#FontInstance): "LEFT"|"RIGHT"|"CENTER"
 	---@return string|table title
 	---@return string|table? description
 	WidgetToolsTable.AddTitle = function(t)
 		--Title
 		local title = t.frame:CreateFontString(t.frame:GetName() .. "Title", "ARTWORK", t.title.template)
 		title:SetPoint(t.title.anchor or "TOPLEFT", (t.title.offset or {}).x, (t.title.offset or {}).y)
+		if t.title.width ~= nil then title:SetWidth(t.title.width) end
+		if t.title.justify ~= nil then title:SetJustifyH(t.title.justify) end
 		title:SetText(t.title.text)
 		if t.description == nil then return title end
 		--Description
 		local description = t.frame:CreateFontString(t.frame:GetName() .. "Description", "ARTWORK", t.description.template)
 		description:SetPoint("TOPLEFT", title, "BOTTOMLEFT", (t.description.offset or {}).x, (t.description.offset or {}).y)
+		if t.description.width ~= nil then description:SetWidth(t.description.width) end
+		if t.description.justify ~= nil then description:SetJustifyH(t.description.justify) end
 		description:SetText(t.description.text)
 		return title, description
 	end
@@ -202,13 +210,13 @@ if not WidgetToolsTable then
 			frame = category,
 			title = {
 				text = t.title,
-				offset = { x = 10, y = 16 },
 				template = "GameFontNormal",
+				offset = { x = 10, y = 16 }
 			},
 			description = {
 				text = t.description,
-				offset = { x = 4, y = -16 },
 				template = "GameFontHighlightSmall",
+				offset = { x = 4, y = -16 }
 			},
 		})
 		return category
@@ -428,8 +436,8 @@ if not WidgetToolsTable then
 				frame = editBox,
 				title = {
 					text = t.label,
-					offset = { x = -1, y = 18 },
-					template = "GameFontNormal"
+					template = "GameFontNormal",
+					offset = { x = -1, y = 18 }
 				}
 			})
 		end
@@ -505,8 +513,8 @@ if not WidgetToolsTable then
 				frame = scrollFrame,
 				title = {
 					text = t.label,
-					offset = { x = -1, y = 20 },
-					template = "GameFontNormal"
+					template = "GameFontNormal",
+					offset = { x = -1, y = 20 }
 				}
 			})
 		end
@@ -679,8 +687,8 @@ if not WidgetToolsTable then
 				frame = dropdown,
 				title = {
 					text = t.label,
-					offset = { x = 22, y = 16 },
-					template = "GameFontNormal"
+					template = "GameFontNormal",
+					offset = { x = 22, y = 16 }
 				}
 			})
 		end
@@ -910,8 +918,8 @@ if not WidgetToolsTable then
 			frame = pickerFrame,
 			title = {
 				text = t.label,
-				offset = { x = 4, y = 0 },
-				template = "GameFontNormal"
+				template = "GameFontNormal",
+				offset = { x = 4, y = 0 }
 			}
 		})
 		--Add color picker button to open the Blizzard Color Picker
@@ -962,17 +970,21 @@ if not WidgetToolsTable then
 		optionsPanel:SetPoint("TOPLEFT") --Preload the frame
 		optionsPanel:Hide()
 		--Title & description
-		local _, description = WidgetToolsTable.AddTitle({
+		WidgetToolsTable.AddTitle({
 			frame = optionsPanel,
 			title = {
 				text = t.title,
+				template = "GameFontNormalLarge",
 				offset = { x = 16, y= -16 },
-				template = "GameFontNormalLarge"
+				width = optionsPanel:GetWidth() - (t.icon ~= nil and 62 or 0),
+				justify = "LEFT"
 			},
 			description = {
 				text = t.description,
+				template = "GameFontHighlightSmall",
 				offset = { x = 0, y= -8 },
-				template = "GameFontHighlightSmall"
+				width = optionsPanel:GetWidth() - (t.icon ~= nil and 62 or 0),
+				justify = "LEFT"
 			}
 		})
 		--Icon texture

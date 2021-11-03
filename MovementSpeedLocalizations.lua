@@ -40,6 +40,10 @@ local english = {
 				label = "Hidden",
 				tooltip = "Hide or show the main #ADDON display.", --# flags will be replaced with code
 			},
+			raise = {
+				label = "Appear on top",
+				tooltip = "Raise the display above most of the other UI elements."
+			},
 			backdrop = {
 				label = "Background Graphic",
 				tooltip = "Toggle the visibility of the backdrop element of the main display.",
@@ -134,9 +138,7 @@ local english = {
 		enter = "ENTER",
 	},
 	misc = {
-		cancel = "Cancel",
 		default = "Default",
-		example = "Example",
 		custom = "Custom",
 	},
 }

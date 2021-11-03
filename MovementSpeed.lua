@@ -180,14 +180,20 @@ local function RemoveMismatch(dbToCheck, dbToSample) --Remove unused or outdated
 		end
 	end
 end
-local function RestoreOldData(dbToSaveTo) --Restore old data to the DB by matching removed items to known old keys
+local function RestoreOldData(dbToSaveTo) --Restore old data to an account-wide DB by matching removed items to known old keys
 	for k, v in pairs(oldData) do
-		if k == "offsetX" then
+		if k == "point" then
+			dbToSaveTo.position.print = v
+			oldData.k = nil
+		elseif k == "offsetX" then
 			dbToSaveTo.position.offset.x = v
+			oldData.k = nil
 		elseif k == "offsetY" then
 			dbToSaveTo.position.offset.y = v
+			oldData.k = nil
 		elseif k == "hidden" then
 			dbToSaveTo.appearance.hidden = v
+			oldData.k = nil
 		end
 	end
 end
@@ -273,8 +279,9 @@ end
 ---@param data table DB table to set the main display values from
 local function SetDisplayValues(data)
 	--Visibility
+	movSpeed:SetFrameStrata(db.appearance.frameStrata)
 	FlipVisibility(data.appearance.hidden)
-	--Backdrop
+	--Display
 	SetDisplaySize(data.font.size)
 	SetDisplayBackdrop(
 		data.appearance.backdrop.visible,
@@ -366,12 +373,25 @@ local function CreateAppearanceOptions(parentFrame)
 		tooltip = strings.options.appearance.hidden.tooltip:gsub("#ADDON", addon),
 		onClick = function(self) FlipVisibility(self:GetChecked()) end
 	})
+	--Checkbox: Raise
+	options.appearance.raise = wt.CreateCheckbox({
+		parent = parentFrame,
+		position = {
+			anchor = "TOPLEFT",
+			relativeTo = options.appearance.hidden,
+			relativePoint = "BOTTOMLEFT",
+			offset = { x = 0, y = -4 }
+		},
+		label = strings.options.appearance.raise.label,
+		tooltip = strings.options.appearance.raise.tooltip,
+		onClick = function(self) movSpeed:SetFrameStrata(self:GetChecked() and "HIGH" or "MEDIUM") end
+	})
 	--Color Picker: Background color
 	_, options.appearance.backdrop.color.picker, options.appearance.backdrop.color.hex = wt.CreateColorPicker({
 		parent = parentFrame,
 		position = {
 			anchor = "TOP",
-			offset = { x = 0, y = -64 }
+			offset = { x = 0, y = -93 }
 		},
 		label = strings.options.appearance.backdrop.color.label,
 		opacity = true,
@@ -395,7 +415,7 @@ local function CreateAppearanceOptions(parentFrame)
 		parent = parentFrame,
 		position = {
 			anchor = "TOPLEFT",
-			relativeTo = options.appearance.hidden,
+			relativeTo = options.appearance.raise,
 			relativePoint = "BOTTOMLEFT",
 			offset = { x = 0, y = -4 }
 		},
@@ -509,7 +529,7 @@ local function CreateMainCategoryPanels(parentFrame)
 			relativePoint = "BOTTOMLEFT",
 			offset = { x = 0, y = -32 }
 		},
-		size = { height = 113 },
+		size = { height = 142 },
 		title = strings.options.appearance.title,
 		description = strings.options.appearance.description:gsub("#ADDON", addon)
 	})
@@ -549,6 +569,7 @@ end
 local function SaveMain()
 	--Appearance
 	db.appearance.hidden = options.appearance.hidden:GetChecked()
+	db.appearance.frameStrata = options.appearance.raise:GetChecked() and "HIGH" or "MEDIUM"
 	db.appearance.backdrop.visible = options.appearance.backdrop.visible:GetChecked()
 	db.appearance.backdrop.color.r, db.appearance.backdrop.color.g, db.appearance.backdrop.color.b, db.appearance.backdrop.color.a = options.appearance.backdrop.color.picker:GetBackdropColor()
 	--Font
@@ -567,6 +588,7 @@ end
 local function UpdateMain(data)
 	--Appearance
 	options.appearance.hidden:SetChecked(data.appearance.hidden)
+	options.appearance.raise:SetChecked(data.appearance.frameStrata == "HIGH")
 	options.appearance.backdrop.visible:SetChecked(data.appearance.backdrop.visible)
 	options.appearance.backdrop.color.picker:SetBackdropColor(
 		data.appearance.backdrop.color.r,
@@ -587,7 +609,6 @@ local function UpdateMain(data)
 	options.font.color.picker:SetBackdropColor(data.font.color.r, data.font.color.g, data.font.color.b, data.font.color.a)
 	options.font.color.hex:SetText(wt.ColorToHex(data.font.color.r, data.font.color.g, data.font.color.b, data.font.color.a))
 end
-
 ---Update the advanced interface option panel GUI frames
 ---@param data table DB table to load the interface options from
 local function UpdateAdvanced(data)
@@ -749,7 +770,6 @@ end
 --Set frame parameters
 local function SetUpMainDisplayFrame()
 	--Main frame
-	movSpeed:SetFrameStrata(db.appearance.frameStrata)
 	movSpeed:SetToplevel(true)
 	movSpeed:SetSize(33, 10)
 	if not movSpeed:IsUserPlaced() then
@@ -757,7 +777,7 @@ local function SetUpMainDisplayFrame()
 		movSpeed:SetPoint(dbDefault.position.point, dbDefault.position.offset.x, dbDefault.position.offset.y)
 		movSpeed:SetUserPlaced(true)
 	end
-	--Backdrop
+	--Display
 	SetDisplaySize(db.font.size)
 	mainDisplay:SetPoint("CENTER")
 	--Text
@@ -802,8 +822,8 @@ local function LoadDB()
 	RemoveMismatch(db, dbDefault) --Remove unneeded data
 	RestoreOldData(db) --Save old data
 end
-function movSpeed:ADDON_LOADED(addon)
-	if addon ~= "MovementSpeed" then return end
+function movSpeed:ADDON_LOADED(name)
+	if name ~= addonNameSpace then return end
 	movSpeed:UnregisterEvent("ADDON_LOADED")
 	--Load & check the DB
 	LoadDB()
@@ -812,9 +832,7 @@ function movSpeed:ADDON_LOADED(addon)
 	--Set up the interface options
 	LoadInterfaceOptions()
 end
-function movSpeed:PLAYER_LOGIN()
-	if not movSpeed:IsShown() then PrintVisibility() end
-end
+function movSpeed:PLAYER_LOGIN() if not movSpeed:IsShown() then PrintVisibility() end end
 
 
 --[[ DISPLAY UPDATE ]]
