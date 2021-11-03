@@ -1,4 +1,4 @@
-# Fallback to MovementSpeed-Mainline.toc
+# Fallback to the Mainline version
 
 ## Interface: 90105
 ## Title: Movement Speed
