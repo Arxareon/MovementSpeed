@@ -14,6 +14,9 @@
 # Support
 [![Donate on PayPal](https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/PayPal.svg/124px-PayPal.svg.png)](https://www.paypal.com/donate/?hosted_button_id=Z4FSAFKA5LX98)
 
+# CurseForge
+Movement Speed is also available on [CurseForge](https://www.curseforge.com/wow/addons/movement-speed) (providing automatic updates via the CurseForge App).
+
 # Licence
 All Rights Reserved unless otherwise explicitly stated.
 
