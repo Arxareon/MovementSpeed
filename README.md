@@ -9,7 +9,7 @@
 # Other Addons
 *If you like minimalistic solutions, you might want to check out there Addons as well:*
 
-**[Remaining XP](https://bitbucket.org/Arxareon/remaining-xp)** • Displays the XP required to reach the next level.
+[**Remaining XP**](https://bitbucket.org/Arxareon/remaining-xp) • Displays the XP required to reach the next level.
 
 # Support
 [![Donate on PayPal](https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/PayPal.svg/124px-PayPal.svg.png)](https://www.paypal.com/donate/?hosted_button_id=Z4FSAFKA5LX98)
