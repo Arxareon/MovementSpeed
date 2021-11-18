@@ -73,7 +73,6 @@ local mainDisplayText = mainDisplay:CreateFontString(mainDisplay:GetName() .. "T
 
 --Register events
 movSpeed:RegisterEvent("ADDON_LOADED")
-movSpeed:RegisterEvent("PLAYER_LOGIN")
 movSpeed:RegisterEvent("PET_BATTLE_OPENING_START")
 movSpeed:RegisterEvent("PET_BATTLE_CLOSE")
 
@@ -183,7 +182,7 @@ end
 local function RestoreOldData(dbToSaveTo) --Restore old data to an account-wide DB by matching removed items to known old keys
 	for k, v in pairs(oldData) do
 		if k == "point" then
-			dbToSaveTo.position.print = v
+			dbToSaveTo.position.point = v
 			oldData.k = nil
 		elseif k == "offsetX" then
 			dbToSaveTo.position.offset.x = v
@@ -833,8 +832,9 @@ function movSpeed:ADDON_LOADED(name)
 	SetUpMainDisplayFrame()
 	--Set up the interface options
 	LoadInterfaceOptions()
+	--Visibility notice
+	if not movSpeed:IsShown() then PrintVisibility() end
 end
-function movSpeed:PLAYER_LOGIN() if not movSpeed:IsShown() then PrintVisibility() end end
 
 
 --[[ DISPLAY UPDATE ]]
