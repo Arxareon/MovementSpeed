@@ -429,7 +429,13 @@ local function CreateFontOptions(parentFrame)
 	local fontItems = {}
 	for i = 0, #fonts do
 		fontItems[i] = fonts[i]
-		fontItems[i].onSelect = function() mainDisplayText:SetFont(fonts[i].path, options.font.size:GetValue(), "THINOUTLINE") end
+		fontItems[i].onSelect = function()
+			mainDisplayText:SetFont(fonts[i].path, options.font.size:GetValue(), "THINOUTLINE")
+			--Refresh the text so the font will be applied even if it's selected for the first time
+			local text = mainDisplayText:GetText()
+			mainDisplayText:SetText("")
+			mainDisplayText:SetText(text)
+		end
 	end
 	options.font.family = wt.CreateDropdown({
 		parent = parentFrame,
@@ -442,7 +448,7 @@ local function CreateFontOptions(parentFrame)
 		tooltipExtra = {
 			[0] = { text = strings.options.font.family.tooltip[1] },
 			[1] = { text = "\n" .. strings.options.font.family.tooltip[2]:gsub("#OPTION_CUSTOM", strings.misc.custom):gsub("#FILE_CUSTOM", "CUSTOM.ttf") },
-			[2] = { text = "[WoW]\\Interface\\AddOns\\MovementSpeed\\Fonts\\", color = { r = 0.185, g = 0.72, b = 0.84 }, wrap = false },
+			[2] = { text = "[WoW]\\Interface\\AddOns\\" .. addonNameSpace .. "\\Fonts\\", color = { r = 0.185, g = 0.72, b = 0.84 }, wrap = false },
 			[3] = { text = strings.options.font.family.tooltip[3]:gsub("#FILE_CUSTOM", "CUSTOM.ttf") },
 			[4] = { text = strings.options.font.family.tooltip[4], color = { r = 0.89, g = 0.65, b = 0.40 } },
 		},
