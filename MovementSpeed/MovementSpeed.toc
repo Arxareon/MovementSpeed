@@ -1,12 +1,15 @@
-# Fallback to the Mainline version
-
-## Interface: 90105
+## Interface: 90200 #Fallback to the Mainline version
 ## Title: Movement Speed
-## Version: 2.0
+## Version: 2.2
+## X-Day: 11
+## X-Month: 3
+## X-Year: 2022
 ## Author: Barnabas Nagy (Arxareon)
+## X-License: All Rights Reserved
 ## Notes: Shows the current movement speed of the player in percentage.
-## SavedVariables: MovementSpeedDB
+## SavedVariables: MovementSpeedDB, MovementSpeedCS
+## SavedVariablesPerCharacter: MovementSpeedDBC, MovementSpeedCSC
 
-WidgetTools.lua
+WidgetTools/WidgetTools.lua
 MovementSpeedLocalizations.lua
 MovementSpeed.lua
