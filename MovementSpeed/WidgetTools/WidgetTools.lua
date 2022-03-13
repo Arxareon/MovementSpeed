@@ -2,7 +2,7 @@
 local addonNameSpace, ns = ...
 
 --Version
-ns.WidgetToolsVersion = "1.1.2"
+ns.WidgetToolsVersion = "1.2"
 
 --Global WidgetTools table containing toolbox subtables for each respective WidgetTools version (WidgetToolbox["version_string"])
 if not WidgetToolbox then WidgetToolbox = {} end
@@ -79,8 +79,8 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--[[ ALIASES ]]
 
 	---@alias UniqueFrameType
-	---|'"Dropdown"'
 	---|'"Selector"'
+	---|'"Dropdown"'
 	---|'"ColorPicker"'
 
 
@@ -306,13 +306,25 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 		return recoveredData
 	end
 
+	--[ Math ]
+
+	---Round a decimal fraction to the specified number of digits
+	---@param number number A fractional number value to round
+	---@param decimals? number Specify the number of decimal places to round the number to [Default: 0]
+	---@return number
+	WidgetToolbox[ns.WidgetToolsVersion].Round = function(number, decimals)
+		local multiplier = 10 ^ (decimals or 0)
+		return math.floor(number * multiplier + 0.5) / multiplier
+	end
+
 	--[ String Formatting ]
 
 	---Format a number string to include thousand separation
 	---@param value number Number value to turn into a string with thousand separation
-	---@param decimals number Specify the number of decimal places to display if the number is a fractional value [Default: 2]
+	---@param decimals? number Specify the number of decimal places to display if the number is a fractional value [Default: 2]
+	---@param trim? boolean Trim trailing zeros in decimal places [Default: true]
 	---@return string
-	WidgetToolbox[ns.WidgetToolsVersion].FormatThousands = function(value, decimals)
+	WidgetToolbox[ns.WidgetToolsVersion].FormatThousands = function(value, decimals, trim)
 		local fraction = math.fmod(value, 1)
 		local integer = value - fraction
 		--Formatting
@@ -321,7 +333,9 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 			integer, leftover = string.gsub(integer, "^(-?%d+)(%d%d%d)", '%1' .. strings.separator .. '%2')
 			if leftover == 0 then break end
 		end
-		return integer .. (fraction ~= 0 and strings.decimal .. tostring(fraction):sub(3, (decimals or 2) + 2) or "")
+		local decimalText = tostring(fraction):sub(3, (decimals or 2) + 2)
+		if trim == false then for i = 1, decimals - #decimalText do decimalText = decimalText .. "0" end end
+		return integer .. ((fraction ~= 0 or trim == false) and strings.decimal .. decimalText or "")
 	end
 
 	---Remove all formatting escape sequences from a string (like **|cAARRGGBB**, **|r** pairs)
@@ -450,6 +464,8 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 		if frame["SetUserPlaced"] ~= nil and frame:IsMovable() then frame:SetUserPlaced(userPlaced == true) end
 	end
 
+	--[ Widget Dependency Management ]
+
 	---Check all dependencies (disable / enable rules) of a frame
 	---@param rules table Indexed, 0-based table containing the dependency rules of the frame object
 	--- - **frame** Frame — Reference to the widget the state of a widget is tied to
@@ -466,18 +482,24 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	local function CheckDependencies(rules)
 		local state = true
 		for i = 0, #rules do
-			if rules[i].frame:IsObjectType("CheckButton") then
-				if rules[i].evaluate ~= nil then
-					state = rules[i].evaluate(rules[i].frame:GetChecked())
-				else
-					state = rules[i].frame:GetChecked()
+			if rules[i].frame.IsObjectType ~= nil then
+				--Blizzard Widgets
+				if rules[i].frame:IsObjectType("CheckButton") then
+					if rules[i].evaluate ~= nil then
+						state = rules[i].evaluate(rules[i].frame:GetChecked())
+					else
+						state = rules[i].frame:GetChecked()
+					end
+				elseif rules[i].frame:IsObjectType("Slider") then
+					state = rules[i].evaluate(rules[i].frame:GetValue())
 				end
-			elseif rules[i].frame:IsObjectType("Slider") then
-				state = rules[i].evaluate(rules[i].frame:GetValue())
-			-- elseif rules[i].frame:IsObjectType("Dropdown") then
-			-- 	state = rules[i].evaluate()
-			-- elseif rules[i].frame:IsObjectType("Selector") then
-			-- 	state = rules[i].evaluate()
+			else
+				--Custom Widgets
+				if rules[i].frame.isObjectType("Selector") then
+					state = rules[i].evaluate(rules[i].frame.getSelected())
+				-- elseif rules[i].frame:IsObjectType("Dropdown") then
+				-- 	state = rules[i].evaluate()
+				end
 			end
 			if state == false then break end
 		end
@@ -486,7 +508,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 
 	---Set the dependencies (disable / enable rules) of a frame based on a ruleset
 	---@param rules table Indexed, 0-based table containing the dependency rules of the frame object
-	--- - **frame**? Frame — Tie the state of this widget to the evaluation of this frame's value
+	--- - **frame** Frame — Tie the state of this widget to the evaluation of this frame's value
 	--- - **evaluate**? function *optional* — Call this function to evaluate the current value of **rules.frame** [Default: *no evaluation, only for checkboxes*]
 	--- 	- @*param* **value**? any *optional* — The current value of **rules.frame**, its variable type depends on the [FrameType](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types) of **rules.frame** (see overloads)
 	--- 	- @*return* **evaluation** boolean — If false, disable the dependent widget (and enable it when true)
@@ -500,11 +522,26 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--- - @*param* boolean
 	local function SetDependencies(rules, setState)
 		for i = 0, #rules do
-			rules[i].frame:HookScript("OnAttributeChanged", function(_, name, value) if name == "loaded" and value == true then setState(CheckDependencies(rules)) end end)
-			if rules[i].frame:IsObjectType("CheckButton") then rules[i].frame:HookScript("OnClick", function() setState(CheckDependencies(rules)) end)
-			elseif rules[i].frame:IsObjectType("Slider") then rules[i].frame:HookScript("OnValueChanged", function() setState(CheckDependencies(rules)) end)
-			-- elseif rules[i].frame:IsObjectType("Dropdown") then rules[i].frame:HookScript("OnClick", setState(rules[i].evaluate()))
-			-- elseif rules[i].frame:IsObjectType("Selector") then rules[i].frame:HookScript("OnClick", setState(rules[i].evaluate()))
+			if rules[i].frame.HookScript ~= nil and rules[i].frame.IsObjectType ~= nil then
+				rules[i].frame:HookScript("OnAttributeChanged", function(_, name, value)
+					if name == "loaded" and value == true then setState(CheckDependencies(rules)) end
+				end)
+				--Blizzard Widgets
+				if rules[i].frame:IsObjectType("CheckButton") then
+					rules[i].frame:HookScript("OnClick", function() setState(CheckDependencies(rules)) end)
+				elseif rules[i].frame:IsObjectType("Slider") then
+					rules[i].frame:HookScript("OnValueChanged", function() setState(CheckDependencies(rules)) end)
+				end
+			else
+				rules[i].frame.frame:HookScript("OnAttributeChanged", function(_, name, value)
+					if name == "loaded" and value == true then setState(CheckDependencies(rules)) end
+				end)
+				--Custom Widgets
+				if rules[i].frame.isObjectType("Selector") then
+					rules[i].frame.frame:HookScript("OnAttributeChanged", function(_, name) if name == "selected" then setState(CheckDependencies(rules)) end end)
+				-- elseif rules[i].frame:IsObjectType("Dropdown") then
+				-- 	rules[i].frame:HookScript("OnClick", setState(rules[i].evaluate()))
+				end
 			end
 		end
 	end
@@ -567,8 +604,8 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 					if k == "CheckButton" then value = v[i].widget:GetChecked()
 					elseif k == "Slider" then value = v[i].widget:GetValue()
 					elseif k == "EditBox" then value = v[i].widget:GetText()
+					elseif k == "Selector" then value = v[i].widget.getSelected()
 					elseif k == "Dropdown" then value = UIDropDownMenu_GetSelectedValue(v[i].widget)
-					elseif k == "Selector" then -- value = optionsData[k][i].widget:GetName()
 					elseif k == "ColorPicker" then value = WidgetToolbox[ns.WidgetToolsVersion].PackColor(v[i].widget.getColor()) end
 					if value ~= nil then
 						--Save the value to the storage table
@@ -616,11 +653,14 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 						v[i].widget:SetAttribute("loaded", false)
 						v[i].widget:SetText(value)
 						v[i].widget:SetAttribute("loaded", true)
+					elseif k == "Selector" then
+						v[i].widget.frame:SetAttribute("loaded", false)
+						v[i].widget.setSelected(value)
+						v[i].widget.frame:SetAttribute("loaded", true)
 					elseif k == "Dropdown" then
 						v[i].widget:SetAttribute("loaded", false)
 						UIDropDownMenu_SetSelectedValue(v[i].widget, value)
 						v[i].widget:SetAttribute("loaded", true)
-					elseif k == "Selector" then -- value = optionsData[k][i].widget:GetName()
 					elseif k == "ColorPicker" then
 						v[i].widget.frame:SetAttribute("loaded", false)
 						v[i].widget.setColor(WidgetToolbox[ns.WidgetToolsVersion].UnpackColor(value))
@@ -685,8 +725,8 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	---@param owner Frame Owner frame the tooltip to be shown for
 	---@param anchor string [GameTooltip anchor](https://wowpedia.fandom.com/wiki/API_GameTooltip_SetOwner)
 	---@param title string String to be shown as the tooltip title
-	---@param text string String to be shown as the first line of tooltip summary
-	---@param textLines? table Table containing additional string lines to be added to the tooltip text [indexed, 0-based]
+	---@param text? string String to be shown as the first line of tooltip summary
+	---@param extraLines? table Table containing additional string lines to be added to the tooltip text [indexed, 0-based]
 	--- - **text** string ― Text to be added to the line
 	--- - **color**? table *optional* ― RGB colors line
 	--- 	- **r** number ― Red [Range: 0 - 1]
@@ -696,24 +736,26 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	---@param offsetX? number [Default: 0]
 	---@param offsetY? number [Default: 0]
 	---@return GameTooltip tooltip (Don't forget to hide later!)
-	WidgetToolbox[ns.WidgetToolsVersion].AddTooltip = function(tooltip, owner, anchor, title, text, textLines, offsetX, offsetY)
+	WidgetToolbox[ns.WidgetToolsVersion].AddTooltip = function(tooltip, owner, anchor, title, text, extraLines, offsetX, offsetY)
 		if tooltip == nil then tooltip = customTooltip end
 		--Position
 		tooltip:SetOwner(owner, anchor, offsetX, offsetY)
 		--Title
 		tooltip:AddLine(title, colors.title.r, colors.title.g, colors.title.b, true)
 		--Summary
-		tooltip:AddLine(text, colors.normal.r, colors.normal.g, colors.normal.b, true)
-		--Additional text lines
-		if textLines ~= nil then
-			--Empty line after the summary
-			tooltip:AddLine(" ", nil, nil, nil, true) --TODO: Check why the third line has the title FontObject
-			for i = 0, #textLines do
-				--Add line
-				local r = (textLines[i].color or {}).r or colors.normal.r
-				local g = (textLines[i].color or {}).g or colors.normal.g
-				local b = (textLines[i].color or {}).b or colors.normal.b
-				tooltip:AddLine(textLines[i].text, r, g, b, textLines[i].wrap == nil and true or textLines[i].wrap)
+		if text ~= nil then
+			tooltip:AddLine(text, colors.normal.r, colors.normal.g, colors.normal.b, true)
+			--Additional text lines
+			if extraLines ~= nil then
+				--Empty line after the summary
+				tooltip:AddLine(" ", nil, nil, nil, true) --TODO: Check why the third line has the title FontObject
+				for i = 0, #extraLines do
+					--Add line
+					local r = (extraLines[i].color or {}).r or colors.normal.r
+					local g = (extraLines[i].color or {}).g or colors.normal.g
+					local b = (extraLines[i].color or {}).b or colors.normal.b
+					tooltip:AddLine(extraLines[i].text, r, g, b, extraLines[i].wrap == nil and true or extraLines[i].wrap)
+				end
 			end
 		end
 		--Show
@@ -1190,9 +1232,9 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--- 	- **offset**? table *optional*
 	--- 		- **x** number
 	--- 		- **y** number
-	--- - **width**? number *optional* [Default: 40]
+	--- - **width**? number *optional* ― [Default: 40]
 	--- - **label** string — Title text to be shown on the button and as the the tooltip label
-	--- - **tooltip** string — Text to be shown as the tooltip of the button
+	--- - **tooltip**? string *optional* — Text to be shown as the tooltip of the button
 	--- - **tooltipExtra**? table [indexed, 0-based] *optional* — Additional text lines to be added to the tooltip of the button
 	--- 	- **text** string ― Text to be added to the line
 	--- 	- **color**? table *optional* ― RGB colors line
@@ -1205,8 +1247,8 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--- 	- **event** string — Event name
 	--- 	- **handler** function — The handler function to be called when the named event happens
 	--- - **disabled**? boolean *optional* — Set the state of this widget to be disabled on load [Default: false]
-	--- - **dependencies**? table [indexed, 0-based] *optional* — Automatically disable or enable this widget based on these rules
-	--- 	- **frame**? Frame — Tie the state of this widget to the evaluation of this frame's value
+	--- - **dependencies**? table [indexed, 0-based] *optional* — Automatically disable or enable this widget based on the rules described in subtables
+	--- 	- **frame** Frame — Tie the state of this widget to the evaluation of this frame's value
 	--- 	- **evaluate**? function *optional* — Call this function to evaluate the current value of **rules.frame** [Default: *no evaluation, only for checkboxes*]
 	--- 		- @*param* **value**? any *optional* — The current value of **rules.frame**, its variable type depends on the [FrameType](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types) of **rules.frame** (see overloads)
 	--- 		- @*return* **evaluation** boolean — If false, disable the dependent widget (and enable it when true)
@@ -1255,9 +1297,9 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--- 		- **x** number
 	--- 		- **y** number
 	--- - **autoOffset**? boolean *optional* — Offset the position of the checkbox in a Category Panel to place it into a 3 column grid based on its anchor point. [Default: false]
-	--- - **label** string — Title text to be shown on the button and as the the tooltip label
-	--- - **tooltip** string — Text to be shown as the tooltip of the button
-	--- - **tooltipExtra**? table [indexed, 0-based] *optional* — Additional text lines to be added to the tooltip of the button
+	--- - **label** string — Text to be shown to the right of the checkbox and as the the tooltip label
+	--- - **tooltip**? string *optional* — Text to be shown as the tooltip of the checkbox
+	--- - **tooltipExtra**? table [indexed, 0-based] *optional* — Additional text lines to be added to the tooltip of the checkbox
 	--- 	- **text** string ― Text to be added to the line
 	--- 	- **color**? table *optional* ― RGB colors line
 	--- 		- **r** number ― Red [Range: 0 - 1]
@@ -1269,8 +1311,8 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--- 	- **event** string — Event name
 	--- 	- **handler** function — The handler function to be called when the named event happens
 	--- - **disabled**? boolean *optional* — Set the state of this widget to be disabled on load [Default: false]
-	--- - **dependencies**? table [indexed, 0-based] *optional* — Automatically disable or enable this widget based on these rules
-	--- 	- **frame**? Frame — Tie the state of this widget to the evaluation of this frame's value
+	--- - **dependencies**? table [indexed, 0-based] *optional* — Automatically disable or enable this widget based on the rules described in subtables
+	--- 	- **frame** Frame — Tie the state of this widget to the evaluation of this frame's value
 	--- 	- **evaluate**? function *optional* — Call this function to evaluate the current value of **rules.frame** [Default: *no evaluation, only for checkboxes*]
 	--- 		- @*param* **value**? any *optional* — The current value of **rules.frame**, its variable type depends on the [FrameType](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types) of **rules.frame** (see overloads)
 	--- 		- @*return* **evaluation** boolean — If false, disable the dependent widget (and enable it when true)
@@ -1333,6 +1375,252 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 		return checkbox
 	end
 
+	--[ Selector & Radio Button ]
+
+	---Create a radio button frame as a child of a container frame
+	---@param t table Parameters are to be provided in this table
+	--- - **parent** Frame — The frame to set as the parent of the new radio button
+	--- - **name**? string *optional* — String to be included in the unique frame name (it will not be visible) [Default: **t.label**]
+	--- - **position** table — Collection of parameters to call [Region:SetPoint()](https://wowwiki-archive.fandom.com/wiki/API_Region_SetPoint#Arguments) with
+	--- 	- **anchor** [AnchorPoint](https://wowwiki-archive.fandom.com/wiki/Widget_Anchor_Points#All_sides)
+	--- 	- **relativeTo**? [Frame](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types) *optional*
+	--- 	- **relativePoint**? [AnchorPoint](https://wowwiki-archive.fandom.com/wiki/Widget_Anchor_Points#All_sides) *optional*
+	--- 	- **offset**? table *optional*
+	--- 		- **x** number
+	--- 		- **y** number
+	--- - **width**? number *optional* — The combined width of the radio button's dot and the clickable extension to the right of it (where the label is) [Default: 140]
+	--- - **label** string — Text to be shown on the right of the radio button and as the the tooltip label
+	--- - **title**? boolean *optional* — Whether or not to show the label and add a clickable extension next to the the radio button bot [Default: true]
+	--- - **tooltip**? string *optional* — Text to be shown as the tooltip of the radio button
+	--- - **tooltipExtra**? table [indexed, 0-based] *optional* — Additional text lines to be added to the tooltip of the radio button
+	--- 	- **text** string ― Text to be added to the line
+	--- 	- **color**? table *optional* ― RGB colors line
+	--- 		- **r** number ― Red [Range: 0 - 1]
+	--- 		- **g** number ― Green [Range: 0 - 1]
+	--- 		- **b** number ― Blue [Range: 0 - 1]
+	--- 	- **wrap**? boolean *optional* ― Allow wrapping the line [Default: true]
+	--- - **onClick**? function *optional* — The function to be called when an [OnClick](https://wowpedia.fandom.com/wiki/UIHANDLER_OnClick) event happens
+	--- - **onEvent**? table [indexed, 0-based] *optional* — Table that holds additional event handler scripts to be set for the radio button
+	--- 	- **event** string — Event name
+	--- 	- **handler** function — The handler function to be called when the named event happens
+	--- - **disabled**? boolean *optional* — Set the state of this widget to be disabled on load [Default: false]
+	--- - **dependencies**? table [indexed, 0-based] *optional* — Automatically disable or enable this widget based on the rules described in subtables
+	--- 	- **frame** Frame — Tie the state of this widget to the evaluation of this frame's value
+	--- 	- **evaluate**? function *optional* — Call this function to evaluate the current value of **rules.frame** [Default: *no evaluation, only for radio buttons*]
+	--- 		- @*param* **value**? any *optional* — The current value of **rules.frame**, its variable type depends on the [FrameType](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types) of **rules.frame** (see overloads)
+	--- 		- @*return* **evaluation** boolean — If false, disable the dependent widget (and enable it when true)
+	--- 		- ***Overloads:***
+	--- 			- function(**value**: boolean) -> **evaluation**: boolean — If **rules.frame** is recognized as a checkbox
+	--- 			- function(**value**: number) -> **evaluation**: boolean — If **rules.frame** is recognized as a slider
+	--- 			- function(**value**: integer) -> **evaluation**: boolean — If **rules.frame** is recognized as a dropdown or selector
+	--- 			- function(**value**: nil) -> **evaluation**: boolean — In any other case *(could be used to add a unique rule tied to unrecognized frame types)*
+	--- 		- ***Note:*** **rules.evaluate** must be defined if the [FrameType](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types) of **rules.frame** is not "CheckButton".
+	--- - **optionsTable**? table ― Reference to the table where all options data should be stored in [Default: **WidgetToolbox[ns.WidgetToolsVersion].OptionsData** *(the data of all addons is stored collectively)*]
+	--- - **optionsData**? table ― If set, add the radio button to the referenced options data table to save & load its value automatically to & from the specified storageTable
+	--- 	- **storageTable** table ― Reference to the table containing the value modified by the options widget
+	--- 	- **key** string ― Key of the variable inside the storage table
+	--- 	- **convertSave**? function *optional* — Function to convert or modify the data while it is being saved from the widget to the storage table
+	--- 		- @*param* boolean ― The current value of the radio button
+	--- 		- @*return* any ― The converted data to be saved to the storage table
+	--- 	- **convertLoad**? function *optional* — Function to convert or modify the data while it is being loaded from the storage table to the widget as its value
+	--- 		- @*param* any ― The data in the storage table to be converted and loaded to the radio button
+	--- 		- @*return* boolean ― The value to be set to the radio button
+	--- - **onSave**? function *optional* — Function to be called when they okay button is pressed (after the data has been saved from the options widget to the storage table)
+	--- 	- @*param* **self** Frame ― Reference to the widget
+	--- - **onLoad**? function *optional* — Function to be called when an options category is refreshed (after the data has been restored from the storage table to the widget)
+	--- 	- @*param* **self** Frame ― Reference to the widget
+	---@return CheckButton radioButton
+	WidgetToolbox[ns.WidgetToolsVersion].CreateRadioButton = function(t)
+		local radioButton = CreateFrame("CheckButton", t.parent:GetName() .. (t.name or t.label:gsub("%s+", "")) .. "RadioButton", t.parent, "UIRadioButtonTemplate")
+		--Position & dimensions
+		WidgetToolbox[ns.WidgetToolsVersion].PositionFrame(
+			radioButton, t.position.anchor, t.position.relativeTo, t.position.relativePoint, (t.position.offset or {}).x, (t.position.offset or {}).y
+		)
+		--Label & clickable extension
+		if t.title ~= false then
+			--Font & text
+			getglobal(radioButton:GetName() .. "Text"):SetFontObject("GameFontHighlightSmall")
+			getglobal(radioButton:GetName() .. "Text"):SetText(t.label)
+			--Add extension
+			local extension = CreateFrame("Frame", radioButton:GetName() .. "Extension", radioButton)
+			--Position & dimensions
+			extension:SetSize((t.width or 140) - radioButton:GetWidth(), radioButton:GetHeight())
+			extension:SetPoint("TOPLEFT", radioButton, "TOPRIGHT")
+			--Linked events
+			extension:HookScript("OnEnter", function() if radioButton:IsEnabled() then radioButton:LockHighlight() end end)
+			extension:HookScript("OnLeave", function() if radioButton:IsEnabled() then radioButton:UnlockHighlight() end end)
+			extension:HookScript("OnMouseDown", function() if radioButton:IsEnabled() then radioButton:Click() end end)
+			--Tooltip
+			extension:HookScript("OnEnter", function()
+				WidgetToolbox[ns.WidgetToolsVersion].AddTooltip(nil, radioButton, "ANCHOR_RIGHT", t.label, t.tooltip, t.tooltipExtra)
+			end)
+			extension:HookScript("OnLeave", function() customTooltip:Hide() end)
+		end
+		--Event handlers
+		if t.onClick ~= nil then radioButton:SetScript("OnClick", t.onClick) end
+		radioButton:HookScript("OnClick", function() PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON) end)
+		if t.onEvent ~= nil then for i = 0, #t.onEvent do radioButton:HookScript(t.onEvent[i].event, t.onEvent[i].handler) end end
+		--Tooltip
+		radioButton:HookScript("OnEnter", function()
+			WidgetToolbox[ns.WidgetToolsVersion].AddTooltip(nil, radioButton, "ANCHOR_RIGHT", t.label, t.tooltip, t.tooltipExtra)
+		end)
+		radioButton:HookScript("OnLeave", function() customTooltip:Hide() end)
+		--State & dependencies
+		if t.disabled then
+			radioButton:Disable()
+			getglobal(radioButton:GetName() .. "Text"):SetFontObject("GameFontDisableSmall")
+		end
+		if t.dependencies ~= nil then SetDependencies(t.dependencies, function(state)
+			radioButton:SetEnabled(state)
+			getglobal(radioButton:GetName() .. "Text"):SetFontObject(state and "GameFontHighlightSmall" or "GameFontDisableSmall")
+		end) end
+		--Add to options data management
+		if t.optionsData ~= nil or t.onSave ~= nil or t.onLoad ~= nil then
+			WidgetToolbox[ns.WidgetToolsVersion].AddOptionsData(radioButton, radioButton:GetObjectType(), t.onSave, t.onLoad, t.optionsTable, t.optionsData)
+		end
+		return radioButton
+	end
+
+	---Set up the built-in Color Picker and create a button as a child of a container frame to open it
+	---@param t table Parameters are to be provided in this table
+	--- - **parent** Frame — The frame to set as the parent of the new selector
+	--- - **name**? string *optional* — String to be included in the unique frame name (it will not be visible) [Default: **t.label**]
+	--- - **position** table — Collection of parameters to call [Region:SetPoint()](https://wowwiki-archive.fandom.com/wiki/API_Region_SetPoint#Arguments) with
+	--- 	- **anchor** [AnchorPoint](https://wowwiki-archive.fandom.com/wiki/Widget_Anchor_Points#All_sides)
+	--- 	- **relativeTo**? [Frame](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types) *optional*
+	--- 	- **relativePoint**? [AnchorPoint](https://wowwiki-archive.fandom.com/wiki/Widget_Anchor_Points#All_sides) *optional*
+	--- 	- **offset**? table *optional*
+	--- 		- **x** number
+	--- 		- **y** number
+	--- - **width**? number *optional* ― The height is defaulted to 36, the width may be specified [Default: 140]
+	--- - **title** string — Title text to be shown above the radio buttons
+	--- - **items** table [indexed, 0-based] — Table containing subtables with data used to create radio button items, or already existing radio button widget frames
+	--- 	- **label** string — Text to represent the items within the selector frame
+	--- 	- **tooltip**? string *optional* — Text to be shown as the tooltip of the radio button
+	--- 	- **tooltipExtra**? table [indexed, 0-based] *optional* — Additional text lines to be added to the tooltip of the radio button
+	--- 		- **text** string ― Text to be added to the line
+	--- 		- **color**? table *optional* ― RGB colors line
+	--- 			- **r** number ― Red [Range: 0 - 1]
+	--- 			- **g** number ― Green [Range: 0 - 1]
+	--- 			- **b** number ― Blue [Range: 0 - 1]
+	--- 		- **wrap**? boolean *optional* ― Allow wrapping the line [Default: true]
+	--- 	- **onSelect**? function *optional* — The function to be called when the radio button is clicked and the item is selected
+	--- - **labels**? boolean *optinal* — Whether or not to add the labels to the right of each newly created radio button [Default: true]
+	--- - **columns**? integer *optional* — Arrange the newly created radio buttons in a grid with the specified number of columns instead of a vertical list [Default: 1]
+	--- - **selected?** integer *optional* — The item to be set as selected on load [Default: 0]
+	--- - **disabled**? boolean *optional* — Set the state of this widget to be disabled on load [Default: false]
+	--- - **dependencies**? table [indexed, 0-based] *optional* — Automatically disable or enable this widget based on the rules described in subtables
+	--- 	- **frame** Frame — Tie the state of this widget to the evaluation of this frame's value
+	--- 	- **evaluate**? function *optional* — Call this function to evaluate the current value of **rules.frame** [Default: *no evaluation, only for checkboxes*]
+	--- 		- @*param* **value**? any *optional* — The current value of **rules.frame**, its variable type depends on the [FrameType](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types) of **rules.frame** (see overloads)
+	--- 		- @*return* **evaluation** boolean — If false, disable the dependent widget (and enable it when true)
+	--- 		- ***Overloads:***
+	--- 			- function(**value**: boolean) -> **evaluation**: boolean — If **rules.frame** is recognized as a checkbox
+	--- 			- function(**value**: number) -> **evaluation**: boolean — If **rules.frame** is recognized as a slider
+	--- 			- function(**value**: integer) -> **evaluation**: boolean — If **rules.frame** is recognized as a dropdown or selector
+	--- 			- function(**value**: nil) -> **evaluation**: boolean — In any other case *(could be used to add a unique rule tied to unrecognized frame types)*
+	--- 		- ***Note:*** **rules.evaluate** must be defined if the [FrameType](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types) of **rules.frame** is not "CheckButton".
+	--- - **optionsTable**? table ― Reference to the table where all options data should be stored in [Default: **WidgetToolbox[ns.WidgetToolsVersion].OptionsData** *(the data of all addons is stored collectively)*]
+	--- - **optionsData**? table ― If set, add the selector to the referenced options data table to save & load its value automatically to & from the specified storageTable
+	--- 	- **storageTable** table ― Reference to the table containing the value modified by the options widget
+	--- 	- **key** string ― Key of the variable inside the storage table
+	--- 	- **convertSave**? function *optional* — Function to convert or modify the data while it is being saved from the widget to the storage table
+	--- 		- @*param* integer ― The index of the currently selected item in the selector
+	--- 		- @*return* any ― The converted data to be saved to the storage table
+	--- 	- **convertLoad**? function *optional* — Function to convert or modify the data while it is being loaded from the storage table to the widget as its value
+	--- 		- @*param* any ― The data in the storage table to be converted and loaded to the selector
+	--- 		- @*return* integer ― The index of the item to be set as selected in the selector
+	--- - **onSave**? function *optional* — Function to be called when they okay button is pressed (after the data has been saved from the options widget to the storage table)
+	--- 	- @*param* **self** Frame ― Reference to the widget
+	--- - **onLoad**? function *optional* — Function to be called when an options category is refreshed (after the data has been restored from the storage table to the widget)
+	--- 	- @*param* **self** Frame ― Reference to the widget
+	---@return table selector A table containing component frame references and getter & setter functions
+	--- - **frame** Frame Reference to the selector parent frame
+	--- 	- ***Events:***
+	--- 		- **OnAttributeChanged** ― Fired after **setSelected** was called (use **selector.frame**:[HookScript](https://wowwiki-archive.fandom.com/wiki/API_Frame_HookScript)(name, index) to add a listener)
+	--- 			- @*return* "selected" string
+	--- 			- @*return* **index** integer
+	--- - **getObjectType** function Returns the object type of this unique frame
+	--- 	- @*return* "Selector" UniqueFrameType
+	--- - **isObjectType** function Checks and returns if the type of this unique frame is equal to the string provided
+	--- 	- @*param* **type** string
+	--- 	- @*return* boolean
+	--- - **getSelected** function Returns the index of the currently selected item
+	--- 	- @*return* **index** integer — [Default: 0]
+	--- - **setSelected** function Set the specified item as selected (automatically called when an item is manually selected by cligking on a radio button)
+	--- 	- @*param* **index** integer
+	--- 	- @*param* **user** boolean — Whether to call **t.item.onSelect** [Default: false]
+	--- 	- @*return* boolean
+	WidgetToolbox[ns.WidgetToolsVersion].CreateSelector = function(t)
+		local selectorFrame = CreateFrame("Frame", t.parent:GetName() .. (t.name or t.label:gsub("%s+", "")) .. "Selector", t.parent)
+		--Position & dimensions
+		WidgetToolbox[ns.WidgetToolsVersion].PositionFrame(
+			selectorFrame, t.position.anchor, t.position.relativeTo, t.position.relativePoint, (t.position.offset or {}).x, (t.position.offset or {}).y
+		)
+		local frameWidth = (t.size or {}).width or 140
+		selectorFrame:SetSize(frameWidth, 36)
+		--Title
+		local title = WidgetToolbox[ns.WidgetToolsVersion].AddTitle({
+			frame = selectorFrame,
+			title = {
+				text = t.label,
+				template = "GameFontNormal",
+				offset = { x = 4, y = 0 }
+			}
+		})
+		--Add radio buttons
+		local items = {}
+		for i = 0, #t.items do
+			if t.items[i].GetObjectType ~= nil then --It's an already existing radio button
+				items[i] = t.items[i]
+			else --Create a new radio button
+				local sameRow = i % (t.columns or 1) > 0
+				items[i] = WidgetToolbox[ns.WidgetToolsVersion].CreateRadioButton({
+					parent = selectorFrame,
+					position = {
+						anchor = "TOPLEFT",
+						relativeTo = i > 0 and items[sameRow and i - 1 or i - (t.columns or 1)] or title,
+						relativePoint = sameRow and "TOPRIGHT" or "BOTTOMLEFT",
+						offset = { x = 0, y = i > 0 and 0 or -4 }
+					},
+					label = t.items[i].label,
+					title = t.labels,
+					tooltip = t.items[i].tooltip,
+					tooltipExtra = t.items[i].tooltipExtra,
+					dependencies = t.dependencies,
+				})
+
+			end
+		end
+		--State & dependencies
+		if t.disabled then
+			title:SetFontObject("GameFontDisable")
+		end
+		if t.dependencies ~= nil then SetDependencies(t.dependencies, function(state)
+			title:SetFontObject(state and "GameFontNormal" or "GameFontDisable")
+		end) end
+		--Assemble the seletor widget table
+		local selector = {
+			frame = selectorFrame,
+			getObjectType = function() return "Selector" end,
+			isObjectType = function(type) return type == "Selector" end,
+			getSelected = function() for i = 0, #items do if items[i]:GetChecked() then return i end end return 0 end,
+			setSelected = function(index, user)
+				if index > #items then index = #items elseif index < 0 then index = 0 end
+				for i = 0, #items do items[i]:SetChecked(i == index) end
+				if t.items[index].onSelect ~= nil and user == true then t.items[index].onSelect() end
+				selectorFrame:SetAttribute("selected", index)
+			end,
+		}
+		for i = 0, #items do items[i]:HookScript("OnClick", function() selector.setSelected(i, true) end) end
+		selector.setSelected(t.selected or 0)
+		--Add to options data management
+		if t.optionsData ~= nil or t.onSave ~= nil or t.onLoad ~= nil then
+			WidgetToolbox[ns.WidgetToolsVersion].AddOptionsData(selector, selector.getObjectType(), t.onSave, t.onLoad, t.optionsTable, t.optionsData)
+		end
+		return selector
+	end
+
 	--[ EditBox ]
 
 	---Create an editbox frame as a child of a container frame
@@ -1359,8 +1647,8 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--- 	- **event** string — Event name
 	--- 	- **handler** function — The handler function to be called when the named event happens
 	--- - **disabled**? boolean *optional* — Set the state of this widget to be disabled on load [Default: false]
-	--- - **dependencies**? table [indexed, 0-based] *optional* — Automatically disable or enable this widget based on these rules
-	--- 	- **frame**? Frame — Tie the state of this widget to the evaluation of this frame's value
+	--- - **dependencies**? table [indexed, 0-based] *optional* — Automatically disable or enable this widget based on the rules described in subtables
+	--- 	- **frame** Frame — Tie the state of this widget to the evaluation of this frame's value
 	--- 	- **evaluate**? function *optional* — Call this function to evaluate the current value of **rules.frame** [Default: *no evaluation, only for checkboxes*]
 	--- 		- @*param* **value**? any *optional* — The current value of **rules.frame**, its variable type depends on the [FrameType](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types) of **rules.frame** (see overloads)
 	--- 		- @*return* **evaluation** boolean — If false, disable the dependent widget (and enable it when true)
@@ -1450,8 +1738,8 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--- - **text**? string *optional* — Text to be shown inside editbox, loaded whenever the text box is shown
 	--- - **label** string — Name of the editbox to be shown as the tooltip title and optionally as the title text
 	--- - **title**? boolean *optional* — Whether or not to add a title above the editbox [Default: true]
-	--- - **tooltip** string — Text to be shown as the tooltip of the button
-	--- - **tooltipExtra**? table [indexed, 0-based] *optional* — Additional text lines to be added to the tooltip of the button
+	--- - **tooltip**? string *optional* — Text to be shown as the tooltip of the editbox
+	--- - **tooltipExtra**? table [indexed, 0-based] *optional* — Additional text lines to be added to the tooltip of the editbox
 	--- 	- **text** string ― Text to be added to the line
 	--- 	- **color**? table *optional* ― RGB colors line
 	--- 		- **r** number ― Red [Range: 0 - 1]
@@ -1466,8 +1754,8 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--- 	- **event** string — Event name
 	--- 	- **handler** function — The handler function to be called when the named event happens
 	--- - **disabled**? boolean *optional* — Set the state of this widget to be disabled on load [Default: false]
-	--- - **dependencies**? table [indexed, 0-based] *optional* — Automatically disable or enable this widget based on these rules
-	--- 	- **frame**? Frame — Tie the state of this widget to the evaluation of this frame's value
+	--- - **dependencies**? table [indexed, 0-based] *optional* — Automatically disable or enable this widget based on the rules described in subtables
+	--- 	- **frame** Frame — Tie the state of this widget to the evaluation of this frame's value
 	--- 	- **evaluate**? function *optional* — Call this function to evaluate the current value of **rules.frame** [Default: *no evaluation, only for checkboxes*]
 	--- 		- @*param* **value**? any *optional* — The current value of **rules.frame**, its variable type depends on the [FrameType](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types) of **rules.frame** (see overloads)
 	--- 		- @*return* **evaluation** boolean — If false, disable the dependent widget (and enable it when true)
@@ -1569,8 +1857,8 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--- - **text**? string *optional* — Text to be shown inside editbox, loaded whenever the text box is shown
 	--- - **label** string — Name of the editbox to be shown as the tooltip title and optionally as the title text
 	--- - **title**? boolean *optional* — Whether or not to add a title above the editbox [Default: true]
-	--- - **tooltip** string — Text to be shown as the tooltip of the button
-	--- - **tooltipExtra**? table [indexed, 0-based] *optional* — Additional text lines to be added to the tooltip of the button
+	--- - **tooltip**? string *optional* — Text to be shown as the tooltip of the editbox
+	--- - **tooltipExtra**? table [indexed, 0-based] *optional* — Additional text lines to be added to the tooltip of the editbox
 	--- 	- **text** string ― Text to be added to the line
 	--- 	- **color**? table *optional* ― RGB colors line
 	--- 		- **r** number ― Red [Range: 0 - 1]
@@ -1587,8 +1875,8 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--- 	- **event** string — Event name
 	--- 	- **handler** function — The handler function to be called when the named event happens
 	--- - **disabled**? boolean *optional* — Set the state of this widget to be disabled on load [Default: false]
-	--- - **dependencies**? table [indexed, 0-based] *optional* — Automatically disable or enable this widget based on these rules
-	--- 	- **frame**? Frame — Tie the state of this widget to the evaluation of this frame's value
+	--- - **dependencies**? table [indexed, 0-based] *optional* — Automatically disable or enable this widget based on the rules described in subtables
+	--- 	- **frame** Frame — Tie the state of this widget to the evaluation of this frame's value
 	--- 	- **evaluate**? function *optional* — Call this function to evaluate the current value of **rules.frame** [Default: *no evaluation, only for checkboxes*]
 	--- 		- @*param* **value**? any *optional* — The current value of **rules.frame**, its variable type depends on the [FrameType](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types) of **rules.frame** (see overloads)
 	--- 		- @*return* **evaluation** boolean — If false, disable the dependent widget (and enable it when true)
@@ -1888,8 +2176,8 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--- 		- **y** number
 	--- - **width**? number *optional*
 	--- - **label** string — Title text to be shown above the slider and as the the tooltip label
-	--- - **tooltip** string — Text to be shown as the tooltip of the slider
-	--- - **tooltipExtra**? table [indexed, 0-based] *optional* — Additional text lines to be added to the tooltip of the button
+	--- - **tooltip**? string *optional* — Text to be shown as the tooltip of the slider
+	--- - **tooltipExtra**? table [indexed, 0-based] *optional* — Additional text lines to be added to the tooltip of the slider
 	--- 	- **text** string ― Text to be added to the line
 	--- 	- **color**? table *optional* ― RGB colors line
 	--- 		- **r** number ― Red [Range: 0 - 1]
@@ -1910,8 +2198,8 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--- 	- **event** string — Event name
 	--- 	- **handler** function — The handler function to be called when the named event happens
 	--- - **disabled**? boolean *optional* — Set the state of this widget to be disabled on load [Default: false]
-	--- - **dependencies**? table [indexed, 0-based] *optional* — Automatically disable or enable this widget based on these rules
-	--- 	- **frame**? Frame — Tie the state of this widget to the evaluation of this frame's value
+	--- - **dependencies**? table [indexed, 0-based] *optional* — Automatically disable or enable this widget based on the rules described in subtables
+	--- 	- **frame** Frame — Tie the state of this widget to the evaluation of this frame's value
 	--- 	- **evaluate**? function *optional* — Call this function to evaluate the current value of **rules.frame** [Default: *no evaluation, only for checkboxes*]
 	--- 		- @*param* **value**? any *optional* — The current value of **rules.frame**, its variable type depends on the [FrameType](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types) of **rules.frame** (see overloads)
 	--- 		- @*return* **evaluation** boolean — If false, disable the dependent widget (and enable it when true)
@@ -2012,7 +2300,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--- - **width**? number *optional* — [Default: 115]
 	--- - **label** string — Name of the dropdown shown as the tooltip title and optionally as the title text
 	--- - **title**? boolean *optional* — Whether or not to add a title above the dropdown menu [Default: true]
-	--- - **tooltip** string — Text to be shown as the tooltip of the dropdown
+	--- - **tooltip**? string *optional* — Text to be shown as the tooltip of the dropdown
 	--- - **tooltipExtra**? table [indexed, 0-based] *optional* — Additional text lines to be added to the tooltip of the dropdown
 	--- 	- **text** string ― Text to be added to the line
 	--- 	- **color**? table *optional* ― RGB colors line
@@ -2020,13 +2308,13 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--- 		- **g** number ― Green [Range: 0 - 1]
 	--- 		- **b** number ― Blue [Range: 0 - 1]
 	--- 	- **wrap**? boolean *optional* ― Allow wrapping the line [Default: true]
-	--- - **items** table [indexed, 0-based] — Table containing the dropdown items
+	--- - **items** table [indexed, 0-based] — Table containing the dropdown items described within subtables
 	--- 	- **text** string — Text to represent the items within the dropdown frame
-	--- 	- **onSelect** function — The function to be called when a dropdown item is selected
+	--- 	- **onSelect** function — The function to be called when the dropdown item is selected
 	--- - **selected?** integer *optional* — The default selected item of the dropdown menu
 	--- - **disabled**? boolean *optional* — Set the state of this widget to be disabled on load [Default: false]
-	--- - **dependencies**? table [indexed, 0-based] *optional* — Automatically disable or enable this widget based on these rules
-	--- 	- **frame**? Frame — Tie the state of this widget to the evaluation of this frame's value
+	--- - **dependencies**? table [indexed, 0-based] *optional* — Automatically disable or enable this widget based on the rules described in subtables
+	--- 	- **frame** Frame — Tie the state of this widget to the evaluation of this frame's value
 	--- 	- **evaluate**? function *optional* — Call this function to evaluate the current value of **rules.frame** [Default: *no evaluation, only for checkboxes*]
 	--- 		- @*param* **value**? any *optional* — The current value of **rules.frame**, its variable type depends on the [FrameType](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types) of **rules.frame** (see overloads)
 	--- 		- @*return* **evaluation** boolean — If false, disable the dependent widget (and enable it when true)
@@ -2101,7 +2389,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 			if state then UIDropDownMenu_EnableDropDown(dropdown) else UIDropDownMenu_DisableDropDown(dropdown) end
 			if title ~= nil then title:SetFontObject(state and "GameFontNormal" or "GameFontDisable") end
 		end) end
-		-- Add to options data management
+		--Add to options data management
 		if t.optionsData ~= nil or t.onSave ~= nil or t.onLoad ~= nil then
 			WidgetToolbox[ns.WidgetToolsVersion].AddOptionsData(dropdown, "Dropdown", t.onSave, function(self)
 				if UIDropDownMenu_GetSelectedValue(dropdown) ~= nil then UIDropDownMenu_SetText(dropdown, t.items[UIDropDownMenu_GetSelectedValue(dropdown)].text) end
@@ -2306,14 +2594,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--- 		- **x** number
 	--- 		- **y** number
 	--- - **width**? number *optional* ― The height is defaulted to 36, the width may be specified [Default: 120]
-	--- - **label** string — Title text to be shown above the color picker button and as the the tooltip label
-	--- - **tooltip**? table *optional* — Additional text lines to be added to the tooltip of the color picker button
-	--- 	- **text** string ― Text to be added to the line
-	--- 	- **color**? table *optional* ― RGB colors line
-	--- 		- **r** number ― Red [Range: 0 - 1]
-	--- 		- **g** number ― Green [Range: 0 - 1]
-	--- 		- **b** number ― Blue [Range: 0 - 1]
-	--- 	- **wrap**? boolean *optional* ― Allow wrapping the line [Default: true]
+	--- - **label** string — Title text to be shown above the color picker button and HEX input box
 	--- - **setColors** function — The function to be called to set the colors of the color picker on load or update
 	--- 	- @*return* **r** number ― Red [Range: 0 - 1]
 	--- 	- @*return* **g** number ― Green [Range: 0 - 1]
@@ -2330,8 +2611,8 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--- 	- @*param* **b** number ― Blue [Range: 0 - 1]
 	--- 	- @*param* **a**? number *optional* ― Opacity [Range: 0 - 1, Default: 1]
 	--- - **disabled**? boolean *optional* — Set the state of this widget to be disabled on load [Default: false]
-	--- - **dependencies**? table [indexed, 0-based] *optional* — Automatically disable or enable this widget based on these rules
-	--- 	- **frame**? Frame — Tie the state of this widget to the evaluation of this frame's value
+	--- - **dependencies**? table [indexed, 0-based] *optional* — Automatically disable or enable this widget based on the rules described in subtables
+	--- 	- **frame** Frame — Tie the state of this widget to the evaluation of this frame's value
 	--- 	- **evaluate**? function *optional* — Call this function to evaluate the current value of **rules.frame** [Default: *no evaluation, only for checkboxes*]
 	--- 		- @*param* **value**? any *optional* — The current value of **rules.frame**, its variable type depends on the [FrameType](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types) of **rules.frame** (see overloads)
 	--- 		- @*return* **evaluation** boolean — If false, disable the dependent widget (and enable it when true)
@@ -2362,18 +2643,18 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--- - **onLoad**? function *optional* — Function to be called when an options category is refreshed (after the data has been restored from the storage table to the widget)
 	--- 	- @*param* **self** Frame ― Reference to the widget
 	---@return table colorPicker A table containing component frame references and color getter & setter functions
-	--- - Frame frame Reference to the color picker parent frame
-	--- - function getObjectType Returns the object type of this unique frame
+	--- - **frame** Frame ― Reference to the color picker parent frame
+	--- - **getObjectType** function ― Returns the object type of this unique frame
 	--- 	- @*return* "ColorPicker" UniqueFrameType
-	--- - function isObjectType Checks and returns if the type of this unique frame is equal to the string provided
+	--- - **isObjectType** function ― Checks and returns if the type of this unique frame is equal to the string provided
 	--- 	- @*param* **type** string
 	--- 	- @*return* boolean
-	--- - function getColor Returns the currently set color values
+	--- - **getColor** function ― Returns the currently set color values
 	--- 	- @*return* **r** number ― Red [Range: 0 - 1]
 	--- 	- @*return* **g** number ― Green [Range: 0 - 1]
 	--- 	- @*return* **b** number ― Blue [Range: 0 - 1]
 	--- 	- @*return* **a**? number ― Opacity [Range: 0 - 1]
-	--- - function setColor Sets the color and text of each element
+	--- - **setColor** function ― Sets the color and text of each element
 	--- 	- @*param* **r** number ― Red [Range: 0 - 1]
 	--- 	- @*param* **g** number ― Green [Range: 0 - 1]
 	--- 	- @*param* **b** number ― Blue [Range: 0 - 1]

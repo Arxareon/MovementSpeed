@@ -40,9 +40,9 @@ local changelogDB = {
 		[1] = "Support for 9.1.5 has been added (support for Season of Mastery will be added when it launches).",
 		[2] = "#N_New features:_#",
 		[3] = "#H_Interface Options:_# buttons, sliders, dropdowns and more have been added as alternatives to chat commands (some new options are not available as chat commands).",
-		[4] = " • H_New options:_# Font family & color customization options have been added besides font size (with a fully custom font type option - see the in-game tooltip in the settings)\n • #H_New option:_# Background graphic (with customizable color)\n • #H_New option:_# Raise (or lower) display among other UI elements\n • #H_New feature:_# Import/Export to backup or move your settings between accounts (with the ability to manually edit them - for advanced coders)",
+		[4] = " • #H_New options:_# Font family & color customization options have been added besides font size (with a fully custom font type option - see the in-game tooltip in the settings)\n • #H_New option:_# Background graphic (with customizable color)\n • #H_New option:_# Raise (or lower) display among other UI elements\n • #H_New feature:_# Import/Export to backup or move your settings between accounts (with the ability to manually edit them - for advanced coders)",
 		[5] = "The main display will be moved to the default position when the preset or the options are being reset.",
-		[6] = "The display now hides during pet battles (thanks for the request! ♥).",
+		[6] = "The display now hides during pet battles (thanks for the request! <3).",
 		[7] = "Added localization support, so more languages can be supported besides English in the future (more info soon on how you can help me translate!).",
 		[8] = "Various other improvements, fixes & cleanup.",
 	},
@@ -57,36 +57,26 @@ local changelogDB = {
 		[2] = "Minor under the hood fixes and changes.",
 	},
 	[8] = {
-		[0] = "#V_Version 2.2_# #H_(3/11/2022)_#",
-		[1] = "#N_Update:_#",
-		[2] = "Added 9.2 (Retail), 1.14.2 (Classic) and 2.5.3 (BCC) multi-version support.",
-		[3] = "#N_New features:_#",
-		[4] = "#H_Added Interface Options:_#",
-		[5] = "Buttons, sliders, dropdowns and more have been added as alternatives to chat commands (many more new options have not been made available as chat commands).",
-		[6] = "Included an about page where you can find contact and support links, changelogs and more.",
-		[7] = "#H_New display options:_#",
-		[8] = "Background graphic: the display now functions as a customizable XP bar with customizable colors, mouseover fade options.",
-		[9] = "Font family & color customization (with a fully custom font type option - see the tooltip in the settings).",
-		[10] = "Multiple display presets have been added to quickly set it up for your needs.",
-		[11] = "Detailed XP value option.",
-		[12] = "Fine-tune the position (select an anchor point and change the offset coordinates with sliders).",
-		[13] = "Raise or lower the display among other UI elements.",
-		[14] = "#N_New features:_#",
-		[15] = "XP bar enhancement integration: detailed XP text and tooltip can be enabled to replace the default text and tooltip shown when mousing over the default XP bar.",
-		[16] = "Added the ability to hide the default Status/XP/Reputation Bars (so it may be replaced with the Remaining XP display).",
-		[17] = "Chat notifications on event updates like XP or Rested XP gain (with the amount gained), level up and more.",
-		[18] = "Option for an accumulative Rested XP gain notification showing you a summary of the total amount of Rested XP gained while resting when leaving a rested area.",
-		[19] = "Import/Export: Back up your settings (or manually edit them - for advanced users).",
-		[20] = "#C_Other additions & changes:_#",
-		[21] = "Right click on the display (or the default XP bar when the integration is enabled) to quickly open an options category page.",
-		[22] = "The chat notification reminder when you are max level and Remaining XP is disabled can now be turned off.",
-		[23] = "The display now hides during pet battles.",
-		[24] = "Added localization support, so more languages can be supported besides English in the future (more info soon on how you can help me translate!).",
-		[25] = "#O_Coming soon:_#",
-		[26] = "Options profiles for character-specific customization.",
-		[27] = "Tracking the playtime/real time spent on a level.",
-		[28] = "Different styles and looks for the custom XP bar.",
-		[29] = "Event update logs: track your XP, Rested XP gain and more.",
+		[0] = "#V_Version 2.2_# #H_(3/13/2022)_#",
+		[1] = "#N_New:_#",
+		[2] = "Updated the look and feel of the interface options to be on par with the Remaining XP addon. Right-click on the display to open specific options.",
+		[3] = "Added an about page with options shortcuts, addon info with changelogs, and useful links.",
+		[4] = "Added speed value text customization options: % and/or y/s & decimal places.",
+		[5] = "Added an option to auto-hide the display when your character is not moving.",
+		[6] = "Added the option to fine-fun the position of the speed display.",
+		[7] = "Added a preset selector (with room to add more display presets in the future).",
+		[8] = "Added an option to change the border color of the display background.",
+		[9] = "Added a helpful tooltip to the display which will be provided with more functionality in the future!",
+		[10] = "#C_Changes:_#",
+		[11] = "The saved display position will now be automatically applied on login for all characters.",
+		[12] = "Hiding the speed display will now be character-specific.",
+		[13] = "The Import/Export string editor can now be switched off of compact mode, allowing you to edit your settings more easily manually. Also, the contents have been color coded for better readability.",
+		[14] = "Several chat command descriptions and responses have been updated.",
+		[15] = "Additional smaller changes & fixes.",
+		[16] = "#O_Coming soon:_#",
+		[17] = "Options profiles for character-specific customization.",
+		[18] = "Different styles and looks for the speed display.",
+		[19] = "Some cool new features are being explored, more on that soon™!",
 	},
 }
 
@@ -201,7 +191,33 @@ local english = {
 			},
 			text = {
 				title = "Text & Font",
-				description = "Customize the font and select the information shown in the speed display text overlay.",
+				description = "Customize the font and the information shown in the speed display text overlay.",
+				valueType = {
+					label = "Show Speed as…",
+					tooltip = "Show the movement speed value as a percentage of the base running speed, its equivalent in yards/second instead or both.",
+					list = {
+						[0] = {
+							label = "Percentage",
+							tooltip = "Show the speed value as a percentage of the base running speed without any speed altering effects."
+						},
+						[1] = {
+							label = "Yards/second",
+							tooltip = "Show the movement speed value in yards/second instead of a percentage of the base running speed.",
+						},
+						[2] = {
+							label = "Both",
+							tooltip = "Show both the percentage value and its equivalent in yards/second.",
+						},
+					},
+				},
+				decimals = {
+					label = "Max Displayed Decimals",
+					tooltip = "Set the maximal number of decimals places displayed in the movement speed value.",
+				},
+				noTrim = {
+					label = "Don't trim zeros",
+					tooltip = "Always show the specified number of decimal digits - don't trim trailing zeros.",
+				},
 				font = {
 					family = {
 						label = "Font Family", --font family or type
@@ -251,7 +267,7 @@ local english = {
 				},
 				statusNotice = {
 					label = "Status notice on load",
-					tooltip = "Get a notice in chat about the state of the #ADDON display after the interface loads.", --# flags will be replaced with code
+					tooltip = "Get a notice in chat about the visibility of the #ADDON display after the interface loads.", --# flags will be replaced with code
 				},
 			},
 		},

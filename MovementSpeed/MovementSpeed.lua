@@ -51,16 +51,16 @@ local textures = {
 }
 
 --Anchor Points
-local anchors = {
-	[0] = { name = strings.points.top.center, point = "TOP" },
-	[1] = { name = strings.points.top.left, point = "TOPLEFT" },
+local types = {
+	[0] = { name = strings.points.top.left, point = "TOPLEFT" },
+	[1] = { name = strings.points.top.center, point = "TOP" },
 	[2] = { name = strings.points.top.right, point = "TOPRIGHT" },
-	[3] = { name = strings.points.bottom.center, point = "BOTTOM" },
-	[4] = { name = strings.points.bottom.left, point = "BOTTOMLEFT" },
-	[5] = { name = strings.points.bottom.right, point = "BOTTOMRIGHT" },
-	[6] = { name = strings.points.left, point = "LEFT" },
-	[7] = { name = strings.points.right, point = "RIGHT" },
-	[8] = { name = strings.points.center, point = "CENTER" },
+	[3] = { name = strings.points.left, point = "LEFT" },
+	[4] = { name = strings.points.center, point = "CENTER" },
+	[5] = { name = strings.points.right, point = "RIGHT" },
+	[6] = { name = strings.points.bottom.left, point = "BOTTOMLEFT" },
+	[7] = { name = strings.points.bottom.center, point = "BOTTOM" },
+	[8] = { name = strings.points.bottom.right, point = "BOTTOMRIGHT" },
 }
 
 
@@ -94,6 +94,9 @@ local dbDefault = {
 			},
 		},
 		text = {
+			valueType = 0,
+			decimals = 0,
+			noTrim = false,
 			font = {
 				family = fonts[0].path,
 				size = 11,
@@ -189,8 +192,8 @@ end
 ---@return integer
 local function GetAnchorID(point)
 	local id = 0
-	for i = 0, #anchors do
-		if anchors[i].point == point then
+	for i = 0, #types do
+		if types[i].point == point then
 			id = i
 			break
 		end
@@ -268,9 +271,10 @@ end
 
 ---Set the size of the speed display
 ---@param height number
-local function SetDisplaySize(height)
+---@param extraWidth number
+local function SetDisplaySize(height, extraWidth)
 	height = math.ceil(height) + 2
-	local width = height * 3 - 4
+	local width = height * 3 - 4 + (extraWidth or 0)
 	speedDisplay:SetSize(width, height)
 end
 
@@ -580,8 +584,7 @@ local function CreateQuickOptions(parentFrame)
 			moveSpeed:SetFrameStrata(presets[i].data.visibility.frameStrata)
 			wt.PositionFrame(moveSpeed, presets[i].data.position.point, nil, nil, presets[i].data.position.offset.x, presets[i].data.position.offset.y)
 			--Update the options
-			UIDropDownMenu_SetSelectedValue(options.position.anchor, GetAnchorID(presets[i].data.position.point))
-			UIDropDownMenu_SetText(options.position.anchor, anchors[GetAnchorID(presets[i].data.position.point)].name)
+			options.position.anchor.setSelected(GetAnchorID(presets[i].data.position.point))
 			options.position.xOffset:SetValue(presets[i].data.position.offset.x)
 			options.position.yOffset:SetValue(presets[i].data.position.offset.y)
 			options.visibility.raise:SetChecked(presets[i].data.visibility.frameStrata == "HIGH")
@@ -639,33 +642,40 @@ local function CreateQuickOptions(parentFrame)
 	})
 end
 local function CreatePositionOptions(parentFrame)
-	--Dropdown: Anchor Point
+	--Selector: Anchor point
 	local anchorItems = {}
-	for i = 0, #anchors do
+	for i = 0, #types do
 		anchorItems[i] = {}
-		anchorItems[i].text = anchors[i].name
-		anchorItems[i].onSelect = function() wt.PositionFrame(moveSpeed, anchors[i].point, nil, nil, options.position.xOffset:GetValue(), options.position.yOffset:GetValue()) end
+		anchorItems[i].label = types[i].name
+		anchorItems[i].onSelect = function()
+			wt.PositionFrame(moveSpeed, types[i].point, nil, nil, options.position.xOffset:GetValue(), options.position.yOffset:GetValue())
+			--Clear the presets dropdown selection
+			UIDropDownMenu_SetSelectedValue(options.visibility.presets, nil)
+			UIDropDownMenu_SetText(options.visibility.presets, strings.options.speedDisplay.quick.presets.select)
+		end
 	end
-	options.position.anchor = wt.CreateDropdown({
+	options.position.anchor = wt.CreateSelector({
 		parent = parentFrame,
 		position = {
 			anchor = "TOPLEFT",
-			offset = { x = -6, y = -30 }
+			offset = { x = 8, y = -30 }
 		},
 		label = strings.options.speedDisplay.position.anchor.label,
 		tooltip = strings.options.speedDisplay.position.anchor.tooltip,
 		items = anchorItems,
+		labels = false,
+		columns = 3,
 		dependencies = {
 			[0] = { frame = options.visibility.hidden, evaluate = function(state) return not state end, },
 		},
 		optionsData = {
 			storageTable = db.speedDisplay.position,
 			key = "point",
-			convertSave = function(value) return anchors[value].point end,
+			convertSave = function(value) return types[value].point end,
 			convertLoad = function(point) return GetAnchorID(point) end,
 		},
 	})
-	--Slider: X Offset
+	--Slider: X offset
 	options.position.xOffset = wt.CreateSlider({
 		parent = parentFrame,
 		position = {
@@ -676,7 +686,10 @@ local function CreatePositionOptions(parentFrame)
 		tooltip = strings.options.speedDisplay.position.xOffset.tooltip,
 		value = { min = -500, max = 500, fractional = 2 },
 		onValueChanged = function(_, value)
-			wt.PositionFrame(moveSpeed, anchors[UIDropDownMenu_GetSelectedValue(options.position.anchor)].point, nil, nil, value, options.position.yOffset:GetValue())
+			wt.PositionFrame(moveSpeed, types[options.position.anchor.getSelected()].point, nil, nil, value, options.position.yOffset:GetValue())
+			--Clear the presets dropdown selection
+			UIDropDownMenu_SetSelectedValue(options.visibility.presets, nil)
+			UIDropDownMenu_SetText(options.visibility.presets, strings.options.speedDisplay.quick.presets.select)
 		end,
 		dependencies = {
 			[0] = { frame = options.visibility.hidden, evaluate = function(state) return not state end, },
@@ -686,7 +699,7 @@ local function CreatePositionOptions(parentFrame)
 			key = "x",
 		},
 	})
-	--Slider: Y Offset
+	--Slider: Y offset
 	options.position.yOffset = wt.CreateSlider({
 		parent = parentFrame,
 		position = {
@@ -697,7 +710,10 @@ local function CreatePositionOptions(parentFrame)
 		tooltip = strings.options.speedDisplay.position.yOffset.tooltip,
 		value = { min = -500, max = 500, fractional = 2 },
 		onValueChanged = function(_, value)
-			wt.PositionFrame(moveSpeed, anchors[UIDropDownMenu_GetSelectedValue(options.position.anchor)].point, nil, nil, options.position.xOffset:GetValue(), value)
+			wt.PositionFrame(moveSpeed, types[options.position.anchor.getSelected()].point, nil, nil, options.position.xOffset:GetValue(), value)
+			--Clear the presets dropdown selection
+			UIDropDownMenu_SetSelectedValue(options.visibility.presets, nil)
+			UIDropDownMenu_SetText(options.visibility.presets, strings.options.speedDisplay.quick.presets.select)
 		end,
 		dependencies = {
 			[0] = { frame = options.visibility.hidden, evaluate = function(state) return not state end, },
@@ -709,6 +725,74 @@ local function CreatePositionOptions(parentFrame)
 	})
 end
 local function CreateTextOptions(parentFrame)
+	local valueTypes = {}
+	for i = 0, 2 do
+		valueTypes[i] = {}
+		valueTypes[i].label = strings.options.speedDisplay.text.valueType.list[i].label
+		valueTypes[i].tooltip = strings.options.speedDisplay.text.valueType.list[i].tooltip
+		valueTypes[i].onSelect = function()
+			db.speedDisplay.text.valueType = i
+			SetDisplaySize(options.text.font.size:GetValue(), i == 1 and 4 or (i == 2 and 40 or 0) + db.speedDisplay.text.decimals * 8) end
+	end
+	--Selector: Value type
+	options.text.valueType = wt.CreateSelector({
+		parent = parentFrame,
+		position = {
+			anchor = "TOPLEFT",
+			offset = { x = 8, y = -30 }
+		},
+		label = strings.options.speedDisplay.text.valueType.label,
+		tooltip = strings.options.speedDisplay.text.valueType.tooltip,
+		items = valueTypes,
+		dependencies = {
+			[0] = { frame = options.visibility.hidden, evaluate = function(state) return not state end, },
+		},
+		optionsData = {
+			storageTable = db.speedDisplay.text,
+			key = "valueType",
+		},
+	})
+	--Slider: Decimals
+	options.text.decimals = wt.CreateSlider({
+		parent = parentFrame,
+		position = {
+			anchor = "TOP",
+			offset = { x = 0, y = -30 }
+		},
+		label = strings.options.speedDisplay.text.decimals.label,
+		tooltip = strings.options.speedDisplay.text.decimals.tooltip,
+		value = { min = 0, max = 4, step = 1 },
+		onValueChanged = function(_, value)
+			db.speedDisplay.text.decimals = value
+			SetDisplaySize(options.text.font.size:GetValue(), db.speedDisplay.text.valueType == 1 and 4 or (db.speedDisplay.text.valueType == 2 and 40 or 0) + value * 4) end,
+		dependencies = {
+			[0] = { frame = options.visibility.hidden, evaluate = function(state) return not state end, },
+		},
+		optionsData = {
+			storageTable = db.speedDisplay.text,
+			key = "decimals",
+		},
+	})
+	--Checkbox: No trim
+	options.text.noTrim = wt.CreateCheckbox({
+		parent = parentFrame,
+		position = {
+			anchor = "TOPRIGHT",
+			offset = { x = 0, y = -30 }
+		},
+		autoOffset = true,
+		label = strings.options.speedDisplay.text.noTrim.label,
+		tooltip = strings.options.speedDisplay.text.noTrim.tooltip,
+		onClick = function(self) db.speedDisplay.text.noTrim = self:GetChecked() end,
+		dependencies = {
+			[0] = { frame = options.visibility.hidden, evaluate = function(state) return not state end, },
+			[1] = { frame = options.text.decimals, evaluate = function(value) return value > 0 end },
+		},
+		optionsData = {
+			storageTable = db.speedDisplay.text,
+			key = "noTrim",
+		},
+	})
 	--Dropdown: Font family
 	local fontItems = {}
 	for i = 0, #fonts do
@@ -726,7 +810,7 @@ local function CreateTextOptions(parentFrame)
 		parent = parentFrame,
 		position = {
 			anchor = "TOPLEFT",
-			offset = { x = -6, y = -60 }
+			offset = { x = -6, y = -101 }
 		},
 		label = strings.options.speedDisplay.text.font.family.label,
 		tooltip = strings.options.speedDisplay.text.font.family.tooltip[0],
@@ -753,7 +837,7 @@ local function CreateTextOptions(parentFrame)
 		parent = parentFrame,
 		position = {
 			anchor = "TOP",
-			offset = { x = 0, y = -60 }
+			offset = { x = 0, y = -101 }
 		},
 		label = strings.options.speedDisplay.text.font.size.label,
 		tooltip = strings.options.speedDisplay.text.font.size.tooltip .. "\n\n" .. strings.misc.default .. ": " .. dbDefault.speedDisplay.text.font.size,
@@ -775,7 +859,7 @@ local function CreateTextOptions(parentFrame)
 		parent = parentFrame,
 		position = {
 			anchor = "TOPRIGHT",
-			offset = { x = -12, y = -60 }
+			offset = { x = -12, y = -101 }
 		},
 		label = strings.options.speedDisplay.text.font.color.label,
 		opacity = true,
@@ -872,10 +956,14 @@ local function CreateVisibilityOptions(parentFrame)
 			anchor = "TOPLEFT",
 			offset = { x = 8, y = -30 }
 		},
-		autoOffset = true,
 		label = strings.options.speedDisplay.visibility.raise.label,
 		tooltip = strings.options.speedDisplay.visibility.raise.tooltip,
-		onClick = function(self) moveSpeed:SetFrameStrata(self:GetChecked() and "HIGH" or "MEDIUM") end,
+		onClick = function(self)
+			moveSpeed:SetFrameStrata(self:GetChecked() and "HIGH" or "MEDIUM")
+			--Clear the presets dropdown selection
+			UIDropDownMenu_SetSelectedValue(options.visibility.presets, nil)
+			UIDropDownMenu_SetText(options.visibility.presets, strings.options.speedDisplay.quick.presets.select)
+		end,
 		dependencies = {
 			[0] = { frame = options.visibility.hidden, evaluate = function(state) return not state end, },
 		},
@@ -945,7 +1033,7 @@ local function CreateSpeedDisplayCategoryPanels(parentFrame) --Add the speed dis
 			relativePoint = "BOTTOMLEFT",
 			offset = { x = 0, y = -32 }
 		},
-		size = { height = 88 },
+		size = { height = 103 },
 		title = strings.options.speedDisplay.position.title,
 		description = strings.options.speedDisplay.position.description:gsub("#SHIFT", strings.keys.shift)
 	})
@@ -959,7 +1047,7 @@ local function CreateSpeedDisplayCategoryPanels(parentFrame) --Add the speed dis
 			relativePoint = "BOTTOMLEFT",
 			offset = { x = 0, y = -32 }
 		},
-		size = { height = 118 },
+		size = { height = 159 },
 		title = strings.options.speedDisplay.text.title,
 		description = strings.options.speedDisplay.text.description
 	})
@@ -1197,8 +1285,8 @@ local function LoadInterfaceOptions()
 		description = strings.options.speedDisplay.description:gsub("#ADDON", addon),
 		logo = textures.logo,
 		scroll = {
-			height = 712,
-			speed = 42,
+			height = 768,
+			speed = 45,
 		},
 		default = DefaultOptions,
 		autoSave = false,
@@ -1310,8 +1398,7 @@ local function PresetCommand(parameter)
 		--Update the GUI options in case the window was open
 		options.visibility.hidden:SetChecked(false)
 		options.visibility.hidden:SetAttribute("loaded", true) --Update dependent widgets
-		UIDropDownMenu_SetSelectedValue(options.position.anchor, GetAnchorID(presets[i].data.position.point))
-		UIDropDownMenu_SetText(options.position.anchor, anchors[GetAnchorID(presets[i].data.position.point)].name)
+		options.position.anchor.setSelected(GetAnchorID(presets[i].data.position.point))
 		options.position.xOffset:SetValue(presets[i].data.position.offset.x)
 		options.position.yOffset:SetValue(presets[i].data.position.offset.y)
 		options.visibility.raise:SetChecked(presets[i].data.visibility.frameStrata == "HIGH")
@@ -1479,8 +1566,7 @@ speedDisplay:SetScript("OnMouseUp", function()
 	db.speedDisplay.position.point, _, _, db.speedDisplay.position.offset.x, db.speedDisplay.position.offset.y = moveSpeed:GetPoint()
 	MovementSpeedDB.speedDisplay.position = wt.Clone(db.speedDisplay.position) --Update in the SavedVariabes DB
 	--Update the GUI options in case the window was open
-	UIDropDownMenu_SetSelectedValue(options.position.anchor, GetAnchorID(db.speedDisplay.position.point))
-	UIDropDownMenu_SetText(options.position.anchor, anchors[GetAnchorID(db.speedDisplay.position.point)].name)
+	options.position.anchor.setSelected(GetAnchorID(db.speedDisplay.position.point))
 	options.position.xOffset:SetValue(db.speedDisplay.position.offset.x)
 	options.position.yOffset:SetValue(db.speedDisplay.position.offset.y)
 end)
@@ -1527,7 +1613,7 @@ end
 
 function moveSpeed:PLAYER_ENTERING_WORLD()
 	--Toggle the visibility of the speed display (before OnUpdate would trigger)
-	wt.SetVisibility(speedDisplay, not db.speedDisplay.visibility.autoHide or GetUnitSpeed(UnitInVehicle("player") and "vehicle" or "player") / 7 ~= 0)
+	wt.SetVisibility(speedDisplay, not db.speedDisplay.visibility.autoHide or GetUnitSpeed(UnitInVehicle("player") and "vehicle" or "player") ~= 0)
 	--Visibility notice
 	if not moveSpeed:IsVisible() or not speedDisplay:IsVisible() then PrintStatus(true) end
 end
@@ -1538,9 +1624,18 @@ end
 --Recalculate the movement speed value and update the displayed text
 moveSpeed:SetScript("OnUpdate", function()
 	--Calculate the current player movement speed
-	local speed = GetUnitSpeed(UnitInVehicle("player") and "vehicle" or "player") / 7
+	local speed = GetUnitSpeed(UnitInVehicle("player") and "vehicle" or "player")
 	--Toggle the visibility of the speed display (if auto-hide is enabled)
 	wt.SetVisibility(speedDisplay, not db.speedDisplay.visibility.autoHide or speed ~= 0)
 	--Update the speed display text
-	speedDisplayText:SetText(string.format("%d%%", math.floor(speed * 100 + 0.5)))
+	local text = ""
+	if db.speedDisplay.text.valueType == 0 then
+		text = wt.FormatThousands(wt.Round(speed / 7 * 100, db.speedDisplay.text.decimals), db.speedDisplay.text.decimals, not db.speedDisplay.text.noTrim) .. "%"
+	elseif db.speedDisplay.text.valueType == 1 then
+		text = wt.FormatThousands(wt.Round(speed, db.speedDisplay.text.decimals), db.speedDisplay.text.decimals, not db.speedDisplay.text.noTrim) .. " y/s"
+	elseif db.speedDisplay.text.valueType == 2 then
+		text = wt.FormatThousands(wt.Round(speed / 7 * 100, db.speedDisplay.text.decimals), db.speedDisplay.text.decimals, not db.speedDisplay.text.noTrim) .. "%" .. " ("
+		text = text .. wt.FormatThousands(wt.Round(speed, db.speedDisplay.text.decimals), db.speedDisplay.text.decimals, not db.speedDisplay.text.noTrim) .. " y/s" .. ")"
+	end
+	speedDisplayText:SetText(text)
 end)
