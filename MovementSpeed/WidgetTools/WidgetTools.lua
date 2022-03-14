@@ -321,10 +321,12 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 
 	---Format a number string to include thousand separation
 	---@param value number Number value to turn into a string with thousand separation
-	---@param decimals? number Specify the number of decimal places to display if the number is a fractional value [Default: 2]
+	---@param decimals? number Specify the number of decimal places to display if the number is a fractional value [Default: 0]
+	---@param round? boolean Round the number value to the specified number of decimal places [Default: true]
 	---@param trim? boolean Trim trailing zeros in decimal places [Default: true]
 	---@return string
-	WidgetToolbox[ns.WidgetToolsVersion].FormatThousands = function(value, decimals, trim)
+	WidgetToolbox[ns.WidgetToolsVersion].FormatThousands = function(value, decimals, round, trim)
+		value = round == false and value or WidgetToolbox[ns.WidgetToolsVersion].Round(value, decimals)
 		local fraction = math.fmod(value, 1)
 		local integer = value - fraction
 		--Formatting
@@ -333,9 +335,9 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 			integer, leftover = string.gsub(integer, "^(-?%d+)(%d%d%d)", '%1' .. strings.separator .. '%2')
 			if leftover == 0 then break end
 		end
-		local decimalText = tostring(fraction):sub(3, (decimals or 2) + 2)
-		if trim == false then for i = 1, decimals - #decimalText do decimalText = decimalText .. "0" end end
-		return integer .. ((fraction ~= 0 or trim == false) and strings.decimal .. decimalText or "")
+		local decimalText = tostring(fraction):sub(3, (decimals or 0) + 2)
+		if trim == false then for i = 1, (decimals or 0) - #decimalText do decimalText = decimalText .. "0" end end
+		return integer .. ((fraction ~= 0 or (trim == false and (decimals or 0) > 0)) and strings.decimal .. decimalText or "")
 	end
 
 	---Remove all formatting escape sequences from a string (like **|cAARRGGBB**, **|r** pairs)

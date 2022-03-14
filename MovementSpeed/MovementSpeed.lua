@@ -51,7 +51,7 @@ local textures = {
 }
 
 --Anchor Points
-local types = {
+local anchors = {
 	[0] = { name = strings.points.top.left, point = "TOPLEFT" },
 	[1] = { name = strings.points.top.center, point = "TOP" },
 	[2] = { name = strings.points.top.right, point = "TOPRIGHT" },
@@ -126,7 +126,7 @@ local presets = {
 		data = {
 			position = {
 				point = "TOPRIGHT",
-				offset = { x = -67, y = -179 },
+				offset = { x = -68, y = -179 },
 			},
 			visibility = {
 				frameStrata = "MEDIUM"
@@ -192,8 +192,8 @@ end
 ---@return integer
 local function GetAnchorID(point)
 	local id = 0
-	for i = 0, #types do
-		if types[i].point == point then
+	for i = 0, #anchors do
+		if anchors[i].point == point then
 			id = i
 			break
 		end
@@ -270,11 +270,17 @@ end
 --[ Speed Display ]
 
 ---Set the size of the speed display
----@param height number
----@param extraWidth number
-local function SetDisplaySize(height, extraWidth)
-	height = math.ceil(height) + 2
-	local width = height * 3 - 4 + (extraWidth or 0)
+---@param height? number Text height [Default: speedDisplayText:GetStringHeight()]
+---@param valueType? number Height:Width ratio [Default: db.speedDisplay.text.valueType]
+---@param decimals? number Height:Width ratio [Default: db.speedDisplay.text.decimals]
+local function SetDisplaySize(height, valueType, decimals)
+	height = math.ceil(height or speedDisplayText:GetStringHeight()) + 2
+	local ratio = 3.08 + ((decimals or db.speedDisplay.text.decimals) > 0 and 0.25 + (decimals or db.speedDisplay.text.decimals) * 0.58 or 0)
+	if (valueType or db.speedDisplay.text.valueType) == 1 then ratio = ratio + 0.46
+	elseif (valueType or db.speedDisplay.text.valueType) == 2 then
+		ratio = ratio + 3.37 + ((decimals or db.speedDisplay.text.decimals) > 0 and 0.25 + (decimals or db.speedDisplay.text.decimals) * 0.58 or 0)
+	end
+	local width = height * ratio - 4
 	speedDisplay:SetSize(width, height)
 end
 
@@ -312,7 +318,7 @@ local function SetDisplayValues(data, characterData)
 	moveSpeed:SetFrameStrata(data.speedDisplay.visibility.frameStrata)
 	wt.SetVisibility(moveSpeed, not characterData.hidden)
 	--Display
-	SetDisplaySize(data.speedDisplay.text.font.size)
+	SetDisplaySize(data.speedDisplay.text.font.size, data.speedDisplay.text.valueType, data.speedDisplay.text.decimals)
 	SetDisplayBackdrop(data.speedDisplay.background.visible, data.speedDisplay.background.colors)
 	--Font & text
 	speedDisplayText:SetFont(data.speedDisplay.text.font.family, data.speedDisplay.text.font.size, "THINOUTLINE")
@@ -644,11 +650,11 @@ end
 local function CreatePositionOptions(parentFrame)
 	--Selector: Anchor point
 	local anchorItems = {}
-	for i = 0, #types do
+	for i = 0, #anchors do
 		anchorItems[i] = {}
-		anchorItems[i].label = types[i].name
+		anchorItems[i].label = anchors[i].name
 		anchorItems[i].onSelect = function()
-			wt.PositionFrame(moveSpeed, types[i].point, nil, nil, options.position.xOffset:GetValue(), options.position.yOffset:GetValue())
+			wt.PositionFrame(moveSpeed, anchors[i].point, nil, nil, options.position.xOffset:GetValue(), options.position.yOffset:GetValue())
 			--Clear the presets dropdown selection
 			UIDropDownMenu_SetSelectedValue(options.visibility.presets, nil)
 			UIDropDownMenu_SetText(options.visibility.presets, strings.options.speedDisplay.quick.presets.select)
@@ -671,7 +677,7 @@ local function CreatePositionOptions(parentFrame)
 		optionsData = {
 			storageTable = db.speedDisplay.position,
 			key = "point",
-			convertSave = function(value) return types[value].point end,
+			convertSave = function(value) return anchors[value].point end,
 			convertLoad = function(point) return GetAnchorID(point) end,
 		},
 	})
@@ -686,7 +692,7 @@ local function CreatePositionOptions(parentFrame)
 		tooltip = strings.options.speedDisplay.position.xOffset.tooltip,
 		value = { min = -500, max = 500, fractional = 2 },
 		onValueChanged = function(_, value)
-			wt.PositionFrame(moveSpeed, types[options.position.anchor.getSelected()].point, nil, nil, value, options.position.yOffset:GetValue())
+			wt.PositionFrame(moveSpeed, anchors[options.position.anchor.getSelected()].point, nil, nil, value, options.position.yOffset:GetValue())
 			--Clear the presets dropdown selection
 			UIDropDownMenu_SetSelectedValue(options.visibility.presets, nil)
 			UIDropDownMenu_SetText(options.visibility.presets, strings.options.speedDisplay.quick.presets.select)
@@ -710,7 +716,7 @@ local function CreatePositionOptions(parentFrame)
 		tooltip = strings.options.speedDisplay.position.yOffset.tooltip,
 		value = { min = -500, max = 500, fractional = 2 },
 		onValueChanged = function(_, value)
-			wt.PositionFrame(moveSpeed, types[options.position.anchor.getSelected()].point, nil, nil, options.position.xOffset:GetValue(), value)
+			wt.PositionFrame(moveSpeed, anchors[options.position.anchor.getSelected()].point, nil, nil, options.position.xOffset:GetValue(), value)
 			--Clear the presets dropdown selection
 			UIDropDownMenu_SetSelectedValue(options.visibility.presets, nil)
 			UIDropDownMenu_SetText(options.visibility.presets, strings.options.speedDisplay.quick.presets.select)
@@ -732,7 +738,8 @@ local function CreateTextOptions(parentFrame)
 		valueTypes[i].tooltip = strings.options.speedDisplay.text.valueType.list[i].tooltip
 		valueTypes[i].onSelect = function()
 			db.speedDisplay.text.valueType = i
-			SetDisplaySize(options.text.font.size:GetValue(), i == 1 and 4 or (i == 2 and 40 or 0) + db.speedDisplay.text.decimals * 8) end
+			SetDisplaySize()
+		end
 	end
 	--Selector: Value type
 	options.text.valueType = wt.CreateSelector({
@@ -764,7 +771,8 @@ local function CreateTextOptions(parentFrame)
 		value = { min = 0, max = 4, step = 1 },
 		onValueChanged = function(_, value)
 			db.speedDisplay.text.decimals = value
-			SetDisplaySize(options.text.font.size:GetValue(), db.speedDisplay.text.valueType == 1 and 4 or (db.speedDisplay.text.valueType == 2 and 40 or 0) + value * 4) end,
+			SetDisplaySize()
+		end,
 		dependencies = {
 			[0] = { frame = options.visibility.hidden, evaluate = function(state) return not state end, },
 		},
@@ -844,7 +852,8 @@ local function CreateTextOptions(parentFrame)
 		value = { min = 8, max = 64, step = 1 },
 		onValueChanged = function(_, value)
 			speedDisplayText:SetFont(speedDisplayText:GetFont(), value, "THINOUTLINE")
-			SetDisplaySize(value)
+			speedDisplayText:SetPoint("CENTER", 0.9, math.fmod(db.speedDisplay.text.font.size, 2) ~= 0 and 0.1 or 0)
+			SetDisplaySize()
 		end,
 		dependencies = {
 			[0] = { frame = options.visibility.hidden, evaluate = function(state) return not state end, },
@@ -1454,7 +1463,8 @@ local function SizeCommand(parameter)
 	if size ~= nil then
 		db.speedDisplay.text.font.size = size
 		speedDisplayText:SetFont(db.speedDisplay.text.font.family, db.speedDisplay.text.font.size, "THINOUTLINE")
-		SetDisplaySize(size)
+		speedDisplayText:SetPoint("CENTER", 0.9, math.fmod(db.speedDisplay.text.font.size, 2) ~= 0 and 0.1 or 0)
+		SetDisplaySize()
 		--Update the GUI option in case it was open
 		options.text.font.size:SetValue(size)
 		--Response
@@ -1540,7 +1550,7 @@ local function SetUpMainDisplayFrame()
 	wt.PositionFrame(moveSpeed, db.speedDisplay.position.point, nil, nil, db.speedDisplay.position.offset.x, db.speedDisplay.position.offset.y)
 	--Display elements
 	speedDisplay:SetPoint("CENTER")
-	speedDisplayText:SetPoint("CENTER") --TODO: Add font offset option to fine-tune the position (AND/OR, ad pre-tested offsets to keep each font in the center)
+	speedDisplayText:SetPoint("CENTER", 0.9, math.fmod(db.speedDisplay.text.font.size, 2) ~= 0 and 0.1 or 0)
 	SetDisplayValues(db, dbc)
 	--Context menu
 	wt.CreateContextMenu({
@@ -1630,12 +1640,12 @@ moveSpeed:SetScript("OnUpdate", function()
 	--Update the speed display text
 	local text = ""
 	if db.speedDisplay.text.valueType == 0 then
-		text = wt.FormatThousands(wt.Round(speed / 7 * 100, db.speedDisplay.text.decimals), db.speedDisplay.text.decimals, not db.speedDisplay.text.noTrim) .. "%"
+		text = wt.FormatThousands(speed / 7 * 100, db.speedDisplay.text.decimals, true, not db.speedDisplay.text.noTrim) .. "%"
 	elseif db.speedDisplay.text.valueType == 1 then
-		text = wt.FormatThousands(wt.Round(speed, db.speedDisplay.text.decimals), db.speedDisplay.text.decimals, not db.speedDisplay.text.noTrim) .. " y/s"
+		text = wt.FormatThousands(speed, db.speedDisplay.text.decimals, true, not db.speedDisplay.text.noTrim) .. " y/s"
 	elseif db.speedDisplay.text.valueType == 2 then
-		text = wt.FormatThousands(wt.Round(speed / 7 * 100, db.speedDisplay.text.decimals), db.speedDisplay.text.decimals, not db.speedDisplay.text.noTrim) .. "%" .. " ("
-		text = text .. wt.FormatThousands(wt.Round(speed, db.speedDisplay.text.decimals), db.speedDisplay.text.decimals, not db.speedDisplay.text.noTrim) .. " y/s" .. ")"
+		text = wt.FormatThousands(speed / 7 * 100, db.speedDisplay.text.decimals, true, not db.speedDisplay.text.noTrim) .. "%" .. " ("
+		text = text .. wt.FormatThousands(speed, db.speedDisplay.text.decimals, true, not db.speedDisplay.text.noTrim) .. " y/s" .. ")"
 	end
 	speedDisplayText:SetText(text)
 end)

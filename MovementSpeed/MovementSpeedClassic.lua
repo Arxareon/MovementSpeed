@@ -268,10 +268,17 @@ end
 --[ Speed Display ]
 
 ---Set the size of the speed display
----@param height number
-local function SetDisplaySize(height)
-	height = math.ceil(height) + 2
-	local width = height * 3 - 4
+---@param height? number Text height [Default: speedDisplayText:GetStringHeight()]
+---@param valueType? number Height:Width ratio [Default: db.speedDisplay.text.valueType]
+---@param decimals? number Height:Width ratio [Default: db.speedDisplay.text.decimals]
+local function SetDisplaySize(height, valueType, decimals)
+	height = math.ceil(height or speedDisplayText:GetStringHeight()) + 2
+	local ratio = 3.1 + ((decimals or db.speedDisplay.text.decimals) > 0 and 0.25 + (decimals or db.speedDisplay.text.decimals) * 0.58 or 0)
+	if (valueType or db.speedDisplay.text.valueType) == 1 then ratio = ratio + 0.3
+	elseif (valueType or db.speedDisplay.text.valueType) == 2 then
+		ratio = ratio + 3.1 + ((decimals or db.speedDisplay.text.decimals) > 0 and 0.25 + (decimals or db.speedDisplay.text.decimals) * 0.58 or 0)
+	end
+	local width = height * ratio - 4
 	speedDisplay:SetSize(width, height)
 end
 
@@ -309,7 +316,7 @@ local function SetDisplayValues(data, characterData)
 	moveSpeed:SetFrameStrata(data.speedDisplay.visibility.frameStrata)
 	wt.SetVisibility(moveSpeed, not characterData.hidden)
 	--Display
-	SetDisplaySize(data.speedDisplay.text.font.size)
+	SetDisplaySize(data.speedDisplay.text.font.size, data.speedDisplay.text.valueType, data.speedDisplay.text.decimals)
 	SetDisplayBackdrop(data.speedDisplay.background.visible, data.speedDisplay.background.colors)
 	--Font & text
 	speedDisplayText:SetFont(data.speedDisplay.text.font.family, data.speedDisplay.text.font.size, "THINOUTLINE")
@@ -722,6 +729,16 @@ local function CreatePositionOptions(parentFrame)
 	})
 end
 local function CreateTextOptions(parentFrame)
+	local valueTypes = {}
+	for i = 0, 2 do
+		valueTypes[i] = {}
+		valueTypes[i].label = strings.options.speedDisplay.text.valueType.list[i].label
+		valueTypes[i].tooltip = strings.options.speedDisplay.text.valueType.list[i].tooltip
+		valueTypes[i].onSelect = function()
+			db.speedDisplay.text.valueType = i
+			SetDisplaySize()
+		end
+	end
 	--Selector: Value type
 	options.text.valueType = wt.CreateSelector({
 		parent = parentFrame,
@@ -731,20 +748,7 @@ local function CreateTextOptions(parentFrame)
 		},
 		label = strings.options.speedDisplay.text.valueType.label,
 		tooltip = strings.options.speedDisplay.text.valueType.tooltip,
-		items = {
-			[0] = {
-				label = strings.options.speedDisplay.text.valueType.list[0].label,
-				tooltip = strings.options.speedDisplay.text.valueType.list[0].tooltip,
-			},
-			[1] = {
-				label = strings.options.speedDisplay.text.valueType.list[1].label,
-				tooltip = strings.options.speedDisplay.text.valueType.list[1].tooltip,
-			},
-			[2] = {
-				label = strings.options.speedDisplay.text.valueType.list[2].label,
-				tooltip = strings.options.speedDisplay.text.valueType.list[2].tooltip,
-			},
-		},
+		items = valueTypes,
 		dependencies = {
 			[0] = { frame = options.visibility.hidden, evaluate = function(state) return not state end, },
 		},
@@ -763,7 +767,10 @@ local function CreateTextOptions(parentFrame)
 		label = strings.options.speedDisplay.text.decimals.label,
 		tooltip = strings.options.speedDisplay.text.decimals.tooltip,
 		value = { min = 0, max = 4, step = 1 },
-		onValueChanged = function(_, value) db.speedDisplay.text.decimals = value end,
+		onValueChanged = function(_, value)
+			db.speedDisplay.text.decimals = value
+			SetDisplaySize()
+		end,
 		dependencies = {
 			[0] = { frame = options.visibility.hidden, evaluate = function(state) return not state end, },
 		},
@@ -843,7 +850,7 @@ local function CreateTextOptions(parentFrame)
 		value = { min = 8, max = 64, step = 1 },
 		onValueChanged = function(_, value)
 			speedDisplayText:SetFont(speedDisplayText:GetFont(), value, "THINOUTLINE")
-			SetDisplaySize(value)
+			SetDisplaySize()
 		end,
 		dependencies = {
 			[0] = { frame = options.visibility.hidden, evaluate = function(state) return not state end, },
@@ -1453,7 +1460,7 @@ local function SizeCommand(parameter)
 	if size ~= nil then
 		db.speedDisplay.text.font.size = size
 		speedDisplayText:SetFont(db.speedDisplay.text.font.family, db.speedDisplay.text.font.size, "THINOUTLINE")
-		SetDisplaySize(size)
+		SetDisplaySize()
 		--Update the GUI option in case it was open
 		options.text.font.size:SetValue(size)
 		--Response
@@ -1604,7 +1611,7 @@ end
 
 function moveSpeed:PLAYER_ENTERING_WORLD()
 	--Toggle the visibility of the speed display (before OnUpdate would trigger)
-	wt.SetVisibility(speedDisplay, not db.speedDisplay.visibility.autoHide or GetUnitSpeed("player") / 7 ~= 0)
+	wt.SetVisibility(speedDisplay, not db.speedDisplay.visibility.autoHide or GetUnitSpeed("player") ~= 0)
 	--Visibility notice
 	if not moveSpeed:IsVisible() or not speedDisplay:IsVisible() then PrintStatus(true) end
 end
@@ -1615,9 +1622,18 @@ end
 --Recalculate the movement speed value and update the displayed text
 moveSpeed:SetScript("OnUpdate", function()
 	--Calculate the current player movement speed
-	local speed = GetUnitSpeed("player") / 7
+	local speed = GetUnitSpeed("player")
 	--Toggle the visibility of the speed display (if auto-hide is enabled)
 	wt.SetVisibility(speedDisplay, not db.speedDisplay.visibility.autoHide or speed ~= 0)
 	--Update the speed display text
-	speedDisplayText:SetText(string.format("%d%%", math.floor(speed * 100 + 0.5)))
+	local text = ""
+	if db.speedDisplay.text.valueType == 0 then
+		text = wt.FormatThousands(speed / 7 * 100, db.speedDisplay.text.decimals, true, not db.speedDisplay.text.noTrim) .. "%"
+	elseif db.speedDisplay.text.valueType == 1 then
+		text = wt.FormatThousands(speed, db.speedDisplay.text.decimals, true, not db.speedDisplay.text.noTrim) .. " y/s"
+	elseif db.speedDisplay.text.valueType == 2 then
+		text = wt.FormatThousands(speed / 7 * 100, db.speedDisplay.text.decimals, true, not db.speedDisplay.text.noTrim) .. "%" .. " ("
+		text = text .. wt.FormatThousands(speed, db.speedDisplay.text.decimals, true, not db.speedDisplay.text.noTrim) .. " y/s" .. ")"
+	end
+	speedDisplayText:SetText(text)
 end)
