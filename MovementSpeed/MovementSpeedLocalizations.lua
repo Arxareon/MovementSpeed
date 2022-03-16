@@ -118,6 +118,7 @@ local english = {
 		name = "#ADDON options",
 		defaults = "The default options and the Custom preset have been reset.",
 		main = {
+			name = "Main page",
 			description = "Customize #ADDON to fit your needs. Type #KEYWORD for chat commands.", --# flags will be replaced with code
 			shortcuts = {
 				title = "Shortcuts",
@@ -146,6 +147,34 @@ local english = {
 			feedback = {
 				title = "Feedback",
 				description = "Visit #ADDON online if you have something to report.", --# flags will be replaced with code
+			},
+		},
+		speedText = {
+			valueType = {
+				label = "Show Speed as…",
+				tooltip = "Show the movement speed value as a percentage of the base running speed, its equivalent in yards/second instead or both.",
+				list = {
+					[0] = {
+						label = "Percentage",
+						tooltip = "Show the speed value as a percentage of the base running speed without any speed altering effects."
+					},
+					[1] = {
+						label = "Yards/second",
+						tooltip = "Show the movement speed value in yards/second instead of a percentage of the base running speed.",
+					},
+					[2] = {
+						label = "Both",
+						tooltip = "Show both the percentage value and its equivalent in yards/second.",
+					},
+				},
+			},
+			decimals = {
+				label = "Max Displayed Decimals",
+				tooltip = "Set the maximal number of decimals places displayed in the movement speed value.",
+			},
+			noTrim = {
+				label = "Don't trim zeros",
+				tooltip = "Always show the specified number of decimal digits - don't trim trailing zeros.",
 			},
 		},
 		speedDisplay = {
@@ -192,32 +221,6 @@ local english = {
 			text = {
 				title = "Text & Font",
 				description = "Customize the font and the information shown in the speed display text overlay.",
-				valueType = {
-					label = "Show Speed as…",
-					tooltip = "Show the movement speed value as a percentage of the base running speed, its equivalent in yards/second instead or both.",
-					list = {
-						[0] = {
-							label = "Percentage",
-							tooltip = "Show the speed value as a percentage of the base running speed without any speed altering effects."
-						},
-						[1] = {
-							label = "Yards/second",
-							tooltip = "Show the movement speed value in yards/second instead of a percentage of the base running speed.",
-						},
-						[2] = {
-							label = "Both",
-							tooltip = "Show both the percentage value and its equivalent in yards/second.",
-						},
-					},
-				},
-				decimals = {
-					label = "Max Displayed Decimals",
-					tooltip = "Set the maximal number of decimals places displayed in the movement speed value.",
-				},
-				noTrim = {
-					label = "Don't trim zeros",
-					tooltip = "Always show the specified number of decimal digits - don't trim trailing zeros.",
-				},
 				font = {
 					family = {
 						label = "Font Family", --font family or type
@@ -268,6 +271,18 @@ local english = {
 				statusNotice = {
 					label = "Status notice on load",
 					tooltip = "Get a notice in chat about the visibility of the #ADDON display after the interface loads.", --# flags will be replaced with code
+				},
+			},
+		},
+		targetSpeed = {
+			title = "Target Speed",
+			description = "View the movement speed of anyone you are targeting or inspecting via mouseover.",
+			mouseover = {
+				title = "Inspect Tooltip",
+				description = "Toggle and specify how the movement speed of your mouseover taget is shown in the inspect tooltip.",
+				enabled = {
+					label = "Enable Integration",
+					tooltip = "Enable or disable the #ADDON integration in the mouseover inspect tooltip."
 				},
 			},
 		},
@@ -361,13 +376,17 @@ local english = {
 			error = "Please enter a valid number value (e.g. #SIZE).", --# flags will be replaced with code
 		},
 	},
-	speedDisplayTooltip = {
+	speedTooltip = {
 		title = "Speed info:",
 		text = {
 			[0] = "Displaying your current movement speed.",
-			[1] = "The percentage value is comparative to the normal running speed which is equivalent to #YARDS yards / s (#PERCENT) without any speed altering effects.", --# flags will be replaced with code
-		}
+			[1] = "#YARDS yards / second.", --# flags will be replaced with code
+			[2] = "#PERCENT of the base running sppeed.", --# flags will be replaced with code
+		},
 	},
+	targetSpeed = "Speed: #SPEED", --# flags will be replaced with code
+	yardsps = "#YARDS yards/s", --# flags will be replaced with code
+	yps = "#YARDS y/s", --# flags will be replaced with code
 	keys = {
 		shift = "SHIFT",
 		enter = "ENTER",

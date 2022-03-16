@@ -337,7 +337,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 		end
 		local decimalText = tostring(fraction):sub(3, (decimals or 0) + 2)
 		if trim == false then for i = 1, (decimals or 0) - #decimalText do decimalText = decimalText .. "0" end end
-		return integer .. ((fraction ~= 0 or (trim == false and (decimals or 0) > 0)) and strings.decimal .. decimalText or "")
+		return integer .. (((decimals or 0) > 0 and (fraction ~= 0 or trim == false)) and strings.decimal .. decimalText or "")
 	end
 
 	---Remove all formatting escape sequences from a string (like **|cAARRGGBB**, **|r** pairs)

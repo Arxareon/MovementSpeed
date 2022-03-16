@@ -103,7 +103,15 @@ local dbDefault = {
 				color = { r = 1, g = 1, b = 1, a = 1 },
 			},
 		},
-	}
+	},
+	targetSpeed = {
+		enabled = true,
+		text = {
+			valueType = 2,
+			decimals = 0,
+			noTrim = false,
+		},
+	},
 }
 local dbcDefault = {
 	hidden = false,
@@ -141,8 +149,10 @@ dbDefault.customPreset = presets[0].data
 
 --[[ FRAMES & EVENTS ]]
 
---Main speed display
-local moveSpeed = CreateFrame("Frame", addon:gsub("%s+", ""), UIParent)
+--[ Speed Display ]
+
+--Create frames
+local moveSpeed = CreateFrame("Frame", addonNameSpace, UIParent)
 local speedDisplay = CreateFrame("Frame", moveSpeed:GetName() .. "SpeedDisplay", moveSpeed, BackdropTemplateMixin and "BackdropTemplate")
 local speedDisplayText = speedDisplay:CreateFontString(speedDisplay:GetName() .. "Text", "OVERLAY")
 
@@ -154,6 +164,16 @@ moveSpeed:RegisterEvent("PET_BATTLE_CLOSE")
 
 --Event handler
 moveSpeed:SetScript("OnEvent", function(self, event, ...)
+	return self[event] and self[event](self, ...)
+end)
+
+--[ Mouseover Target Speed Update ]
+
+--Create frame
+local targetSpeed = CreateFrame("Frame", addonNameSpace .. "TargetSpeed", UIParent)
+
+--Event handler
+targetSpeed:SetScript("OnEvent", function(self, event, ...)
 	return self[event] and self[event](self, ...)
 end)
 
@@ -267,6 +287,60 @@ local function LoadDBs()
 	return firstLoad
 end
 
+--[ Speed Update ]
+
+---Get the current player speed in yards / second
+---@return number
+local function GetPlayerSpeed()
+	return GetUnitSpeed(UnitInVehicle("player") and "vehicle" or "player")
+end
+
+---Assemble the detailed text lines for player speed tooltip
+---@return table extraLines Table containing additional string lines to be added to the tooltip text [indexed, 0-based]
+--- - **text** string ― Text to be added to the line
+--- - **color**? table *optional* ― RGB colors line
+--- 	- **r** number ― Red [Range: 0 - 1]
+--- 	- **g** number ― Green [Range: 0 - 1]
+--- 	- **b** number ― Blue [Range: 0 - 1]
+--- - **wrap**? boolean *optional* ― Allow wrapping the line [Default: true]
+local function GetSpeedTooltipDetails()
+	local speed = GetPlayerSpeed()
+	return {
+		[0] = {
+			text = strings.speedTooltip.text[1]:gsub(
+				"#YARDS", Color(wt.FormatThousands(speed, 4, true),  colors.yellow[0])
+			),
+			color = colors.yellow[1],
+		},
+		[1] = {
+			text = "\n" .. strings.speedTooltip.text[2]:gsub(
+				"#PERCENT", Color(wt.FormatThousands(speed / 7 * 100, 4, true) .. "%%", colors.green[0])
+			),
+			color = colors.green[1],
+		},
+	}
+end
+
+---Assemble the text for the mouseover target's speed
+---@return string
+local function GetTargetSpeedText()
+	local speed = GetUnitSpeed("mouseover")
+	local text
+	if db.targetSpeed.text.valueType == 0 then
+		text = Color(wt.FormatThousands(speed / 7 * 100, db.targetSpeed.text.decimals, true, not db.targetSpeed.text.noTrim) .. "%%", colors.green[0])
+	elseif db.targetSpeed.text.valueType == 1 then
+		text = Color(strings.yardsps:gsub(
+			"#YARDS", Color(wt.FormatThousands(speed, db.targetSpeed.text.decimals, true, not db.targetSpeed.text.noTrim), colors.green[0])
+		), colors.green[1])
+	elseif db.targetSpeed.text.valueType == 2 then
+		text = Color(wt.FormatThousands(speed / 7 * 100, db.targetSpeed.text.decimals, true, not db.targetSpeed.text.noTrim) .. "%%", colors.green[0]) .. " ("
+		text = text .. Color(strings.yardsps:gsub(
+			"#YARDS", Color(wt.FormatThousands(speed, db.targetSpeed.text.decimals, true, not db.targetSpeed.text.noTrim), colors.yellow[0])
+		) .. ")", colors.yellow[1])
+	end
+	return "|T" .. textures.logo .. ":0|t" .. " " .. strings.targetSpeed:gsub("#SPEED", text)
+end
+
 --[ Speed Display ]
 
 ---Set the size of the speed display
@@ -340,6 +414,7 @@ local options = {
 		colors = {},
 		size = {},
 	},
+	mouseover = {},
 	backup = {},
 }
 
@@ -348,7 +423,7 @@ local options = {
 --Main page
 local function CreateOptionsShortcuts(parentFrame)
 	--Button: Speed Display page
-	local speedDisplay = wt.CreateButton({
+	local speedDisplayPage = wt.CreateButton({
 		parent = parentFrame,
 		position = {
 			anchor = "TOPLEFT",
@@ -358,6 +433,20 @@ local function CreateOptionsShortcuts(parentFrame)
 		label = strings.options.speedDisplay.title,
 		tooltip = strings.options.speedDisplay.description:gsub("#ADDON", addon),
 		onClick = function() InterfaceOptionsFrame_OpenToCategory(options.speedDisplayOptionsPage) end,
+	})
+	--Button: Target Speed page
+	wt.CreateButton({
+		parent = parentFrame,
+		position = {
+			anchor = "TOPLEFT",
+			relativeTo = speedDisplayPage,
+			relativePoint = "TOPRIGHT",
+			offset = { x = 10, y = 0 }
+		},
+		width = 120,
+		label = strings.options.targetSpeed.title,
+		tooltip = strings.options.targetSpeed.description:gsub("#ADDON", addon),
+		onClick = function() InterfaceOptionsFrame_OpenToCategory(options.targetSpeedOptionsPage) end,
 	})
 	--Button: Advanced page
 	wt.CreateButton({
@@ -731,25 +820,25 @@ local function CreatePositionOptions(parentFrame)
 	})
 end
 local function CreateTextOptions(parentFrame)
+	--Selector: Value type
 	local valueTypes = {}
 	for i = 0, 2 do
 		valueTypes[i] = {}
-		valueTypes[i].label = strings.options.speedDisplay.text.valueType.list[i].label
-		valueTypes[i].tooltip = strings.options.speedDisplay.text.valueType.list[i].tooltip
+		valueTypes[i].label = strings.options.speedText.valueType.list[i].label
+		valueTypes[i].tooltip = strings.options.speedText.valueType.list[i].tooltip
 		valueTypes[i].onSelect = function()
 			db.speedDisplay.text.valueType = i
 			SetDisplaySize()
 		end
 	end
-	--Selector: Value type
 	options.text.valueType = wt.CreateSelector({
 		parent = parentFrame,
 		position = {
 			anchor = "TOPLEFT",
 			offset = { x = 8, y = -30 }
 		},
-		label = strings.options.speedDisplay.text.valueType.label,
-		tooltip = strings.options.speedDisplay.text.valueType.tooltip,
+		label = strings.options.speedText.valueType.label,
+		tooltip = strings.options.speedText.valueType.tooltip,
 		items = valueTypes,
 		dependencies = {
 			[0] = { frame = options.visibility.hidden, evaluate = function(state) return not state end, },
@@ -766,8 +855,8 @@ local function CreateTextOptions(parentFrame)
 			anchor = "TOP",
 			offset = { x = 0, y = -30 }
 		},
-		label = strings.options.speedDisplay.text.decimals.label,
-		tooltip = strings.options.speedDisplay.text.decimals.tooltip,
+		label = strings.options.speedText.decimals.label,
+		tooltip = strings.options.speedText.decimals.tooltip,
 		value = { min = 0, max = 4, step = 1 },
 		onValueChanged = function(_, value)
 			db.speedDisplay.text.decimals = value
@@ -789,8 +878,8 @@ local function CreateTextOptions(parentFrame)
 			offset = { x = 0, y = -30 }
 		},
 		autoOffset = true,
-		label = strings.options.speedDisplay.text.noTrim.label,
-		tooltip = strings.options.speedDisplay.text.noTrim.tooltip,
+		label = strings.options.speedText.noTrim.label,
+		tooltip = strings.options.speedText.noTrim.tooltip,
 		onClick = function(self) db.speedDisplay.text.noTrim = self:GetChecked() end,
 		dependencies = {
 			[0] = { frame = options.visibility.hidden, evaluate = function(state) return not state end, },
@@ -1092,6 +1181,103 @@ local function CreateSpeedDisplayCategoryPanels(parentFrame) --Add the speed dis
 	CreateVisibilityOptions(visibilityOptions)
 end
 
+--Target Speed page
+local function CreateTooltipOptions(parentFrame)
+	--Checkbox: Enabled
+	options.mouseover.enabled = wt.CreateCheckbox({
+		parent = parentFrame,
+		position = {
+			anchor = "TOPLEFT",
+			offset = { x = 8, y = -30 }
+		},
+		label = strings.options.targetSpeed.mouseover.enabled.label,
+		tooltip = strings.options.targetSpeed.mouseover.enabled.tooltip:gsub("#ADDON", addon),
+		onClick = function(self) db.targetSpeed.enabled = self:GetChecked() end,
+		optionsData = {
+			storageTable = db.targetSpeed,
+			key = "enabled",
+		},
+	})
+	local valueTypes = {}
+	--Selector: Value type
+	for i = 0, 2 do
+		valueTypes[i] = {}
+		valueTypes[i].label = strings.options.speedText.valueType.list[i].label
+		valueTypes[i].tooltip = strings.options.speedText.valueType.list[i].tooltip
+		valueTypes[i].onSelect = function() db.targetSpeed.text.valueType = i end
+	end
+	options.mouseover.valueType = wt.CreateSelector({
+		parent = parentFrame,
+		position = {
+			anchor = "TOPLEFT",
+			offset = { x = 8, y = -60 }
+		},
+		label = strings.options.speedText.valueType.label,
+		tooltip = strings.options.speedText.valueType.tooltip,
+		items = valueTypes,
+		dependencies = {
+			[0] = { frame = options.mouseover.enabled },
+		},
+		optionsData = {
+			storageTable = db.targetSpeed.text,
+			key = "valueType",
+		},
+	})
+	--Slider: Decimals
+	options.mouseover.decimals = wt.CreateSlider({
+		parent = parentFrame,
+		position = {
+			anchor = "TOP",
+			offset = { x = 0, y = -60 }
+		},
+		label = strings.options.speedText.decimals.label,
+		tooltip = strings.options.speedText.decimals.tooltip,
+		value = { min = 0, max = 4, step = 1 },
+		onValueChanged = function(_, value) db.targetSpeed.text.decimals = value end,
+		dependencies = {
+			[0] = { frame = options.mouseover.enabled },
+		},
+		optionsData = {
+			storageTable = db.targetSpeed.text,
+			key = "decimals",
+		},
+	})
+	--Checkbox: No trim
+	options.mouseover.noTrim = wt.CreateCheckbox({
+		parent = parentFrame,
+		position = {
+			anchor = "TOPRIGHT",
+			offset = { x = 0, y = -60 }
+		},
+		autoOffset = true,
+		label = strings.options.speedText.noTrim.label,
+		tooltip = strings.options.speedText.noTrim.tooltip,
+		onClick = function(self) db.targetSpeed.text.noTrim = self:GetChecked() end,
+		dependencies = {
+			[0] = { frame = options.mouseover.enabled },
+			[1] = { frame = options.mouseover.decimals, evaluate = function(value) return value > 0 end },
+		},
+		optionsData = {
+			storageTable = db.targetSpeed.text,
+			key = "noTrim",
+		},
+	})
+end
+local function CreateTargetSpeedCategoryPanels(parentFrame) --Add the speed display page widgets to the category panel frame
+	--Mouseover
+	local mouseoverOptions = wt.CreatePanel({
+		parent = parentFrame,
+		position = {
+			anchor = "TOPLEFT",
+			offset = { x = 16, y = -78 }
+		},
+		size = { height = 134 },
+		title = strings.options.targetSpeed.mouseover.title,
+		description = strings.options.targetSpeed.mouseover.description
+	})
+	CreateTooltipOptions(mouseoverOptions)
+end
+
 --Advanced page
 local function CreateOptionsProfiles(parentFrame)
 	--TODO: Add profiles handler widgets
@@ -1134,7 +1320,7 @@ local function CreateBackupOptions(parentFrame)
 			offset = { x = 16, y = -30 }
 		},
 		size = { width = parentFrame:GetWidth() - 32, height = 276 },
-		maxLetters = 3000,
+		maxLetters = 3250,
 		fontObject = "GameFontWhiteSmall",
 		label = strings.options.advanced.backup.backupBox.label,
 		tooltip = strings.options.advanced.backup.backupBox.tooltip[0],
@@ -1275,7 +1461,7 @@ end
 local function LoadInterfaceOptions()
 	--Main options panel
 	options.mainOptionsPage = wt.CreateOptionsPanel({
-		name = addon:gsub("%s+", "") .. "Main",
+		name = addonNameSpace .. "Main",
 		title = addon,
 		description = strings.options.main.description:gsub("#ADDON", addon):gsub("#KEYWORD", strings.chat.keyword),
 		logo = textures.logo,
@@ -1289,7 +1475,7 @@ local function LoadInterfaceOptions()
 	local displayOptionsScrollFrame
 	options.speedDisplayOptionsPage, displayOptionsScrollFrame = wt.CreateOptionsPanel({
 		parent = options.mainOptionsPage.name,
-		name = addon:gsub("%s+", "") .. "SpeedDisplay",
+		name = addonNameSpace .. "SpeedDisplay",
 		title = strings.options.speedDisplay.title,
 		description = strings.options.speedDisplay.description:gsub("#ADDON", addon),
 		logo = textures.logo,
@@ -1302,10 +1488,22 @@ local function LoadInterfaceOptions()
 		autoLoad = false,
 	})
 	CreateSpeedDisplayCategoryPanels(displayOptionsScrollFrame) --Add categories & GUI elements to the panel
+	--Target Speed options panel
+	options.targetSpeedOptionsPage = wt.CreateOptionsPanel({
+		parent = options.mainOptionsPage.name,
+		name = addonNameSpace .. "TargetSpeed",
+		title = strings.options.targetSpeed.title,
+		description = strings.options.targetSpeed.description:gsub("#ADDON", addon),
+		logo = textures.logo,
+		default = DefaultOptions,
+		autoSave = false,
+		autoLoad = false,
+	})
+	CreateTargetSpeedCategoryPanels(options.targetSpeedOptionsPage) --Add categories & GUI elements to the panel
 	--Advanced options panel
 	options.advancedOptionsPage = wt.CreateOptionsPanel({
 		parent = options.mainOptionsPage.name,
-		name = addon:gsub("%s+", "") .. "Advanced",
+		name = addonNameSpace .. "Advanced",
 		title = strings.options.advanced.title,
 		description = strings.options.advanced.description:gsub("#ADDON", addon),
 		logo = textures.logo,
@@ -1530,6 +1728,14 @@ local function CreateContextMenuItems()
 			end,
 		},
 		{
+			text = strings.options.targetSpeed.title,
+			notCheckable = true,
+			func = function()
+				InterfaceOptionsFrame_OpenToCategory(options.targetSpeedOptionsPage)
+				InterfaceOptionsFrame_OpenToCategory(options.targetSpeedOptionsPage) --Load twice to make sure the proper page and category is loaded
+			end,
+		},
+		{
 			text = strings.options.advanced.title,
 			notCheckable = true,
 			func = function()
@@ -1543,7 +1749,7 @@ end
 --[ Speed Display Setup ]
 
 --Set frame parameters
-local function SetUpMainDisplayFrame()
+local function SetUpSpeedDisplayFrame()
 	--Main frame
 	moveSpeed:SetToplevel(true)
 	moveSpeed:SetSize(33, 10)
@@ -1584,12 +1790,9 @@ end)
 --Toggling the speed display tooltip
 speedDisplay:SetScript('OnEnter', function()
 	--Show tooltip
-	ns.tooltip = wt.AddTooltip(nil, speedDisplay, "ANCHOR_BOTTOMRIGHT", strings.speedDisplayTooltip.title, strings.speedDisplayTooltip.text[0], {
-		[0] = {
-			text = strings.speedDisplayTooltip.text[1]:gsub("#YARDS", Color(7,  colors.green[0])):gsub("#PERCENT", Color("100%%", colors.green[0])),
-			color = colors.yellow[0],
-		},
-	}, 0, speedDisplay:GetHeight())
+	ns.tooltip = wt.AddTooltip(
+		nil, speedDisplay, "ANCHOR_BOTTOMRIGHT", strings.speedTooltip.title, strings.speedTooltip.text[0], GetSpeedTooltipDetails(), 0, speedDisplay:GetHeight()
+	)
 end)
 speedDisplay:SetScript('OnLeave', function()
 	--Hide tooltip
@@ -1618,12 +1821,12 @@ function moveSpeed:ADDON_LOADED(name)
 	--Set up the interface options
 	LoadInterfaceOptions()
 	--Set up the main frame & text
-	SetUpMainDisplayFrame()
+	SetUpSpeedDisplayFrame()
 end
 
 function moveSpeed:PLAYER_ENTERING_WORLD()
 	--Toggle the visibility of the speed display (before OnUpdate would trigger)
-	wt.SetVisibility(speedDisplay, not db.speedDisplay.visibility.autoHide or GetUnitSpeed(UnitInVehicle("player") and "vehicle" or "player") ~= 0)
+	wt.SetVisibility(speedDisplay, not db.speedDisplay.visibility.autoHide or GetPlayerSpeed() ~= 0)
 	--Visibility notice
 	if not moveSpeed:IsVisible() or not speedDisplay:IsVisible() then PrintStatus(true) end
 end
@@ -1634,18 +1837,51 @@ end
 --Recalculate the movement speed value and update the displayed text
 moveSpeed:SetScript("OnUpdate", function()
 	--Calculate the current player movement speed
-	local speed = GetUnitSpeed(UnitInVehicle("player") and "vehicle" or "player")
+	local speed = GetPlayerSpeed()
 	--Toggle the visibility of the speed display (if auto-hide is enabled)
 	wt.SetVisibility(speedDisplay, not db.speedDisplay.visibility.autoHide or speed ~= 0)
+	--Update the speed display tooltip
+	if speedDisplay:IsMouseOver() then
+		ns.tooltip = wt.AddTooltip(
+			nil, speedDisplay, "ANCHOR_BOTTOMRIGHT", strings.speedTooltip.title, strings.speedTooltip.text[0], GetSpeedTooltipDetails(), 0, speedDisplay:GetHeight()
+		)
+	end
 	--Update the speed display text
 	local text = ""
 	if db.speedDisplay.text.valueType == 0 then
 		text = wt.FormatThousands(speed / 7 * 100, db.speedDisplay.text.decimals, true, not db.speedDisplay.text.noTrim) .. "%"
 	elseif db.speedDisplay.text.valueType == 1 then
-		text = wt.FormatThousands(speed, db.speedDisplay.text.decimals, true, not db.speedDisplay.text.noTrim) .. " y/s"
+		text = strings.yps:gsub(
+			"#YARDS", wt.FormatThousands(speed, db.speedDisplay.text.decimals, true, not db.speedDisplay.text.noTrim)
+		)
 	elseif db.speedDisplay.text.valueType == 2 then
 		text = wt.FormatThousands(speed / 7 * 100, db.speedDisplay.text.decimals, true, not db.speedDisplay.text.noTrim) .. "%" .. " ("
-		text = text .. wt.FormatThousands(speed, db.speedDisplay.text.decimals, true, not db.speedDisplay.text.noTrim) .. " y/s" .. ")"
+		text = text .. strings.yps:gsub(
+			"#YARDS", wt.FormatThousands(speed, db.speedDisplay.text.decimals, true, not db.speedDisplay.text.noTrim)
+		) .. ")"
 	end
 	speedDisplayText:SetText(text)
+end)
+
+--[[ MOUSEOVER TARGET SPEED ]]
+
+GameTooltip:HookScript("OnTooltipSetUnit", function(tooltip)
+	if not db.targetSpeed.enabled then return end
+	tooltip:AddLine(GetTargetSpeedText(), colors.yellow[1].r, colors.yellow[1].g, colors.yellow[1].b, true)
+	--Start mouseover target speed updates
+	targetSpeed:SetScript("OnUpdate", function()
+		--Find the speed line
+		for i = 3, GameTooltip:NumLines() do
+			local line = _G["GameTooltipTextLeft" .. i]
+			if string.match(line:GetText(), "|T" .. textures.logo .. ":0|t") then
+				line:SetText(GetTargetSpeedText())
+				break
+			end
+		end
+	end)
+end)
+
+GameTooltip:HookScript("OnTooltipCleared", function()
+	--Stop mouseover target speed updates
+	targetSpeed:SetScript("OnUpdate", nil)
 end)
