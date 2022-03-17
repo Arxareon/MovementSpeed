@@ -57,26 +57,28 @@ local changelogDB = {
 		[2] = "Minor under the hood fixes and changes.",
 	},
 	[8] = {
-		[0] = "#V_Version 2.2_# #H_(3/13/2022)_#",
-		[1] = "#N_New:_#",
-		[2] = "Updated the look and feel of the interface options to be on par with the Remaining XP addon. Right-click on the display to open specific options.",
-		[3] = "Added an about page with options shortcuts, addon info with changelogs, and useful links.",
-		[4] = "Added speed value text customization options: % and/or y/s & decimal places.",
-		[5] = "Added an option to auto-hide the display when your character is not moving.",
-		[6] = "Added the option to fine-fun the position of the speed display.",
-		[7] = "Added a preset selector (with room to add more display presets in the future).",
-		[8] = "Added an option to change the border color of the display background.",
-		[9] = "Added a helpful tooltip to the display which will be provided with more functionality in the future!",
-		[10] = "#C_Changes:_#",
-		[11] = "The saved display position will now be automatically applied on login for all characters.",
-		[12] = "Hiding the speed display will now be character-specific.",
-		[13] = "The Import/Export string editor can now be switched off of compact mode, allowing you to edit your settings more easily manually. Also, the contents have been color coded for better readability.",
-		[14] = "Several chat command descriptions and responses have been updated.",
-		[15] = "Additional smaller changes & fixes.",
-		[16] = "#O_Coming soon:_#",
-		[17] = "Options profiles for character-specific customization.",
-		[18] = "Different styles and looks for the speed display.",
-		[19] = "Some cool new features are being explored, more on that soon™!",
+		[0] = "#V_Version 2.2_# #H_(3/17/2022)_#",
+		[1] = "#O_Movement Speed has been released on Wago!_#\n#H_Next to CurseForge, it can now also be updated through the Wago app as well as WoWUp if you enable Wago.io as an addon provider._#",
+		[2] = "#H_Thank you for using my addons! Should you wish to support their development further, the Wago Subscription is now a new way to do so. <3._#",
+		[3] = "#N_New:_#",
+		[4] = "#H_New feature: Target speed!_#\nView the current movement speed of any player or NPC you inspect via mouseover. (Customize this integration in the interface options.)",
+		[5] = "Updated the look and feel of the interface options to be on par with the Remaining XP addon. Right-click on the speed display to open specific options pages.",
+		[6] = "Added an about page with options page shortcuts, addon info with a changelog, and useful links.",
+		[7] = "Added speed value text customization options: % and/or y/s & decimal places.",
+		[8] = "Added an option to auto-hide the display when your character is not moving.",
+		[9] = "Added the option to fine-tune the position of the speed display.",
+		[10] = "Added a preset selector (with room to add more display presets in the future).",
+		[11] = "Added an option to change the border color of the display background.",
+		[12] = "Added a helpful tooltip to the display which currently shows your movement speed percentage and its equivalent in yards / second.",
+		[13] = "#C_Changes:_#",
+		[14] = "Hiding the speed display will now be character-specific.",
+		[15] = "The Import/Export string editor can now be switched off of compact mode, making code review and manual edits easier. Also, the contents have been color coded for better readability.",
+		[16] = "Several chat command descriptions and responses have been updated.",
+		[17] = "Additional changes & small fixes.",
+		[18] = "#O_Coming soon:_#",
+		[19] = "Options profiles for character-specific customization.",
+		[20] = "Different styles and looks for the speed display.",
+		[21] = "Some cool new features are being explored, more on that soon™!",
 	},
 }
 
@@ -122,7 +124,7 @@ local english = {
 			description = "Customize #ADDON to fit your needs. Type #KEYWORD for chat commands.", --# flags will be replaced with code
 			shortcuts = {
 				title = "Shortcuts",
-				description = "Access customization options by expanding the #ADDON categories on the left or by clicking a button here.", --# flags will be replaced with code
+				description = "Access specific options by expanding the #ADDON categories on the left or by clicking a button here.", --# flags will be replaced with code
 			},
 			about = {
 				title = "About",
@@ -179,7 +181,7 @@ local english = {
 		},
 		speedDisplay = {
 			title = "Speed Display",
-			description = "Customize the #ADDON display, change its background and font settings to make it your own.", --# flags will be replaced with code
+			description = "Curtomize the main #ADDON display where you view your own movement speed.", --# flags will be replaced with code
 			quick = {
 				title = "Quick settings",
 				description = "Quickly settings enable or disable the #ADDON display or set it up via presets.", --# flags will be replaced with code
@@ -204,7 +206,7 @@ local english = {
 			},
 			position = {
 				title = "Position",
-				description = "You may drag the speed display while holding #SHIFT to position it anywhere on the screen, fine-tune it here.", --# flags will be replaced with code
+				description = "Drag & drop the speed display while holding #SHIFT to position it anywhere on the screen, fine-tune it here.", --# flags will be replaced with code
 				anchor = {
 					label = "Screen Anchor Point",
 					tooltip = "Select which point of the screen should the speed display be anchored to.",
@@ -220,7 +222,7 @@ local english = {
 			},
 			text = {
 				title = "Text & Font",
-				description = "Customize the font and the information shown in the speed display text overlay.",
+				description = "Customize what information shown in the speed display text overlay and how it is presented.",
 				font = {
 					family = {
 						label = "Font Family", --font family or type
@@ -243,7 +245,7 @@ local english = {
 			},
 			background = {
 				title = "Background",
-				description = "Customize the graphical background elements of the speed display.",
+				description = "Customize the background graphic element of the speed display.",
 				visible = {
 					label = "Visible",
 					tooltip = "Toggle the visibility of the backdrop elements of the main XP display.",
@@ -276,10 +278,10 @@ local english = {
 		},
 		targetSpeed = {
 			title = "Target Speed",
-			description = "View the movement speed of anyone you are targeting or inspecting via mouseover.",
+			description = "View the current movement speed of any player or NPC you are inspecting via mouseover.",
 			mouseover = {
 				title = "Inspect Tooltip",
-				description = "Toggle and specify how the movement speed of your mouseover taget is shown in the inspect tooltip.",
+				description = "Toggle and specify how the movement speed of your mouseover target is shown in the inspect tooltip.",
 				enabled = {
 					label = "Enable Integration",
 					tooltip = "Enable or disable the #ADDON integration in the mouseover inspect tooltip."
@@ -320,7 +322,7 @@ local english = {
 				},
 				import = "Load the string",
 				warning = "Are you sure you want to attempt to load the currently inserted string?\n\nIf you've copied it from an online source or someone else has sent it to you, only load it after you've checked the code inside and you know what you are doing.\n\nIf don't trust the source, you may want to cancel to prevent any unwanted actions.", --\n represents the newline character
-				error = "The provided backup string could not be validated and no data was loaded. It might be missing some characters or errors may heve been introduced if it was edited.",
+				error = "The provided backup string could not be validated and no data was loaded. It might be missing some characters or errors may have been introduced if it was edited.",
 			},
 		},
 	},
@@ -381,7 +383,7 @@ local english = {
 		text = {
 			[0] = "Displaying your current movement speed.",
 			[1] = "#YARDS yards / second.", --# flags will be replaced with code
-			[2] = "#PERCENT of the base running sppeed.", --# flags will be replaced with code
+			[2] = "#PERCENT of the base running speed.", --# flags will be replaced with code
 		},
 	},
 	targetSpeed = "Speed: #SPEED", --# flags will be replaced with code

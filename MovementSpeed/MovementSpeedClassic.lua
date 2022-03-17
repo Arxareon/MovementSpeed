@@ -105,11 +105,13 @@ local dbDefault = {
 		},
 	},
 	targetSpeed = {
-		enabled = true,
-		text = {
-			valueType = 2,
-			decimals = 0,
-			noTrim = false,
+		tooltip = {
+			enabled = true,
+			text = {
+				valueType = 2,
+				decimals = 0,
+				noTrim = false,
+			},
 		},
 	},
 }
@@ -165,10 +167,12 @@ moveSpeed:SetScript("OnEvent", function(self, event, ...)
 	return self[event] and self[event](self, ...)
 end)
 
---[ Mouseover Target Speed Update ]
+--[ Target Speed ]
 
 --Create frame
 local targetSpeed = CreateFrame("Frame", addonNameSpace .. "TargetSpeed", UIParent)
+-- local targetSpeedDisplay = CreateFrame("Frame", targetSpeed:GetName() .. "Display", moveSpeed, BackdropTemplateMixin and "BackdropTemplate")
+-- local targetSpeedDisplayText = speedDisplay:CreateFontString(targetSpeed:GetName() .. "Text", "OVERLAY")
 
 --Event handler
 targetSpeed:SetScript("OnEvent", function(self, event, ...)
@@ -324,16 +328,16 @@ end
 local function GetTargetSpeedText()
 	local speed = GetUnitSpeed("mouseover")
 	local text
-	if db.targetSpeed.text.valueType == 0 then
-		text = Color(wt.FormatThousands(speed / 7 * 100, db.targetSpeed.text.decimals, true, not db.targetSpeed.text.noTrim) .. "%%", colors.green[0])
-	elseif db.targetSpeed.text.valueType == 1 then
+	if db.targetSpeed.tooltip.text.valueType == 0 then
+		text = Color(wt.FormatThousands(speed / 7 * 100, db.targetSpeed.tooltip.text.decimals, true, not db.targetSpeed.tooltip.text.noTrim) .. "%%", colors.green[0])
+	elseif db.targetSpeed.tooltip.text.valueType == 1 then
 		text = Color(strings.yardsps:gsub(
-			"#YARDS", Color(wt.FormatThousands(speed, db.targetSpeed.text.decimals, true, not db.targetSpeed.text.noTrim), colors.green[0])
+			"#YARDS", Color(wt.FormatThousands(speed, db.targetSpeed.tooltip.text.decimals, true, not db.targetSpeed.tooltip.text.noTrim), colors.green[0])
 		), colors.green[1])
-	elseif db.targetSpeed.text.valueType == 2 then
-		text = Color(wt.FormatThousands(speed / 7 * 100, db.targetSpeed.text.decimals, true, not db.targetSpeed.text.noTrim) .. "%%", colors.green[0]) .. " ("
+	elseif db.targetSpeed.tooltip.text.valueType == 2 then
+		text = Color(wt.FormatThousands(speed / 7 * 100, db.targetSpeed.tooltip.text.decimals, true, not db.targetSpeed.tooltip.text.noTrim) .. "%%", colors.green[0]) .. " ("
 		text = text .. Color(strings.yardsps:gsub(
-			"#YARDS", Color(wt.FormatThousands(speed, db.targetSpeed.text.decimals, true, not db.targetSpeed.text.noTrim), colors.yellow[0])
+			"#YARDS", Color(wt.FormatThousands(speed, db.targetSpeed.tooltip.text.decimals, true, not db.targetSpeed.tooltip.text.noTrim), colors.yellow[0])
 		) .. ")", colors.yellow[1])
 	end
 	return "|T" .. textures.logo .. ":0|t" .. " " .. strings.targetSpeed:gsub("#SPEED", text)
@@ -1189,9 +1193,9 @@ local function CreateTooltipOptions(parentFrame)
 		},
 		label = strings.options.targetSpeed.mouseover.enabled.label,
 		tooltip = strings.options.targetSpeed.mouseover.enabled.tooltip:gsub("#ADDON", addon),
-		onClick = function(self) db.targetSpeed.enabled = self:GetChecked() end,
+		onClick = function(self) db.targetSpeed.tooltip.enabled = self:GetChecked() end,
 		optionsData = {
-			storageTable = db.targetSpeed,
+			storageTable = db.targetSpeed.tooltip,
 			key = "enabled",
 		},
 	})
@@ -1201,7 +1205,7 @@ local function CreateTooltipOptions(parentFrame)
 		valueTypes[i] = {}
 		valueTypes[i].label = strings.options.speedText.valueType.list[i].label
 		valueTypes[i].tooltip = strings.options.speedText.valueType.list[i].tooltip
-		valueTypes[i].onSelect = function() db.targetSpeed.text.valueType = i end
+		valueTypes[i].onSelect = function() db.targetSpeed.tooltip.text.valueType = i end
 	end
 	options.mouseover.valueType = wt.CreateSelector({
 		parent = parentFrame,
@@ -1216,7 +1220,7 @@ local function CreateTooltipOptions(parentFrame)
 			[0] = { frame = options.mouseover.enabled },
 		},
 		optionsData = {
-			storageTable = db.targetSpeed.text,
+			storageTable = db.targetSpeed.tooltip.text,
 			key = "valueType",
 		},
 	})
@@ -1230,12 +1234,12 @@ local function CreateTooltipOptions(parentFrame)
 		label = strings.options.speedText.decimals.label,
 		tooltip = strings.options.speedText.decimals.tooltip,
 		value = { min = 0, max = 4, step = 1 },
-		onValueChanged = function(_, value) db.targetSpeed.text.decimals = value end,
+		onValueChanged = function(_, value) db.targetSpeed.tooltip.text.decimals = value end,
 		dependencies = {
 			[0] = { frame = options.mouseover.enabled },
 		},
 		optionsData = {
-			storageTable = db.targetSpeed.text,
+			storageTable = db.targetSpeed.tooltip.text,
 			key = "decimals",
 		},
 	})
@@ -1249,13 +1253,13 @@ local function CreateTooltipOptions(parentFrame)
 		autoOffset = true,
 		label = strings.options.speedText.noTrim.label,
 		tooltip = strings.options.speedText.noTrim.tooltip,
-		onClick = function(self) db.targetSpeed.text.noTrim = self:GetChecked() end,
+		onClick = function(self) db.targetSpeed.tooltip.text.noTrim = self:GetChecked() end,
 		dependencies = {
 			[0] = { frame = options.mouseover.enabled },
 			[1] = { frame = options.mouseover.decimals, evaluate = function(value) return value > 0 end },
 		},
 		optionsData = {
-			storageTable = db.targetSpeed.text,
+			storageTable = db.targetSpeed.tooltip.text,
 			key = "noTrim",
 		},
 	})
@@ -1266,7 +1270,7 @@ local function CreateTargetSpeedCategoryPanels(parentFrame) --Add the speed disp
 		parent = parentFrame,
 		position = {
 			anchor = "TOPLEFT",
-			offset = { x = 16, y = -78 }
+			offset = { x = 16, y = -82 }
 		},
 		size = { height = 134 },
 		title = strings.options.targetSpeed.mouseover.title,
@@ -1854,17 +1858,25 @@ end)
 --[[ MOUSEOVER TARGET SPEED ]]
 
 GameTooltip:HookScript("OnTooltipSetUnit", function(tooltip)
-	if not db.targetSpeed.enabled then return end
-	tooltip:AddLine(GetTargetSpeedText(), colors.yellow[1].r, colors.yellow[1].g, colors.yellow[1].b, true)
+	if not db.targetSpeed.tooltip.enabled then return end
 	--Start mouseover target speed updates
 	targetSpeed:SetScript("OnUpdate", function()
+		if UnitName("mouseover") == nil then return end
 		--Find the speed line
-		for i = 3, GameTooltip:NumLines() do
+		local lineAdded = false
+		for i = 2, tooltip:NumLines() do
 			local line = _G["GameTooltipTextLeft" .. i]
 			if string.match(line:GetText(), "|T" .. textures.logo .. ":0|t") then
+				--Update the speed line
 				line:SetText(GetTargetSpeedText())
+				lineAdded = true
 				break
 			end
+		end
+		--Add the speed line if the target is moving
+		if not lineAdded and GetUnitSpeed("mouseover") ~= 0 then
+			tooltip:AddLine(GetTargetSpeedText(), colors.yellow[1].r, colors.yellow[1].g, colors.yellow[1].b, true)
+			tooltip:Show() --Force the tooltip to be resized
 		end
 	end)
 end)
