@@ -72,7 +72,6 @@ local anchors = {
 local db --Account-wide options
 local dbc --Character-specific options
 local cs --Cross-session account-wide data
-local csc --Cross-session character-specific data
 
 --Default values
 local dbDefault = {
@@ -278,7 +277,6 @@ local function LoadDBs()
 	db = wt.Clone(MovementSpeedDB) --Account-wide options DB copy
 	dbc = wt.Clone(MovementSpeedDBC) --Character-specific options DB copy
 	cs = MovementSpeedCS --Cross-session account-wide data direct reference
-	csc = MovementSpeedCSC --Cross-session character-specific data direct reference
 	--DB checkup & fix
 	wt.RemoveEmpty(db, CheckValidity)
 	wt.RemoveEmpty(dbc, CheckValidity)

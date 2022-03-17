@@ -1,4 +1,4 @@
-***A simple solution to a simple problem:*** Movement Speed shows your character's speed percentage in a movable and customizable text display with fast updates.
+***A simple solution to a simple problem:*** Movement Speed shows your character's speed percentage in a movable and customizable text display or anyone else's in the inspect tooltip with fast updates.
 
 # Features
 * Customize the movement speed display via the Interface Options or the **/movespeed** chat command (some settings are not available as chat commands).

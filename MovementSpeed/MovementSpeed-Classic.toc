@@ -6,9 +6,9 @@
 ## X-Year: 2022
 ## Author: Barnabas Nagy (Arxareon)
 ## X-License: All Rights Reserved
-## Notes: Shows the current movement speed of the player in percentage.
-## SavedVariables: MovementSpeedDB, MovementSpeedDBC, MovementSpeedCS, MovementSpeedCSC
-## SavedVariablesPerCharacter: MovementSpeedDBC, MovementSpeedCSC
+## Notes: View the movement speed of anyone in customizable displays and tooltips with fast updates.
+## SavedVariables: MovementSpeedDB, MovementSpeedCS
+## SavedVariablesPerCharacter: MovementSpeedDBC
 
 WidgetTools/WidgetTools.lua
 MovementSpeedLocalizations.lua
