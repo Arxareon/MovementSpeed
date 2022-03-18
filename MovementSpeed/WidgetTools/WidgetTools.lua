@@ -445,11 +445,11 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	---Set the position and anchoring of a frame when it is unknown which parameters will be nil when calling [Region:SetPoint()](https://wowpedia.fandom.com/wiki/API_Region_SetPoint)
 	---@param frame Frame Reference to the frame to be moved
 	---@param anchor AnchorPoint Base anchor point
-	---@param relativeTo Frame [Default: UIParent *(the entire screen)*]
-	---@param relativePoint AnchorPoint [Default: **anchor**]
+	---@param relativeTo? Frame [Default: UIParent *(the entire screen)*]
+	---@param relativePoint? AnchorPoint [Default: **anchor**]
 	---@param offsetX? number [Default: 0]
 	---@param offsetY? number [Default: 0]
-	---@param userPlaced boolean Whether to set the position of the frame to be user placed [Default: false]
+	---@param userPlaced? boolean Whether to set the position of the frame to be user placed [Default: false]
 	WidgetToolbox[ns.WidgetToolsVersion].PositionFrame = function(frame, anchor, relativeTo, relativePoint, offsetX, offsetY, userPlaced)
 		frame:ClearAllPoints()
 		--Set the position

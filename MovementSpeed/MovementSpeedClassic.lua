@@ -16,11 +16,6 @@ strings.chat.keyword = "/movespeed"
 
 --Colors
 local colors = {
-	grey = {
-		[0] = { r = 0.54, g = 0.54, b = 0.54 },
-		[1] = { r = 0.69, g = 0.69, b = 0.69 },
-		[2] = { r = 0.79, g = 0.79, b = 0.79 },
-	},
 	green = {
 		[0] = { r = 0.31, g = 0.85, b = 0.21 },
 		[1] = { r = 0.56, g = 0.83, b = 0.43 },
@@ -85,13 +80,6 @@ local dbDefault = {
 			autoHide = false,
 			statusNotice = true,
 		},
-		background = {
-			visible = false,
-			colors = {
-				bg = { r = 0, g = 0, b = 0, a = 0.5 },
-				border = { r = 1, g = 1, b = 1, a = 0.4 },
-			},
-		},
 		text = {
 			valueType = 0,
 			decimals = 0,
@@ -100,6 +88,13 @@ local dbDefault = {
 				family = fonts[0].path,
 				size = 11,
 				color = { r = 1, g = 1, b = 1, a = 1 },
+			},
+		},
+		background = {
+			visible = false,
+			colors = {
+				bg = { r = 0, g = 0, b = 0, a = 0.5 },
+				border = { r = 1, g = 1, b = 1, a = 0.4 },
 			},
 		},
 	},
@@ -270,7 +265,6 @@ local function LoadDBs()
 	end
 	if MovementSpeedDBC == nil then MovementSpeedDBC = wt.Clone(dbcDefault) end
 	if MovementSpeedCS == nil then MovementSpeedCS = {} end
-	if MovementSpeedCSC == nil then MovementSpeedCSC = {} end
 	--Load the DBs
 	db = wt.Clone(MovementSpeedDB) --Account-wide options DB copy
 	dbc = wt.Clone(MovementSpeedDBC) --Character-specific options DB copy
@@ -386,7 +380,8 @@ local function SetDisplayBackdrop(enabled, backdropColors)
 end
 
 ---Set the visibility, backdrop, font family, size and color of the speed display to the currently saved values
----@param data table DB table to set the speed display values from
+---@param data table Accound-wide data table to set the speed display values from
+---@param characterData table Character-specific data table to set the speed display values from
 local function SetDisplayValues(data, characterData)
 	--Visibility
 	moveSpeed:SetFrameStrata(data.speedDisplay.visibility.frameStrata)
@@ -1831,7 +1826,7 @@ moveSpeed:SetScript("OnUpdate", function()
 	--Toggle the visibility of the speed display (if auto-hide is enabled)
 	wt.SetVisibility(speedDisplay, not db.speedDisplay.visibility.autoHide or speed ~= 0)
 	--Update the speed display tooltip
-	if speedDisplay:IsMouseOver() then
+	if speedDisplay:IsMouseOver() and ns.tooltip:IsVisible() then
 		ns.tooltip = wt.AddTooltip(
 			nil, speedDisplay, "ANCHOR_BOTTOMRIGHT", strings.speedTooltip.title, strings.speedTooltip.text[0], GetSpeedTooltipDetails(), 0, speedDisplay:GetHeight()
 		)
@@ -1864,7 +1859,7 @@ GameTooltip:HookScript("OnTooltipSetUnit", function(tooltip)
 		local lineAdded = false
 		for i = 2, tooltip:NumLines() do
 			local line = _G["GameTooltipTextLeft" .. i]
-			if string.match(line:GetText(), "|T" .. textures.logo .. ":0|t") then
+			if string.match(line:GetText() or "", "|T" .. textures.logo .. ":0|t") then
 				--Update the speed line
 				line:SetText(GetTargetSpeedText())
 				lineAdded = true

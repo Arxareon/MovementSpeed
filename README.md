@@ -11,6 +11,12 @@
 
 [**Remaining XP**](https://bitbucket.org/Arxareon/remaining-xp) • Shows the amount of XP needed to reach the next level & much more.
 
+*Coming soon™:*
+[**Party Targets**](https://bitbucket.org/Arxareon/party-targets) • See who your party and raid members are targeting.
+
+*Coming soon™:*
+[**RP Keyboard**](https://bitbucket.org/Arxareon/rp-keyboard) • Type fantasy letters & runes in chat to talk to other RP Keyboard users.
+
 # Support
 *Possibilities to directly support the development of Movement Speed and other addons:*
 
@@ -20,6 +26,7 @@
 [**CurseForge**](https://www.curseforge.com/wow/addons/movement-speed) • Should you prefer, support development by watching ads on CurseForge, and keep up to date via automatic updates via the CurseForge App.
 
 [**Wago**](https://addons.wago.io/addons/movement-speed) • You can also use Wago to get updates and support development by watching ads, and provide much appreciated continuous support via a Subscription.
+*You can also get updates via **WoWUP** if you have Wago.io enabled as an addon provider!*
 
 # License
 All Rights Reserved unless otherwise explicitly stated.
