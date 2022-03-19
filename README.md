@@ -26,6 +26,7 @@
 [**CurseForge**](https://www.curseforge.com/wow/addons/movement-speed) • Should you prefer, support development by watching ads on CurseForge, and keep up to date via automatic updates via the CurseForge App.
 
 [**Wago**](https://addons.wago.io/addons/movement-speed) • You can also use Wago to get updates and support development by watching ads, and provide much appreciated continuous support via a Subscription.
+
 *You can also get updates via **WoWUP** if you have Wago.io enabled as an addon provider!*
 
 # License
