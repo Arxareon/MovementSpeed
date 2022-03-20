@@ -1838,7 +1838,7 @@ moveSpeed:SetScript("OnUpdate", function()
 	--Toggle the visibility of the speed display (if auto-hide is enabled)
 	wt.SetVisibility(speedDisplay, not db.speedDisplay.visibility.autoHide or speed ~= 0)
 	--Update the speed display tooltip
-	if speedDisplay:IsMouseOver() and ns.tooltip:Isvisible() then
+	if speedDisplay:IsMouseOver() and ns.tooltip:IsVisible() then
 		ns.tooltip = wt.AddTooltip(
 			nil, speedDisplay, "ANCHOR_BOTTOMRIGHT", strings.speedTooltip.title, strings.speedTooltip.text[0], GetSpeedTooltipDetails(), 0, speedDisplay:GetHeight()
 		)

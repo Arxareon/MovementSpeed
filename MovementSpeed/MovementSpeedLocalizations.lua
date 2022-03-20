@@ -88,6 +88,11 @@ local changelogDB = {
 		[2] = "I wasn't able to reproduce any of the problems reported recently, but hopefully this quick patch should help. \nPlease, keep reporting them with information such as when/how they occur, what WoW version and other addons you are using if you can. If the bugs don't happen for me, it's hard to get a grip on them - but I try! :)",
 		[3] = "Fixed the issue of the speed display tooltip not disappearing under the bags or other frames.",
 	},
+	[10] = {
+		[0] = "#V_Version 2.2.2_# #H_(3/20/2022)_#",
+		[1] = "#F_Hotfix:_# #H_Thank you for your reports!_#",
+		[2] = "Fixed an error that popped up when mousing over the speed display in the Retail version.",
+	},
 }
 
 ns.GetChangelog = function()
