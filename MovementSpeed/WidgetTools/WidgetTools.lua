@@ -2,7 +2,7 @@
 local addonNameSpace, ns = ...
 
 --Version
-ns.WidgetToolsVersion = "1.2"
+ns.WidgetToolsVersion = "1.3"
 
 --Global WidgetTools table containing toolbox subtables for each respective WidgetTools version (WidgetToolbox["version_string"])
 if not WidgetToolbox then WidgetToolbox = {} end
@@ -89,10 +89,9 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--[ Table Management ]
 
 	---Get the sorted key value pairs of a table ([Documentation: Sort](https://www.lua.org/pil/19.3.html))
-	---@param t table Table to be sorted (in an ascending order and/or alphabetically)
-	---@param f? function Iterator function defining how elements should be compared (used for [table.sort](https://www.lua.org/manual/5.4/manual.html#pdf-table.sort)) [Default: < *operator (fixed for mixed tables)*]
+	---@param t table Table to be sorted (in an ascending order and/or alphabetically, based on the < operator)
 	---@return function iterator Function returning the Key, Value pairs of the table in order
-	WidgetToolbox[ns.WidgetToolsVersion].SortedPairs = function(t, f)
+	WidgetToolbox[ns.WidgetToolsVersion].SortedPairs = function(t)
 		local a = {}
 		for n in pairs(t) do table.insert(a, n) end
 		table.sort(a, function(x, y) if type(x) == "number" and type(y) == "number" then return x < y else return tostring(x) < tostring(y) end end)
@@ -267,7 +266,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	end
 
 	---Compare two tables to check for and fill in missing data from one to the other
-	---@param tableToCheck table|any Reference to the table to fill in missing data to (it will be turned into an empty table first if its type is not already "table")
+	---@param tableToCheck table | any Reference to the table to fill in missing data to (it will be turned into an empty table first if its type is not already "table")
 	---@param tableToSample table Reference to the table to sample data from
 	WidgetToolbox[ns.WidgetToolsVersion].AddMissing = function(tableToCheck, tableToSample)
 		if type(tableToSample) ~= "table" then return end
@@ -318,6 +317,19 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	end
 
 	--[ String Formatting ]
+
+	---Add coloring escape sequences to a string
+	---@param text string Text to add coloring to
+	---@param color table Table containing the color values
+	--- - **r** number ― Red [Range: 0 - 1]
+	--- - **g** number ― Green [Range: 0 - 1]
+	--- - **b** number ― Blue [Range: 0 - 1]
+	--- - **a**? number *optional* ― Opacity [Range: 0 - 1, Default: 1]
+	---@return string
+	WidgetToolbox[ns.WidgetToolsVersion].Color = function(text, color)
+		local r, g, b, a = WidgetToolbox[ns.WidgetToolsVersion].UnpackColor(color)
+		return WrapTextInColorCode(text, WidgetToolbox[ns.WidgetToolsVersion].ColorToHex(r, g, b, a, true, false))
+	end
 
 	---Format a number string to include thousand separation
 	---@param value number Number value to turn into a string with thousand separation
@@ -703,20 +715,12 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 		local tooltip = CreateFrame("GameTooltip", name .. "GameTooltip", nil, "GameTooltipTemplate")
 		tooltip:SetFrameStrata("DIALOG")
 		tooltip:SetScale(0.9)
-		--Title font
-		tooltip:AddFontStrings(
-			tooltip:CreateFontString(tooltip:GetName() .. "TextLeft1", nil, "GameTooltipHeaderText"),
-			tooltip:CreateFontString(tooltip:GetName() .. "TextRight1", nil, "GameTooltipHeaderText")
-		)
-		_G[tooltip:GetName() .. "TextLeft1"]:SetFontObject(GameTooltipHeaderText) --TODO: It's not the right font object (too big), find another one that matches (or create a custom one)
-		_G[tooltip:GetName() .. "TextRight1"]:SetFontObject(GameTooltipHeaderText)
-		--Text font
-		tooltip:AddFontStrings(
-			tooltip:CreateFontString(tooltip:GetName() .. "TextLeft" .. 2, nil, "GameTooltipTextSmall"),
-			tooltip:CreateFontString(tooltip:GetName() .. "TextRight" .. 2, nil, "GameTooltipTextSmall")
-		)
-		_G[tooltip:GetName() .. "TextLeft" .. 2]:SetFontObject(GameTooltipTextSmall)
-		_G[tooltip:GetName() .. "TextRight" .. 2]:SetFontObject(GameTooltipTextSmall)
+		--Title
+		local left = tooltip:GetName() .. "TextLeft" .. 1
+		local right = tooltip:GetName() .. "TextRight" .. 1
+		tooltip:AddFontStrings(tooltip:CreateFontString(left, nil, GameFontNormalMed1), tooltip:CreateFontString(right, nil, GameFontNormalMed1))
+		_G[left]:SetFontObject(GameFontNormalMed1)
+		_G[right]:SetFontObject(GameFontNormalMed1)
 		return tooltip
 	end
 
@@ -727,37 +731,47 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	---@param owner Frame Owner frame the tooltip to be shown for
 	---@param anchor string [GameTooltip anchor](https://wowpedia.fandom.com/wiki/API_GameTooltip_SetOwner)
 	---@param title string String to be shown as the tooltip title
-	---@param text? string String to be shown as the first line of tooltip summary
-	---@param extraLines? table Table containing additional string lines to be added to the tooltip text [indexed, 0-based]
+	---@param textLines? table Table containing text lines to be added to the tooltip [indexed, 0-based]
 	--- - **text** string ― Text to be added to the line
-	--- - **color**? table *optional* ― RGB colors line
+	--- - **font**? string | FontObject *optional* ― The FontObject to set for this line [Default: GameTooltipTextSmall]
+	--- - **color**? table *optional* ― Table containing the RGB values to color this line with [Default: HIGHLIGHT_FONT_COLOR (white)]
 	--- 	- **r** number ― Red [Range: 0 - 1]
 	--- 	- **g** number ― Green [Range: 0 - 1]
 	--- 	- **b** number ― Blue [Range: 0 - 1]
-	--- - **wrap**? boolean *optional* ― Allow wrapping the line [Default: true]
+	--- - **wrap**? boolean *optional* ― Allow this line to be wrapped [Default: true]
 	---@param offsetX? number [Default: 0]
 	---@param offsetY? number [Default: 0]
 	---@return GameTooltip tooltip (Don't forget to hide later!)
-	WidgetToolbox[ns.WidgetToolsVersion].AddTooltip = function(tooltip, owner, anchor, title, text, extraLines, offsetX, offsetY)
+	WidgetToolbox[ns.WidgetToolsVersion].AddTooltip = function(tooltip, owner, anchor, title, textLines, offsetX, offsetY)
 		if tooltip == nil then tooltip = customTooltip end
 		--Position
 		tooltip:SetOwner(owner, anchor, offsetX, offsetY)
 		--Title
 		tooltip:AddLine(title, colors.title.r, colors.title.g, colors.title.b, true)
-		--Summary
-		if text ~= nil then
-			tooltip:AddLine(text, colors.normal.r, colors.normal.g, colors.normal.b, true)
-			--Additional text lines
-			if extraLines ~= nil then
-				--Empty line after the summary
-				tooltip:AddLine(" ", nil, nil, nil, true) --TODO: Check why the third line has the title FontObject
-				for i = 0, #extraLines do
-					--Add line
-					local r = (extraLines[i].color or {}).r or colors.normal.r
-					local g = (extraLines[i].color or {}).g or colors.normal.g
-					local b = (extraLines[i].color or {}).b or colors.normal.b
-					tooltip:AddLine(extraLines[i].text, r, g, b, extraLines[i].wrap == nil and true or extraLines[i].wrap)
+		--Text
+		if textLines ~= nil then
+			local offset = 2
+			for i = 0, #textLines do
+				--Set FontString
+				local left = tooltip:GetName() .. "TextLeft" .. i + offset
+				local right = tooltip:GetName() .. "TextRight" .. i + offset
+				local font = textLines[i].font or GameTooltipTextSmall
+				if _G[left] == nil or _G[right] == nil then
+					tooltip:AddFontStrings(tooltip:CreateFontString(left, nil, font), tooltip:CreateFontString(right, nil, font))
 				end
+				_G[left]:SetFontObject(font)
+				_G[left]:SetJustifyH("LEFT")
+				_G[right]:SetFontObject(font)
+				_G[right]:SetJustifyH("RIGHT")
+				--Add line
+				if i == 1 then --Third line is bugged (on Retail), skip it
+					if (select(4, GetBuildInfo())) >= 90200 then --Temporary workaround for Retail
+						tooltip:AddLine(" \n") --FIXME: Find out why the third line is bugged
+						offset = 3
+					end
+				end
+				local color = textLines[i].color or colors.normal
+				tooltip:AddLine(textLines[i].text, color.r, color.g, color.b, textLines[i].wrap ~= false)
 			end
 		end
 		--Show
@@ -857,13 +871,13 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--- 		- **x** number
 	--- 		- **y** number
 	--- - **width**? number *optional*
-	--- - **justify**? string *optional* — Set the horizontal justification of the text: "LEFT"|"RIGHT"|"CENTER" [Default: "CENTER"]
+	--- - **justify**? string *optional* — Set the horizontal justification of the text: "LEFT" | "RIGHT" | "CENTER" [Default: "CENTER"]
 	--- - **layer**? Layer *optional* ― Draw [Layer](https://wowpedia.fandom.com/wiki/Layer)
 	--- - **template**? string *optional* ― Template to be used for the [FontString](https://wowpedia.fandom.com/wiki/UIOBJECT_FontString) [Default: "GameFontNormal" if **t.font** == nil]
 	--- - **font**? table *optional* ― Table containing font properties used for [SetFont](https://wowwiki-archive.fandom.com/wiki/API_FontInstance_SetFont)
 	--- 	- **path** string ― Path to the font file relative to the WoW client directory
 	--- 	- **size** number
-	--- 	- **flags** string ― Outline, coloring (comma separated string of one or more of): "OUTLINE"|"THICKOUTLINE"|"THINOUTLINE"|"MONOCHROME" ..
+	--- 	- **flags** string ― Outline, coloring (comma separated string of one or more of): "OUTLINE" | "THICKOUTLINE" | "THINOUTLINE" | "MONOCHROME" ..
 	--- - **color**? table *optional* — Apply the specified color to the text
 	--- 	- **r** number ― Red [Range: 0 - 1]
 	--- 	- **g** number ― Green [Range: 0 - 1]
@@ -897,7 +911,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--- 		- **x** number ― Horizontal offset value
 	--- 		- **y** number ― Vertical offset value
 	--- 	- **width**? number *optional* [Default: *width of the parent frame*]
-	--- 	- **justify**? table *optional* — Set the horizontal justification of the text: "LEFT"|"RIGHT"|"CENTER" [Default: "LEFT"]
+	--- 	- **justify**? table *optional* — Set the horizontal justification of the text: "LEFT" | "RIGHT" | "CENTER" [Default: "LEFT"]
 	--- 	- **color**? table *optional* — Apply the specified color to the title
 	--- 		- **r** number ― Red [Range: 0 - 1]
 	--- 		- **g** number ― Green [Range: 0 - 1]
@@ -910,7 +924,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--- 		- **x** number ― Horizontal offset value
 	--- 		- **y** number ― Vertical offset value
 	--- 	- **width**? number *optional* [Default: *width of the parent frame*]
-	--- 	- **justify**? table *optional* — Set the horizontal justification of the text: "LEFT"|"RIGHT"|"CENTER" [Default: "LEFT"]
+	--- 	- **justify**? table *optional* — Set the horizontal justification of the text: "LEFT" | "RIGHT" | "CENTER" [Default: "LEFT"]
 	--- 	- **color**? table *optional* — Apply the specified color to the description
 	--- 		- **r** number ― Red [Range: 0 - 1]
 	--- 		- **g** number ― Green [Range: 0 - 1]
@@ -1236,14 +1250,14 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--- 		- **y** number
 	--- - **width**? number *optional* ― [Default: 40]
 	--- - **label** string — Title text to be shown on the button and as the the tooltip label
-	--- - **tooltip**? string *optional* — Text to be shown as the tooltip of the button
-	--- - **tooltipExtra**? table [indexed, 0-based] *optional* — Additional text lines to be added to the tooltip of the button
+	--- - **tooltip**? table [indexed, 0-based] *optional* — Text lines to be added to the tooltip of the button
 	--- 	- **text** string ― Text to be added to the line
-	--- 	- **color**? table *optional* ― RGB colors line
+	--- 	- **font**? string | FontObject *optional* ― The FontObject to set for this line [Default: GameTooltipTextSmall]
+	--- 	- **color**? table *optional* ― Table containing the RGB values to color this line with [Default: HIGHLIGHT_FONT_COLOR (white)]
 	--- 		- **r** number ― Red [Range: 0 - 1]
 	--- 		- **g** number ― Green [Range: 0 - 1]
 	--- 		- **b** number ― Blue [Range: 0 - 1]
-	--- 	- **wrap**? boolean *optional* ― Allow wrapping the line [Default: true]
+	--- 	- **wrap**? boolean *optional* ― Allow this line to be wrapped [Default: true]
 	--- - **onClick** function — The function to be called when an [OnClick](https://wowpedia.fandom.com/wiki/UIHANDLER_OnClick) event happens
 	--- - **onEvent**? table [indexed, 0-based] *optional* — Table that holds additional event handler scripts to be set for the button
 	--- 	- **event** string — Event name
@@ -1276,7 +1290,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 		if t.onEvent ~= nil then for i = 0, #t.onEvent do button:HookScript(t.onEvent[i].event, t.onEvent[i].handler) end end
 		--Tooltip
 		button:HookScript("OnEnter", function()
-			WidgetToolbox[ns.WidgetToolsVersion].AddTooltip(nil, button, "ANCHOR_TOPLEFT", t.label, t.tooltip, t.tooltipExtra, 20)
+			WidgetToolbox[ns.WidgetToolsVersion].AddTooltip(nil, button, "ANCHOR_TOPLEFT", t.label, t.tooltip, 20)
 		end)
 		button:HookScript("OnLeave", function() customTooltip:Hide() end)
 		--State & dependencies
@@ -1300,14 +1314,14 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--- 		- **y** number
 	--- - **autoOffset**? boolean *optional* — Offset the position of the checkbox in a Category Panel to place it into a 3 column grid based on its anchor point. [Default: false]
 	--- - **label** string — Text to be shown to the right of the checkbox and as the the tooltip label
-	--- - **tooltip**? string *optional* — Text to be shown as the tooltip of the checkbox
-	--- - **tooltipExtra**? table [indexed, 0-based] *optional* — Additional text lines to be added to the tooltip of the checkbox
+	--- - **tooltip**? table [indexed, 0-based] *optional* — Text lines to be added to the tooltip of the checkbox
 	--- 	- **text** string ― Text to be added to the line
-	--- 	- **color**? table *optional* ― RGB colors line
+	--- 	- **font**? string | FontObject *optional* ― The FontObject to set for this line [Default: GameTooltipTextSmall]
+	--- 	- **color**? table *optional* ― Table containing the RGB values to color this line with [Default: HIGHLIGHT_FONT_COLOR (white)]
 	--- 		- **r** number ― Red [Range: 0 - 1]
 	--- 		- **g** number ― Green [Range: 0 - 1]
 	--- 		- **b** number ― Blue [Range: 0 - 1]
-	--- 	- **wrap**? boolean *optional* ― Allow wrapping the line [Default: true]
+	--- 	- **wrap**? boolean *optional* ― Allow this line to be wrapped [Default: true]
 	--- - **onClick**? function *optional* — The function to be called when an [OnClick](https://wowpedia.fandom.com/wiki/UIHANDLER_OnClick) event happens
 	--- - **onEvent**? table [indexed, 0-based] *optional* — Table that holds additional event handler scripts to be set for the checkbox
 	--- 	- **event** string — Event name
@@ -1358,7 +1372,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 		if t.onEvent ~= nil then for i = 0, #t.onEvent do checkbox:HookScript(t.onEvent[i].event, t.onEvent[i].handler) end end
 		--Tooltip
 		checkbox:HookScript("OnEnter", function()
-			WidgetToolbox[ns.WidgetToolsVersion].AddTooltip(nil, checkbox, "ANCHOR_RIGHT", t.label, t.tooltip, t.tooltipExtra)
+			WidgetToolbox[ns.WidgetToolsVersion].AddTooltip(nil, checkbox, "ANCHOR_RIGHT", t.label, t.tooltip)
 		end)
 		checkbox:HookScript("OnLeave", function() customTooltip:Hide() end)
 		--State & dependencies
@@ -1393,14 +1407,14 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--- - **width**? number *optional* — The combined width of the radio button's dot and the clickable extension to the right of it (where the label is) [Default: 140]
 	--- - **label** string — Text to be shown on the right of the radio button and as the the tooltip label
 	--- - **title**? boolean *optional* — Whether or not to show the label and add a clickable extension next to the the radio button bot [Default: true]
-	--- - **tooltip**? string *optional* — Text to be shown as the tooltip of the radio button
-	--- - **tooltipExtra**? table [indexed, 0-based] *optional* — Additional text lines to be added to the tooltip of the radio button
+	--- - **tooltip**? table [indexed, 0-based] *optional* — Text lines to be added to the tooltip of the radio button
 	--- 	- **text** string ― Text to be added to the line
-	--- 	- **color**? table *optional* ― RGB colors line
+	--- 	- **font**? string | FontObject *optional* ― The FontObject to set for this line [Default: GameTooltipTextSmall]
+	--- 	- **color**? table *optional* ― Table containing the RGB values to color this line with [Default: HIGHLIGHT_FONT_COLOR (white)]
 	--- 		- **r** number ― Red [Range: 0 - 1]
 	--- 		- **g** number ― Green [Range: 0 - 1]
 	--- 		- **b** number ― Blue [Range: 0 - 1]
-	--- 	- **wrap**? boolean *optional* ― Allow wrapping the line [Default: true]
+	--- 	- **wrap**? boolean *optional* ― Allow this line to be wrapped [Default: true]
 	--- - **onClick**? function *optional* — The function to be called when an [OnClick](https://wowpedia.fandom.com/wiki/UIHANDLER_OnClick) event happens
 	--- - **onEvent**? table [indexed, 0-based] *optional* — Table that holds additional event handler scripts to be set for the radio button
 	--- 	- **event** string — Event name
@@ -1454,7 +1468,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 			extension:HookScript("OnMouseDown", function() if radioButton:IsEnabled() then radioButton:Click() end end)
 			--Tooltip
 			extension:HookScript("OnEnter", function()
-				WidgetToolbox[ns.WidgetToolsVersion].AddTooltip(nil, radioButton, "ANCHOR_RIGHT", t.label, t.tooltip, t.tooltipExtra)
+				WidgetToolbox[ns.WidgetToolsVersion].AddTooltip(nil, radioButton, "ANCHOR_RIGHT", t.label, t.tooltip)
 			end)
 			extension:HookScript("OnLeave", function() customTooltip:Hide() end)
 		end
@@ -1464,7 +1478,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 		if t.onEvent ~= nil then for i = 0, #t.onEvent do radioButton:HookScript(t.onEvent[i].event, t.onEvent[i].handler) end end
 		--Tooltip
 		radioButton:HookScript("OnEnter", function()
-			WidgetToolbox[ns.WidgetToolsVersion].AddTooltip(nil, radioButton, "ANCHOR_RIGHT", t.label, t.tooltip, t.tooltipExtra)
+			WidgetToolbox[ns.WidgetToolsVersion].AddTooltip(nil, radioButton, "ANCHOR_RIGHT", t.label, t.tooltip)
 		end)
 		radioButton:HookScript("OnLeave", function() customTooltip:Hide() end)
 		--State & dependencies
@@ -1498,16 +1512,16 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--- - **title** string — Title text to be shown above the radio buttons
 	--- - **items** table [indexed, 0-based] — Table containing subtables with data used to create radio button items, or already existing radio button widget frames
 	--- 	- **label** string — Text to represent the items within the selector frame
-	--- 	- **tooltip**? string *optional* — Text to be shown as the tooltip of the radio button
-	--- 	- **tooltipExtra**? table [indexed, 0-based] *optional* — Additional text lines to be added to the tooltip of the radio button
+	--- 	- **tooltip**? table [indexed, 0-based] *optional* — Text lines to be added to the tooltip of the radio button
 	--- 		- **text** string ― Text to be added to the line
-	--- 		- **color**? table *optional* ― RGB colors line
+	--- 		- **font**? string | FontObject *optional* ― The FontObject to set for this line [Default: GameTooltipTextSmall]
+	--- 		- **color**? table *optional* ― Table containing the RGB values to color this line with [Default: HIGHLIGHT_FONT_COLOR (white)]
 	--- 			- **r** number ― Red [Range: 0 - 1]
 	--- 			- **g** number ― Green [Range: 0 - 1]
 	--- 			- **b** number ― Blue [Range: 0 - 1]
-	--- 		- **wrap**? boolean *optional* ― Allow wrapping the line [Default: true]
+	--- 		- **wrap**? boolean *optional* ― Allow this line to be wrapped [Default: true]
 	--- 	- **onSelect**? function *optional* — The function to be called when the radio button is clicked and the item is selected
-	--- - **labels**? boolean *optinal* — Whether or not to add the labels to the right of each newly created radio button [Default: true]
+	--- - **labels**? boolean *optional* — Whether or not to add the labels to the right of each newly created radio button [Default: true]
 	--- - **columns**? integer *optional* — Arrange the newly created radio buttons in a grid with the specified number of columns instead of a vertical list [Default: 1]
 	--- - **selected?** integer *optional* — The item to be set as selected on load [Default: 0]
 	--- - **disabled**? boolean *optional* — Set the state of this widget to be disabled on load [Default: false]
@@ -1549,7 +1563,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--- 	- @*return* boolean
 	--- - **getSelected** function Returns the index of the currently selected item
 	--- 	- @*return* **index** integer — [Default: 0]
-	--- - **setSelected** function Set the specified item as selected (automatically called when an item is manually selected by cligking on a radio button)
+	--- - **setSelected** function Set the specified item as selected (automatically called when an item is manually selected by clicking on a radio button)
 	--- 	- @*param* **index** integer
 	--- 	- @*param* **user** boolean — Whether to call **t.item.onSelect** [Default: false]
 	--- 	- @*return* boolean
@@ -1601,7 +1615,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 		if t.dependencies ~= nil then SetDependencies(t.dependencies, function(state)
 			title:SetFontObject(state and "GameFontNormal" or "GameFontDisable")
 		end) end
-		--Assemble the seletor widget table
+		--Assemble the selector widget table
 		local selector = {
 			frame = selectorFrame,
 			getObjectType = function() return "Selector" end,
@@ -1630,8 +1644,8 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	---@param t table Parameters are to be provided in this table
 	--- - **multiline** boolean — Set to true if the editbox should be support multiple lines for the string input
 	--- - **justify**? table *optional* — Set the justification of the [FontInstance](https://wowwiki-archive.fandom.com/wiki/Widget_API#FontInstance)
-	--- 	- **h**? string *optional* — Horizontal: "LEFT"|"RIGHT"|"CENTER" [Default: "LEFT"]
-	--- 	- **v**? string *optional* — Vertical: "TOP"|"BOTTOM"|"MIDDLE" [Default: "MIDDLE"]
+	--- 	- **h**? string *optional* — Horizontal: "LEFT" | "RIGHT" | "CENTER" [Default: "LEFT"]
+	--- 	- **v**? string *optional* — Vertical: "TOP" | "BOTTOM" | "MIDDLE" [Default: "MIDDLE"]
 	--- - **maxLetters**? number *optional* — The value to set by [EditBox:SetMaxLetters()](https://wowpedia.fandom.com/wiki/API_EditBox_SetMaxLetters) [Default: 0 (*no limit*)]
 	--- - **fontObject**? FontString *optional*— Font template object to use [Default: *default font template based on the frame template*]
 	--- - **color**? table *optional* — Apply the specified color to all text in the editbox
@@ -1728,8 +1742,8 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--- 		- **y** number
 	--- - **width** number — The height is defaulted to 17, the width may be specified [Default: 180]
 	--- - **justify**? table *optional* — Set the justification of the [FontInstance](https://wowwiki-archive.fandom.com/wiki/Widget_API#FontInstance)
-	--- 	- **h**? string *optional* — Horizontal: "LEFT"|"RIGHT"|"CENTER" [Default: "LEFT"]
-	--- 	- **v**? string *optional* — Vertical: "TOP"|"BOTTOM"|"MIDDLE" [Default: "MIDDLE"]
+	--- 	- **h**? string *optional* — Horizontal: "LEFT" | "RIGHT" | "CENTER" [Default: "LEFT"]
+	--- 	- **v**? string *optional* — Vertical: "TOP" | "BOTTOM" | "MIDDLE" [Default: "MIDDLE"]
 	--- - **maxLetters**? number *optional* — The value to set by [EditBox:SetMaxLetters()](https://wowpedia.fandom.com/wiki/API_EditBox_SetMaxLetters) [Default: 0 (*no limit*])
 	--- - **fontObject**? FontString *optional*— Font template object to use [Default: *default font template based on the frame template*]
 	--- - **color**? table *optional* — Apply the specified color to all text in the editbox
@@ -1740,14 +1754,14 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--- - **text**? string *optional* — Text to be shown inside editbox, loaded whenever the text box is shown
 	--- - **label** string — Name of the editbox to be shown as the tooltip title and optionally as the title text
 	--- - **title**? boolean *optional* — Whether or not to add a title above the editbox [Default: true]
-	--- - **tooltip**? string *optional* — Text to be shown as the tooltip of the editbox
-	--- - **tooltipExtra**? table [indexed, 0-based] *optional* — Additional text lines to be added to the tooltip of the editbox
+	--- - **tooltip**? table [indexed, 0-based] *optional* — Text lines to be added to the tooltip of the editbox
 	--- 	- **text** string ― Text to be added to the line
-	--- 	- **color**? table *optional* ― RGB colors line
+	--- 	- **font**? string | FontObject *optional* ― The FontObject to set for this line [Default: GameTooltipTextSmall]
+	--- 	- **color**? table *optional* ― Table containing the RGB values to color this line with [Default: HIGHLIGHT_FONT_COLOR (white)]
 	--- 		- **r** number ― Red [Range: 0 - 1]
 	--- 		- **g** number ― Green [Range: 0 - 1]
 	--- 		- **b** number ― Blue [Range: 0 - 1]
-	--- 	- **wrap**? boolean *optional* ― Allow wrapping the line [Default: true]
+	--- 	- **wrap**? boolean *optional* ― Allow this line to be wrapped [Default: true]
 	--- - **readOnly**? boolean *optional* — The text will be uneditable if true [Default: false]
 	--- - **onChar**? function *optional* — The function to be called when a character is entered. Can be used for excluding characters via pattern matching.
 	--- - **onEnterPressed**? function *optional* — The function to be called when an [OnEnterPressed](https://wowpedia.fandom.com/wiki/UIHANDLER_OnEnterPressed) event happens
@@ -1825,7 +1839,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 		})
 		--Tooltip
 		editBox:HookScript("OnEnter", function()
-			WidgetToolbox[ns.WidgetToolsVersion].AddTooltip(nil, editBox, "ANCHOR_RIGHT", t.label, t.tooltip, t.tooltipExtra)
+			WidgetToolbox[ns.WidgetToolsVersion].AddTooltip(nil, editBox, "ANCHOR_RIGHT", t.label, t.tooltip)
 		end)
 		editBox:HookScript("OnLeave", function() customTooltip:Hide() end)
 		return editBox
@@ -1846,8 +1860,8 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--- 	- **width** number
 	--- 	- **height**? number *optional* — [Default: 17]
 	--- - **justify**? table *optional* — Set the justification of the [FontInstance](https://wowwiki-archive.fandom.com/wiki/Widget_API#FontInstance)
-	--- 	- **h**? string *optional* — Horizontal: "LEFT"|"RIGHT"|"CENTER" [Default: "LEFT"]
-	--- 	- **v**? string *optional* — Vertical: "TOP"|"BOTTOM"|"MIDDLE" [Default: "MIDDLE"]
+	--- 	- **h**? string *optional* — Horizontal: "LEFT" | "RIGHT" | "CENTER" [Default: "LEFT"]
+	--- 	- **v**? string *optional* — Vertical: "TOP" | "BOTTOM" | "MIDDLE" [Default: "MIDDLE"]
 	--- - **maxLetters**? integer *optional* — The value to set by [EditBox:SetMaxLetters()](https://wowpedia.fandom.com/wiki/API_EditBox_SetMaxLetters) [Default: 0 (*no limit*)]
 	--- - **charCount**? boolean — Show or hide the remaining number of characters [Default: (**t.maxLetters** or 0) > 0]
 	--- - **fontObject**? FontString *optional*— Font template object to use [Default: *default font template based on the frame template*]
@@ -1859,14 +1873,14 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--- - **text**? string *optional* — Text to be shown inside editbox, loaded whenever the text box is shown
 	--- - **label** string — Name of the editbox to be shown as the tooltip title and optionally as the title text
 	--- - **title**? boolean *optional* — Whether or not to add a title above the editbox [Default: true]
-	--- - **tooltip**? string *optional* — Text to be shown as the tooltip of the editbox
-	--- - **tooltipExtra**? table [indexed, 0-based] *optional* — Additional text lines to be added to the tooltip of the editbox
+	--- - **tooltip**? table [indexed, 0-based] *optional* — Text lines to be added to the tooltip of the editbox
 	--- 	- **text** string ― Text to be added to the line
-	--- 	- **color**? table *optional* ― RGB colors line
+	--- 	- **font**? string | FontObject *optional* ― The FontObject to set for this line [Default: GameTooltipTextSmall]
+	--- 	- **color**? table *optional* ― Table containing the RGB values to color this line with [Default: HIGHLIGHT_FONT_COLOR (white)]
 	--- 		- **r** number ― Red [Range: 0 - 1]
 	--- 		- **g** number ― Green [Range: 0 - 1]
 	--- 		- **b** number ― Blue [Range: 0 - 1]
-	--- 	- **wrap**? boolean *optional* ― Allow wrapping the line [Default: true]
+	--- 	- **wrap**? boolean *optional* ― Allow this line to be wrapped [Default: true]
 	--- - **scrollSpeed**? number *optional* — Scroll step value [Default: *half of the height of the scroll bar*]
 	--- - **scrollToTop**? boolean *optional* — Automatically scroll to the top when the text is loaded or changed while not being actively edited [Default: true]
 	--- - **readOnly**? boolean *optional* — The text will be uneditable if true [Default: false]
@@ -1972,7 +1986,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 		end)
 		--Tooltip
 		scrollFrame.EditBox:HookScript("OnEnter", function()
-			WidgetToolbox[ns.WidgetToolsVersion].AddTooltip(nil, scrollFrame, "ANCHOR_RIGHT", t.label, t.tooltip, t.tooltipExtra)
+			WidgetToolbox[ns.WidgetToolsVersion].AddTooltip(nil, scrollFrame, "ANCHOR_RIGHT", t.label, t.tooltip)
 		end)
 		scrollFrame.EditBox:HookScript("OnLeave", function() customTooltip:Hide() end)
 		return scrollFrame.EditBox, scrollFrame
@@ -1993,8 +2007,8 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--- 		- **y** number
 	--- - **width**? number *optional* — The height is defaulted to 17, the width may be specified [Default: 120]
 	--- - **justify**? table *optional* — Set the justification of the [FontInstance](https://wowwiki-archive.fandom.com/wiki/Widget_API#FontInstance)
-	--- 	- **h**? string *optional* — Horizontal: "LEFT"|"RIGHT"|"CENTER" [Default: "LEFT"]
-	--- 	- **v**? string *optional* — Vertical: "TOP"|"BOTTOM"|"MIDDLE" [Default: "MIDDLE"]
+	--- 	- **h**? string *optional* — Horizontal: "LEFT" | "RIGHT" | "CENTER" [Default: "LEFT"]
+	--- 	- **v**? string *optional* — Vertical: "TOP" | "BOTTOM" | "MIDDLE" [Default: "MIDDLE"]
 	--- - **layer**? Layer *optional* ― Draw [Layer](https://wowpedia.fandom.com/wiki/Layer)
 	--- - **template**? string *optional* ― Template to be used for the [FontString](https://wowpedia.fandom.com/wiki/UIOBJECT_FontString) [Default: "GameFontNormal"]
 	--- - **color**? table *optional* — Apply the specified color to the text
@@ -2060,7 +2074,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 			text = t.text,
 			label = strings.copy.editbox.label,
 			title = false,
-			tooltip = strings.copy.editbox.tooltip,
+			tooltip = { [0] = { text = strings.copy.editbox.tooltip }, },
 			onEvent = {
 				[0] = {
 					event = "OnTextChanged",
@@ -2094,7 +2108,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 		end
 		--Tooltip
 		copyBox:HookScript("OnEnter", function()
-			WidgetToolbox[ns.WidgetToolsVersion].AddTooltip(nil, copyBox, "ANCHOR_RIGHT", strings.copy.textline.label, strings.copy.textline.tooltip)
+			WidgetToolbox[ns.WidgetToolsVersion].AddTooltip(nil, copyBox, "ANCHOR_RIGHT", strings.copy.textline.label, { [0] = { text = strings.copy.textline.tooltip }, })
 		end)
 		copyBox:HookScript("OnLeave", function() customTooltip:Hide() end)
 		return copyBox, textLine, editBox
@@ -2147,7 +2161,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 			local v = self:GetNumber()
 			if value.step ~= nil then v = max(value.min, min(value.max, floor(v * (1 / value.step) + 0.5) / (1 / value.step))) end
 			self:SetText(tostring(v):gsub(matchPattern, replacePattern))
-			slider:SetAttribute("ValueBoxChange", v)
+			slider:SetAttribute("valueboxchange", v)
 		end)
 		valueBox:HookScript("OnEnterPressed", function(self)
 			PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
@@ -2159,7 +2173,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 		slider:HookScript("OnValueChanged", function(_, v) valueBox:SetText(tostring(v):gsub(matchPattern, replacePattern)) end)
 		--Tooltip
 		valueBox:HookScript("OnEnter", function()
-			WidgetToolbox[ns.WidgetToolsVersion].AddTooltip(nil, valueBox, "ANCHOR_RIGHT", strings.value.label, strings.value.tooltip)
+			WidgetToolbox[ns.WidgetToolsVersion].AddTooltip(nil, valueBox, "ANCHOR_RIGHT", strings.value.label, { [0] = { text = strings.value.tooltip }, })
 		end)
 		valueBox:HookScript("OnLeave", function() customTooltip:Hide() end)
 		return valueBox
@@ -2178,14 +2192,14 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--- 		- **y** number
 	--- - **width**? number *optional*
 	--- - **label** string — Title text to be shown above the slider and as the the tooltip label
-	--- - **tooltip**? string *optional* — Text to be shown as the tooltip of the slider
-	--- - **tooltipExtra**? table [indexed, 0-based] *optional* — Additional text lines to be added to the tooltip of the slider
+	--- - **tooltip**? table [indexed, 0-based] *optional* — Text lines to be added to the tooltip of the slider
 	--- 	- **text** string ― Text to be added to the line
-	--- 	- **color**? table *optional* ― RGB colors line
+	--- 	- **font**? string | FontObject *optional* ― The FontObject to set for this line [Default: GameTooltipTextSmall]
+	--- 	- **color**? table *optional* ― Table containing the RGB values to color this line with [Default: HIGHLIGHT_FONT_COLOR (white)]
 	--- 		- **r** number ― Red [Range: 0 - 1]
 	--- 		- **g** number ― Green [Range: 0 - 1]
 	--- 		- **b** number ― Blue [Range: 0 - 1]
-	--- 	- **wrap**? boolean *optional* ― Allow wrapping the line [Default: true]
+	--- 	- **wrap**? boolean *optional* ― Allow this line to be wrapped [Default: true]
 	--- - **value** table
 	--- 	- **min** number — Lower numeric value limit
 	--- 	- **max** number — Upper numeric value limit
@@ -2260,7 +2274,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 		if t.onEvent ~= nil then for i = 0, #t.onEvent do slider:HookScript(t.onEvent[i].event, t.onEvent[i].handler) end end
 		--Tooltip
 		slider:HookScript("OnEnter", function()
-			WidgetToolbox[ns.WidgetToolsVersion].AddTooltip(nil, slider, "ANCHOR_RIGHT", t.label, t.tooltip, t.tooltipExtra)
+			WidgetToolbox[ns.WidgetToolsVersion].AddTooltip(nil, slider, "ANCHOR_RIGHT", t.label, t.tooltip)
 		end)
 		slider:HookScript("OnLeave", function() customTooltip:Hide() end)
 		--Value box
@@ -2302,14 +2316,14 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--- - **width**? number *optional* — [Default: 115]
 	--- - **label** string — Name of the dropdown shown as the tooltip title and optionally as the title text
 	--- - **title**? boolean *optional* — Whether or not to add a title above the dropdown menu [Default: true]
-	--- - **tooltip**? string *optional* — Text to be shown as the tooltip of the dropdown
-	--- - **tooltipExtra**? table [indexed, 0-based] *optional* — Additional text lines to be added to the tooltip of the dropdown
+	--- - **tooltip**? table [indexed, 0-based] *optional* — Text lines to be added to the tooltip of the dropdown
 	--- 	- **text** string ― Text to be added to the line
-	--- 	- **color**? table *optional* ― RGB colors line
+	--- 	- **font**? string | FontObject *optional* ― The FontObject to set for this line [Default: GameTooltipTextSmall]
+	--- 	- **color**? table *optional* ― Table containing the RGB values to color this line with [Default: HIGHLIGHT_FONT_COLOR (white)]
 	--- 		- **r** number ― Red [Range: 0 - 1]
 	--- 		- **g** number ― Green [Range: 0 - 1]
 	--- 		- **b** number ― Blue [Range: 0 - 1]
-	--- 	- **wrap**? boolean *optional* ― Allow wrapping the line [Default: true]
+	--- 	- **wrap**? boolean *optional* ― Allow this line to be wrapped [Default: true]
 	--- - **items** table [indexed, 0-based] — Table containing the dropdown items described within subtables
 	--- 	- **text** string — Text to represent the items within the dropdown frame
 	--- 	- **onSelect** function — The function to be called when the dropdown item is selected
@@ -2379,7 +2393,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 		end
 		--Tooltip
 		dropdown:HookScript("OnEnter", function()
-			WidgetToolbox[ns.WidgetToolsVersion].AddTooltip(nil, dropdown, "ANCHOR_RIGHT", t.label, t.tooltip, t.tooltipExtra)
+			WidgetToolbox[ns.WidgetToolsVersion].AddTooltip(nil, dropdown, "ANCHOR_RIGHT", t.label, t.tooltip)
 		end)
 		dropdown:HookScript("OnLeave", function() customTooltip:Hide() end)
 		--State & dependencies
@@ -2407,7 +2421,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	---@param t table Parameters are to be provided in this table
 	--- - **parent** Frame — The frame to set as the parent of the new context menu
 	--- - **name**? string *optional* — String to be included in the unique frame name (it will not be visible) [Default: ""]
-	--- - **anchor** string|[AnchorPoint](https://wowwiki-archive.fandom.com/wiki/Widget_Anchor_Points#All_sides) [Default: 'cursor']
+	--- - **anchor** string | [AnchorPoint](https://wowwiki-archive.fandom.com/wiki/Widget_Anchor_Points#All_sides) [Default: 'cursor']
 	--- - **offset**? table *optional*
 	--- 	- **x** number [Default: 0]
 	--- 	- **y** number [Default: 0]
@@ -2578,7 +2592,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 			else
 				tooltip = strings.color.picker.tooltip:gsub("#ALPHA", "")
 			end
-			WidgetToolbox[ns.WidgetToolsVersion].AddTooltip(nil, pickerButton, "ANCHOR_TOPLEFT", strings.color.picker.label, tooltip, nil, 20)
+			WidgetToolbox[ns.WidgetToolsVersion].AddTooltip(nil, pickerButton, "ANCHOR_TOPLEFT", strings.color.picker.label, { [0] = { text = tooltip }, }, 20)
 		end)
 		pickerButton:HookScript("OnLeave", function() customTooltip:Hide() end)
 		return pickerButton, backgroundGradient
@@ -2697,7 +2711,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 			fontObject = "GameFontWhiteSmall",
 			label = strings.color.hex.label,
 			title = false,
-			tooltip = strings.color.hex.tooltip .. "\n\n" .. strings.misc.example .. ": #2266BB" .. (alpha ~= nil and "AA" or ""),
+			tooltip = { [0] = { text = strings.color.hex.tooltip .. "\n\n" .. strings.misc.example .. ": #2266BB" .. (alpha ~= nil and "AA" or "") }, },
 			onChar = function(self) self:SetText(self:GetText():gsub("^(#?)([%x]*).*", "%1%2")) end,
 			onEnterPressed = function(self)
 				local r, g, b, a = WidgetToolbox[ns.WidgetToolsVersion].HexToColor(self:GetText())

@@ -1,9 +1,9 @@
 ***A simple solution to a simple problem:*** Movement Speed shows your character's speed percentage in a movable and customizable text display or anyone else's in the inspect tooltip with fast updates.
 
 # Features
-* Customize the movement speed display via the Interface Options or the **/movespeed** chat command (some settings are not available as chat commands).
-* Use **Shift + Click & drag** to reposition it anywhere you like.
-* You may save a preset position to quickly set up the position on all of your characters without having to drag the addon in just the right place each time. (The default preset is under the default Minimap).
+* See your own movement speed in a customizable and repositionable display.
+* View the movement speed of other players or NPCs by mousing over them within the inspect tooltip.
+* Set up Movement Speed via the Interface Options or the **/movespeed** chat command *(some settings are not available as chat commands)*.
 * Includes multi-version support for Retail, Classic and Burning Crusade Classic!
 
 # Other Addons

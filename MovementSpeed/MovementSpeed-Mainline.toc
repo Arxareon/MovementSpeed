@@ -1,7 +1,7 @@
 ## Interface: 90200
 ## Title: Movement Speed
-## Version: 2.2.2
-## X-Day: 20
+## Version: 2.2.3
+## X-Day: 23
 ## X-Month: 3
 ## X-Year: 2022
 ## Author: Barnabas Nagy (Arxareon)

@@ -16,6 +16,9 @@ strings.chat.keyword = "/movespeed"
 
 --Colors
 local colors = {
+	grey = {
+		[0] = { r = 0.69, g = 0.69, b = 0.69 },
+	},
 	green = {
 		[0] = { r = 0.31, g = 0.85, b = 0.21 },
 		[1] = { r = 0.56, g = 0.83, b = 0.43 },
@@ -167,8 +170,6 @@ end)
 
 --Create frame
 local targetSpeed = CreateFrame("Frame", addonNameSpace .. "TargetSpeed", UIParent)
--- local targetSpeedDisplay = CreateFrame("Frame", targetSpeed:GetName() .. "Display", moveSpeed, BackdropTemplateMixin and "BackdropTemplate")
--- local targetSpeedDisplayText = speedDisplay:CreateFontString(targetSpeed:GetName() .. "Text", "OVERLAY")
 
 --Event handler
 targetSpeed:SetScript("OnEvent", function(self, event, ...)
@@ -177,19 +178,6 @@ end)
 
 
 --[[ UTILITIES ]]
-
----Add coloring escape sequences to a string
----@param text string Text to add coloring to
----@param color table Table containing the color values
---- - **r** number ― Red [Range: 0 - 1]
---- - **g** number ― Green [Range: 0 - 1]
---- - **b** number ― Blue [Range: 0 - 1]
---- - **a**? number *optional* ― Opacity [Range: 0 - 1, Default: 1]
----@return string
-local function Color(text, color)
-	local r, g, b, a = wt.UnpackColor(color)
-	return WrapTextInColorCode(text, wt.ColorToHex(r, g, b, a, true, false))
-end
 
 ---Find the ID of the font provided
 ---@param fontPath string
@@ -303,16 +291,29 @@ local function GetSpeedTooltipDetails()
 	local speed = GetPlayerSpeed()
 	return {
 		[0] = {
-			text = strings.speedTooltip.text[1]:gsub(
-				"#YARDS", Color(wt.FormatThousands(speed, 4, true),  colors.yellow[0])
+			text = strings.speedTooltip.text[0],
+		},
+		[1] = {
+			text = "\n" .. strings.speedTooltip.text[1]:gsub(
+				"#YARDS", wt.Color(wt.FormatThousands(speed, 4, true),  colors.yellow[0])
 			),
 			color = colors.yellow[1],
 		},
-		[1] = {
+		[2] = {
 			text = "\n" .. strings.speedTooltip.text[2]:gsub(
-				"#PERCENT", Color(wt.FormatThousands(speed / 7 * 100, 4, true) .. "%%", colors.green[0])
+				"#PERCENT", wt.Color(wt.FormatThousands(speed / 7 * 100, 4, true) .. "%%", colors.green[0])
 			),
 			color = colors.green[1],
+		},
+		[3] = {
+			text = "\n" .. strings.speedTooltip.hintMove:gsub("#SHIFT", strings.keys.shift),
+			font = GameFontNormalTiny,
+			color = colors.grey[0],
+		},
+		[4] = {
+			text = strings.speedTooltip.hintOptions,
+			font = GameFontNormalTiny,
+			color = colors.grey[0],
 		},
 	}
 end
@@ -323,15 +324,15 @@ local function GetTargetSpeedText()
 	local speed = GetUnitSpeed("mouseover")
 	local text
 	if db.targetSpeed.tooltip.text.valueType == 0 then
-		text = Color(wt.FormatThousands(speed / 7 * 100, db.targetSpeed.tooltip.text.decimals, true, not db.targetSpeed.tooltip.text.noTrim) .. "%%", colors.green[0])
+		text = wt.Color(wt.FormatThousands(speed / 7 * 100, db.targetSpeed.tooltip.text.decimals, true, not db.targetSpeed.tooltip.text.noTrim) .. "%%", colors.green[0])
 	elseif db.targetSpeed.tooltip.text.valueType == 1 then
-		text = Color(strings.yardsps:gsub(
-			"#YARDS", Color(wt.FormatThousands(speed, db.targetSpeed.tooltip.text.decimals, true, not db.targetSpeed.tooltip.text.noTrim), colors.green[0])
+		text = wt.Color(strings.yardsps:gsub(
+			"#YARDS", wt.Color(wt.FormatThousands(speed, db.targetSpeed.tooltip.text.decimals, true, not db.targetSpeed.tooltip.text.noTrim), colors.green[0])
 		), colors.green[1])
 	elseif db.targetSpeed.tooltip.text.valueType == 2 then
-		text = Color(wt.FormatThousands(speed / 7 * 100, db.targetSpeed.tooltip.text.decimals, true, not db.targetSpeed.tooltip.text.noTrim) .. "%%", colors.green[0]) .. " ("
-		text = text .. Color(strings.yardsps:gsub(
-			"#YARDS", Color(wt.FormatThousands(speed, db.targetSpeed.tooltip.text.decimals, true, not db.targetSpeed.tooltip.text.noTrim), colors.yellow[0])
+		text = wt.Color(wt.FormatThousands(speed / 7 * 100, db.targetSpeed.tooltip.text.decimals, true, not db.targetSpeed.tooltip.text.noTrim) .. "%%", colors.green[0]) .. " ("
+		text = text .. wt.Color(strings.yardsps:gsub(
+			"#YARDS", wt.Color(wt.FormatThousands(speed, db.targetSpeed.tooltip.text.decimals, true, not db.targetSpeed.tooltip.text.noTrim), colors.yellow[0])
 		) .. ")", colors.yellow[1])
 	end
 	return "|T" .. textures.logo .. ":0|t" .. " " .. strings.targetSpeed:gsub("#SPEED", text)
@@ -382,7 +383,7 @@ local function SetDisplayBackdrop(enabled, backdropColors)
 end
 
 ---Set the visibility, backdrop, font family, size and color of the speed display to the currently saved values
----@param data table Accound-wide data table to set the speed display values from
+---@param data table Account-wide data table to set the speed display values from
 ---@param characterData table Character-specific data table to set the speed display values from
 local function SetDisplayValues(data, characterData)
 	--Visibility
@@ -428,7 +429,7 @@ local function CreateOptionsShortcuts(parentFrame)
 		},
 		width = 120,
 		label = strings.options.speedDisplay.title,
-		tooltip = strings.options.speedDisplay.description:gsub("#ADDON", addon),
+		tooltip = { [0] = { text = strings.options.speedDisplay.description:gsub("#ADDON", addon) }, },
 		onClick = function() InterfaceOptionsFrame_OpenToCategory(options.speedDisplayOptionsPage) end,
 	})
 	--Button: Target Speed page
@@ -442,7 +443,7 @@ local function CreateOptionsShortcuts(parentFrame)
 		},
 		width = 120,
 		label = strings.options.targetSpeed.title,
-		tooltip = strings.options.targetSpeed.description:gsub("#ADDON", addon),
+		tooltip = { [0] = { text = strings.options.targetSpeed.description:gsub("#ADDON", addon) }, },
 		onClick = function() InterfaceOptionsFrame_OpenToCategory(options.targetSpeedOptionsPage) end,
 	})
 	--Button: Advanced page
@@ -454,7 +455,7 @@ local function CreateOptionsShortcuts(parentFrame)
 		},
 		width = 120,
 		label = strings.options.advanced.title,
-		tooltip = strings.options.advanced.description:gsub("#ADDON", addon),
+		tooltip = { [0] = { text = strings.options.advanced.description:gsub("#ADDON", addon) }, },
 		onClick = function() InterfaceOptionsFrame_OpenToCategory(options.advancedOptionsPage) end,
 	})
 end
@@ -538,7 +539,7 @@ local function CreateAboutInfo(parentFrame)
 		fontObject = "GameFontDisableSmall",
 		text = ns.GetChangelog(),
 		label = strings.options.main.about.changelog.label,
-		tooltip = strings.options.main.about.changelog.tooltip,
+		tooltip = { [0] = { text = strings.options.main.about.changelog.tooltip }, },
 		scrollSpeed = 45,
 		readOnly = true,
 	})
@@ -658,7 +659,7 @@ local function CreateQuickOptions(parentFrame)
 			offset = { x = 8, y = -30 }
 		},
 		label = strings.options.speedDisplay.quick.hidden.label,
-		tooltip = strings.options.speedDisplay.quick.hidden.tooltip:gsub("#ADDON", addon),
+		tooltip = { [0] = { text = strings.options.speedDisplay.quick.hidden.tooltip:gsub("#ADDON", addon) }, },
 		onClick = function(self) wt.SetVisibility(moveSpeed, not (self:GetChecked())) end,
 		optionsData = {
 			storageTable = dbc,
@@ -693,7 +694,7 @@ local function CreateQuickOptions(parentFrame)
 		},
 		width = 160,
 		label = strings.options.speedDisplay.quick.presets.label,
-		tooltip = strings.options.speedDisplay.quick.presets.tooltip,
+		tooltip = { [0] = { text = strings.options.speedDisplay.quick.presets.tooltip }, },
 		items = presetItems,
 		dependencies = {
 			[0] = { frame = options.visibility.hidden, evaluate = function(state) return not state end, },
@@ -715,7 +716,7 @@ local function CreateQuickOptions(parentFrame)
 			--Save the Custom preset
 			db.customPreset = presets[0].data
 			--Response
-			print(Color(addon .. ":", colors.green[0]) .. " " .. Color(strings.chat.save.response, colors.yellow[1]))
+			print(wt.Color(addon .. ":", colors.green[0]) .. " " .. wt.Color(strings.chat.save.response, colors.yellow[1]))
 		end,
 	})
 	wt.CreateButton({
@@ -726,7 +727,7 @@ local function CreateQuickOptions(parentFrame)
 		},
 		width = 160,
 		label = strings.options.speedDisplay.quick.savePreset.label,
-		tooltip = strings.options.speedDisplay.quick.savePreset.tooltip,
+		tooltip = { [0] = { text = strings.options.speedDisplay.quick.savePreset.tooltip }, },
 		onClick = function() StaticPopup_Show(savePopup) end,
 		dependencies = {
 			[0] = { frame = options.visibility.hidden, evaluate = function(state) return not state end, },
@@ -753,7 +754,7 @@ local function CreatePositionOptions(parentFrame)
 			offset = { x = 8, y = -30 }
 		},
 		label = strings.options.speedDisplay.position.anchor.label,
-		tooltip = strings.options.speedDisplay.position.anchor.tooltip,
+		tooltip = { [0] = { text = strings.options.speedDisplay.position.anchor.tooltip }, },
 		items = anchorItems,
 		labels = false,
 		columns = 3,
@@ -775,7 +776,7 @@ local function CreatePositionOptions(parentFrame)
 			offset = { x = 0, y = -30 }
 		},
 		label = strings.options.speedDisplay.position.xOffset.label,
-		tooltip = strings.options.speedDisplay.position.xOffset.tooltip,
+		tooltip = { [0] = { text = strings.options.speedDisplay.position.xOffset.tooltip }, },
 		value = { min = -500, max = 500, fractional = 2 },
 		onValueChanged = function(_, value)
 			wt.PositionFrame(moveSpeed, anchors[options.position.anchor.getSelected()].point, nil, nil, value, options.position.yOffset:GetValue())
@@ -799,7 +800,7 @@ local function CreatePositionOptions(parentFrame)
 			offset = { x = -14, y = -30 }
 		},
 		label = strings.options.speedDisplay.position.yOffset.label,
-		tooltip = strings.options.speedDisplay.position.yOffset.tooltip,
+		tooltip = { [0] = { text = strings.options.speedDisplay.position.yOffset.tooltip }, },
 		value = { min = -500, max = 500, fractional = 2 },
 		onValueChanged = function(_, value)
 			wt.PositionFrame(moveSpeed, anchors[options.position.anchor.getSelected()].point, nil, nil, options.position.xOffset:GetValue(), value)
@@ -822,7 +823,7 @@ local function CreateTextOptions(parentFrame)
 	for i = 0, 2 do
 		valueTypes[i] = {}
 		valueTypes[i].label = strings.options.speedText.valueType.list[i].label
-		valueTypes[i].tooltip = strings.options.speedText.valueType.list[i].tooltip
+		valueTypes[i].tooltip = { [0] = { text = strings.options.speedText.valueType.list[i].tooltip }, }
 		valueTypes[i].onSelect = function()
 			db.speedDisplay.text.valueType = i
 			SetDisplaySize()
@@ -835,7 +836,7 @@ local function CreateTextOptions(parentFrame)
 			offset = { x = 8, y = -30 }
 		},
 		label = strings.options.speedText.valueType.label,
-		tooltip = strings.options.speedText.valueType.tooltip,
+		tooltip = { [0] = { text = strings.options.speedText.valueType.tooltip }, },
 		items = valueTypes,
 		dependencies = {
 			[0] = { frame = options.visibility.hidden, evaluate = function(state) return not state end, },
@@ -853,7 +854,7 @@ local function CreateTextOptions(parentFrame)
 			offset = { x = 0, y = -30 }
 		},
 		label = strings.options.speedText.decimals.label,
-		tooltip = strings.options.speedText.decimals.tooltip,
+		tooltip = { [0] = { text = strings.options.speedText.decimals.tooltip }, },
 		value = { min = 0, max = 4, step = 1 },
 		onValueChanged = function(_, value)
 			db.speedDisplay.text.decimals = value
@@ -876,7 +877,7 @@ local function CreateTextOptions(parentFrame)
 		},
 		autoOffset = true,
 		label = strings.options.speedText.noTrim.label,
-		tooltip = strings.options.speedText.noTrim.tooltip,
+		tooltip = { [0] = { text = strings.options.speedText.noTrim.tooltip }, },
 		onClick = function(self) db.speedDisplay.text.noTrim = self:GetChecked() end,
 		dependencies = {
 			[0] = { frame = options.visibility.hidden, evaluate = function(state) return not state end, },
@@ -907,13 +908,13 @@ local function CreateTextOptions(parentFrame)
 			offset = { x = -6, y = -101 }
 		},
 		label = strings.options.speedDisplay.text.font.family.label,
-		tooltip = strings.options.speedDisplay.text.font.family.tooltip[0],
-		tooltipExtra = {
-			[0] = { text = strings.options.speedDisplay.text.font.family.tooltip[1] },
-			[1] = { text = "\n" .. strings.options.speedDisplay.text.font.family.tooltip[2]:gsub("#OPTION_CUSTOM", strings.misc.custom):gsub("#FILE_CUSTOM", "CUSTOM.ttf") },
-			[2] = { text = "[WoW]\\Interface\\AddOns\\" .. addonNameSpace .. "\\Fonts\\", color = { r = 0.185, g = 0.72, b = 0.84 }, wrap = false },
-			[3] = { text = strings.options.speedDisplay.text.font.family.tooltip[3]:gsub("#FILE_CUSTOM", "CUSTOM.ttf") },
-			[4] = { text = strings.options.speedDisplay.text.font.family.tooltip[4], color = { r = 0.89, g = 0.65, b = 0.40 } },
+		tooltip = {
+			[0] = { text = strings.options.speedDisplay.text.font.family.tooltip[0] },
+			[1] = { text = "\n" .. strings.options.speedDisplay.text.font.family.tooltip[1] },
+			[2] = { text = "\n" .. strings.options.speedDisplay.text.font.family.tooltip[2]:gsub("#OPTION_CUSTOM", strings.misc.custom):gsub("#FILE_CUSTOM", "CUSTOM.ttf") },
+			[3] = { text = "[WoW]\\Interface\\AddOns\\" .. addonNameSpace .. "\\Fonts\\", color = { r = 0.185, g = 0.72, b = 0.84 }, wrap = false },
+			[4] = { text = strings.options.speedDisplay.text.font.family.tooltip[3]:gsub("#FILE_CUSTOM", "CUSTOM.ttf") },
+			[5] = { text = strings.options.speedDisplay.text.font.family.tooltip[4], color = { r = 0.89, g = 0.65, b = 0.40 } },
 		},
 		items = fontItems,
 		dependencies = {
@@ -934,7 +935,9 @@ local function CreateTextOptions(parentFrame)
 			offset = { x = 0, y = -101 }
 		},
 		label = strings.options.speedDisplay.text.font.size.label,
-		tooltip = strings.options.speedDisplay.text.font.size.tooltip .. "\n\n" .. strings.misc.default .. ": " .. dbDefault.speedDisplay.text.font.size,
+		tooltip = {
+			[0] = { text = strings.options.speedDisplay.text.font.size.tooltip .. "\n\n" .. strings.misc.default .. ": " .. dbDefault.speedDisplay.text.font.size },
+		},
 		value = { min = 8, max = 64, step = 1 },
 		onValueChanged = function(_, value)
 			speedDisplayText:SetFont(speedDisplayText:GetFont(), value, "THINOUTLINE")
@@ -979,7 +982,7 @@ local function CreateBackgroundOptions(parentFrame)
 			offset = { x = 8, y = -30 }
 		},
 		label = strings.options.speedDisplay.background.visible.label,
-		tooltip = strings.options.speedDisplay.background.visible.tooltip,
+		tooltip = { [0] = { text = strings.options.speedDisplay.background.visible.tooltip }, },
 		onClick = function(self)
 			SetDisplayBackdrop(self:GetChecked(), {
 				bg = wt.PackColor(options.background.colors.bg.getColor()),
@@ -1052,7 +1055,7 @@ local function CreateVisibilityOptions(parentFrame)
 			offset = { x = 8, y = -30 }
 		},
 		label = strings.options.speedDisplay.visibility.raise.label,
-		tooltip = strings.options.speedDisplay.visibility.raise.tooltip,
+		tooltip = { [0] = { text = strings.options.speedDisplay.visibility.raise.tooltip }, },
 		onClick = function(self)
 			moveSpeed:SetFrameStrata(self:GetChecked() and "HIGH" or "MEDIUM")
 			--Clear the presets dropdown selection
@@ -1079,7 +1082,7 @@ local function CreateVisibilityOptions(parentFrame)
 			offset = { x = 0, y = -4 }
 		},
 		label = strings.options.speedDisplay.visibility.autoHide.label,
-		tooltip = strings.options.speedDisplay.visibility.autoHide.tooltip,
+		tooltip = { [0] = { text = strings.options.speedDisplay.visibility.autoHide.tooltip }, },
 		onClick = function(self) db.speedDisplay.visibility.autoHide = self:GetChecked() end,
 		dependencies = {
 			[0] = { frame = options.visibility.hidden, evaluate = function(state) return not state end, },
@@ -1099,7 +1102,7 @@ local function CreateVisibilityOptions(parentFrame)
 			offset = { x = 0, y = -4 }
 		},
 		label = strings.options.speedDisplay.visibility.statusNotice.label,
-		tooltip = strings.options.speedDisplay.visibility.statusNotice.tooltip:gsub("#ADDON", addon),
+		tooltip = { [0] = { text = strings.options.speedDisplay.visibility.statusNotice.tooltip:gsub("#ADDON", addon) }, },
 		optionsData = {
 			storageTable = db.speedDisplay.visibility,
 			key = "statusNotice",
@@ -1188,7 +1191,7 @@ local function CreateTooltipOptions(parentFrame)
 			offset = { x = 8, y = -30 }
 		},
 		label = strings.options.targetSpeed.mouseover.enabled.label,
-		tooltip = strings.options.targetSpeed.mouseover.enabled.tooltip:gsub("#ADDON", addon),
+		tooltip = { [0] = { text = strings.options.targetSpeed.mouseover.enabled.tooltip:gsub("#ADDON", addon) }, },
 		onClick = function(self) db.targetSpeed.tooltip.enabled = self:GetChecked() end,
 		optionsData = {
 			storageTable = db.targetSpeed.tooltip,
@@ -1200,7 +1203,7 @@ local function CreateTooltipOptions(parentFrame)
 	for i = 0, 2 do
 		valueTypes[i] = {}
 		valueTypes[i].label = strings.options.speedText.valueType.list[i].label
-		valueTypes[i].tooltip = strings.options.speedText.valueType.list[i].tooltip
+		valueTypes[i].tooltip = { [0] = { text = strings.options.speedText.valueType.list[i].tooltip }, }
 		valueTypes[i].onSelect = function() db.targetSpeed.tooltip.text.valueType = i end
 	end
 	options.mouseover.valueType = wt.CreateSelector({
@@ -1210,7 +1213,7 @@ local function CreateTooltipOptions(parentFrame)
 			offset = { x = 8, y = -60 }
 		},
 		label = strings.options.speedText.valueType.label,
-		tooltip = strings.options.speedText.valueType.tooltip,
+		tooltip = { [0] = { text = strings.options.speedText.valueType.tooltip }, },
 		items = valueTypes,
 		dependencies = {
 			[0] = { frame = options.mouseover.enabled },
@@ -1228,7 +1231,7 @@ local function CreateTooltipOptions(parentFrame)
 			offset = { x = 0, y = -60 }
 		},
 		label = strings.options.speedText.decimals.label,
-		tooltip = strings.options.speedText.decimals.tooltip,
+		tooltip = { [0] = { text = strings.options.speedText.decimals.tooltip }, },
 		value = { min = 0, max = 4, step = 1 },
 		onValueChanged = function(_, value) db.targetSpeed.tooltip.text.decimals = value end,
 		dependencies = {
@@ -1248,7 +1251,7 @@ local function CreateTooltipOptions(parentFrame)
 		},
 		autoOffset = true,
 		label = strings.options.speedText.noTrim.label,
-		tooltip = strings.options.speedText.noTrim.tooltip,
+		tooltip = { [0] = { text = strings.options.speedText.noTrim.tooltip }, },
 		onClick = function(self) db.targetSpeed.tooltip.text.noTrim = self:GetChecked() end,
 		dependencies = {
 			[0] = { frame = options.mouseover.enabled },
@@ -1305,7 +1308,7 @@ local function CreateBackupOptions(parentFrame)
 				SetDisplayValues(db, dbc)
 				--Update the interface options
 				wt.LoadOptionsData()
-			else print(Color(addon .. ":", colors.green[0]) .. " " .. Color(strings.options.advanced.backup.error, colors.yellow[1])) end
+			else print(wt.Color(addon .. ":", colors.green[0]) .. " " .. wt.Color(strings.options.advanced.backup.error, colors.yellow[1])) end
 		end
 	})
 	local backupBox
@@ -1320,12 +1323,12 @@ local function CreateBackupOptions(parentFrame)
 		maxLetters = 3250,
 		fontObject = "GameFontWhiteSmall",
 		label = strings.options.advanced.backup.backupBox.label,
-		tooltip = strings.options.advanced.backup.backupBox.tooltip[0],
-		tooltipExtra = {
-			[0] = { text = strings.options.advanced.backup.backupBox.tooltip[1] },
-			[1] = { text = "\n" .. strings.options.advanced.backup.backupBox.tooltip[2]:gsub("#ENTER", strings.keys.enter) },
-			[2] = { text = strings.options.advanced.backup.backupBox.tooltip[3], color = { r = 0.89, g = 0.65, b = 0.40 } },
-			[3] = { text = "\n" .. strings.options.advanced.backup.backupBox.tooltip[4], color = { r = 0.92, g = 0.34, b = 0.23 } },
+		tooltip = {
+			[0] = { text = strings.options.advanced.backup.backupBox.tooltip[0] },
+			[1] = { text = "\n" .. strings.options.advanced.backup.backupBox.tooltip[1] },
+			[2] = { text = "\n" .. strings.options.advanced.backup.backupBox.tooltip[2]:gsub("#ENTER", strings.keys.enter) },
+			[3] = { text = strings.options.advanced.backup.backupBox.tooltip[3], color = { r = 0.89, g = 0.65, b = 0.40 } },
+			[4] = { text = "\n" .. strings.options.advanced.backup.backupBox.tooltip[4], color = { r = 0.92, g = 0.34, b = 0.23 } },
 		},
 		scrollSpeed = 60,
 		onEnterPressed = function() StaticPopup_Show(importPopup) end,
@@ -1342,7 +1345,7 @@ local function CreateBackupOptions(parentFrame)
 			offset = { x = -8, y = -13 }
 		},
 		label = strings.options.advanced.backup.compact.label,
-		tooltip = strings.options.advanced.backup.compact.tooltip,
+		tooltip = { [0] = { text = strings.options.advanced.backup.compact.tooltip }, },
 		onClick = function(self)
 			options.backup.string:SetText(wt.TableToString({ account = db, character = dbc }, self:GetChecked(), true))
 			--Set focus after text change to set the scroll to the top and refresh the position character counter
@@ -1365,7 +1368,7 @@ local function CreateBackupOptions(parentFrame)
 		},
 		width = 80,
 		label = strings.options.advanced.backup.load.label,
-		tooltip = strings.options.advanced.backup.load.tooltip,
+		tooltip = { [0] = { text = strings.options.advanced.backup.load.tooltip }, },
 		onClick = function() StaticPopup_Show(importPopup) end,
 	})
 	--Button: Reset
@@ -1379,7 +1382,7 @@ local function CreateBackupOptions(parentFrame)
 		},
 		width = 80,
 		label = strings.options.advanced.backup.reset.label,
-		tooltip = strings.options.advanced.backup.reset.tooltip,
+		tooltip = { [0] = { text = strings.options.advanced.backup.reset.tooltip }, },
 		onClick = function()
 			options.backup.string:SetText("") --Remove text to make sure OnTextChanged will get called
 			options.backup.string:SetText(wt.TableToString({ account = db, character = dbc }, options.backup.compact:GetChecked(), true))
@@ -1451,7 +1454,7 @@ local function DefaultOptions()
 	UIDropDownMenu_SetSelectedValue(options.visibility.presets, 0)
 	UIDropDownMenu_SetText(options.visibility.presets, presets[0].name)
 	--Notification
-	print(Color(addon .. ":", colors.green[0]) .. " " .. Color(strings.options.defaults, colors.yellow[1]))
+	print(wt.Color(addon .. ":", colors.green[0]) .. " " .. wt.Color(strings.options.defaults, colors.yellow[1]))
 end
 
 --Create and add the options panels to the WoW Interface options
@@ -1520,24 +1523,24 @@ end
 ---@param load boolean [Default: false]
 local function PrintStatus(load)
 	if load == true and not db.speedDisplay.visibility.statusNotice then return end
-	print(Color(addon .. ":", colors.green[0]) .. " " .. Color(moveSpeed:IsVisible() and (
+	print(wt.Color(addon .. ":", colors.green[0]) .. " " .. wt.Color(moveSpeed:IsVisible() and (
 		not speedDisplay:IsVisible() and strings.chat.status.notVisible or strings.chat.status.visible
 	) or strings.chat.status.hidden, colors.yellow[0]):gsub(
-		"#AUTO", Color(strings.chat.status.auto:gsub(
-			"#STATE", Color(db.speedDisplay.visibility.autoHide and strings.misc.enabled or strings.misc.disabled, colors.green[0])
+		"#AUTO", wt.Color(strings.chat.status.auto:gsub(
+			"#STATE", wt.Color(db.speedDisplay.visibility.autoHide and strings.misc.enabled or strings.misc.disabled, colors.green[1])
 		), colors.yellow[1])
 	))
 end
 --Print help info
 local function PrintInfo()
-	print(Color(strings.chat.help.thanks:gsub("#ADDON", Color(addon, colors.green[0])), colors.yellow[0]))
+	print(wt.Color(strings.chat.help.thanks:gsub("#ADDON", wt.Color(addon, colors.green[0])), colors.yellow[0]))
 	PrintStatus()
-	print(Color(strings.chat.help.hint:gsub("#HELP_COMMAND", Color(strings.chat.keyword .. " " .. strings.chat.help.command, colors.green[1])), colors.yellow[1]))
-	print(Color(strings.chat.help.move:gsub("#SHIFT", Color(strings.keys.shift, colors.green[1])):gsub("#ADDON", addon), colors.yellow[1]))
+	print(wt.Color(strings.chat.help.hint:gsub("#HELP_COMMAND", wt.Color(strings.chat.keyword .. " " .. strings.chat.help.command, colors.green[1])), colors.yellow[1]))
+	print(wt.Color(strings.chat.help.move:gsub("#SHIFT", wt.Color(strings.keys.shift, colors.green[1])):gsub("#ADDON", addon), colors.yellow[1]))
 end
 --Print the command list with basic functionality info
 local function PrintCommands()
-	print(Color(addon .. " ", colors.green[0]) .. Color(strings.chat.help.list .. ":", colors.yellow[0]))
+	print(wt.Color(addon .. " ", colors.green[0]) .. wt.Color(strings.chat.help.list .. ":", colors.yellow[0]))
 	--Index the commands (skipping the help command) and put replacement code segments in place
 	local commands = {
 		[0] = {
@@ -1551,31 +1554,31 @@ local function PrintCommands()
 		[2] = {
 			command = strings.chat.preset.command,
 			description = strings.chat.preset.description:gsub(
-				"#INDEX", Color(strings.chat.preset.command .. " " .. 0, colors.green[1])
+				"#INDEX", wt.Color(strings.chat.preset.command .. " " .. 0, colors.green[1])
 			)
 		},
 		[3] = {
 			command = strings.chat.toggle.command,
 			description = strings.chat.toggle.description:gsub(
-				"#HIDDEN", Color(dbc.hidden and strings.chat.toggle.hidden or strings.chat.toggle.notHidden, colors.green[1])
+				"#HIDDEN", wt.Color(dbc.hidden and strings.chat.toggle.hidden or strings.chat.toggle.notHidden, colors.green[1])
 			)
 		},
 		[4] = {
 			command = strings.chat.auto.command,
 			description = strings.chat.auto.description:gsub(
-				"#STATE", Color(db.speedDisplay.visibility.autoHide and strings.misc.enabled or strings.misc.disabled, colors.green[1])
+				"#STATE", wt.Color(db.speedDisplay.visibility.autoHide and strings.misc.enabled or strings.misc.disabled, colors.green[1])
 			)
 		},
 		[5] = {
 			command = strings.chat.size.command,
 			description =  strings.chat.size.description:gsub(
-				"#SIZE", Color(strings.chat.size.command .. " " .. dbDefault.speedDisplay.text.font.size, colors.green[1])
+				"#SIZE", wt.Color(strings.chat.size.command .. " " .. dbDefault.speedDisplay.text.font.size, colors.green[1])
 			)
 		},
 	}
 	--Print the listŁ
 	for i = 0, #commands do
-		print("    " .. Color(strings.chat.keyword .. " " .. commands[i].command, colors.green[1])  .. Color(" - " .. commands[i].description, colors.yellow[1]))
+		print("    " .. wt.Color(strings.chat.keyword .. " " .. commands[i].command, colors.green[1])  .. wt.Color(" - " .. commands[i].description, colors.yellow[1]))
 	end
 end
 
@@ -1590,7 +1593,7 @@ local function SaveCommand()
 	--Update in the SavedVariabes DB
 	MovementSpeedDB.customPreset = wt.Clone(db.customPreset)
 	--Response
-	print(Color(addon .. ":", colors.green[0]) .. " " .. Color(strings.chat.save.response, colors.yellow[1]))
+	print(wt.Color(addon .. ":", colors.green[0]) .. " " .. wt.Color(strings.chat.save.response, colors.yellow[1]))
 end
 local function PresetCommand(parameter)
 	local i = tonumber(parameter)
@@ -1615,17 +1618,17 @@ local function PresetCommand(parameter)
 		MovementSpeedDB.speedDisplay.position = wt.Clone(db.speedDisplay.position)
 		MovementSpeedDB.speedDisplay.visibility.frameStrata = db.speedDisplay.visibility.frameStrata
 		--Response
-		print(Color(addon .. ":", colors.green[0]) .. " " .. Color(strings.chat.preset.response:gsub(
-			"#PRESET", Color(presets[i].name, colors.green[1])
+		print(wt.Color(addon .. ":", colors.green[0]) .. " " .. wt.Color(strings.chat.preset.response:gsub(
+			"#PRESET", wt.Color(presets[i].name, colors.green[1])
 		), colors.yellow[1]))
 	else
 		--Error
-		print(Color(addon .. ":", colors.green[0]) .. " " .. Color(strings.chat.preset.unchanged, colors.yellow[0]))
-		print(Color(strings.chat.preset.error:gsub("#INDEX", Color(strings.chat.preset.command .. " " .. 0, colors.green[1])), colors.yellow[1]))
-		print(Color(strings.chat.preset.list, colors.green[1]))
+		print(wt.Color(addon .. ":", colors.green[0]) .. " " .. wt.Color(strings.chat.preset.unchanged, colors.yellow[0]))
+		print(wt.Color(strings.chat.preset.error:gsub("#INDEX", wt.Color(strings.chat.preset.command .. " " .. 0, colors.green[1])), colors.yellow[1]))
+		print(wt.Color(strings.chat.preset.list, colors.green[1]))
 		for j = 0, #presets, 2 do
-			local list = "    " .. Color(j, colors.green[1]) .. Color(" - " .. presets[j].name, colors.yellow[1])
-			if j + 1 <= #presets then list = list .. "    " .. Color(j + 1, colors.green[1]) .. Color(" - " .. presets[j + 1].name, colors.yellow[1]) end
+			local list = "    " .. wt.Color(j, colors.green[1]) .. wt.Color(" - " .. presets[j].name, colors.yellow[1])
+			if j + 1 <= #presets then list = list .. "    " .. wt.Color(j + 1, colors.green[1]) .. wt.Color(" - " .. presets[j + 1].name, colors.yellow[1]) end
 			print(list)
 		end
 	end
@@ -1637,7 +1640,7 @@ local function ToggleCommand()
 	options.visibility.hidden:SetChecked(dbc.hidden)
 	options.visibility.hidden:SetAttribute("loaded", true) --Update dependent widgets
 	--Response
-	print(Color(addon .. ":", colors.green[0]) .. " " .. Color(dbc.hidden and strings.chat.toggle.hiding or strings.chat.toggle.unhiding, colors.yellow[1]))
+	print(wt.Color(addon .. ":", colors.green[0]) .. " " .. wt.Color(dbc.hidden and strings.chat.toggle.hiding or strings.chat.toggle.unhiding, colors.yellow[1]))
 	--Update in the SavedVariabes DB
 	MovementSpeedDBC.hidden = dbc.hidden
 end
@@ -1647,8 +1650,8 @@ local function AutoCommand()
 	options.visibility.autoHide:SetChecked(db.speedDisplay.visibility.autoHide)
 	options.visibility.autoHide:SetAttribute("loaded", true) --Update dependent widgets
 	--Response
-	print(Color(addon .. ":", colors.green[0]) .. " " .. Color(strings.chat.auto.response:gsub(
-		"#STATE", Color(db.speedDisplay.visibility.autoHide and strings.misc.enabled or strings.misc.disabled, colors.green[1])
+	print(wt.Color(addon .. ":", colors.green[0]) .. " " .. wt.Color(strings.chat.auto.response:gsub(
+		"#STATE", wt.Color(db.speedDisplay.visibility.autoHide and strings.misc.enabled or strings.misc.disabled, colors.green[1])
 	), colors.yellow[1]))
 	--Update in the SavedVariabes DB
 	MovementSpeedDB.speedDisplay.visibility.autoHide = db.speedDisplay.visibility.autoHide
@@ -1663,12 +1666,12 @@ local function SizeCommand(parameter)
 		--Update the GUI option in case it was open
 		options.text.font.size:SetValue(size)
 		--Response
-		print(Color(addon .. ":", colors.green[0]) .. " " .. Color(strings.chat.size.response:gsub("#VALUE", Color(size, colors.green[1])), colors.yellow[1]))
+		print(wt.Color(addon .. ":", colors.green[0]) .. " " .. wt.Color(strings.chat.size.response:gsub("#VALUE", wt.Color(size, colors.green[1])), colors.yellow[1]))
 	else
 		--Error
-		print(Color(addon .. ":", colors.green[0]) .. " " .. Color(strings.chat.size.unchanged, colors.yellow[0]))
-		print(Color(strings.chat.size.error:gsub(
-			"#SIZE", Color(strings.chat.size.command .. " " .. dbDefault.speedDisplay.text.font.size, colors.green[1])
+		print(wt.Color(addon .. ":", colors.green[0]) .. " " .. wt.Color(strings.chat.size.unchanged, colors.yellow[0]))
+		print(wt.Color(strings.chat.size.error:gsub(
+			"#SIZE", wt.Color(strings.chat.size.command .. " " .. dbDefault.speedDisplay.text.font.size, colors.green[1])
 		), colors.yellow[1]))
 	end
 	--Update in the SavedVariabes DB
@@ -1765,16 +1768,28 @@ end
 --Making the frame moveable
 moveSpeed:SetMovable(true)
 speedDisplay:SetScript("OnMouseDown", function()
-	if (IsShiftKeyDown() and not moveSpeed.isMoving) then
+	if IsShiftKeyDown() and not moveSpeed.isMoving then
 		moveSpeed:StartMoving()
 		moveSpeed.isMoving = true
+		--Stop moving when SHIFT is released
+		speedDisplay:SetScript("OnUpdate", function ()
+			if IsShiftKeyDown() then return end
+			moveSpeed:StopMovingOrSizing()
+			moveSpeed.isMoving = false
+			--Reset the position
+			wt.PositionFrame(moveSpeed, db.speedDisplay.position.point, nil, nil, db.speedDisplay.position.offset.x, db.speedDisplay.position.offset.y)
+			--Chat response
+			print(wt.Color(addon .. ":", colors.green[0]) .. " " .. wt.Color(strings.chat.position.cancel, colors.yellow[0]))
+			print(wt.Color(strings.chat.position.error:gsub("#SHIFT", strings.keys.shift), colors.yellow[1]))
+			--Stop checking if SHIFT is pressed
+			speedDisplay:SetScript("OnUpdate", nil)
+		end)
 	end
 end)
 speedDisplay:SetScript("OnMouseUp", function()
-	if (moveSpeed.isMoving) then
-		moveSpeed:StopMovingOrSizing()
-		moveSpeed.isMoving = false
-	end
+	if not moveSpeed.isMoving then return end
+	moveSpeed:StopMovingOrSizing()
+	moveSpeed.isMoving = false
 	--Save the position (for account-wide use)
 	db.speedDisplay.position.point, _, _, db.speedDisplay.position.offset.x, db.speedDisplay.position.offset.y = moveSpeed:GetPoint()
 	MovementSpeedDB.speedDisplay.position = wt.Clone(db.speedDisplay.position) --Update in the SavedVariabes DB
@@ -1782,18 +1797,20 @@ speedDisplay:SetScript("OnMouseUp", function()
 	options.position.anchor.setSelected(GetAnchorID(db.speedDisplay.position.point))
 	options.position.xOffset:SetValue(db.speedDisplay.position.offset.x)
 	options.position.yOffset:SetValue(db.speedDisplay.position.offset.y)
+	--Chat response
+	print(wt.Color(addon .. ":", colors.green[0]) .. " " .. wt.Color(strings.chat.position.save, colors.yellow[1]))
+	--Stop checking if SHIFT is pressed
+	speedDisplay:SetScript("OnUpdate", nil)
 end)
 
 --Toggling the speed display tooltip
 speedDisplay:SetScript('OnEnter', function()
 	--Show tooltip
-	ns.tooltip = wt.AddTooltip(
-		nil, speedDisplay, "ANCHOR_BOTTOMRIGHT", strings.speedTooltip.title, strings.speedTooltip.text[0], GetSpeedTooltipDetails(), 0, speedDisplay:GetHeight()
-	)
+	ns.tooltip = wt.AddTooltip(nil, speedDisplay, "ANCHOR_BOTTOMRIGHT", strings.speedTooltip.title, GetSpeedTooltipDetails(), 0, speedDisplay:GetHeight())
 end)
 speedDisplay:SetScript('OnLeave', function()
 	--Hide tooltip
-	ns.tooltip:Hide()
+	(ns.tooltip or GameTooltip):Hide()
 end)
 
 --Hide during Pet Battle
@@ -1838,10 +1855,8 @@ moveSpeed:SetScript("OnUpdate", function()
 	--Toggle the visibility of the speed display (if auto-hide is enabled)
 	wt.SetVisibility(speedDisplay, not db.speedDisplay.visibility.autoHide or speed ~= 0)
 	--Update the speed display tooltip
-	if speedDisplay:IsMouseOver() and ns.tooltip:IsVisible() then
-		ns.tooltip = wt.AddTooltip(
-			nil, speedDisplay, "ANCHOR_BOTTOMRIGHT", strings.speedTooltip.title, strings.speedTooltip.text[0], GetSpeedTooltipDetails(), 0, speedDisplay:GetHeight()
-		)
+	if speedDisplay:IsMouseOver() and (ns.tooltip or GameTooltip):IsVisible() then
+		ns.tooltip = wt.AddTooltip(nil, speedDisplay, "ANCHOR_BOTTOMRIGHT", strings.speedTooltip.title, GetSpeedTooltipDetails(), 0, speedDisplay:GetHeight())
 	end
 	--Update the speed display text
 	local text = ""

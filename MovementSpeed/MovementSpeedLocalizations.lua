@@ -72,15 +72,16 @@ local changelogDB = {
 		[12] = "Added an option to change the border color of the display background.",
 		[13] = "Added a helpful tooltip to the display which currently shows your movement speed percentage and its equivalent in yards / second.",
 		[14] = "#C_Changes:_#",
-		[15] = "Hiding the speed display will now be character-specific.",
-		[16] = "The Import/Export string editor can now be switched off of compact mode, making code review and manual edits easier. Also, the contents have been color coded for better readability.",
-		[17] = "Several chat command descriptions and responses have been updated.",
-		[18] = "The addon description has been updated.",
-		[19] = "Additional changes & small fixes.",
-		[20] = "#O_Coming soon:_#",
-		[21] = "Options profiles for character-specific customization.",
-		[22] = "Different styles and looks for the speed display.",
-		[23] = "Some cool new features are being explored, more on that soon™!",
+		[15] = "The saved display position will now be automatically applied on login for all characters.",
+		[16] = "Hiding the speed display will now be character-specific.",
+		[17] = "The Import/Export string editor can now be switched off of compact mode, making code review and manual edits easier. Also, the contents have been color coded for better readability.",
+		[18] = "Several chat command descriptions and responses have been updated.",
+		[19] = "The addon description has been updated.",
+		[20] = "Additional changes & small fixes.",
+		[21] = "#O_Coming soon:_#",
+		[22] = "Options profiles for character-specific customization.",
+		[23] = "Different styles and looks for the speed display.",
+		[24] = "Some cool new features are being explored, more on that soon™!",
 	},
 	[9] = {
 		[0] = "#V_Version 2.2.1_# #H_(3/19/2022)_#",
@@ -92,6 +93,18 @@ local changelogDB = {
 		[0] = "#V_Version 2.2.2_# #H_(3/20/2022)_#",
 		[1] = "#F_Hotfix:_# #H_Thank you for your reports!_#",
 		[2] = "Fixed an error that popped up when mousing over the speed display in the Retail version.",
+	},
+	[11] = {
+		[0] = "#V_Version 2.2.3_# #H_(3/23/2022)_#",
+		[1] = "#N_Update:_#",
+		[2] = "New hints have been added to the speed display tooltip.",
+		[3] = "Chat responses have been added when the speed display is dragged to confirm when the position is saved.",
+		[4] = "Added 2.5.4 (BCC) support.",
+		[5] = "#C_Change:_#",
+		[6] = "The repositioning of speed display will now be cancelled when SHIFT is released before the mouse button.",
+		[7] = "The tooltips have been adjusted to fit in more with the base UI.",
+		[8] = "#F_Hotfix:_# #H_Thank you for your reports!_#",
+		[9] = "Further minor fixes to dodge LUA errors and improve reliability.\n#H_If you encounter any more issues, please, consider reporting them! Try to include when/how they occur, and which addons are you using to give me the best chance to be able to reproduce and fix them._#",
 	},
 }
 
@@ -194,7 +207,7 @@ local english = {
 		},
 		speedDisplay = {
 			title = "Speed Display",
-			description = "Curtomize the main #ADDON display where you view your own movement speed.", --# flags will be replaced with code
+			description = "Customize the main #ADDON display where you view your own movement speed.", --# flags will be replaced with code
 			quick = {
 				title = "Quick settings",
 				description = "Quickly settings enable or disable the #ADDON display or set it up via presets.", --# flags will be replaced with code
@@ -390,6 +403,11 @@ local english = {
 			unchanged = "The font size was not changed.",
 			error = "Please enter a valid number value (e.g. #SIZE).", --# flags will be replaced with code
 		},
+		position = {
+			save = "The speed display position was saved.",
+			cancel = "The repositioning of the speed display was cancelled.",
+			error = "Hold #SHIFT until the mouse button is released to save the position.", --# flags will be replaced with code
+		},
 	},
 	speedTooltip = {
 		title = "Speed info:",
@@ -398,6 +416,8 @@ local english = {
 			[1] = "#YARDS yards / second.", --# flags will be replaced with code
 			[2] = "#PERCENT of the base running speed.", --# flags will be replaced with code
 		},
+		hintMove = "Hold #SHIFT & drag to reposition.", --# flags will be replaced with code
+		hintOptions = "Right-click to open specific options.",
 	},
 	targetSpeed = "Speed: #SPEED", --# flags will be replaced with code
 	yardsps = "#YARDS yards/s", --# flags will be replaced with code
