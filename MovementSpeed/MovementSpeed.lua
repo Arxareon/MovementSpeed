@@ -280,13 +280,14 @@ local function GetPlayerSpeed()
 end
 
 ---Assemble the detailed text lines for player speed tooltip
----@return table extraLines Table containing additional string lines to be added to the tooltip text [indexed, 0-based]
+---@return table textLines Table containing text lines to be added to the tooltip [indexed, 0-based]
 --- - **text** string ― Text to be added to the line
---- - **color**? table *optional* ― RGB colors line
+--- - **font**? string | FontObject *optional* ― The FontObject to set for this line [Default: GameTooltipTextSmall]
+--- - **color**? table *optional* ― Table containing the RGB values to color this line with [Default: HIGHLIGHT_FONT_COLOR (white)]
 --- 	- **r** number ― Red [Range: 0 - 1]
 --- 	- **g** number ― Green [Range: 0 - 1]
 --- 	- **b** number ― Blue [Range: 0 - 1]
---- - **wrap**? boolean *optional* ― Allow wrapping the line [Default: true]
+--- - **wrap**? boolean *optional* ― Allow this line to be wrapped [Default: true]
 local function GetSpeedTooltipDetails()
 	local speed = GetPlayerSpeed()
 	return {
@@ -306,12 +307,12 @@ local function GetSpeedTooltipDetails()
 			color = colors.green[1],
 		},
 		[3] = {
-			text = "\n" .. strings.speedTooltip.hintMove:gsub("#SHIFT", strings.keys.shift),
+			text = "\n" .. strings.speedTooltip.hintOptions,
 			font = GameFontNormalTiny,
 			color = colors.grey[0],
 		},
 		[4] = {
-			text = strings.speedTooltip.hintOptions,
+			text = strings.speedTooltip.hintMove:gsub("#SHIFT", strings.keys.shift),
 			font = GameFontNormalTiny,
 			color = colors.grey[0],
 		},

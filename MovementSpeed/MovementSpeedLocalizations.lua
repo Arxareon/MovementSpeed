@@ -416,8 +416,8 @@ local english = {
 			[1] = "#YARDS yards / second.", --# flags will be replaced with code
 			[2] = "#PERCENT of the base running speed.", --# flags will be replaced with code
 		},
-		hintMove = "Hold #SHIFT & drag to reposition.", --# flags will be replaced with code
 		hintOptions = "Right-click to open specific options.",
+		hintMove = "Hold #SHIFT & drag to reposition.", --# flags will be replaced with code
 	},
 	targetSpeed = "Speed: #SPEED", --# flags will be replaced with code
 	yardsps = "#YARDS yards/s", --# flags will be replaced with code
