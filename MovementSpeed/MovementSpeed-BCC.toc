@@ -1,8 +1,8 @@
 ## Interface: 20504
 ## Title: Movement Speed
-## Version: 2.2.3
-## X-Day: 23
-## X-Month: 3
+## Version: 2.2.4
+## X-Day: 5
+## X-Month: 7
 ## X-Year: 2022
 ## Author: Barnabas Nagy (Arxareon)
 ## X-License: All Rights Reserved

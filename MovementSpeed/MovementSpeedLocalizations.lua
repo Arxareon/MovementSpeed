@@ -106,6 +106,14 @@ local changelogDB = {
 		[8] = "#F_Hotfix:_# #H_Thank you for your reports!_#",
 		[9] = "Further minor fixes to dodge LUA errors and improve reliability.\n#H_If you encounter any more issues, please, consider reporting them! Try to include when/how they occur, and which addons are you using to give me the best chance to be able to reproduce and fix them._#",
 	},
+	[12] = {
+		[0] = "#V_Version 2.2.4_# #H_(7/5/2022)_#",
+		[1] = "#N_Update:_#",
+		[2] = "Added 9.2.5 (Retail) and 1.14.3 (Classic) support.",
+		[3] = "Numerous under the hood changes & improvements.",
+		[4] = "#F_Hotfix:_# #H_Thank you for your reports!_#",
+		[5] = "Fixed the issue of the Speed Display tooltip sometimes appearing and being stuck on the screen.",
+	},
 }
 
 ns.GetChangelog = function()
