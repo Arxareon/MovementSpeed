@@ -2654,7 +2654,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 			local a = OpacitySliderFrame:GetValue() or 1
 			colorPickerData.activeColorPicker:SetBackdropColor(r, g, b, a)
 			colorPickerData.backgroundGradient:SetVertexColor(r, g, b, 1)
-			_G[colorPickerData.activeColorPicker:GetName():gsub("Button", "EditBox")]:SetText(WidgetToolbox[ns.WidgetToolsVersion].ColorToHex(r, g, b, a))
+			_G[colorPickerData.activeColorPicker:GetName():gsub("PickerButton", "HEXBox")]:SetText(WidgetToolbox[ns.WidgetToolsVersion].ColorToHex(r, g, b, a))
 			colorPickerData.onColorUpdate(r, g, b, a)
 		end
 		--RGB
@@ -2674,7 +2674,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 				colorPickerData.startColors.b,
 				colorPickerData.startColors.a or 1
 			)
-			_G[colorPickerData.activeColorPicker:GetName():gsub("Button", "EditBox")]:SetText(WidgetToolbox[ns.WidgetToolsVersion].ColorToHex(
+			_G[colorPickerData.activeColorPicker:GetName():gsub("PickerButton", "HEXBox")]:SetText(WidgetToolbox[ns.WidgetToolsVersion].ColorToHex(
 				colorPickerData.startColors.r,
 				colorPickerData.startColors.g,
 				colorPickerData.startColors.b,
@@ -2707,7 +2707,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	---@return Button pickerButton The color picker button frame
 	---@return Texture backgroundGradient The gradient color background texture
 	local function AddColorPickerButton(colorPicker, t)
-		local pickerButton = CreateFrame("Button", colorPicker:GetName() .. "Button", colorPicker, BackdropTemplateMixin and "BackdropTemplate")
+		local pickerButton = CreateFrame("Button", colorPicker:GetName() .. "PickerButton", colorPicker, BackdropTemplateMixin and "BackdropTemplate")
 		--Position & dimensions
 		pickerButton:SetPoint("TOPLEFT", 0, -16)
 		pickerButton:SetSize(34, 22)
