@@ -114,6 +114,11 @@ local changelogDB = {
 		[4] = "#F_Hotfix:_# #H_Thank you for your reports!_#",
 		[5] = "Fixed the issue of the Speed Display tooltip sometimes appearing and being stuck on the screen.",
 	},
+	[13] = {
+		[0] = "#V_Version 2.2.5_# #H_(7/9/2022)_#",
+		[1] = "#F_Hotfix:_#",
+		[2] = "Fixed an error that popped up when clicking on a color picker button.",
+	},
 }
 
 ns.GetChangelog = function()
