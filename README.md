@@ -11,7 +11,7 @@
 ## Other Addons
 *If you like minimalistic solutions, you might want to check out these Addons as well:*
 
-| Addon | Descrription | Links |
+| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Addon&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Descrription | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Links&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 |-|-|-|
 | <img src="https://wago-addons.ams3.digitaloceanspaces.com/thumbnails/FWxJtQUjJe24aWsbIwEUeN4ga6hHKkmB5UUci5AW.png" alt="Movement Speed Logo" width="20" height="20" align="top"> **Remaining XP** | Shows the XP left to level up, you Rested XP gain, a customizable EXP bar & more. | [GitHub](https://github.com/Arxareon/RemainingXP) • [CurseForge](https://www.curseforge.com/wow/addons/remaining-xp) • [Wago](https://addons.wago.io/addons/remaining-xp) |
 | *Coming soon™:* <br> <img src="https://wago-addons.ams3.digitaloceanspaces.com/thumbnails/CmtzQg7JfpeZBchDcOx4qF7mUz5QaCCJrf22knx4.png" alt="Party Targets Logo" width="20" height="20" align="top"> **Party Targets** | See who all of your party or raid members are targeting at once. Useful for PvP! | [GitHub](https://github.com/Arxareon/PartyTargets) • [CurseForge](https://www.curseforge.com/wow/addons/party-targets-addon) • [Wago](https://addons.wago.io/addons/party-targets) |
