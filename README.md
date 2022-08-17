@@ -1,4 +1,4 @@
-# <img src="https://wago-addons.ams3.digitaloceanspaces.com/thumbnails/Ejl21mndIAdtw5Dg1QPGxcC0qGgzkaeV0mpLoXop.png" alt="Movement Speed Logo" width="40" height="40" align="top"> Movement Speed
+# [<img src="https://wago-addons.ams3.digitaloceanspaces.com/thumbnails/Ejl21mndIAdtw5Dg1QPGxcC0qGgzkaeV0mpLoXop.png" alt="Movement Speed Logo" width="40" height="40" align="top">](#-movement-speed) Movement Speed
 
 ***A simple solution to a simple problem:*** Movement Speed shows your character's current speed in a movable and customizable display, or anyone else's in the inspect tooltip with fast updates.
 
@@ -11,11 +11,11 @@
 ## Other Addons
 *If you like minimalistic solutions, you might want to check out these Addons as well:*
 
-| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Addon&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Descrription | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Links&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
-|-|-|-|
-| <img src="https://wago-addons.ams3.digitaloceanspaces.com/thumbnails/FWxJtQUjJe24aWsbIwEUeN4ga6hHKkmB5UUci5AW.png" alt="Movement Speed Logo" width="20" height="20" align="top"> **Remaining XP** | Shows the XP left to level up, you Rested XP gain, a customizable EXP bar & more. | [GitHub](https://github.com/Arxareon/RemainingXP) • [CurseForge](https://www.curseforge.com/wow/addons/remaining-xp) • [Wago](https://addons.wago.io/addons/remaining-xp) |
-| *Coming soon™:* <br> <img src="https://wago-addons.ams3.digitaloceanspaces.com/thumbnails/CmtzQg7JfpeZBchDcOx4qF7mUz5QaCCJrf22knx4.png" alt="Party Targets Logo" width="20" height="20" align="top"> **Party Targets** | See who all of your party or raid members are targeting at once. Useful for PvP! | [GitHub](https://github.com/Arxareon/PartyTargets) • [CurseForge](https://www.curseforge.com/wow/addons/party-targets-addon) • [Wago](https://addons.wago.io/addons/party-targets) |
-| *Coming soon™:* <br> <img src="https://wago-addons.ams3.digitaloceanspaces.com/thumbnails/ItNTG9RkclzoxYCape4RAavnM9s3TePvcwMz4u1p.png" alt="Party Targets Logo" width="20" height="20" align="top"> **RP Keyboard** | Type fantasy letters & runes in chat to talk to other RP Keyboard users in style! | [GitHub](https://github.com/Arxareon/RPKeyboard) • [CurseForge](https://www.curseforge.com/wow/addons/rp-keyboard) • [Wago](https://addons.wago.io/addons/rp-keyboard) |
+| Addons | Description | Links |
+|-|-|:-:|
+| [<img src="https://wago-addons.ams3.digitaloceanspaces.com/thumbnails/FWxJtQUjJe24aWsbIwEUeN4ga6hHKkmB5UUci5AW.png" alt="Movement Speed Logo" width="20" height="20" align="top">](#other-addons) **Movement Speed** | Shows the XP left to level up, you Rested XP gain, a<br>customizable EXP bar & more. | [GitHub](https://github.com/Arxareon/RemainingXP) • [CurseForge](https://www.curseforge.com/wow/addons/remaining-xp) • [Wago](https://addons.wago.io/addons/remaining-xp) |
+| *Coming soon™:* <br> [<img src="https://wago-addons.ams3.digitaloceanspaces.com/thumbnails/CmtzQg7JfpeZBchDcOx4qF7mUz5QaCCJrf22knx4.png" alt="Party Targets Logo" width="20" height="20" align="top">](#other-addons) **Party Targets** | See who all of your party or raid members are<br>targeting at once. Useful for PvP! | [GitHub](https://github.com/Arxareon/PartyTargets) • [CurseForge](https://www.curseforge.com/wow/addons/party-targets-addon) • [Wago](https://addons.wago.io/addons/party-targets) |
+| *Coming soon™:* <br> [<img src="https://wago-addons.ams3.digitaloceanspaces.com/thumbnails/ItNTG9RkclzoxYCape4RAavnM9s3TePvcwMz4u1p.png" alt="Party Targets Logo" width="20" height="20" align="top">](#other-addons) **RP Keyboard** | Type fantasy letters & runes in chat to talk to other<br>RP Keyboard users in style! | [GitHub](https://github.com/Arxareon/RPKeyboard) • [CurseForge](https://www.curseforge.com/wow/addons/rp-keyboard) • [Wago](https://addons.wago.io/addons/rp-keyboard) |
 
 ## Support
 *Possibilities to directly support the development of Movement Speed and other addons:*
