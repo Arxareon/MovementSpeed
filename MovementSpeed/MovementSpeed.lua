@@ -654,8 +654,9 @@ local function CreateQuickOptions(parentFrame)
 		position = { offset = { x = 8, y = -30 } },
 		onClick = function(self) wt.SetVisibility(moveSpeed, not (self:GetChecked())) end,
 		optionsData = {
+			optionsKey = addonNameSpace,
 			storageTable = dbc,
-			key = "hidden",
+			storageKey = "hidden",
 		},
 	})
 	--Dropdown: Apply a preset
@@ -690,10 +691,13 @@ local function CreateQuickOptions(parentFrame)
 		width = 160,
 		items = presetItems,
 		dependencies = { [0] = { frame = options.visibility.hidden, evaluate = function(state) return not state end, }, },
-		onLoad = function(self)
-			UIDropDownMenu_SetSelectedValue(self, nil)
-			UIDropDownMenu_SetText(self, strings.options.speedDisplay.quick.presets.select)
-		end,
+		optionsData = {
+			optionsKey = addonNameSpace,
+			onLoad = function(self)
+				UIDropDownMenu_SetSelectedValue(self, nil)
+				UIDropDownMenu_SetText(self, strings.options.speedDisplay.quick.presets.select)
+			end,
+		},
 	})
 	--Button & Popup: Save Custom preset
 	local savePopup = wt.CreatePopup({
@@ -749,8 +753,9 @@ local function CreatePositionOptions(parentFrame)
 		columns = 3,
 		dependencies = { [0] = { frame = options.visibility.hidden, evaluate = function(state) return not state end, }, },
 		optionsData = {
+			optionsKey = addonNameSpace,
 			storageTable = db.speedDisplay.position,
-			key = "point",
+			storageKey = "point",
 			convertSave = function(value) return anchors[value].point end,
 			convertLoad = function(point) return GetAnchorID(point) end,
 		},
@@ -774,8 +779,9 @@ local function CreatePositionOptions(parentFrame)
 		end,
 		dependencies = { [0] = { frame = options.visibility.hidden, evaluate = function(state) return not state end, }, },
 		optionsData = {
+			optionsKey = addonNameSpace,
 			storageTable = db.speedDisplay.position.offset,
-			key = "x",
+			storageKey = "x",
 		},
 	})
 	--Slider: Y offset
@@ -797,8 +803,9 @@ local function CreatePositionOptions(parentFrame)
 		end,
 		dependencies = { [0] = { frame = options.visibility.hidden, evaluate = function(state) return not state end, }, },
 		optionsData = {
+			optionsKey = addonNameSpace,
 			storageTable = db.speedDisplay.position.offset,
-			key = "y",
+			storageKey = "y",
 		},
 	})
 end
@@ -823,8 +830,9 @@ local function CreateTextOptions(parentFrame)
 		items = valueTypes,
 		dependencies = { [0] = { frame = options.visibility.hidden, evaluate = function(state) return not state end, }, },
 		optionsData = {
+			optionsKey = addonNameSpace,
 			storageTable = db.speedDisplay.text,
-			key = "valueType",
+			storageKey = "valueType",
 		},
 	})
 	--Slider: Decimals
@@ -844,8 +852,9 @@ local function CreateTextOptions(parentFrame)
 		end,
 		dependencies = { [0] = { frame = options.visibility.hidden, evaluate = function(state) return not state end, }, },
 		optionsData = {
+			optionsKey = addonNameSpace,
 			storageTable = db.speedDisplay.text,
-			key = "decimals",
+			storageKey = "decimals",
 		},
 	})
 	--Checkbox: No trim
@@ -865,8 +874,9 @@ local function CreateTextOptions(parentFrame)
 			[1] = { frame = options.text.decimals, evaluate = function(value) return value > 0 end },
 		},
 		optionsData = {
+			optionsKey = addonNameSpace,
 			storageTable = db.speedDisplay.text,
-			key = "noTrim",
+			storageKey = "noTrim",
 		},
 	})
 	--Dropdown: Font family
@@ -898,8 +908,9 @@ local function CreateTextOptions(parentFrame)
 		items = fontItems,
 		dependencies = { [0] = { frame = options.visibility.hidden, evaluate = function(state) return not state end, }, },
 		optionsData = {
+			optionsKey = addonNameSpace,
 			storageTable = db.speedDisplay.text.font,
-			key = "family",
+			storageKey = "family",
 			convertSave = function(value) return fonts[value].path end,
 			convertLoad = function(font) return GetFontID(font) end,
 		},
@@ -922,8 +933,9 @@ local function CreateTextOptions(parentFrame)
 		end,
 		dependencies = { [0] = { frame = options.visibility.hidden, evaluate = function(state) return not state end, }, },
 		optionsData = {
+			optionsKey = addonNameSpace,
 			storageTable = db.speedDisplay.text.font,
-			key = "size",
+			storageKey = "size",
 		},
 	})
 	--Color Picker: Font color
@@ -941,8 +953,9 @@ local function CreateTextOptions(parentFrame)
 		onCancel = function(r, g, b, a) speedDisplayText:SetTextColor(r, g, b, a) end,
 		dependencies = { [0] = { frame = options.visibility.hidden, evaluate = function(state) return not state end, }, },
 		optionsData = {
+			optionsKey = addonNameSpace,
 			storageTable = db.speedDisplay.text.font,
-			key = "color",
+			storageKey = "color",
 		},
 	})
 end
@@ -962,8 +975,9 @@ local function CreateBackgroundOptions(parentFrame)
 		end,
 		dependencies = { [0] = { frame = options.visibility.hidden, evaluate = function(state) return not state end, }, },
 		optionsData = {
+			optionsKey = addonNameSpace,
 			storageTable = db.speedDisplay.background,
-			key = "visible",
+			storageKey = "visible",
 		},
 	})
 	--Color Picker: Background color
@@ -987,8 +1001,9 @@ local function CreateBackgroundOptions(parentFrame)
 			[1] = { frame = options.background.visible },
 		},
 		optionsData = {
+			optionsKey = addonNameSpace,
 			storageTable = db.speedDisplay.background.colors,
-			key = "bg",
+			storageKey = "bg",
 		},
 	})
 	--Color Picker: Border color
@@ -1012,8 +1027,9 @@ local function CreateBackgroundOptions(parentFrame)
 			[1] = { frame = options.background.visible },
 		},
 		optionsData = {
+			optionsKey = addonNameSpace,
 			storageTable = db.speedDisplay.background.colors,
-			key = "border",
+			storageKey = "border",
 		},
 	})
 end
@@ -1033,8 +1049,9 @@ local function CreateVisibilityOptions(parentFrame)
 		end,
 		dependencies = { [0] = { frame = options.visibility.hidden, evaluate = function(state) return not state end, }, },
 		optionsData = {
+			optionsKey = addonNameSpace,
 			storageTable = db.speedDisplay.visibility,
-			key = "frameStrata",
+			storageKey = "frameStrata",
 			convertSave = function(enabled) return enabled and "HIGH" or "MEDIUM" end,
 			convertLoad = function(strata) return strata == "HIGH" end,
 		},
@@ -1053,8 +1070,9 @@ local function CreateVisibilityOptions(parentFrame)
 		onClick = function(self) db.speedDisplay.visibility.autoHide = self:GetChecked() end,
 		dependencies = { [0] = { frame = options.visibility.hidden, evaluate = function(state) return not state end, }, },
 		optionsData = {
+			optionsKey = addonNameSpace,
 			storageTable = db.speedDisplay.visibility,
-			key = "autoHide",
+			storageKey = "autoHide",
 		},
 	})
 	--Checkbox: Status notice
@@ -1069,8 +1087,9 @@ local function CreateVisibilityOptions(parentFrame)
 			offset = { y = -4 }
 		},
 		optionsData = {
+			optionsKey = addonNameSpace,
 			storageTable = db.speedDisplay.visibility,
-			key = "statusNotice",
+			storageKey = "statusNotice",
 		},
 	})
 end
@@ -1154,8 +1173,9 @@ local function CreateTooltipOptions(parentFrame)
 		position = { offset = { x = 8, y = -30 } },
 		onClick = function(self) db.targetSpeed.tooltip.enabled = self:GetChecked() end,
 		optionsData = {
+			optionsKey = addonNameSpace,
 			storageTable = db.targetSpeed.tooltip,
-			key = "enabled",
+			storageKey = "enabled",
 		},
 	})
 	--Selector: Value type
@@ -1175,8 +1195,9 @@ local function CreateTooltipOptions(parentFrame)
 		items = valueTypes,
 		dependencies = { [0] = { frame = options.mouseover.enabled }, },
 		optionsData = {
+			optionsKey = addonNameSpace,
 			storageTable = db.targetSpeed.tooltip.text,
-			key = "valueType",
+			storageKey = "valueType",
 		},
 	})
 	--Slider: Decimals
@@ -1193,8 +1214,9 @@ local function CreateTooltipOptions(parentFrame)
 		onValueChanged = function(_, value) db.targetSpeed.tooltip.text.decimals = value end,
 		dependencies = { [0] = { frame = options.mouseover.enabled }, },
 		optionsData = {
+			optionsKey = addonNameSpace,
 			storageTable = db.targetSpeed.tooltip.text,
-			key = "decimals",
+			storageKey = "decimals",
 		},
 	})
 	--Checkbox: No trim
@@ -1214,8 +1236,9 @@ local function CreateTooltipOptions(parentFrame)
 			[1] = { frame = options.mouseover.decimals, evaluate = function(value) return value > 0 end },
 		},
 		optionsData = {
+			optionsKey = addonNameSpace,
 			storageTable = db.targetSpeed.tooltip.text,
-			key = "noTrim",
+			storageKey = "noTrim",
 		},
 	})
 end
@@ -1262,7 +1285,7 @@ local function CreateBackupOptions(parentFrame)
 				wt.PositionFrame(moveSpeed, db.speedDisplay.position.point, nil, nil, db.speedDisplay.position.offset.x, db.speedDisplay.position.offset.y)
 				SetDisplayValues(db, dbc)
 				--Update the interface options
-				wt.LoadOptionsData()
+				wt.LoadOptionsData(addonNameSpace)
 			else print(wt.Color(addonTitle .. ":", colors.green[0]) .. " " .. wt.Color(strings.options.advanced.backup.error, colors.yellow[1])) end
 		end
 	})
@@ -1285,7 +1308,10 @@ local function CreateBackupOptions(parentFrame)
 		scrollSpeed = 60,
 		onEnterPressed = function() StaticPopup_Show(importPopup) end,
 		onEscapePressed = function(self) self:SetText(wt.TableToString({ account = db, character = dbc }, options.backup.compact:GetChecked(), true)) end,
-		onLoad = function(self) self:SetText(wt.TableToString({ account = db, character = dbc }, options.backup.compact:GetChecked(), true)) end,
+		optionsData = {
+			optionsKey = addonNameSpace,
+			onLoad = function(self) self:SetText(wt.TableToString({ account = db, character = dbc }, options.backup.compact:GetChecked(), true)) end,
+		},
 	})
 	--Checkbox: Compact
 	options.backup.compact = wt.CreateCheckbox({
@@ -1305,8 +1331,9 @@ local function CreateBackupOptions(parentFrame)
 			options.backup.string:ClearFocus()
 		end,
 		optionsData = {
+			optionsKey = addonNameSpace,
 			storageTable = cs,
-			key = "compactBackup",
+			storageKey = "compactBackup",
 		},
 	})
 	--Button: Load
@@ -1401,7 +1428,7 @@ local function DefaultOptions()
 	wt.PositionFrame(moveSpeed, db.speedDisplay.position.point, nil, nil, db.speedDisplay.position.offset.x, db.speedDisplay.position.offset.y)
 	SetDisplayValues(db, dbc)
 	--Update the interface options
-	wt.LoadOptionsData()
+	wt.LoadOptionsData(addonNameSpace)
 	--Set the preset selection to Custom
 	UIDropDownMenu_SetSelectedValue(options.visibility.presets, 0)
 	UIDropDownMenu_SetText(options.visibility.presets, presets[0].name)
@@ -1421,6 +1448,7 @@ local function LoadInterfaceOptions()
 		okay = SaveOptions,
 		cancel = CancelChanges,
 		default = DefaultOptions,
+		optionsKey = addonNameSpace,
 	})
 	CreateMainCategoryPanels(options.mainOptionsPage) --Add categories & GUI elements to the panel
 	--Display options panel
@@ -1437,8 +1465,6 @@ local function LoadInterfaceOptions()
 			speed = 45,
 		},
 		default = DefaultOptions,
-		autoSave = false,
-		autoLoad = false,
 	})
 	CreateSpeedDisplayCategoryPanels(displayOptionsScrollFrame) --Add categories & GUI elements to the panel
 	--Target Speed options panel
@@ -1450,8 +1476,6 @@ local function LoadInterfaceOptions()
 		description = strings.options.targetSpeed.description:gsub("#ADDON", addonTitle),
 		logo = textures.logo,
 		default = DefaultOptions,
-		autoSave = false,
-		autoLoad = false,
 	})
 	CreateTargetSpeedCategoryPanels(options.targetSpeedOptionsPage) --Add categories & GUI elements to the panel
 	--Advanced options panel
@@ -1463,8 +1487,6 @@ local function LoadInterfaceOptions()
 		description = strings.options.advanced.description:gsub("#ADDON", addonTitle),
 		logo = textures.logo,
 		default = DefaultOptions,
-		autoSave = false,
-		autoLoad = false,
 	})
 	CreateAdvancedCategoryPanels(options.advancedOptionsPage) --Add categories & GUI elements to the panel
 end

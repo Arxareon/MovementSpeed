@@ -119,6 +119,12 @@ local changelogDB = {
 		[1] = "#F_Hotfix:_#",
 		[2] = "Fixed an error that popped up when clicking on a color picker button.",
 	},
+	[14] = {
+		[0] = "#V_Version 2.2.6_# #H_(8/20/2022)_#",
+		[1] = "#N_Update:_#",
+		[2] = "Added 9.2.7 (Retail) and 3.4 (WotLK Classic) support.",
+		[3] = "Under the hood changes & improvements.",
+	},
 }
 
 ns.GetChangelog = function()

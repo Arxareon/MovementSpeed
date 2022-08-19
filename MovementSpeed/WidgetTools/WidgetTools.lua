@@ -7,7 +7,7 @@ local addonNameSpace, ns = ...
 --[[ WIDGET TOOLS DATA ]]
 
 --Version string
-ns.WidgetToolsVersion = "1.4"
+ns.WidgetToolsVersion = "1.4.1"
 
 --Global WidgetTools table containing toolbox subtables for each respective WidgetTools version (WidgetToolbox["version_string"])
 if not WidgetToolbox then WidgetToolbox = {} end
@@ -108,6 +108,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 		end
 		return iterator
 	end
+	local SortedPairs = WidgetToolbox[ns.WidgetToolsVersion].SortedPairs --Short local reference
 
 	---Convert and format an input object to string to be dumped to the in-game chat
 	---@param object any Object to dump out
@@ -122,21 +123,21 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	local function GetDumpOutput(object, outputTable, name, blockrule, depth, currentKey, currentLevel)
 		--Check whether the current key is to be skipped
 		local skip = false
-		if currentKey ~= nil and blockrule ~= nil then skip = blockrule(currentKey) end
+		if currentKey and blockrule then skip = blockrule(currentKey) end
 		--Calculate indentation based on the current depth level
 		currentLevel = currentLevel or 0
 		local indentation = ""
 		for i = 1, currentLevel do indentation = indentation .. "    " end
 		--Format the name and key
-		currentKey = currentKey ~= nil and indentation .. "|cFFACD1EC" .. currentKey .. "|r" or nil
-		name = name ~= nil and "|cFF69A6F8" .. name .. "|r " or ""
+		currentKey = currentKey and indentation .. "|cFFACD1EC" .. currentKey .. "|r" or nil
+		name = name and "|cFF69A6F8" .. name .. "|r " or ""
 		--Add the line to the output
 		if type(object) ~= "table" then
-			local line = (currentKey ~= nil and currentKey .. " = " or "Dump " .. name .. "value:") .. (skip and "…" or tostring(object))
-			outputTable[outputTable[0] ~= nil and #outputTable + 1 or 0] = line
+			local line = (currentKey and currentKey .. " = " or "Dump " .. name .. "value:") .. (skip and "…" or tostring(object))
+			outputTable[outputTable[0] and #outputTable + 1 or 0] = line
 			return
 		else
-			local s = (currentKey ~= nil and currentKey or "Dump " .. name .. "table") .. ":"
+			local s = (currentKey and currentKey or "Dump " .. name .. "table") .. ":"
 			--Stop at the max depth or if the key is skipped
 			if skip or currentLevel >= (depth or currentLevel + 1) then
 				outputTable[outputTable[0] ~= nil and #outputTable + 1 or 0] = s .. " {…}"
@@ -144,7 +145,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 			end
 			outputTable[outputTable[0] ~= nil and #outputTable + 1 or 0] = s
 			--Convert & format the subtable
-			for k, v in WidgetToolbox[ns.WidgetToolsVersion].SortedPairs(object) do GetDumpOutput(v, outputTable, nil, blockrule, depth, k, currentLevel + 1) end
+			for k, v in SortedPairs(object) do GetDumpOutput(v, outputTable, nil, blockrule, depth, k, currentLevel + 1) end
 		end
 	end
 
@@ -180,8 +181,8 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--- 	```
 	---@param depth? integer How many levels of subtables to print out (root level: 0) [Default: *full depth*]
 	---@param linesPerMessage? integer Print the specified number of output lines in a single chat message (all lines in one message: 0) [Default: 7]
-	WidgetToolbox[ns.WidgetToolsVersion].Dump = function(object, name, linesPerMessage, blockrule, depth)
-		--Get the outlut lines
+	WidgetToolbox[ns.WidgetToolsVersion].Dump = function(object, name, blockrule, depth, linesPerMessage)
+		--Get the output lines
 		local output = {}
 		GetDumpOutput(object, output, name, blockrule, depth)
 		--Print the output
@@ -197,7 +198,6 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 			end
 		end
 	end
-
 	local Dump = WidgetToolbox[ns.WidgetToolsVersion].Dump --Short local reference
 
 	---Convert table to code chunk
@@ -210,11 +210,11 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	WidgetToolbox[ns.WidgetToolsVersion].TableToString = function(table, compact, colored, currentLevel)
 		if type(table) ~= "table" then return tostring(table) end
 		--Set whitespaces, calculate indentation based on the current depth level
-		local s = compact ~= true and " " or ""
-		local nl = compact ~= true and "\n" or ""
+		local s = not compact and " " or ""
+		local nl = not compact and "\n" or ""
 		local indentation = ""
 		currentLevel = currentLevel or 0
-		if compact ~= true then for i = 0, currentLevel do indentation = indentation .. "    " end end
+		if not compact then for i = 0, currentLevel do indentation = indentation .. "    " end end
 		--Set coloring escape sequences
 		local c = "|cFF999999" --base color (grey)
 		local ck = "|cFFFFFFFF" --key (white)
@@ -245,7 +245,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 			--Add separator
 			chunk = chunk .. ","
 		end
-		return ((chunk .. "}"):gsub("," .. "}", (compact ~= true and "," or "") .. nl .. indentation:gsub("%s%s%s%s(.*)", "%1") .. "}") .. r)
+		return ((chunk .. "}"):gsub("," .. "}", (not compact and "," or "") .. nl .. indentation:gsub("%s%s%s%s(.*)", "%1") .. "}") .. r)
 	end
 
 	---Make a new deep copy (not reference) of an object (table)
@@ -293,7 +293,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 				end
 			else
 				local remove = v == nil or v == "" --The value is empty or doesn't exist
-				if not remove and valueChecker ~= nil then remove = not valueChecker(k, v) end--The value is invalid
+				if valueChecker and not remove then remove = not valueChecker(k, v) end--The value is invalid
 				if remove then tableToCheck[k] = nil end --Remove the key value pair
 			end
 		end
@@ -454,7 +454,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	---@return number? a
 	WidgetToolbox[ns.WidgetToolsVersion].UnpackColor = function(table, alpha)
 		if type(table) ~= "table" then return end
-		if alpha or alpha == nil then
+		if alpha ~= false then
 			return table.r, table.g, table.b, table.a or 1
 		else
 			return table.r, table.g, table.b
@@ -473,9 +473,9 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	---@return string hex Color code in HEX format (Examples: RGB - "#2266BB", RGBA - "#2266BBAA")
 	WidgetToolbox[ns.WidgetToolsVersion].ColorToHex = function(r, g, b, a, alphaFirst, hashtag)
 		local hex = hashtag ~= false and "#" or ""
-		if a ~= nil and alphaFirst == true then hex = hex .. string.format("%02x", math.ceil(a * 255)) end
+		if a and alphaFirst then hex = hex .. string.format("%02x", math.ceil(a * 255)) end
 		hex = hex .. string.format("%02x", math.ceil(r * 255)) .. string.format("%02x", math.ceil(g * 255)) .. string.format("%02x", math.ceil(b * 255))
-		if a ~= nil and alphaFirst ~= true then hex = hex .. string.format("%02x", math.ceil(a * 255)) end
+		if a and not alphaFirst then hex = hex .. string.format("%02x", math.ceil(a * 255)) end
 		return hex:upper()
 	end
 
@@ -519,96 +519,78 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	WidgetToolbox[ns.WidgetToolsVersion].PositionFrame = function(frame, anchor, relativeTo, relativePoint, offsetX, offsetY, userPlaced)
 		frame:ClearAllPoints()
 		--Set the position
-		if (relativeTo == nil or relativePoint == nil) and (offsetX == nil or offsetY == nil) then
+		if (not relativeTo or not relativePoint) and (not offsetX or not offsetY) then
 			frame:SetPoint(anchor)
-		elseif relativeTo == nil or relativePoint == nil then
+		elseif not relativeTo or not relativePoint then
 			frame:SetPoint(anchor, offsetX, offsetY)
-		elseif offsetX == nil or offsetY == nil then
+		elseif not offsetX or not offsetY then
 			frame:SetPoint(anchor, relativeTo, relativePoint)
 		else
 			frame:SetPoint(anchor, relativeTo, relativePoint, offsetX, offsetY)
 		end
 		--Set user placed
-		if frame["SetUserPlaced"] ~= nil and frame:IsMovable() then frame:SetUserPlaced(userPlaced == true) end
+		if frame["SetUserPlaced"] and frame:IsMovable() then frame:SetUserPlaced(userPlaced == true) end
 	end
 
 	--[ Widget Dependency Handling ]
 
 	---Check all dependencies (disable / enable rules) of a frame
 	---@param rules table Indexed, 0-based table containing the dependency rules of the frame object
-	--- - **frame** Frame — Reference to the widget the state of a widget is tied to
-	--- - **evaluate**? function *optional* — Call this function to evaluate the current value of **rules.frame** [Default: *no evaluation, only for checkboxes*]
-	--- 	- @*param* **value**? any *optional* — The current value of **rules.frame**, the type of which depends on the type of the frame (see overloads)
-	--- 	- @*return* **evaluation** boolean — If false, disable the dependent widget (or enable it when true)
-	--- 	- ***Overloads:***
-	--- 		- function(**value**: boolean) -> **evaluation**: boolean — If **rules.frame** is recognized as a checkbox
-	--- 		- function(**value**: number) -> **evaluation**: boolean — If **rules.frame** is recognized as a slider
-	--- 		- function(**value**: integer) -> **evaluation**: boolean — If **rules.frame** is recognized as a dropdown or selector
-	--- 		- function(**value**: nil) -> **evaluation**: boolean — In any other case *(could be used to add a unique rule tied to unrecognized frame types)*
-	--- 	- ***Note:*** **rules.evaluate** must be defined if the [FrameType](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types) of **rules.frame** is not "CheckButton".
+	--- - **[*index*]** table ― Parameters of a dependency rule
+	--- 	- **frame** Frame — Reference to the widget the state of a widget is tied to
+	--- 	- **evaluate**? function *optional* — Call this function to evaluate the current value of **rules.frame** [Default: *no evaluation, only for checkboxes*]
+	--- 		- @*param* **value**? any *optional* — The current value of **rules.frame**, the type of which depends on the type of the frame (see overloads)
+	--- 		- @*return* **evaluation** boolean — If false, disable the dependent widget (or enable it when true)
+	--- 		- ***Overloads:***
+	--- 			- function(**value**: boolean) -> **evaluation**: boolean — If **rules.frame** is recognized as a checkbox
+	--- 			- function(**value**: number) -> **evaluation**: boolean — If **rules.frame** is recognized as a slider
+	--- 			- function(**value**: integer) -> **evaluation**: boolean — If **rules.frame** is recognized as a dropdown or selector
+	--- 			- function(**value**: nil) -> **evaluation**: boolean — In any other case *(could be used to add a unique rule tied to unrecognized frame types)*
+	--- 		- ***Note:*** **rules.evaluate** must be defined if the [FrameType](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types) of **rules.frame** is not "CheckButton".
 	---@return boolean state
 	local function CheckDependencies(rules)
 		local state = true
 		for i = 0, #rules do
-			if rules[i].frame.IsObjectType ~= nil then
-				--Blizzard Widgets
-				if rules[i].frame:IsObjectType("CheckButton") then
-					if rules[i].evaluate ~= nil then
-						state = rules[i].evaluate(rules[i].frame:GetChecked())
-					else
-						state = rules[i].frame:GetChecked()
-					end
-				elseif rules[i].frame:IsObjectType("Slider") then
-					state = rules[i].evaluate(rules[i].frame:GetValue())
-				end
-			else
-				--Custom Widgets
-				if rules[i].frame.isObjectType("Selector") then
-					state = rules[i].evaluate(rules[i].frame.getSelected())
-				-- elseif rules[i].frame:IsObjectType("Dropdown") then
-				-- 	state = rules[i].evaluate()
-				end
+			--Blizzard widgets
+			if rules[i].frame:IsObjectType("CheckButton") then
+				if rules[i].evaluate then state = rules[i].evaluate(rules[i].frame:GetChecked()) else state = rules[i].frame:GetChecked() end
+			elseif rules[i].frame:IsObjectType("Slider") then state = rules[i].evaluate(rules[i].frame:GetValue())
+			elseif rules[i].frame:IsObjectType("Frame") then
+				--Custom widgets
+				if rules[i].frame.isUniqueType("Dropdown") then state = rules[i].evaluate(UIDropDownMenu_GetSelectedValue(rules[i].frame))
+				elseif rules[i].frame.isUniqueType("Selector") then state = rules[i].evaluate(rules[i].frame.getSelected()) end
 			end
-			if state == false then break end
+			if not state then break end
 		end
 		return state
 	end
 
 	---Set the dependencies (disable / enable rules) of a frame based on a ruleset
 	---@param rules table Indexed, 0-based table containing the dependency rules of the frame object
-	--- - **frame** Frame — Tie the state of this widget to the evaluation of this frame's value
-	--- - **evaluate**? function *optional* — Call this function to evaluate the current value of **rules.frame** [Default: *no evaluation, only for checkboxes*]
-	--- 	- @*param* **value**? any *optional* — The current value of **rules.frame**, the type of which depends on the [FrameType](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types) of **rules.frame** (see overloads)
-	--- 	- @*return* **evaluation** boolean — If false, disable the dependent widget (or enable it when true)
-	--- 	- ***Overloads:***
+	--- - **[*index*]** table ― Parameters of a dependency rule
+	--- 	- **frame** Frame — Tie the state of this widget to the evaluation of this frame's value
+	--- 	- **evaluate**? function *optional* — Call this function to evaluate the current value of **rules.frame** [Default: *no evaluation, only for checkboxes*]
+	--- 		- @*param* **value**? any *optional* — The current value of **rules.frame**, the type of which depends on the [FrameType](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types) of **rules.frame** (see overloads)
+	--- 		- @*return* **evaluation** boolean — If false, disable the dependent widget (or enable it when true)
+	--- 		- ***Overloads:***
 	--- 		- function(**value**: boolean) -> **evaluation**: boolean — If **rules.frame** is recognized as a checkbox
-	--- 		- function(**value**: number) -> **evaluation**: boolean — If **rules.frame** is recognized as a slider
-	--- 		- function(**value**: integer) -> **evaluation**: boolean — If **rules.frame** is recognized as a dropdown or selector
-	--- 		- function(**value**: nil) -> **evaluation**: boolean — In any other case *(could be used to add a unique rule tied to unrecognized frame types)*
-	--- 	- ***Note:*** **rules.evaluate** must be defined if the [FrameType](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types) of **rules.frame** is not "CheckButton".
+	--- 			- function(**value**: number) -> **evaluation**: boolean — If **rules.frame** is recognized as a slider
+	--- 			- function(**value**: integer) -> **evaluation**: boolean — If **rules.frame** is recognized as a dropdown or selector
+	--- 			- function(**value**: nil) -> **evaluation**: boolean — In any other case *(could be used to add a unique rule tied to unrecognized frame types)*
+	--- 		- ***Note:*** **rules.evaluate** must be defined if the [FrameType](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types) of **rules.frame** is not "CheckButton".
 	---@param setState function Function to call to set the state of the frame
 	--- - @*param* boolean
 	local function SetDependencies(rules, setState)
 		for i = 0, #rules do
-			if rules[i].frame.HookScript ~= nil and rules[i].frame.IsObjectType ~= nil then
-				rules[i].frame:HookScript("OnAttributeChanged", function(_, name, value)
-					if name == "loaded" and value == true then setState(CheckDependencies(rules)) end
-				end)
+			if rules[i].frame.HookScript and rules[i].frame.IsObjectType then
+				rules[i].frame:HookScript("OnAttributeChanged", function(_, name, value) if name == "loaded" and value then setState(CheckDependencies(rules)) end end)
 				--Blizzard Widgets
-				if rules[i].frame:IsObjectType("CheckButton") then
-					rules[i].frame:HookScript("OnClick", function() setState(CheckDependencies(rules)) end)
-				elseif rules[i].frame:IsObjectType("Slider") then
-					rules[i].frame:HookScript("OnValueChanged", function() setState(CheckDependencies(rules)) end)
-				end
-			else
-				rules[i].frame.frame:HookScript("OnAttributeChanged", function(_, name, value)
-					if name == "loaded" and value == true then setState(CheckDependencies(rules)) end
-				end)
-				--Custom Widgets
-				if rules[i].frame.isObjectType("Selector") then
-					rules[i].frame.frame:HookScript("OnAttributeChanged", function(_, name) if name == "selected" then setState(CheckDependencies(rules)) end end)
-				-- elseif rules[i].frame:IsObjectType("Dropdown") then
-				-- 	rules[i].frame:HookScript("OnClick", setState(rules[i].evaluate()))
+				if rules[i].frame:IsObjectType("CheckButton") then rules[i].frame:HookScript("OnClick", function() setState(CheckDependencies(rules)) end)
+				elseif rules[i].frame:IsObjectType("Slider") then rules[i].frame:HookScript("OnValueChanged", function() setState(CheckDependencies(rules)) end)
+				elseif rules[i].frame:IsObjectType("Frame") then
+					if rules[i].frame.isUniqueType("Dropdown") or rules[i].frame.isUniqueType("Selector") then
+						rules[i].frame:HookScript("OnAttributeChanged", function(_, name, value) if name == "selected" then setState(CheckDependencies(rules)) end end)
+					end
 				end
 			end
 		end
@@ -616,73 +598,77 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 
 	--[ Interface Options Data Management ]
 
-	---Add a connection between an options widget and a DB entry to the options data table
+	--Collection of rules describing where to save/load options data to/from, and what to call in the process
+	local optionsTable
+
+	---Add a connection between an options widget and a DB entry to the options data table under the specified options key
 	---@param widget table Widget table containing reference to its UI frame
-	--- - **frame** Frame ― Reference to the object to be saved & loaded data to & from
+	--- - **frame**? Frame *optional* ― Reference to the widget to be saved & loaded data to & from (if it's a custom WidgetTools object with UniqueFrameType)
 	---@param type FrameType|UniqueFrameType Type of the widget object (string)
 	--- - ***Example:*** The return value of [**widget**:GetObjectType()](https://wowpedia.fandom.com/wiki/API_UIObject_GetObjectType) (for applicable Blizzard-built widgets).
 	--- - ***Note:*** If GetObjectType() would return "Frame" in case of a Frame with UIDropDownMenuTemplate or another uniquely built frame, provide a UniqueFrameType.
-	---@param onSave? function Optional function to be called when they okay button is pressed (after the data has been saved from the options widget to the storage table)
-	--- - @*param* **self** Frame ― Reference to the widget
-	---@param onLoad? function Optional function to be called when an options category is refreshed (after the data has been restored from the storage table to the widget)
-	--- - @*param* **self** Frame ― Reference to the widget
-	---@param optionsTable? table Reference to the table where all options data should be stored in [Default: **WidgetToolbox[ns.WidgetToolsVersion].OptionsData** *(the data of all addons is stored collectively)*]
-	---@param optionsData? table Table containing the autosave/-load-specific options data of the specified widget
-	--- - **storageTable** table ― Reference to the table containing the value modified by the options widget
-	--- - **key** string ― Key of the variable inside the storage table
-	--- - **convertSave**? function *optional* — Function to convert or modify the data while it is being saved from the widget to the storage table
-	--- 	- @*param* boolean ― The current value of the widget
-	--- 	- @*return* any ― The converted data to be saved to the storage table
-	--- - **convertLoad**? function *optional* — Function to convert or modify the data while it is being loaded from the storage table to the widget as its value
-	--- 	- @*param* any ― The data in the storage table to be converted and loaded to the widget
-	--- 	- @*return* boolean ― The value to be set to the widget
-	WidgetToolbox[ns.WidgetToolsVersion].AddOptionsData = function(widget, type, onSave, onLoad, optionsTable, optionsData)
-		--Set the options data table
-		if optionsTable == nil then
-			if WidgetToolbox[ns.WidgetToolsVersion].OptionsData == nil then WidgetToolbox[ns.WidgetToolsVersion].OptionsData = {} end
-			optionsTable = WidgetToolbox[ns.WidgetToolsVersion].OptionsData
-		end
+	---@param optionsKey table A unique key referencing the collection of widget options data to add this data to to be saved & loaded together
+	---@param storageTable table Reference to the table containing the value modified by the options widget
+	---@param storageKey string Key of the variable inside the storage table
+	---@param convertSave? function Function to convert or modify the data while it is being saved from the widget to the storage table
+	--- - @*param* boolean ― The current value of the widget
+	--- - @*return* any ― The converted data to be saved to the storage table
+	---@param convertLoad? function Function to convert or modify the data while it is being loaded from the storage table to the widget as its value
+	--- - @*param* any ― The data in the storage table to be converted and loaded to the widget
+	--- - @*return* boolean ― The value to be set to the widget
+	---@param onSave? function This function will be called with the parameters listed below when the options are saved (the Okay button is pressed) after the data has been saved from the options widget to the storage table
+	--- - @*param* **self**? Frame ― Reference to the widget
+	--- - @*param* **value**? any ― Reference to the widget
+	---@param onLoad? function This function will be called with the parameters listed below when the options category page is refreshed after the data has been loaded from the storage table to the widget
+	--- - @*param* **self**? Frame ― Reference to the widget
+	--- - @*param* **value**? any ― The value loaded to the frame
+	WidgetToolbox[ns.WidgetToolsVersion].AddOptionsData = function(widget, type, optionsKey, storageTable, storageKey, convertSave, convertLoad, onSave, onLoad)
+		--Check the tables
+		if not optionsTable then optionsTable = {} end
+		if not optionsTable[optionsKey] then optionsTable[optionsKey] = {} end
+		if not optionsTable[optionsKey][type] then optionsTable[optionsKey][type] = {} end
 		--Add the options data
-		if optionsTable[type] == nil then optionsTable[type] = {} end
-		if optionsData == nil then optionsData = {} end
-		optionsData.widget = widget
-		optionsData.onSave = onSave
-		optionsData.onLoad = onLoad
-		optionsTable[type][optionsTable[type][0] == nil and 0 or #optionsTable[type] + 1] = optionsData
+		optionsTable[optionsKey][type][not optionsTable[optionsKey][type][0] and 0 or #optionsTable[optionsKey][type] + 1] = {
+			widget = widget,
+			storageTable = storageTable,
+			storageKey = storageKey,
+			convertSave = convertSave,
+			convertLoad = convertLoad,
+			onSave = onSave,
+			onLoad = onLoad
+		}
 	end
 
-	---Save all data from the widgets to the storage table(s) specified in an options data table
-	---@param optionsTable? table Reference to the table where all options data is being stored in [Default: **WidgetToolbox[ns.WidgetToolsVersion].OptionsData** *(the data of all addons is stored collectively)*]
-	WidgetToolbox[ns.WidgetToolsVersion].SaveOptionsData = function(optionsTable)
-		if optionsTable == nil then
-			if WidgetToolbox[ns.WidgetToolsVersion].OptionsData == nil then return end
-			optionsTable = WidgetToolbox[ns.WidgetToolsVersion].OptionsData
-		end
-		for k, v in pairs(optionsTable) do
+	---Save all data from the widgets to the storage table(s) specified in the collection of options data referenced by the options key
+	---@param optionsKey table A unique key referencing the collection of widget options data to be saved
+	WidgetToolbox[ns.WidgetToolsVersion].SaveOptionsData = function(optionsKey)
+		if not (optionsTable or {})[optionsKey] then return end
+		for k, v in pairs(optionsTable[optionsKey]) do
 			for i = 0, #v do
+				local value = nil
 				--Automatic save
-				if v[i].storageTable ~= nil and v[i].key ~= nil then
+				if v[i].storageTable and v[i].storageKey then
 					--Get the value from the widget
-					local value = nil
 					if k == "CheckButton" then value = v[i].widget:GetChecked()
 					elseif k == "Slider" then value = v[i].widget:GetValue()
 					elseif k == "EditBox" then value = v[i].widget:GetText()
 					elseif k == "Selector" then value = v[i].widget.getSelected()
 					elseif k == "Dropdown" then value = UIDropDownMenu_GetSelectedValue(v[i].widget)
-					elseif k == "ColorPicker" then value = WidgetToolbox[ns.WidgetToolsVersion].PackColor(v[i].widget.getColor()) end
+					elseif k == "ColorPicker" then value = WidgetToolbox[ns.WidgetToolsVersion].PackColor(v[i].widget.getColor())
+					end
 					if value ~= nil then
 						--Save the value to the storage table
-						if v[i].convertSave ~= nil then value = v[i].convertSave(value) end
-						v[i].storageTable[v[i].key] = value
+						if v[i].convertSave then value = v[i].convertSave(value) end
+						v[i].storageTable[v[i].storageKey] = value
 					end
 				end
 				--Call onSave if specified
-				if v[i].onSave ~= nil then v[i].onSave(v[i].widget) end
+				if v[i].onSave then v[i].onSave(v[i].widget, value) end
 			end
 		end
 	end
 
-	---Load all data from the storage table(s) to the widgets specified in an options data table
+	---Load all data from the storage table(s) to the widgets specified in the collection of options data referenced by the options key
 	--- - [OnAttributeChanged](https://wowpedia.fandom.com/wiki/UIHANDLER_OnAttributeChanged) will be triggered for all frames:
 	--- 	- First, before the widget's value is loaded the event will be called with:
 	--- 		- **name**: "loaded"
@@ -690,19 +676,17 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--- 	- Second, after the widget's value has been successfully loaded:
 	--- 		- **name**: "loaded"
 	--- 		- **value**: true
-	---@param optionsTable? table Reference to the table where all options data is being stored in [Default: **WidgetToolbox[ns.WidgetToolsVersion].OptionsData** *(the data of all addons is stored collectively)*]
-	WidgetToolbox[ns.WidgetToolsVersion].LoadOptionsData = function(optionsTable)
-		if optionsTable == nil then
-			if WidgetToolbox[ns.WidgetToolsVersion].OptionsData == nil then return end
-			optionsTable = WidgetToolbox[ns.WidgetToolsVersion].OptionsData
-		end
-		for k, v in pairs(optionsTable) do
+	---@param optionsKey table A unique key referencing the collection of widget options data to be loaded
+	WidgetToolbox[ns.WidgetToolsVersion].LoadOptionsData = function(optionsKey)
+		if not (optionsTable or {})[optionsKey] then return end
+		for k, v in pairs(optionsTable[optionsKey]) do
 			for i = 0, #v do
+				local value = nil
 				--Automatic load
-				if v[i].storageTable ~= nil and v[i].key ~= nil then
+				if v[i].storageTable and v[i].storageKey then
 					--Load the value from the storage table
-					local value = v[i].storageTable[v[i].key]
-					if v[i].convertLoad ~= nil then value = v[i].convertLoad(value) end
+					value = v[i].storageTable[v[i].storageKey]
+					if v[i].convertLoad then value = v[i].convertLoad(value) end
 					--Apply to the widget
 					if k == "CheckButton" then
 						v[i].widget:SetAttribute("loaded", false)
@@ -717,31 +701,30 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 						v[i].widget:SetText(value)
 						v[i].widget:SetAttribute("loaded", true)
 					elseif k == "Selector" then
-						v[i].widget.frame:SetAttribute("loaded", false)
+						v[i].widget:SetAttribute("loaded", false)
 						v[i].widget.setSelected(value)
-						v[i].widget.frame:SetAttribute("loaded", true)
+						v[i].widget:SetAttribute("loaded", true)
 					elseif k == "Dropdown" then
 						v[i].widget:SetAttribute("loaded", false)
 						UIDropDownMenu_SetSelectedValue(v[i].widget, value)
 						v[i].widget:SetAttribute("loaded", true)
 					elseif k == "ColorPicker" then
-						v[i].widget.frame:SetAttribute("loaded", false)
+						v[i].widget:SetAttribute("loaded", false)
 						v[i].widget.setColor(WidgetToolbox[ns.WidgetToolsVersion].UnpackColor(value))
-						v[i].widget.frame:SetAttribute("loaded", true)
+						v[i].widget:SetAttribute("loaded", true)
 					end
 				end
 				--Call onLoad if specified
-				if v[i].onLoad ~= nil then v[i].onLoad(v[i].widget) end
-				--Signal that the widget's value has been loaded to trigger the OnAttributeChanged event
+				if v[i].onLoad then v[i].onLoad(v[i].widget, value) end
 			end
 		end
 	end
 
 	--[ Hyperlink Handlers ]
 
-	---Format a string to be a clikable hyperlink text via escape sequences
+	---Format a string to be a clickable hyperlink text via escape sequences
 	---@param type HyperlinkType [Type of the hyperlink](https://wowpedia.fandom.com/wiki/Hyperlinks#Types) determining how it's being handled and what payload it carries
-	--- - ***Note:*** To make a custom hyperlink handled by an addon, *"item"* may be used as **type**. (Following details are to be provided in **content** to be able to use **WidgetToolbox[ns.WidgetToolsVersion].SetHyperlinkHandler** to set a fuction to handle clicks on the custom hyperlink).
+	--- - ***Note:*** To make a custom hyperlink handled by an addon, *"item"* may be used as **type**. (Following details are to be provided in **content** to be able to use **WidgetToolbox[ns.WidgetToolsVersion].SetHyperlinkHandler** to set a function to handle clicks on the custom hyperlink).
 	---@param content string A colon-separated chain of parameters determined by the [type of the hyperlink](https://wowpedia.fandom.com/wiki/Hyperlinks#Types) (Example: "parameter1:parameter2:parameter3")
 	--- - ***Note:*** When using *"item"* as **type** with the intention of setting a custom hyperlink to be handled by an addon, set the first parameter of **content** to a unique addon identifier key, and the second parameter to a unique key signifying the type of the hyperlink specific to the addon (if the addon handles multiple different custom types of hyperlinks), in order to be able to set unique hyperlink click handlers via **WidgetToolbox[ns.WidgetToolsVersion].SetHyperlinkHandler**.
 	---@param text string Clickable text to be displayed as the hyperlink
@@ -756,13 +739,13 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	---@param handlerFunction function Function to be called by clicking on a hyperlink text created via |Hitem:**addonKey**:**handlerKey**:*content*|h*Text*|h
 	WidgetToolbox[ns.WidgetToolsVersion].SetHyperlinkHandler = function(addon, handlerKey, handlerFunction)
 		--Set the table containing the hyperlink handlers
-		if WidgetToolbox[ns.WidgetToolsVersion].HyperlinkHandlers == nil then
+		if not WidgetToolbox[ns.WidgetToolsVersion].HyperlinkHandlers then
 			--Create the table
 			WidgetToolbox[ns.WidgetToolsVersion].HyperlinkHandlers = {}
-			--Hook the hyprlink handler caller
+			--Hook the hyperlink handler caller
 			hooksecurefunc(ItemRefTooltip, "SetHyperlink", function(...)
 				local _, linkType = ...
-				local _, addonID, handlerID, content = strsplit(":", linkType)
+				local _, addonID, handlerID, content = strsplit(":", linkType, 4)
 				--Check if it's a registered addon
 				for key, addonHandlers in pairs(WidgetToolbox[ns.WidgetToolsVersion].HyperlinkHandlers) do
 					if addonID == key then
@@ -779,7 +762,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 			end)
 		end
 		--Add the hyperlink handler function to the table
-		if WidgetToolbox[ns.WidgetToolsVersion].HyperlinkHandlers[addon] == nil then WidgetToolbox[ns.WidgetToolsVersion].HyperlinkHandlers[addon] = {} end
+		if not WidgetToolbox[ns.WidgetToolsVersion].HyperlinkHandlers[addon] then WidgetToolbox[ns.WidgetToolsVersion].HyperlinkHandlers[addon] = {} end
 		WidgetToolbox[ns.WidgetToolsVersion].HyperlinkHandlers[addon][handlerKey] = handlerFunction
 	end
 
@@ -839,22 +822,20 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	---@param offsetY? number [Default: 0]
 	---@return GameTooltip tooltip (Don't forget to hide later!)
 	WidgetToolbox[ns.WidgetToolsVersion].AddTooltip = function(tooltip, parent, anchor, title, textLines, offsetX, offsetY)
-		if tooltip == nil then tooltip = customTooltip end
+		if not tooltip then tooltip = customTooltip end
 		--Position
 		tooltip:SetOwner(parent, anchor, offsetX, offsetY)
 		--Title
 		tooltip:AddLine(title, colors.title.r, colors.title.g, colors.title.b, true)
 		--Text
-		if textLines ~= nil then
+		if textLines then
 			local offset = 2
 			for i = 0, #textLines do
 				--Set FontString
 				local left = tooltip:GetName() .. "TextLeft" .. i + offset
 				local right = tooltip:GetName() .. "TextRight" .. i + offset
 				local font = textLines[i].font or GameTooltipTextSmall
-				if _G[left] == nil or _G[right] == nil then
-					tooltip:AddFontStrings(tooltip:CreateFontString(left, nil, font), tooltip:CreateFontString(right, nil, font))
-				end
+				if not _G[left] or not _G[right] then tooltip:AddFontStrings(tooltip:CreateFontString(left, nil, font), tooltip:CreateFontString(right, nil, font)) end
 				_G[left]:SetFontObject(font)
 				_G[left]:SetJustifyH("LEFT")
 				_G[right]:SetFontObject(font)
@@ -972,7 +953,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--- - **width**? number *optional*
 	--- - **text** string ― Text to be shown
 	--- - **layer**? Layer *optional* ― Draw [Layer](https://wowpedia.fandom.com/wiki/Layer)
-	--- - **template**? string *optional* ― Template to be used for the [FontString](https://wowpedia.fandom.com/wiki/UIOBJECT_FontString) [Default: "GameFontNormal" if **t.font** == nil]
+	--- - **template**? string *optional* ― Template to be used for the [FontString](https://wowpedia.fandom.com/wiki/UIOBJECT_FontString) [Default: "GameFontNormal"]
 	--- - **font**? table *optional* ― Table containing font properties used for [SetFont](https://wowwiki-archive.fandom.com/wiki/API_FontInstance_SetFont)
 	--- 	- **path** string ― Path to the font file relative to the WoW client directory
 	--- 	- **size**? number *optional* ― [Default: *size defined by the template*]
@@ -988,19 +969,19 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	WidgetToolbox[ns.WidgetToolsVersion].CreateText = function(t)
 		local name = "Text"
 		if t.name then name = t.name:gsub("%s+", "") end
-		local text = t.parent:CreateFontString(t.parent:GetName() .. name, t.layer, (t.template == nil and t.font == nil) and "GameFontNormal" or t.template)
+		local text = t.parent:CreateFontString(t.parent:GetName() .. name, t.layer, t.template and t.template or "GameFontNormal")
 		--Position & dimensions
-		if t.position == nil then text:SetPoint("TOPLEFT") else
+		if not t.position then text:SetPoint("TOPLEFT") else
 			local offsetX = (t.position.offset or {}).x or 0
 			local offsetY = (t.position.offset or {}).y or 0
 			WidgetToolbox[ns.WidgetToolsVersion].PositionFrame(text, t.position.anchor or "TOPLEFT", t.position.relativeTo, t.position.relativePoint, offsetX, offsetY)
 		end
-		if t.width ~= nil then text:SetWidth(t.width) end
+		if t.width then text:SetWidth(t.width) end
 		--Font & text
-		if t.justify ~= nil then text:SetJustifyH(t.justify) end
-		if t.wrap ~= nil then text:SetWordWrap(t.wrap) end
-		if t.font ~= nil then text:SetFont(t.font.path, t.font.size, t.font.style) end
-		if t.color ~= nil then text:SetTextColor(WidgetToolbox[ns.WidgetToolsVersion].UnpackColor(t.color)) end
+		if t.font then text:SetFont(t.font.path, t.font.size, t.font.style) end
+		if t.color then text:SetTextColor(WidgetToolbox[ns.WidgetToolsVersion].UnpackColor(t.color)) end
+		if t.justify then text:SetJustifyH(t.justify) end
+		if t.wrap ~= false then text:SetWordWrap(t.wrap) end
 		text:SetText(t.text)
 		return text
 	end
@@ -1093,7 +1074,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--- 	- **width** number
 	--- 	- **height** number
 	--- - **path** string ― Path to the specific texture file relative to the root directory of the specific WoW client.
-	--- 	- ***Note:*** The use of "/" as separator is recommanded (Example: Interface/AddOns/AddonNameKey/Textures/TextureImage.tga).
+	--- 	- ***Note:*** The use of "/" as separator is recommended (Example: Interface/AddOns/AddonNameKey/Textures/TextureImage.tga).
 	--- 	- ***Note - File format:*** Texture files must be in JPEG (no transparency, not recommended), PNG, TGA or BLP format.
 	--- 	- ***Note - Size:*** Texture files must have powers of 2 dimensions to be handled by the WoW client.
 	--- - **tile**? number *optional*
@@ -1103,14 +1084,14 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 		if t.name then name = t.name:gsub("%s+", "") end
 		local texture = t.parent:CreateTexture(t.parent:GetName() .. name)
 		--Position & dimensions
-		if t.position == nil then texture:SetPoint("TOPLEFT") else
+		if not t.position then texture:SetPoint("TOPLEFT") else
 			local offsetX = (t.position.offset or {}).x or 0
 			local offsetY = (t.position.offset or {}).y or 0
 			WidgetToolbox[ns.WidgetToolsVersion].PositionFrame(texture, t.position.anchor or "TOPLEFT", t.position.relativeTo, t.position.relativePoint, offsetX, offsetY)
 		end
 		texture:SetSize(t.size.width, t.size.height)
 		--Set asset
-		if t.tile ~= nil then texture:SetTexture(t.path, t.tile) else texture:SetTexture(t.path) end
+		if t.tile then texture:SetTexture(t.path, t.tile) else texture:SetTexture(t.path) end
 		return texture
 	end
 
@@ -1142,7 +1123,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 		local parentName = t.parent:GetName()
 		local scrollFrame = CreateFrame("ScrollFrame", parentName .. "ScrollFrame", t.parent, "UIPanelScrollFrameTemplate")
 		--Position & dimensions
-		if t.position == nil then scrollFrame:SetPoint("TOPLEFT") else
+		if not t.position then scrollFrame:SetPoint("TOPLEFT") else
 			local offsetX = (t.position.offset or {}).x or 0
 			local offsetY = (t.position.offset or {}).y or 0
 			WidgetToolbox[ns.WidgetToolsVersion].PositionFrame(scrollFrame, t.position.anchor or "TOPLEFT", t.position.relativeTo, t.position.relativePoint, offsetX, offsetY)
@@ -1156,7 +1137,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 		_G[scrollFrame:GetName() .. "ScrollBar"]:ClearAllPoints()
 		_G[scrollFrame:GetName() .. "ScrollBar"]:SetPoint("TOP", _G[scrollFrame:GetName() .. "ScrollBarScrollUpButton"], "BOTTOM")
 		_G[scrollFrame:GetName() .. "ScrollBar"]:SetPoint("BOTTOM", _G[scrollFrame:GetName() .. "ScrollBarScrollDownButton"], "TOP")
-		if t.scrollSpeed ~= nil then _G[scrollFrame:GetName() .. "ScrollBar"].scrollStep = t.scrollSpeed end
+		if t.scrollSpeed then _G[scrollFrame:GetName() .. "ScrollBar"].scrollStep = t.scrollSpeed end
 		--Scrollbar background
 		local scrollBarBG = CreateFrame("Frame", scrollFrame:GetName() .. "ScrollBarBackground", scrollFrame,  BackdropTemplateMixin and "BackdropTemplate")
 		scrollBarBG:SetPoint("TOPLEFT", _G[scrollFrame:GetName() .. "ScrollBar"], "TOPLEFT", -1, -3)
@@ -1203,7 +1184,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 		if t.name then name = t.name:gsub("%s+", "") end
 		local panel = CreateFrame("Frame", (t.append ~= false and t.parent:GetName() or "") .. name, t.parent, BackdropTemplateMixin and "BackdropTemplate")
 		--Position & dimensions
-		if t.position == nil then UnitThreatPercentageOfLead:SetPoint("TOPLEFT") else
+		if not t.position then UnitThreatPercentageOfLead:SetPoint("TOPLEFT") else
 			local offsetX = (t.position.offset or {}).x or 0
 			local offsetY = (t.position.offset or {}).y or 0
 			WidgetToolbox[ns.WidgetToolsVersion].PositionFrame(panel, t.position.anchor or "TOPLEFT", t.position.relativeTo, t.position.relativePoint, offsetX, offsetY)
@@ -1225,7 +1206,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 				text = t.title or t.name or "Panel",
 				offset = { x = 10, y = 16 },
 			} or nil,
-			description = t.description ~= nil and {
+			description = t.description and {
 				text = t.description,
 				template = "GameFontHighlightSmall",
 				offset = { x = 4, y = -16 },
@@ -1259,7 +1240,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 		WidgetToolbox[ns.WidgetToolsVersion].PositionFrame(_G[optionsPanel:GetName() .. "Title"], "TOPLEFT", nil, nil, 16, -12)
 		_G[optionsPanel:GetName() .. "Title"]:SetWidth(_G[optionsPanel:GetName() .. "Title"]:GetWidth() - 20)
 		_G[optionsPanel:GetName() .. "Description"]:SetWidth(_G[optionsPanel:GetName() .. "Description"]:GetWidth() - 20)
-		if _G[optionsPanel:GetName() .. "Icon"] ~= nil then
+		if _G[optionsPanel:GetName() .. "Icon"] then
 			_G[optionsPanel:GetName() .. "Icon"]:SetParent(scrollChild)
 			WidgetToolbox[ns.WidgetToolsVersion].PositionFrame(_G[optionsPanel:GetName() .. "Icon"], "TOPRIGHT", nil, nil, -16, -12)
 		end
@@ -1278,13 +1259,15 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--- - **scroll**? table *optional* — Create an empty ScrollFrame for the category panel
 	--- 	- **height** number — Set the height of the scrollable child frame to the specified value
 	--- 	- **speed**? number *optional* — Set the scroll rate to the specified value [Default: *half of the height of the scroll bar*]
-	--- - **okay**? function *optional* — The function to be called then the "Okay" button is clicked
-	--- - **cancel**? function *optional* — The function to be called then the "Cancel" button is clicked
-	--- - **default**? function *optional* — The function to be called then either the "All Settings" or "These Settings" (Options Category Panel-specific) button is clicked from the "Defaults" dialogue (refresh will be called automatically afterwards)
-	--- - **refresh**? function *optional* — The function to be called then the interface panel is loaded
-	--- - **autoSave**? boolean *optional* — If true, automatically save all data from the storage tables to the widgets stored within the options data table [Default: true]
-	--- - **autoLoad**? boolean *optional* — If true, automatically load the values of all widgets to the storage tables within the options data table [Default: true]
-	--- - **optionsTable**? table ― Reference to the table where all options data should be stored in [Default: **WidgetToolbox[ns.WidgetToolsVersion].OptionsData** *(the data of all addons is stored collectively)*]
+	--- - **okay**? function *optional* — The function to be called when the "Okay" button is clicked
+	--- - **cancel**? function *optional* — The function to be called when the "Cancel" button is clicked
+	--- - **default**? function *optional* — The function to be called when either the "All Settings" or "These Settings" (***Options Category Panel-specific***) button is clicked from the "Defaults" dialogue (**t.refresh** will be called automatically afterwards)
+	--- - **refresh**? function *optional* — The function to be called when the interface panel is loaded
+	--- - **optionsKey**? table ―  A unique key referencing the collection of widget options data to be saved & loaded with this options category page
+	--- - **autoSave**? boolean *optional* — If true, automatically save all data from the storage tables to the widgets described in the collection of options data referenced by **t.optionsKey** [Default: true if **t.optionsKey** is set]
+	--- 	- ***Note:*** If **t.optionsKey** is not set, the automatic save will not be executed even if **t.autoSave** is true.
+	--- - **autoLoad**? boolean *optional* — If true, automatically load the values of all widgets to the storage tables described in the collection of options data referenced by **t.optionsKey** [Default: true if **t.optionsKey** is set]
+	--- 	- ***Note:*** If **t.optionsKey** is not set, the automatic load will not be executed even if **t.autoLoad** is true.
 	---@return Frame optionsPanel
 	---@return Frame? scrollChild
 	WidgetToolbox[ns.WidgetToolsVersion].CreateOptionsPanel = function(t)
@@ -1297,10 +1280,10 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 		optionsPanel:Hide()
 		--Set the category name
 		local title = t.title
-		if title == nil then _, title = GetAddOnInfo(t.addon) end
-		optionsPanel.name = title .. (t.logo ~= nil and t.titleLogo == true and " |T" .. t.logo .. ":0|t" or "")
+		if not title then _, title = GetAddOnInfo(t.addon) end
+		optionsPanel.name = title .. (t.logo and t.titleLogo and " |T" .. t.logo .. ":0|t" or "")
 		--Set as a subcategory or a parent category
-		if t.parent ~= nil then optionsPanel.parent = t.parent end
+		if t.parent then optionsPanel.parent = t.parent end
 		--Title & description
 		WidgetToolbox[ns.WidgetToolsVersion].AddTitle({
 			parent = optionsPanel,
@@ -1308,17 +1291,17 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 				text = title,
 				template = "GameFontNormalLarge",
 				offset = { x = 16, y = -16 },
-				width = optionsPanel:GetWidth() - (t.logo ~= nil and 72 or 32),
+				width = optionsPanel:GetWidth() - (t.logo and 72 or 32),
 			},
-			description = t.description ~= nil and {
+			description = t.description and {
 				text = t.description,
 				template = "GameFontHighlightSmall",
 				offset = { y = -8 },
-				width = optionsPanel:GetWidth() - (t.logo ~= nil and 72 or 32),
+				width = optionsPanel:GetWidth() - (t.logo and 72 or 32),
 			} or nil
 		})
 		--Icon texture
-		if t.logo ~= nil then
+		if t.logo then
 			WidgetToolbox[ns.WidgetToolsVersion].CreateTexture({
 				parent = optionsPanel,
 				name = "Icon",
@@ -1331,23 +1314,23 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 			})
 		end
 		--Event handlers
-		if t.okay ~= nil or t.autoSave ~= false then optionsPanel.okay = function()
-			if t.autoSave ~= false then WidgetToolbox[ns.WidgetToolsVersion].SaveOptionsData(t.optionsTable) end
-			if t.okay ~= nil then t.okay() end
+		if t.okay or t.autoSave or t.optionsKey then optionsPanel.okay = function()
+			if t.autoSave or t.optionsKey then WidgetToolbox[ns.WidgetToolsVersion].SaveOptionsData(t.optionsKey) end
+			if t.okay then t.okay() end
 		end end
-		if t.cancel ~= nil or t.autoLoad ~= false then optionsPanel.cancel = function()
-			if t.autoLoad ~= false then WidgetToolbox[ns.WidgetToolsVersion].LoadOptionsData(t.optionsTable) end
-			if t.cancel ~= nil then t.cancel() end
+		if t.cancel or t.autoLoad or t.optionsKey then optionsPanel.cancel = function()
+			if t.autoLoad or t.optionsKey then WidgetToolbox[ns.WidgetToolsVersion].LoadOptionsData(t.optionsKey) end
+			if t.cancel then t.cancel() end
 		end end
-		if t.default ~= nil then optionsPanel.default = t.default end --Refresh will be called automatically afterwards
-		if t.refresh ~= nil or t.autoLoad ~= false then optionsPanel.refresh = function()
-			if t.autoLoad ~= false then WidgetToolbox[ns.WidgetToolsVersion].LoadOptionsData(t.optionsTable) end
-			if t.refresh ~= nil then t.refresh() end
+		if t.default then optionsPanel.default = t.default end --Refresh will be called automatically afterwards
+		if t.refresh or t.autoLoad or t.optionsKey then optionsPanel.refresh = function()
+			if t.autoLoad or t.optionsKey then WidgetToolbox[ns.WidgetToolsVersion].LoadOptionsData(t.optionsKey) end
+			if t.refresh then t.refresh() end
 		end end
 		--Add to the Interface options
 		InterfaceOptions_AddCategory(optionsPanel)
 		--Make scrollable
-		if t.scroll ~= nil then return optionsPanel, AddOptionsPanelScrollFrame(optionsPanel, t.scroll.height, t.scroll.speed) end
+		if t.scroll then return optionsPanel, AddOptionsPanelScrollFrame(optionsPanel, t.scroll.height, t.scroll.speed) end
 		return optionsPanel
 	end
 
@@ -1404,25 +1387,25 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 		if t.name then name = t.name:gsub("%s+", "") end
 		local button = CreateFrame("Button", (t.append ~= false and t.parent:GetName() or "") .. name, t.parent, "UIPanelButtonTemplate")
 		--Position & dimensions
-		if t.position == nil then button:SetPoint("TOPLEFT") else
+		if not t.position then button:SetPoint("TOPLEFT") else
 			local offsetX = (t.position.offset or {}).x or 0
 			local offsetY = (t.position.offset or {}).y or 0
 			WidgetToolbox[ns.WidgetToolsVersion].PositionFrame(button, t.position.anchor or "TOPLEFT", t.position.relativeTo, t.position.relativePoint, offsetX, offsetY)
 		end
-		if t.width ~= nil then button:SetWidth(t.width) end
+		if t.width then button:SetWidth(t.width) end
 		--Title
 		local title = t.title or t.name or "Button"
 		if t.label ~= false then getglobal(button:GetName() .. "Text"):SetText(title) else getglobal(button:GetName() .. "Text"):Hide() end
 		--Event handlers
 		button:SetScript("OnClick", t.onClick)
 		button:HookScript("OnClick", function() PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON) end)
-		if t.onEvent ~= nil then for i = 0, #t.onEvent do button:HookScript(t.onEvent[i].event, t.onEvent[i].handler) end end
+		if t.onEvent then for i = 0, #t.onEvent do button:HookScript(t.onEvent[i].event, t.onEvent[i].handler) end end
 		--Tooltip
 		button:HookScript("OnEnter", function() WidgetToolbox[ns.WidgetToolsVersion].AddTooltip(nil, button, "ANCHOR_TOPLEFT", title, t.tooltip, 20) end)
 		button:HookScript("OnLeave", function() customTooltip:Hide() end)
 		--State & dependencies
 		if t.disabled then button:Disable() end
-		if t.dependencies ~= nil then SetDependencies(t.dependencies, function(state) button:SetEnabled(state) end) end
+		if t.dependencies then SetDependencies(t.dependencies, function(state) button:SetEnabled(state) end) end
 		return button
 	end
 
@@ -1431,7 +1414,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	---Create a checkbox frame as a child of a container frame
 	---@param t table Parameters are to be provided in this table
 	--- - **parent** Frame — The frame to set as the parent of the new checkbox
-	--- - **name**? string *optional* — Unique string used to set the name of the new frame [Default: "Checkox"]
+	--- - **name**? string *optional* — Unique string used to set the name of the new frame [Default: "Checkbox"]
 	--- - **append**? boolean *optional* — When setting the name, append **t.name** to the name of **t.parent** [Default: true]
 	--- - **title**? string *optional* — Text to be shown on the right of the checkbox and in the top line of the tooltip [Default: **t.name**]
 	--- - **label**? boolean *optional* — Whether or not to display **t.title** as the label next to the checkbox [Default: true]
@@ -1470,27 +1453,29 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--- 				- function(**value**: integer) -> **evaluation**: boolean — If **t.dependencies[*index*].frame** is recognized as a dropdown or selector
 	--- 				- function(**value**: nil) -> **evaluation**: boolean — In any other case *(could be used to add a unique rule tied to unrecognized frame types)*
 	--- 			- ***Note:*** **rules.evaluate** must be defined if the [FrameType](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types) of **t.dependencies[*index*].frame** is not "CheckButton".
-	--- - **optionsTable**? table ― Reference to the table where all options data should be stored in [Default: **WidgetToolbox[ns.WidgetToolsVersion].OptionsData** *(the data of all addons is stored collectively)*]
-	--- - **optionsData**? table ― If set, add the checkbox to the referenced options data table to save & load its value automatically to & from the specified storageTable
+	--- - **optionsData**? table ― If set, add the checkbox to the options data table to save & load its value automatically to & from the specified storageTable
+	--- 	- **optionsKey** table ― A unique key referencing a collection of widget options data to be saved & loaded together
 	--- 	- **storageTable** table ― Reference to the table containing the value modified by the options widget
-	--- 	- **key** string ― Key of the variable inside the storage table
+	--- 	- **storageKey** string ― Key of the variable inside the storage table
 	--- 	- **convertSave**? function *optional* — Function to convert or modify the data while it is being saved from the widget to the storage table
 	--- 		- @*param* boolean ― The current value of the checkbox
 	--- 		- @*return* any ― The converted data to be saved to the storage table
 	--- 	- **convertLoad**? function *optional* — Function to convert or modify the data while it is being loaded from the storage table to the widget as its value
 	--- 		- @*param* any ― The data in the storage table to be converted and loaded to the checkbox
 	--- 		- @*return* boolean ― The value to be set to the checkbox
-	--- - **onSave**? function *optional* — Function to be called when they okay button is pressed (after the data has been saved from the options widget to the storage table)
-	--- 	- @*param* **self** Frame ― Reference to the widget
-	--- - **onLoad**? function *optional* — Function to be called when an options category is refreshed (after the data has been restored from the storage table to the widget)
-	--- 	- @*param* **self** Frame ― Reference to the widget
+	--- 	- **onSave**? function *optional* — This function will be called with the parameters listed below when the options are saved (the Okay button is pressed) after the data has been saved from the options widget to the storage table
+	--- 		- @*param* **self** Frame ― Reference to the widget
+	--- 		- @*param* **value** boolean ― The saved value of the frame
+	--- 	- **onLoad**? function *optional* — This function will be called with the parameters listed below when the options category page is refreshed after the data has been loaded from the storage table to the widget
+	--- 		- @*param* **self** Frame ― Reference to the widget
+	--- 		- @*param* **value** boolean ― The value loaded to the frame
 	---@return CheckButton checkbox
 	WidgetToolbox[ns.WidgetToolsVersion].CreateCheckbox = function(t)
 		local name = "Checkbox"
 		if t.name then name = t.name:gsub("%s+", "") end
 		local checkbox = CreateFrame("CheckButton", (t.append ~= false and t.parent:GetName() or "") .. name, t.parent, "InterfaceOptionsCheckButtonTemplate")
 		--Position & dimensions
-		if t.position == nil then checkbox:SetPoint("TOPLEFT") else
+		if not t.position then checkbox:SetPoint("TOPLEFT") else
 			local w = checkbox:GetWidth() --Frame width
 			local cW = (t.parent:GetWidth() - 16 - 20) / 3 --Column width
 			local columnOffset = t.autoOffset and (t.position.anchor == "TOP" and cW / -2 + w / 2 or (t.position.anchor == "TOPRIGHT" and -cW - 8 + w or 0) or 8) or 0
@@ -1507,24 +1492,27 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 			label:SetText(title)
 		else getglobal(checkbox:GetName() .. "Text"):Hide() end
 		--Event handlers
-		if t.onClick ~= nil then checkbox:SetScript("OnClick", t.onClick) else checkbox:SetScript("OnClick", function() --[[ Do nothing ]] end) end
+		if t.onClick then checkbox:SetScript("OnClick", t.onClick) else checkbox:SetScript("OnClick", function() --[[ Do nothing ]] end) end
 		checkbox:HookScript("OnClick", function() PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON) end)
-		if t.onEvent ~= nil then for i = 0, #t.onEvent do checkbox:HookScript(t.onEvent[i].event, t.onEvent[i].handler) end end
+		if t.onEvent then for i = 0, #t.onEvent do checkbox:HookScript(t.onEvent[i].event, t.onEvent[i].handler) end end
 		--Tooltip
 		checkbox:HookScript("OnEnter", function() WidgetToolbox[ns.WidgetToolsVersion].AddTooltip(nil, checkbox, "ANCHOR_RIGHT", title, t.tooltip) end)
 		checkbox:HookScript("OnLeave", function() customTooltip:Hide() end)
 		--State & dependencies
 		if t.disabled then
 			checkbox:Disable()
-			if label ~= nil then label:SetFontObject("GameFontDisable") end
+			if label then label:SetFontObject("GameFontDisable") end
 		end
-		if t.dependencies ~= nil then SetDependencies(t.dependencies, function(state)
+		if t.dependencies then SetDependencies(t.dependencies, function(state)
 			checkbox:SetEnabled(state)
-			if label ~= nil then label:SetFontObject(state and "GameFontHighlight" or "GameFontDisable") end
+			if label then label:SetFontObject(state and "GameFontHighlight" or "GameFontDisable") end
 		end) end
 		--Add to options data management
-		if t.optionsData ~= nil or t.onSave ~= nil or t.onLoad ~= nil then
-			WidgetToolbox[ns.WidgetToolsVersion].AddOptionsData(checkbox, checkbox:GetObjectType(), t.onSave, t.onLoad, t.optionsTable, t.optionsData)
+		if t.optionsData then
+			local o = t.optionsData
+			WidgetToolbox[ns.WidgetToolsVersion].AddOptionsData(
+				checkbox, checkbox:GetObjectType(), o.optionsKey, o.storageTable, o.storageKey, o.convertSave, o.convertLoad, o.onSave, o.onLoad
+			)
 		end
 		return checkbox
 	end
@@ -1573,27 +1561,29 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--- 				- function(**value**: integer) -> **evaluation**: boolean — If **t.dependencies[*index*].frame** is recognized as a dropdown or selector
 	--- 				- function(**value**: nil) -> **evaluation**: boolean — In any other case *(could be used to add a unique rule tied to unrecognized frame types)*
 	--- 			- ***Note:*** **rules.evaluate** must be defined if the [FrameType](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types) of **t.dependencies[*index*].frame** is not "CheckButton".
-	--- - **optionsTable**? table ― Reference to the table where all options data should be stored in [Default: **WidgetToolbox[ns.WidgetToolsVersion].OptionsData** *(the data of all addons is stored collectively)*]
-	--- - **optionsData**? table ― If set, add the radio button to the referenced options data table to save & load its value automatically to & from the specified storageTable
+	--- - **optionsData**? table ― If set, add the radio button to the options data table to save & load its value automatically to & from the specified storageTable
+	--- 	- **optionsKey** table ― A unique key referencing a collection of widget options data to be saved & loaded together
 	--- 	- **storageTable** table ― Reference to the table containing the value modified by the options widget
-	--- 	- **key** string ― Key of the variable inside the storage table
+	--- 	- **storageKey** string ― Key of the variable inside the storage table
 	--- 	- **convertSave**? function *optional* — Function to convert or modify the data while it is being saved from the widget to the storage table
 	--- 		- @*param* boolean ― The current value of the radio button
 	--- 		- @*return* any ― The converted data to be saved to the storage table
 	--- 	- **convertLoad**? function *optional* — Function to convert or modify the data while it is being loaded from the storage table to the widget as its value
 	--- 		- @*param* any ― The data in the storage table to be converted and loaded to the radio button
 	--- 		- @*return* boolean ― The value to be set to the radio button
-	--- - **onSave**? function *optional* — Function to be called when they okay button is pressed (after the data has been saved from the options widget to the storage table)
-	--- 	- @*param* **self** Frame ― Reference to the widget
-	--- - **onLoad**? function *optional* — Function to be called when an options category is refreshed (after the data has been restored from the storage table to the widget)
-	--- 	- @*param* **self** Frame ― Reference to the widget
+	--- 	- **onSave**? function *optional* — This function will be called with the parameters listed below when the options are saved (the Okay button is pressed) after the data has been saved from the options widget to the storage table
+	--- 		- @*param* **self** Frame ― Reference to the widget
+	--- 		- @*param* **value** boolean ― The saved value of the frame
+	--- 	- **onLoad**? function *optional* — This function will be called with the parameters listed below when the options category page is refreshed after the data has been loaded from the storage table to the widget
+	--- 		- @*param* **self** Frame ― Reference to the widget
+	--- 		- @*param* **value** boolean ― The value loaded to the frame
 	---@return CheckButton radioButton
 	WidgetToolbox[ns.WidgetToolsVersion].CreateRadioButton = function(t)
 		local name = "RadioButton"
 		if t.name then name = t.name:gsub("%s+", "") end
 		local radioButton = CreateFrame("CheckButton", (t.append ~= false and t.parent:GetName() or "") .. name, t.parent, "UIRadioButtonTemplate")
 		--Position
-		if t.position == nil then radioButton:SetPoint("TOPLEFT") else
+		if not t.position then radioButton:SetPoint("TOPLEFT") else
 			local offsetX = (t.position.offset or {}).x or 0
 			local offsetY = (t.position.offset or {}).y or 0
 			WidgetToolbox[ns.WidgetToolsVersion].PositionFrame(radioButton, t.position.anchor or "TOPLEFT", t.position.relativeTo, t.position.relativePoint, offsetX, offsetY)
@@ -1620,29 +1610,32 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 			extension:HookScript("OnLeave", function() customTooltip:Hide() end)
 		else getglobal(radioButton:GetName() .. "Text"):Hide() end
 		--Event handlers
-		if t.onClick ~= nil then radioButton:SetScript("OnClick", t.onClick) end
+		if t.onClick then radioButton:SetScript("OnClick", t.onClick) end
 		radioButton:HookScript("OnClick", function() PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON) end)
-		if t.onEvent ~= nil then for i = 0, #t.onEvent do radioButton:HookScript(t.onEvent[i].event, t.onEvent[i].handler) end end
+		if t.onEvent then for i = 0, #t.onEvent do radioButton:HookScript(t.onEvent[i].event, t.onEvent[i].handler) end end
 		--Tooltip
 		radioButton:HookScript("OnEnter", function() WidgetToolbox[ns.WidgetToolsVersion].AddTooltip(nil, radioButton, "ANCHOR_RIGHT", title, t.tooltip) end)
 		radioButton:HookScript("OnLeave", function() customTooltip:Hide() end)
 		--State & dependencies
 		if t.disabled then
 			radioButton:Disable()
-			if label ~= nil then label:SetFontObject("GameFontDisableSmall") end
+			if label then label:SetFontObject("GameFontDisableSmall") end
 		end
-		if t.dependencies ~= nil then SetDependencies(t.dependencies, function(state)
+		if t.dependencies then SetDependencies(t.dependencies, function(state)
 			radioButton:SetEnabled(state)
-			if label ~= nil then label:SetFontObject(state and "GameFontHighlightSmall" or "GameFontDisableSmall") end
+			if label then label:SetFontObject(state and "GameFontHighlightSmall" or "GameFontDisableSmall") end
 		end) end
 		--Add to options data management
-		if t.optionsData ~= nil or t.onSave ~= nil or t.onLoad ~= nil then
-			WidgetToolbox[ns.WidgetToolsVersion].AddOptionsData(radioButton, radioButton:GetObjectType(), t.onSave, t.onLoad, t.optionsTable, t.optionsData)
+		if t.optionsData then
+			local o = t.optionsData
+			WidgetToolbox[ns.WidgetToolsVersion].AddOptionsData(
+				radioButton, radioButton:GetObjectType(), o.optionsKey, o.storageTable, o.storageKey, o.convertSave, o.convertLoad, o.onSave, o.onLoad
+			)
 		end
 		return radioButton
 	end
 
-	---Set up the built-in Color Picker and create a button as a child of a container frame to open it
+	---Create a selector frame, a collection of radio buttons to pick one out of multiple options
 	---@param t table Parameters are to be provided in this table
 	--- - **parent** Frame — The frame to set as the parent of the new selector
 	--- - **name**? string *optional* — Unique string used to set the name of the new frame [Default: "Selector"]
@@ -1670,6 +1663,9 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--- 					- **b** number ― Blue [Range: 0, 1]
 	--- 				- **wrap**? boolean *optional* ― Allow the text in this line to be wrapped [Default: true]
 	--- 		- **onSelect**? function *optional* — The function to be called when the radio button is clicked and the item is selected
+	--- 			- ***Note:*** A custom [OnAttributeChanged](https://wowpedia.fandom.com/wiki/UIHANDLER_OnAttributeChanged) event will be evoked whenever an item is selected with:
+	--- 				- **name**: "selected"
+	--- 				- **value**: *index*
 	--- - **labels**? boolean *optional* — Whether or not to add the labels to the right of each newly created radio button [Default: true]
 	--- - **columns**? integer *optional* — Arrange the newly created radio buttons in a grid with the specified number of columns instead of a vertical list [Default: 1]
 	--- - **selected?** integer *optional* — The item to be set as selected on load [Default: 0]
@@ -1686,29 +1682,26 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--- 				- function(**value**: integer) -> **evaluation**: boolean — If **t.dependencies[*index*].frame** is recognized as a dropdown or selector
 	--- 				- function(**value**: nil) -> **evaluation**: boolean — In any other case *(could be used to add a unique rule tied to unrecognized frame types)*
 	--- 			- ***Note:*** **rules.evaluate** must be defined if the [FrameType](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types) of **t.dependencies[*index*].frame** is not "CheckButton".
-	--- - **optionsTable**? table ― Reference to the table where all options data should be stored in [Default: **WidgetToolbox[ns.WidgetToolsVersion].OptionsData** *(the data of all addons is stored collectively)*]
-	--- - **optionsData**? table ― If set, add the selector to the referenced options data table to save & load its value automatically to & from the specified storageTable
+	--- - **optionsData**? table ― If set, add the selector to the options data table to save & load its value automatically to & from the specified storageTable
+	--- 	- **optionsKey** table ― A unique key referencing a collection of widget options data to be saved & loaded together
 	--- 	- **storageTable** table ― Reference to the table containing the value modified by the options widget
-	--- 	- **key** string ― Key of the variable inside the storage table
+	--- 	- **storageKey** string ― Key of the variable inside the storage table
 	--- 	- **convertSave**? function *optional* — Function to convert or modify the data while it is being saved from the widget to the storage table
 	--- 		- @*param* integer ― The index of the currently selected item in the selector
 	--- 		- @*return* any ― The converted data to be saved to the storage table
 	--- 	- **convertLoad**? function *optional* — Function to convert or modify the data while it is being loaded from the storage table to the widget as its value
 	--- 		- @*param* any ― The data in the storage table to be converted and loaded to the selector
 	--- 		- @*return* integer ― The index of the item to be set as selected in the selector
-	--- - **onSave**? function *optional* — Function to be called when they okay button is pressed (after the data has been saved from the options widget to the storage table)
-	--- 	- @*param* **self** Frame ― Reference to the widget
-	--- - **onLoad**? function *optional* — Function to be called when an options category is refreshed (after the data has been restored from the storage table to the widget)
-	--- 	- @*param* **self** Frame ― Reference to the widget
-	---@return table selector A table containing component frame references and getter & setter functions
-	--- - **frame** Frame Reference to the selector parent frame
-	--- 	- ***Events:***
-	--- 		- **OnAttributeChanged** ― Fired after **setSelected** was called (use **selector.frame**:[HookScript](https://wowwiki-archive.fandom.com/wiki/API_Frame_HookScript)(name, index) to add a listener)
-	--- 			- @*return* "selected" string
-	--- 			- @*return* **index** integer
-	--- - **getObjectType** function Returns the object type of this unique frame
+	--- 	- **onSave**? function *optional* — This function will be called with the parameters listed below when the options are saved (the Okay button is pressed) after the data has been saved from the options widget to the storage table
+	--- 		- @*param* **self** Frame ― Reference to the widget
+	--- 		- @*param* **value** integer ― The saved value of the frame
+	--- 	- **onLoad**? function *optional* — This function will be called with the parameters listed below when the options category page is refreshed after the data has been loaded from the storage table to the widget
+	--- 		- @*param* **self** Frame ― Reference to the widget
+	--- 		- @*param* **value** integer ― The value loaded to the frame
+	---@return Frame selector A base Frame object with custom functions and events added
+	--- - **getUniqueType** function Returns the object type of this unique frame
 	--- 	- @*return* "Selector" UniqueFrameType
-	--- - **isObjectType** function Checks and returns if the type of this unique frame is equal to the string provided
+	--- - **isUniqueType** function Checks and returns if the type of this unique frame is equal to the string provided
 	--- 	- @*param* **type** string
 	--- 	- @*return* boolean
 	--- - **getSelected** function Returns the index of the currently selected item
@@ -1717,21 +1710,25 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--- 	- @*param* **index** integer
 	--- 	- @*param* **user** boolean — Whether to call **t.item.onSelect** [Default: false]
 	--- 	- @*return* boolean
+	--- - ***Events:***
+	--- 	- **OnAttributeChanged** ― Fired after **setSelected** was called or an option was clicked (use **selector**:[HookScript](https://wowwiki-archive.fandom.com/wiki/API_Frame_HookScript)(name, index) to add a listener)
+	--- 		- @*return* "selected" string
+	--- 		- @*return* **index** integer
 	WidgetToolbox[ns.WidgetToolsVersion].CreateSelector = function(t)
 		local name = "Selector"
 		if t.name then name = t.name:gsub("%s+", "") end
-		local selectorFrame = CreateFrame("Frame", (t.append ~= false and t.parent:GetName() or "") .. name, t.parent)
+		local selector = CreateFrame("Frame", (t.append ~= false and t.parent:GetName() or "") .. name, t.parent)
 		--Position & dimensions
-		if t.position == nil then selectorFrame:SetPoint("TOPLEFT") else
+		if not t.position then selector:SetPoint("TOPLEFT") else
 			local offsetX = (t.position.offset or {}).x or 0
 			local offsetY = (t.position.offset or {}).y or 0
-			WidgetToolbox[ns.WidgetToolsVersion].PositionFrame(selectorFrame, t.position.anchor or "TOPLEFT", t.position.relativeTo, t.position.relativePoint, offsetX, offsetY)
+			WidgetToolbox[ns.WidgetToolsVersion].PositionFrame(selector, t.position.anchor or "TOPLEFT", t.position.relativeTo, t.position.relativePoint, offsetX, offsetY)
 		end
 		local frameWidth = (t.size or {}).width or 140
-		selectorFrame:SetSize(frameWidth, 36)
+		selector:SetSize(frameWidth, 36)
 		--Title
 		local label = WidgetToolbox[ns.WidgetToolsVersion].AddTitle({
-			parent = selectorFrame,
+			parent = selector,
 			title = t.label ~= false and {
 				text = t.title or t.name or "Selector",
 				offset = { x = 4, },
@@ -1740,12 +1737,16 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 		--Add radio buttons
 		local items = {}
 		for i = 0, #t.items do
-			if t.items[i].GetObjectType ~= nil then --It's an already existing radio button
+			local new = true
+			--Check if it's an already existing radio button
+			if t.items[i].IsObjectType then if t.items[i]:IsObjectType("CheckButton") then
 				items[i] = t.items[i]
-			else --Create a new radio button
-				local sameRow = i % (t.columns or 1) > 0
+				new = false
+			end end
+			--Create a new radio button
+			if new then local sameRow = i % (t.columns or 1) > 0
 				items[i] = WidgetToolbox[ns.WidgetToolsVersion].CreateRadioButton({
-					parent = selectorFrame,
+					parent = selector,
 					name = "Item" .. i,
 					title = t.items[i].title,
 					label = t.labels,
@@ -1761,25 +1762,27 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 		end
 		--State & dependencies
 		if t.disabled then label:SetFontObject("GameFontDisable") end
-		if t.dependencies ~= nil then SetDependencies(t.dependencies, function(state) label:SetFontObject(state and "GameFontNormal" or "GameFontDisable") end) end
-		--Assemble the selector widget table
-		local selector = {
-			frame = selectorFrame,
-			getObjectType = function() return "Selector" end,
-			isObjectType = function(type) return type == "Selector" end,
-			getSelected = function() for i = 0, #items do if items[i]:GetChecked() then return i end end return 0 end,
-			setSelected = function(index, user)
-				if index > #items then index = #items elseif index < 0 then index = 0 end
-				for i = 0, #items do items[i]:SetChecked(i == index) end
-				if t.items[index].onSelect ~= nil and user == true then t.items[index].onSelect() end
-				selectorFrame:SetAttribute("selected", index)
-			end,
-		}
+		if t.dependencies then SetDependencies(t.dependencies, function(state) label:SetFontObject(state and "GameFontNormal" or "GameFontDisable") end) end
+		--Add custom functions to the frame
+		selector.getUniqueType = function() return "Selector" end
+		selector.isUniqueType = function(type) return type == "Selector" end
+		selector.getSelected = function() for i = 0, #items do if items[i]:GetChecked() then return i end end return 0 end
+		selector.setSelected = function(index, user)
+			if index > #items then index = #items elseif index < 0 then index = 0 end
+			for i = 0, #items do items[i]:SetChecked(i == index) end
+			if t.items[index].onSelect and user then t.items[index].onSelect() end
+			--Evoke a custom event
+			selector:SetAttribute("selected", index)
+		end
+		--Establish chain selection updates
 		for i = 0, #items do items[i]:HookScript("OnClick", function() selector.setSelected(i, true) end) end
 		selector.setSelected(t.selected or 0)
 		--Add to options data management
-		if t.optionsData ~= nil or t.onSave ~= nil or t.onLoad ~= nil then
-			WidgetToolbox[ns.WidgetToolsVersion].AddOptionsData(selector, selector.getObjectType(), t.onSave, t.onLoad, t.optionsTable, t.optionsData)
+		if t.optionsData then
+			local o = t.optionsData
+			WidgetToolbox[ns.WidgetToolsVersion].AddOptionsData(
+				selector, selector.getUniqueType(), o.optionsKey, o.storageTable, o.storageKey, o.convertSave, o.convertLoad, o.onSave, o.onLoad
+			)
 		end
 		return selector
 	end
@@ -1823,58 +1826,63 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--- 				- function(**value**: integer) -> **evaluation**: boolean — If **t.dependencies[*index*].frame** is recognized as a dropdown or selector
 	--- 				- function(**value**: nil) -> **evaluation**: boolean — In any other case *(could be used to add a unique rule tied to unrecognized frame types)*
 	--- 			- ***Note:*** **rules.evaluate** must be defined if the [FrameType](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types) of **t.dependencies[*index*].frame** is not "CheckButton".
-	--- - **optionsTable**? table ― Reference to the table where all options data should be stored in [Default: **WidgetToolbox[ns.WidgetToolsVersion].OptionsData** *(the data of all addons is stored collectively)*]
-	--- - **optionsData**? table ― If set, add the editbox to the referenced options data table to save & load its value automatically to & from the specified storageTable
+	--- - **optionsData**? table ― If set, add the editbox to the options data table to save & load its value automatically to & from the specified storageTable
+	--- 	- **optionsKey** table ― A unique key referencing a collection of widget options data to be saved & loaded together
 	--- 	- **storageTable** table ― Reference to the table containing the value modified by the options widget
-	--- 	- **key** string ― Key of the variable inside the storage table
+	--- 	- **storageKey** string ― Key of the variable inside the storage table
 	--- 	- **convertSave**? function *optional* — Function to convert or modify the data while it is being saved from the widget to the storage table
 	--- 		- @*param* string ― The current value of the editbox
 	--- 		- @*return* any ― The converted data to be saved to the storage table
 	--- 	- **convertLoad**? function *optional* — Function to convert or modify the data while it is being loaded from the storage table to the widget as its value
 	--- 		- @*param* any ― The data in the storage table to be converted and loaded to the editbox
 	--- 		- @*return* string ― The value to be set to the editbox
-	--- - **onSave**? function *optional* — Function to be called when they okay button is pressed (after the data has been saved from the options widget to the storage table)
-	--- 	- @*param* **self** Frame ― Reference to the widget
-	--- - **onLoad**? function *optional* — Function to be called when an options category is refreshed (after the data has been restored from the storage table to the widget)
-	--- 	- @*param* **self** Frame ― Reference to the widget
+	--- 	- **onSave**? function *optional* — This function will be called with the parameters listed below when the options are saved (the Okay button is pressed) after the data has been saved from the options widget to the storage table
+	--- 		- @*param* **self** Frame ― Reference to the widget
+	--- 		- @*param* **value** string ― The saved value of the frame
+	--- 	- **onLoad**? function *optional* — This function will be called with the parameters listed below when the options category page is refreshed after the data has been loaded from the storage table to the widget
+	--- 		- @*param* **self** Frame ― Reference to the widget
+	--- 		- @*param* **value** string ― The value loaded to the frame
 	---@return EditBox editBox
 	local function SetEditBox(editBox, t)
 		--Font & text
 		editBox:SetMultiLine(t.multiline)
-		if t.fontObject ~= nil then editBox:SetFontObject(t.fontObject) end
-		if t.justify ~= nil then
-			if t.justify.h ~= nil then editBox:SetJustifyH(t.justify.h) end
-			if t.justify.v ~= nil then editBox:SetJustifyV(t.justify.v) end
+		if t.fontObject then editBox:SetFontObject(t.fontObject) end
+		if t.justify then
+			if t.justify.h then editBox:SetJustifyH(t.justify.h) end
+			if t.justify.v then editBox:SetJustifyV(t.justify.v) end
 		end
-		if t.maxLetters ~= nil then editBox:SetMaxLetters(t.maxLetters) end
-		if t.color ~= nil and t.text ~= nil then
+		if t.maxLetters then editBox:SetMaxLetters(t.maxLetters) end
+		if t.color and t.text then
 			local r, g, b, a = WidgetToolbox[ns.WidgetToolsVersion].UnpackColor(t.color)
 			t.text = "|c" .. WidgetToolbox[ns.WidgetToolsVersion].ColorToHex(r, g, b, a, true, false) .. t.text .. "|r"
 		end
 		--Events & behavior
 		editBox:SetAutoFocus(false)
-		if t.text ~= nil then editBox:HookScript("OnShow", function(self) self:SetText(t.text) end) end
-		if t.onChar ~= nil then editBox:SetScript("OnChar", t.onChar) end
-		if t.onEnterPressed ~= nil then
+		if t.text then editBox:HookScript("OnShow", function(self) self:SetText(t.text) end) end
+		if t.onChar then editBox:SetScript("OnChar", t.onChar) end
+		if t.onEnterPressed then
 			editBox:SetScript("OnEnterPressed", t.onEnterPressed)
 			editBox:HookScript("OnEnterPressed", function(self)
 				PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
 				self:ClearFocus()
 			end)
 		end
-		if t.onEscapePressed ~= nil then editBox:SetScript("OnEscapePressed", t.onEscapePressed) end
+		if t.onEscapePressed then editBox:SetScript("OnEscapePressed", t.onEscapePressed) end
 		editBox:HookScript("OnEscapePressed", function(self) self:ClearFocus() end)
-		if t.onEvent ~= nil then for i = 0, #t.onEvent do editBox:HookScript(t.onEvent[i].event, t.onEvent[i].handler) end end
+		if t.onEvent then for i = 0, #t.onEvent do editBox:HookScript(t.onEvent[i].event, t.onEvent[i].handler) end end
 		--State & dependencies
 		if t.readOnly or t.disabled then editBox:Disable() end
-		if t.disabled and t.label ~= nil then t.label:SetFontObject("GameFontDisable") end
-		if t.dependencies ~= nil then SetDependencies(t.dependencies, function(state)
+		if t.label and t.disabled then t.label:SetFontObject("GameFontDisable") end
+		if t.dependencies then SetDependencies(t.dependencies, function(state)
 			editBox:SetEnabled(state)
-			if t.label ~= nil then t.label:SetFontObject(state and "GameFontNormal" or "GameFontDisable") end
+			if t.label then t.label:SetFontObject(state and "GameFontNormal" or "GameFontDisable") end
 		end) end
 		--Add to options data management
-		if t.optionsData ~= nil or t.onSave ~= nil or t.onLoad ~= nil then
-			WidgetToolbox[ns.WidgetToolsVersion].AddOptionsData(editBox, editBox:GetObjectType(), t.onSave, t.onLoad, t.optionsTable, t.optionsData)
+		if t.optionsData then
+			local o = t.optionsData
+			WidgetToolbox[ns.WidgetToolsVersion].AddOptionsData(
+				editBox, editBox:GetObjectType(), o.optionsKey, o.storageTable, o.storageKey, o.convertSave, o.convertLoad, o.onSave, o.onLoad
+			)
 		end
 	end
 
@@ -1934,27 +1942,29 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--- 				- function(**value**: integer) -> **evaluation**: boolean — If **t.dependencies[*index*].frame** is recognized as a dropdown or selector
 	--- 				- function(**value**: nil) -> **evaluation**: boolean — In any other case *(could be used to add a unique rule tied to unrecognized frame types)*
 	--- 			- ***Note:*** **rules.evaluate** must be defined if the [FrameType](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types) of **t.dependencies[*index*].frame** is not "CheckButton".
-	--- - **optionsTable**? table ― Reference to the table where all options data should be stored in [Default: **WidgetToolbox[ns.WidgetToolsVersion].OptionsData** *(the data of all addons is stored collectively)*]
-	--- - **optionsData**? table ― If set, add the editbox to the referenced options data table to save & load its value automatically to & from the specified storageTable
+	--- - **optionsData**? table ― If set, add the editbox to the options data table to save & load its value automatically to & from the specified storageTable
+	--- 	- **optionsKey** table ― A unique key referencing a collection of widget options data to be saved & loaded together
 	--- 	- **storageTable** table ― Reference to the table containing the value modified by the options widget
-	--- 	- **key** string ― Key of the variable inside the storage table
+	--- 	- **storageKey** string ― Key of the variable inside the storage table
 	--- 	- **convertSave**? function *optional* — Function to convert or modify the data while it is being saved from the widget to the storage table
 	--- 		- @*param* string ― The current value of the editbox
 	--- 		- @*return* any ― The converted data to be saved to the storage table
 	--- 	- **convertLoad**? function *optional* — Function to convert or modify the data while it is being loaded from the storage table to the widget as its value
 	--- 		- @*param* any ― The data in the storage table to be converted and loaded to the editbox
 	--- 		- @*return* string ― The value to be set to the editbox
-	--- - **onSave**? function *optional* — Function to be called when they okay button is pressed (after the data has been saved from the options widget to the storage table)
-	--- 	- @*param* **self** Frame ― Reference to the widget
-	--- - **onLoad**? function *optional* — Function to be called when an options category is refreshed (after the data has been restored from the storage table to the widget)
-	--- 	- @*param* **self** Frame ― Reference to the widget
+	--- 	- **onSave**? function *optional* — This function will be called with the parameters listed below when the options are saved (the Okay button is pressed) after the data has been saved from the options widget to the storage table
+	--- 		- @*param* **self** Frame ― Reference to the widget
+	--- 		- @*param* **value** string ― The saved value of the frame
+	--- 	- **onLoad**? function *optional* — This function will be called with the parameters listed below when the options category page is refreshed after the data has been loaded from the storage table to the widget
+	--- 		- @*param* **self** Frame ― Reference to the widget
+	--- 		- @*param* **value** string ― The value loaded to the frame
 	---@return EditBox editBox
 	WidgetToolbox[ns.WidgetToolsVersion].CreateEditBox = function(t)
 		local name = "EditBox"
 		if t.name then name = t.name:gsub("%s+", "") end
 		local editBox = CreateFrame("EditBox", (t.append ~= false and t.parent:GetName() or "") .. name, t.parent, "InputBoxTemplate")
 		--Position & dimensions
-		if t.position == nil then editBox:SetPoint("TOPLEFT") else
+		if not t.position then editBox:SetPoint("TOPLEFT") else
 			local offsetX = (t.position.offset or {}).x or 0
 			local offsetY = ((t.position.offset or {}).y or 0) + (t.label ~= false and -18 or 0)
 			WidgetToolbox[ns.WidgetToolsVersion].PositionFrame(editBox, t.position.anchor or "TOPLEFT", t.position.relativeTo, t.position.relativePoint, offsetX, offsetY)
@@ -1985,10 +1995,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 			onEvent = t.onEvent,
 			disabled = t.disabled,
 			dependencies = t.dependencies,
-			optionsTable = t.optionsTable,
 			optionsData = t.optionsData,
-			onSave = t.onSave,
-			onLoad = t.onLoad,
 		})
 		--Tooltip
 		editBox:HookScript("OnEnter", function() WidgetToolbox[ns.WidgetToolsVersion].AddTooltip(nil, editBox, "ANCHOR_RIGHT", title, t.tooltip) end)
@@ -2057,20 +2064,22 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--- 				- function(**value**: integer) -> **evaluation**: boolean — If **t.dependencies[*index*].frame** is recognized as a dropdown or selector
 	--- 				- function(**value**: nil) -> **evaluation**: boolean — In any other case *(could be used to add a unique rule tied to unrecognized frame types)*
 	--- 			- ***Note:*** **rules.evaluate** must be defined if the [FrameType](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types) of **t.dependencies[*index*].frame** is not "CheckButton".
-	--- - **optionsTable**? table ― Reference to the table where all options data should be stored in [Default: **WidgetToolbox[ns.WidgetToolsVersion].OptionsData** *(the data of all addons is stored collectively)*]
-	--- - **optionsData**? table ― If set, add the editbox to the referenced options data table to save & load its value automatically to & from the specified storageTable
+	--- - **optionsData**? table ― If set, add the editbox to the options data table to save & load its value automatically to & from the specified storageTable
+	--- 	- **optionsKey** table ― A unique key referencing a collection of widget options data to be saved & loaded together
 	--- 	- **storageTable** table ― Reference to the table containing the value modified by the options widget
-	--- 	- **key** string ― Key of the variable inside the storage table
+	--- 	- **storageKey** string ― Key of the variable inside the storage table
 	--- 	- **convertSave**? function *optional* — Function to convert or modify the data while it is being saved from the widget to the storage table
 	--- 		- @*param* string ― The current value of the editbox
 	--- 		- @*return* any ― The converted data to be saved to the storage table
 	--- 	- **convertLoad**? function *optional* — Function to convert or modify the data while it is being loaded from the storage table to the widget as its value
 	--- 		- @*param* any ― The data in the storage table to be converted and loaded to the editbox
 	--- 		- @*return* string ― The value to be set to the editbox
-	--- - **onSave**? function *optional* — Function to be called when they okay button is pressed (after the data has been saved from the options widget to the storage table)
-	--- 	- @*param* **self** Frame ― Reference to the widget
-	--- - **onLoad**? function *optional* — Function to be called when an options category is refreshed (after the data has been restored from the storage table to the widget)
-	--- 	- @*param* **self** Frame ― Reference to the widget
+	--- 	- **onSave**? function *optional* — This function will be called with the parameters listed below when the options are saved (the Okay button is pressed) after the data has been saved from the options widget to the storage table
+	--- 		- @*param* **self** Frame ― Reference to the widget
+	--- 		- @*param* **value** string ― The saved value of the frame
+	--- 	- **onLoad**? function *optional* — This function will be called with the parameters listed below when the options category page is refreshed after the data has been loaded from the storage table to the widget
+	--- 		- @*param* **self** Frame ― Reference to the widget
+	--- 		- @*param* **value** string ― The value loaded to the frame
 	---@return EditBox
 	---@return Frame scrollFrame
 	WidgetToolbox[ns.WidgetToolsVersion].CreateEditScrollBox = function(t)
@@ -2078,7 +2087,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 		if t.name then name = t.name:gsub("%s+", "") end
 		local scrollFrame = CreateFrame("ScrollFrame", (t.append ~= false and t.parent:GetName() or "") .. name, t.parent, "InputScrollFrameTemplate")
 		--Position & dimensions
-		if t.position == nil then scrollFrame:SetPoint("TOPLEFT") else
+		if not t.position then scrollFrame:SetPoint("TOPLEFT") else
 			local offsetX = (t.position.offset or {}).x or 0
 			local offsetY = ((t.position.offset or {}).y or 0) - 20
 			WidgetToolbox[ns.WidgetToolsVersion].PositionFrame(scrollFrame, t.position.anchor or "TOPLEFT", t.position.relativeTo, t.position.relativePoint, offsetX, offsetY)
@@ -2091,7 +2100,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 		end
 		ResizeEditBox()
 		--Scroll speed
-		if t.scrollSpeed ~= nil then _G[scrollFrame:GetName() .. "ScrollBar"].scrollStep = t.scrollSpeed end
+		if t.scrollSpeed then _G[scrollFrame:GetName() .. "ScrollBar"].scrollStep = t.scrollSpeed end
 		--Character counter
 		scrollFrame.CharCount:SetFontObject("GameFontDisableTiny2")
 		if t.charCount == false or (t.maxLetters or 0) == 0 then scrollFrame.CharCount:Hide() end
@@ -2120,16 +2129,13 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 			onEvent = t.onEvent,
 			disabled = t.disabled,
 			dependencies = t.dependencies,
-			optionsTable = t.optionsTable,
 			optionsData = t.optionsData,
-			onSave = t.onSave,
-			onLoad = t.onLoad,
 		})
 		--Events & behavior
 		t.scrollToTop = t.scrollToTop ~= false or nil
 		scrollFrame.EditBox:HookScript("OnTextChanged", function()
 			ResizeEditBox()
-			if t.scrollToTop == true then scrollFrame:SetVerticalScroll(0) end
+			if t.scrollToTop then scrollFrame:SetVerticalScroll(0) end
 		end)
 		scrollFrame.EditBox:HookScript("OnEditFocusGained", function(self)
 			ResizeEditBox()
@@ -2187,7 +2193,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 		if t.name then name = t.name:gsub("%s+", "") end
 		local copyBox = CreateFrame("Button", (t.append ~= false and t.parent:GetName() or "") .. name, t.parent)
 		--Position & dimensions
-		if t.position == nil then copyBox:SetPoint("TOPLEFT") else
+		if not t.position then copyBox:SetPoint("TOPLEFT") else
 			local offsetX = (t.position.offset or {}).x or 0
 			local offsetY = ((t.position.offset or {}).y or 0) + (t.label ~= false and -12 or 0)
 			WidgetToolbox[ns.WidgetToolsVersion].PositionFrame(copyBox, t.position.anchor or "TOPLEFT", t.position.relativeTo, t.position.relativePoint, offsetX, offsetY)
@@ -2213,10 +2219,11 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 			template = t.template,
 			color = t.color,
 			justify = (t.justify or {}).h or "LEFT",
+			wrap = false
 		})
 		--Copyable textline
 		local text = t.text
-		if t.color ~= nil then
+		if t.color then
 			local r, g, b, a = WidgetToolbox[ns.WidgetToolsVersion].UnpackColor(t.color)
 			text = "|c" .. WidgetToolbox[ns.WidgetToolsVersion].ColorToHex(r, g, b, a, true, false) .. t.text .. "|r"
 		end
@@ -2241,7 +2248,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 					end
 				},
 				[1] = {
-					event = t.flipOnMouse == true and "OnLeave" or "OnEditFocusLost",
+					event = t.flipOnMouse and "OnLeave" or "OnEditFocusLost",
 					handler = function(self)
 						self:Hide()
 						textLine:Show()
@@ -2252,14 +2259,14 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 		})
 		editBox:Hide()
 		--Events & behavior
-		copyBox:SetScript(t.flipOnMouse == true and "OnEnter" or "OnClick", function()
+		copyBox:SetScript(t.flipOnMouse and "OnEnter" or "OnClick", function()
 			textLine:Hide()
 			editBox:Show()
 			editBox:SetFocus()
 			editBox:HighlightText()
 			PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
 		end)
-		if t.flipOnMouse ~= true and t.colorOnMouse ~= nil then
+		if not t.flipOnMouse and t.colorOnMouse then
 			copyBox:SetScript("OnEnter", function() textLine:SetTextColor(WidgetToolbox[ns.WidgetToolsVersion].UnpackColor(t.colorOnMouse)) end)
 			copyBox:SetScript("OnLeave", function() textLine:SetTextColor(WidgetToolbox[ns.WidgetToolsVersion].UnpackColor(t.color)) end)
 		end
@@ -2284,7 +2291,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	local function AddSliderValueBox(slider, value)
 		local valueBox = CreateFrame("EditBox", slider:GetName() .. "ValueBox", slider, BackdropTemplateMixin and "BackdropTemplate")
 		--Calculate the required number of fractal digits, assemble string patterns for value validation
-		local decimals = value.fractional ~= nil and value.fractional or max(
+		local decimals = value.fractional or max(
 			tostring(value.min):gsub("-?[%d]+[%.]?([%d]*).*", "%1"):len(),
 			tostring(value.max):gsub("-?[%d]+[%.]?([%d]*).*", "%1"):len(),
 			tostring(value.step or 0):gsub("-?[%d]+[%.]?([%d]*).*", "%1"):len()
@@ -2316,7 +2323,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 		valueBox:SetScript("OnLeave", function(self) self:SetBackdropBorderColor(0.5, 0.5, 0.5, 0.9) end)
 		valueBox:SetScript("OnEnterPressed", function(self)
 			local v = self:GetNumber()
-			if value.step ~= nil then v = max(value.min, min(value.max, floor(v * (1 / value.step) + 0.5) / (1 / value.step))) end
+			if value.step then v = max(value.min, min(value.max, floor(v * (1 / value.step) + 0.5) / (1 / value.step))) end
 			self:SetText(tostring(v):gsub(matchPattern, replacePattern))
 			slider:SetAttribute("valueboxchange", v)
 		end)
@@ -2365,7 +2372,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--- 	- **max** number — Upper numeric value limit
 	--- 	- **step**? number *optional* — Size of value increments [Default: *the value can be freely changed (within range, no set increments)*]
 	--- 	- **fractional**? integer *optional* — If the value is fractional, allow and display this many decimal digits [Default: *the most amount of digits present in the fractional part of* **t.value.min**, **t.value.max** *or* **t.value.step**]
-	--- - **valueBox**? boolean *optional* — Set to false when the frame type should NOT have an [EditBox](https://wowpedia.fandom.com/wiki/UIOBJECT_EditBox) added as a child frame
+	--- - **valueBox**? boolean *optional* — Whether or not should the slider have an [EditBox](https://wowpedia.fandom.com/wiki/UIOBJECT_EditBox) as a child to manually enter a precise value to move the slider to [Default: true]
 	--- - **onValueChanged** function — The function to be called when an [OnValueChanged](https://wowpedia.fandom.com/wiki/UIHANDLER_OnValueChanged) event happens
 	--- 	- @*param* **self** Frame ― Reference to the widget
 	--- 	- @*param* **value** number ― The new value of the slider
@@ -2387,20 +2394,22 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--- 				- function(**value**: integer) -> **evaluation**: boolean — If **t.dependencies[*index*].frame** is recognized as a dropdown or selector
 	--- 				- function(**value**: nil) -> **evaluation**: boolean — In any other case *(could be used to add a unique rule tied to unrecognized frame types)*
 	--- 			- ***Note:*** **rules.evaluate** must be defined if the [FrameType](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types) of **t.dependencies[*index*].frame** is not "CheckButton".
-	--- - **optionsTable**? table ― Reference to the table where all options data should be stored in [Default: **WidgetToolbox[ns.WidgetToolsVersion].OptionsData** *(the data of all addons is stored collectively)*]
-	--- - **optionsData**? table ― If set, add the slider to the referenced options data table to save & load its value automatically to & from the specified storageTable
+	--- - **optionsData**? table ― If set, add the slider to the options data table to save & load its value automatically to & from the specified storageTable
+	--- 	- **optionsKey** table ― A unique key referencing a collection of widget options data to be saved & loaded together
 	--- 	- **storageTable** table ― Reference to the table containing the value modified by the options widget
-	--- 	- **key** string ― Key of the variable inside the storage table
+	--- 	- **storageKey** string ― Key of the variable inside the storage table
 	--- 	- **convertSave**? function *optional* — Function to convert or modify the data while it is being saved from the widget to the storage table
 	--- 		- @*param* number ― The current value of the slider
 	--- 		- @*return* any ― The converted data to be saved to the storage table
 	--- 	- **convertLoad**? function *optional* — Function to convert or modify the data while it is being loaded from the storage table to the widget as its value
 	--- 		- @*param* any ― The data in the storage table to be converted and loaded to the slider
 	--- 		- @*return* number ― The value to be set to the slider
-	--- - **onSave**? function *optional* — Function to be called when they okay button is pressed (after the data has been saved from the options widget to the storage table)
-	--- 	- @*param* **self** Frame ― Reference to the widget
-	--- - **onLoad**? function *optional* — Function to be called when an options category is refreshed (after the data has been restored from the storage table to the widget)
-	--- 	- @*param* **self** Frame ― Reference to the widget
+	--- 	- **onSave**? function *optional* — This function will be called with the parameters listed below when the options are saved (the Okay button is pressed) after the data has been saved from the options widget to the storage table
+	--- 		- @*param* **self** Frame ― Reference to the widget
+	--- 		- @*param* **value** number ― The saved value of the frame
+	--- 	- **onLoad**? function *optional* — This function will be called with the parameters listed below when the options category page is refreshed after the data has been loaded from the storage table to the widget
+	--- 		- @*param* **self** Frame ― Reference to the widget
+	--- 		- @*param* **value** number ― The value loaded to the frame
 	---@return Slider slider
 	---@return EditBox? valueBox
 	WidgetToolbox[ns.WidgetToolsVersion].CreateSlider = function(t)
@@ -2408,12 +2417,12 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 		if t.name then name = t.name:gsub("%s+", "") end
 		local slider = CreateFrame("Slider", (t.append ~= false and t.parent:GetName() or "") .. name, t.parent, "OptionsSliderTemplate")
 		--Position
-		if t.position == nil then slider:SetPoint("TOPLEFT") else
+		if not t.position then slider:SetPoint("TOPLEFT") else
 			local offsetX = (t.position.offset or {}).x or 0
 			local offsetY = ((t.position.offset or {}).y or 0) - 12
 			WidgetToolbox[ns.WidgetToolsVersion].PositionFrame(slider, t.position.anchor or "TOPLEFT", t.position.relativeTo, t.position.relativePoint, offsetX, offsetY)
 		end
-		if t.width ~= nil then slider:SetWidth(t.width) end
+		if t.width then slider:SetWidth(t.width) end
 		--Title
 		local title = t.title or t.name or "Slider"
 		local label = nil
@@ -2426,7 +2435,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 		getglobal(slider:GetName() .. "Low"):SetText(tostring(t.value.min))
 		getglobal(slider:GetName() .. "High"):SetText(tostring(t.value.max))
 		slider:SetMinMaxValues(t.value.min, t.value.max)
-		if t.value.step ~= nil then
+		if t.value.step then
 			slider:SetValueStep(t.value.step)
 			slider:SetObeyStepOnDrag(true)
 		end
@@ -2442,7 +2451,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 			end
 		end)
 		slider:HookScript("OnMouseUp", function() PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON) end)
-		if t.onEvent ~= nil then for i = 0, #t.onEvent do slider:HookScript(t.onEvent[i].event, t.onEvent[i].handler) end end
+		if t.onEvent then for i = 0, #t.onEvent do slider:HookScript(t.onEvent[i].event, t.onEvent[i].handler) end end
 		--Tooltip
 		slider:HookScript("OnEnter", function() WidgetToolbox[ns.WidgetToolsVersion].AddTooltip(nil, slider, "ANCHOR_RIGHT", title, t.tooltip) end)
 		slider:HookScript("OnLeave", function() customTooltip:Hide() end)
@@ -2453,18 +2462,21 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 		if t.disabled then
 			slider:Disable()
 			valueBox:Disable()
-			if label ~= nil then label:SetFontObject("GameFontDisable") end
+			if label then label:SetFontObject("GameFontDisable") end
 			valueBox:SetFontObject("GameFontDisableSmall")
 		end
-		if t.dependencies ~= nil then SetDependencies(t.dependencies, function(state)
+		if t.dependencies then SetDependencies(t.dependencies, function(state)
 			slider:SetEnabled(state)
 			valueBox:SetEnabled(state)
-			if label ~= nil then label:SetFontObject(state and "GameFontNormal" or "GameFontDisable") end
+			if label then label:SetFontObject(state and "GameFontNormal" or "GameFontDisable") end
 			valueBox:SetFontObject(state and "GameFontHighlightSmall" or "GameFontDisableSmall")
 		end) end
 		--Add to options data management
-		if t.optionsData ~= nil or t.onSave ~= nil or t.onLoad ~= nil then
-			WidgetToolbox[ns.WidgetToolsVersion].AddOptionsData(slider, slider:GetObjectType(), t.onSave, t.onLoad, t.optionsTable, t.optionsData)
+		if t.optionsData then
+			local o = t.optionsData
+			WidgetToolbox[ns.WidgetToolsVersion].AddOptionsData(
+				slider, slider:GetObjectType(), o.optionsKey, o.storageTable, o.storageKey, o.convertSave, o.convertLoad, o.onSave, o.onLoad
+			)
 		end
 		return slider, valueBox
 	end
@@ -2499,6 +2511,9 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--- 	- **[*index*]** table ― Parameters of a dropdown item
 	--- 		- **title** string — Text to represent the item within the dropdown frame
 	--- 		- **onSelect** function — The function to be called when the dropdown item is selected
+	--- 			- ***Note:*** A custom [OnAttributeChanged](https://wowpedia.fandom.com/wiki/UIHANDLER_OnAttributeChanged) event will be evoked whenever an item is selected with:
+	--- 				- **name**: "selected"
+	--- 				- **value**: *index*
 	--- - **selected?** integer *optional* — The default selected item of the dropdown menu
 	--- - **disabled**? boolean *optional* — Set the state of this widget to be disabled on load [Default: false]
 	--- - **dependencies**? table [indexed, 0-based] *optional* — Automatically disable or enable this widget based on the rules described in subtables
@@ -2513,27 +2528,38 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--- 				- function(**value**: integer) -> **evaluation**: boolean — If **t.dependencies[*index*].frame** is recognized as a dropdown or selector
 	--- 				- function(**value**: nil) -> **evaluation**: boolean — In any other case *(could be used to add a unique rule tied to unrecognized frame types)*
 	--- 			- ***Note:*** **rules.evaluate** must be defined if the [FrameType](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types) of **t.dependencies[*index*].frame** is not "CheckButton".
-	--- - **optionsTable**? table ― Reference to the table where all options data should be stored in [Default: **WidgetToolbox[ns.WidgetToolsVersion].OptionsData** *(the data of all addons is stored collectively)*]
-	--- - **optionsData**? table ― If set, add the dropdown to the referenced options data table to save & load its value automatically to & from the specified storageTable (also set its text to the name of the currently selected value automatically on load)
-	--- 	- **storageTable** table ― Reference to the table containing the value modified by the options widget
-	--- 	- **key** string ― Key of the variable inside the storage table
+	--- - **optionsData**? table ― If set, add the dropdown to the options data table to save & load its value automatically to & from the specified storageTable (also set its text to the name of the currently selected value automatically on load)
+	--- 	- **optionsKey** table ― A unique key referencing a collection of widget options data to be saved & loaded together
+	--- 	- **storageTable**? table *optional* ― Reference to the table containing the value modified by the options widget
+	--- 	- **storageKey**? string *optional* ― Key of the variable inside the storage table
 	--- 	- **convertSave**? function *optional* — Function to convert or modify the data while it is being saved from the widget to the storage table
 	--- 		- @*param* integer ― The index of the currently selected item in the dropdown menu
 	--- 		- @*return* any ― The converted data to be saved to the storage table
 	--- 	- **convertLoad**? function *optional* — Function to convert or modify the data while it is being loaded from the storage table to the widget as its value
 	--- 		- @*param* any ― The data in the storage table to be converted and loaded to the dropdown menu
 	--- 		- @*return* integer ― The index of the item to be set as selected in the dropdown menu
-	--- - **onSave**? function *optional* — Function to be called when they okay button is pressed (after the data has been saved from the options widget to the storage table)
-	--- 	- @*param* **self** Frame ― Reference to the widget
-	--- - **onLoad**? function *optional* — Function to be called when an options category is refreshed (after the data has been restored from the storage table to the widget; the name of the currently selected item based on the value loaded will be set on load whether the onLoad function is specified or not)
-	--- 	- @*param* **self** Frame ― Reference to the widget
-	---@return Frame dropdown
+	--- 	- **onSave**? function *optional* — This function will be called with the parameters listed below when the options are saved (the Okay button is pressed) after the data has been saved from the options widget to the storage table
+	--- 		- @*param* **self** Frame ― Reference to the widget
+	--- 		- @*param* **value** integer ― The saved value of the frame
+	--- 	- **onLoad**? function *optional* — Function to be called when an options category is refreshed (after the data has been restored from the storage table to the widget; the name of the currently selected item based on the value loaded will be set on load whether the onLoad function is specified or not)
+	--- 		- @*param* **self** Frame ― Reference to the widget
+	--- 		- @*param* **value** integer ― The value loaded to the frame
+	---@return Frame dropdown A base UIDropDownMenu Frame with custom functions and events added
+	--- - **getUniqueType** function ― Returns the functional unique type of this Frame
+	--- 	- @*return* "Dropdown" UniqueFrameType
+	--- - **isUniqueType** function ― Checks and returns if the functional unique type of this Frame matches the string provided entirely
+	--- 	- @*param* **type** UniqueFrameType|string
+	--- 	- @*return* boolean
+	--- - ***Events:***
+	--- 	- **OnAttributeChanged** ― Fired after a dropdown button was clicked (use **dropdown**:[HookScript](https://wowwiki-archive.fandom.com/wiki/API_Frame_HookScript)(name, index) to add a listener)
+	--- 		- @*return* "selected" string
+	--- 		- @*return* **index** integer
 	WidgetToolbox[ns.WidgetToolsVersion].CreateDropdown = function(t)
 		local name = "Dropdown"
 		if t.name then name = t.name:gsub("%s+", "") end
 		local dropdown = CreateFrame("Frame", (t.append ~= false and t.parent:GetName() or "") .. name, t.parent, "UIDropDownMenuTemplate")
 		--Position & dimensions
-		if t.position == nil then dropdown:SetPoint("TOPLEFT") else
+		if not t.position then dropdown:SetPoint("TOPLEFT") else
 			local offsetX = (t.position.offset or {}).x or 0
 			local offsetY = ((t.position.offset or {}).y or 0) + (t.title ~= false and -16 or 0)
 			WidgetToolbox[ns.WidgetToolsVersion].PositionFrame(dropdown, t.position.anchor or "TOPLEFT", t.position.relativeTo, t.position.relativePoint, offsetX, offsetY)
@@ -2557,11 +2583,13 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 				info.func = function(self)
 					t.items[i].onSelect()
 					UIDropDownMenu_SetSelectedValue(dropdown, self.value)
+					--Evoke a custom event
+					dropdown:SetAttribute("selected", self.value)
 				end
 				UIDropDownMenu_AddButton(info)
 			end
 		end)
-		if t.selected ~= nil then
+		if t.selected then
 			UIDropDownMenu_SetSelectedValue(dropdown, t.selected)
 			UIDropDownMenu_SetText(dropdown, t.items[t.selected].title)
 		end
@@ -2571,19 +2599,25 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 		--State & dependencies
 		if t.disabled then
 			UIDropDownMenu_DisableDropDown(dropdown)
-			if label ~= nil then label:SetFontObject("GameFontDisable") end
+			if label then label:SetFontObject("GameFontDisable") end
 		end
-		if t.dependencies ~= nil then SetDependencies(t.dependencies, function(state)
+		if t.dependencies then SetDependencies(t.dependencies, function(state)
 			if state then UIDropDownMenu_EnableDropDown(dropdown) else UIDropDownMenu_DisableDropDown(dropdown) end
-			if label ~= nil then label:SetFontObject(state and "GameFontNormal" or "GameFontDisable") end
+			if label then label:SetFontObject(state and "GameFontNormal" or "GameFontDisable") end
 		end) end
 		--Add to options data management
-		if t.optionsData ~= nil or t.onSave ~= nil or t.onLoad ~= nil then
-			WidgetToolbox[ns.WidgetToolsVersion].AddOptionsData(dropdown, "Dropdown", t.onSave, function(self)
-				if UIDropDownMenu_GetSelectedValue(dropdown) ~= nil then UIDropDownMenu_SetText(dropdown, t.items[UIDropDownMenu_GetSelectedValue(dropdown)].title) end
-				if t.onLoad ~= nil then t.onLoad(self) end
-			end, t.optionsTable, t.optionsData)
+		if t.optionsData then
+			local o = t.optionsData
+			WidgetToolbox[ns.WidgetToolsVersion].AddOptionsData(
+				dropdown, "Dropdown", o.optionsKey, o.storageTable, o.storageKey, o.convertSave, o.convertLoad, o.onSave, function(self, value)
+					if value then UIDropDownMenu_SetText(dropdown, t.items[value].title) end
+					if o.onLoad then o.onLoad(self, value) end
+				end
+			)
 		end
+		--Add custom functions to the frame
+		dropdown.getUniqueType = function() return "Dropdown" end
+		dropdown.isUniqueType = function(type) return type == "Dropdown" end
 		return dropdown
 	end
 
@@ -2594,13 +2628,13 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--- - **parent** Frame — The frame to set as the parent of the new context menu
 	--- - **name**? string *optional* — Unique string used to set the name of the new frame [Default: "ContextMenu"]
 	--- - **append**? boolean *optional* — When setting the name, append **t.name** to the name of **t.parent** [Default: true]
-	--- - **anchor** string|[AnchorPoint](https://wowwiki-archive.fandom.com/wiki/Widget_Anchor_Points#All_sides) [Default: 'cursor']
+	--- - **anchor** string|Region — The current cursor position or a region or frame reference [Default: 'cursor']
 	--- - **offset**? table *optional*
 	--- 	- **x**? number [Default: 0]
 	--- 	- **y**? number [Default: 0]
 	--- - **width**? number *optional* — [Default: 115]
 	--- - **menu** table — Table of nested subtables for the context menu items containing their attributes
-	--- 	- **[*value*]** table — List of attriutes representing a menu item (*Select examples below!* See the [full list of attributes](https://www.townlong-yak.com/framexml/5.4.7/UIDropDownMenu.lua#139) that can be set for menu items.)
+	--- 	- **[*value*]** table — List of attributes representing a menu item (*Select examples below!* See the [full list of attributes](https://www.townlong-yak.com/framexml/5.4.7/UIDropDownMenu.lua#139) that can be set for menu items.)
 	--- 		- **text** string — Text to be displayed on the button within the context menu
 	--- 		- **isTitle**? boolean *optional* — Set the item as a title instead of a clickable button [Default: false (*not title*)]
 	--- 		- **disabled**? number *optional* — Disable the button if set to 1 [Range: nil, 1; Default: nil or 1 if **t.isTitle** == true]
@@ -2625,7 +2659,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 
 	--[ Color Picker ]
 
-	--Addon-scope data bust be used to stop the separate color pickers from interfering with each other through the global Blizzard Color Picker frame
+	--Addon-scope data must be used to stop the separate color pickers from interfering with each other through the global Blizzard Color Picker frame
 	local colorPickerData = {}
 
 	---Set up and open the built-in Color Picker frame
@@ -2757,7 +2791,7 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 		--Tooltip
 		pickerButton:HookScript("OnEnter", function()
 			local tooltip = strings.color.picker.tooltip
-			if a ~= nil then tooltip = strings.color.picker.tooltip:gsub("#ALPHA", strings.color.picker.alpha)
+			if a then tooltip = strings.color.picker.tooltip:gsub("#ALPHA", strings.color.picker.alpha)
 			else tooltip = strings.color.picker.tooltip:gsub("#ALPHA", "") end
 			WidgetToolbox[ns.WidgetToolsVersion].AddTooltip(nil, pickerButton, "ANCHOR_TOPLEFT", strings.color.picker.label, { [0] = { text = tooltip }, }, 20)
 		end)
@@ -2808,10 +2842,10 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--- 				- function(**value**: integer) -> **evaluation**: boolean — If **t.dependencies[*index*].frame** is recognized as a dropdown or selector
 	--- 				- function(**value**: nil) -> **evaluation**: boolean — In any other case *(could be used to add a unique rule tied to unrecognized frame types)*
 	--- 			- ***Note:*** **rules.evaluate** must be defined if the [FrameType](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types) of **t.dependencies[*index*].frame** is not "CheckButton".
-	--- - **optionsTable**? table ― Reference to the table where all options data should be stored in [Default: **WidgetToolbox[ns.WidgetToolsVersion].OptionsData** *(the data of all addons is stored collectively)*]
-	--- - **optionsData**? table ― If set, add the color picker to the referenced options data table to save & load its value automatically to & from the specified storageTable
+	--- - **optionsData**? table ― If set, add the color picker to the options data table to save & load its value automatically to & from the specified storageTable
+	--- 	- **optionsKey** table ― A unique key referencing a collection of widget options data to be saved & loaded together
 	--- 	- **storageTable** table ― Reference to the table containing the value modified by the options widget
-	--- 	- **key** string ― Key of the variable inside the storage table
+	--- 	- **storageKey** string ― Key of the variable inside the storage table
 	--- 	- **convertSave**? function *optional* — Function to convert or modify the data while it is being saved from the widget to the storage table
 	--- 		- @*param* **r** number ― Red [Range: 0, 1]
 	--- 		- @*param* **g** number ― Green [Range: 0, 1]
@@ -2824,16 +2858,25 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	--- 		- @*return* **g** number ― Green [Range: 0, 1]
 	--- 		- @*return* **b** number ― Blue [Range: 0, 1]
 	--- 		- @*return* **a**? number ― Opacity [Range: 0, 1]
-	--- - **onSave**? function *optional* — Function to be called when they okay button is pressed (after the data has been saved from the options widget to the storage table)
-	--- 	- @*param* **self** Frame ― Reference to the widget
-	--- - **onLoad**? function *optional* — Function to be called when an options category is refreshed (after the data has been restored from the storage table to the widget)
-	--- 	- @*param* **self** Frame ― Reference to the widget
-	---@return table colorPicker A table containing component frame references and color getter & setter functions
-	--- - **frame** Frame ― Reference to the color picker parent frame
-	--- - **getObjectType** function ― Returns the object type of this unique frame
+	--- 	- **onSave**? function *optional* — This function will be called with the parameters listed below when the options are saved (the Okay button is pressed) after the data has been saved from the options widget to the storage table
+	--- 		- @*param* **self** Frame ― Reference to the widget
+	--- 		- @*param* **value** table ― The saved value of the frame
+	--- 			- **r** number ― Red [Range: 0, 1]
+	--- 			- **g** number ― Green [Range: 0, 1]
+	--- 			- **b** number ― Blue [Range: 0, 1]
+	--- 			- **a**? number *optional* ― Opacity [Range: 0, 1; Default: 1]
+	--- 	- **onLoad**? function *optional* — This function will be called with the parameters listed below when the options category page is refreshed after the data has been loaded from the storage table to the widget
+	--- 		- @*param* **self** Frame ― Reference to the widget
+	--- 		- @*param* **value** table ― The value loaded to the frame
+	--- 			- **r** number ― Red [Range: 0, 1]
+	--- 			- **g** number ― Green [Range: 0, 1]
+	--- 			- **b** number ― Blue [Range: 0, 1]
+	--- 			- **a**? number *optional* ― Opacity [Range: 0, 1; Default: 1]
+	---@return Frame colorPicker A base Frame object with custom functions added
+	--- - **getUniqueType** function ― Returns the object type of this unique frame
 	--- 	- @*return* "ColorPicker" UniqueFrameType
-	--- - **isObjectType** function ― Checks and returns if the type of this unique frame is equal to the string provided
-	--- 	- @*param* **type** string
+	--- - **isUniqueType** function ― Checks and returns if the type of this unique frame matches the string provided entirely
+	--- 	- @*param* **type** UniqueFrameType|string
 	--- 	- @*return* boolean
 	--- - **getColor** function ― Returns the currently set color values
 	--- 	- @*return* **r** number ― Red [Range: 0, 1]
@@ -2848,25 +2891,25 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 	WidgetToolbox[ns.WidgetToolsVersion].CreateColorPicker = function(t)
 		local name = "ColorPicker"
 		if t.name then name = t.name:gsub("%s+", "") end
-		local pickerFrame = CreateFrame("Frame", (t.append ~= false and t.parent:GetName() or "") .. name, t.parent)
+		local colorPicker = CreateFrame("Frame", (t.append ~= false and t.parent:GetName() or "") .. name, t.parent)
 		--Position & dimensions
-		if t.position == nil then pickerFrame:SetPoint("TOPLEFT") else
+		if not t.position then colorPicker:SetPoint("TOPLEFT") else
 			local offsetX = (t.position.offset or {}).x or 0
 			local offsetY = (t.position.offset or {}).y or 0
-			WidgetToolbox[ns.WidgetToolsVersion].PositionFrame(pickerFrame, t.position.anchor or "TOPLEFT", t.position.relativeTo, t.position.relativePoint, offsetX, offsetY)
+			WidgetToolbox[ns.WidgetToolsVersion].PositionFrame(colorPicker, t.position.anchor or "TOPLEFT", t.position.relativeTo, t.position.relativePoint, offsetX, offsetY)
 		end
 		local frameWidth = (t.size or {}).width or 120
-		pickerFrame:SetSize(frameWidth, 36)
+		colorPicker:SetSize(frameWidth, 36)
 		--Title
 		local label = WidgetToolbox[ns.WidgetToolsVersion].AddTitle({
-			parent = pickerFrame,
+			parent = colorPicker,
 			title = t.label ~= false and {
 				text = t.title or t.name or "ColorPicker",
 				offset = { x = 4, },
 			} or nil,
 		})
 		--Add color picker button to open the Blizzard Color Picker
-		local pickerButton, backgroundGradient = AddColorPickerButton(pickerFrame, {
+		local pickerButton, backgroundGradient = AddColorPickerButton(colorPicker, {
 			setColors = t.setColors,
 			onColorUpdate = t.onColorUpdate,
 			onCancel = t.onCancel
@@ -2874,14 +2917,14 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 		--Add editbox to change the color via HEX code
 		local _, _, _, alpha = t.setColors()
 		local hexBox = WidgetToolbox[ns.WidgetToolsVersion].CreateEditBox({
-			parent = pickerFrame,
+			parent = colorPicker,
 			name = "HEXBox",
 			title = strings.color.hex.label,
 			label = false,
-			tooltip = { [0] = { text = strings.color.hex.tooltip .. "\n\n" .. strings.misc.example .. ": #2266BB" .. (alpha ~= nil and "AA" or "") }, },
+			tooltip = { [0] = { text = strings.color.hex.tooltip .. "\n\n" .. strings.misc.example .. ": #2266BB" .. (alpha and "AA" or "") }, },
 			position = { offset = { x = 44, y = -18 } },
 			width = frameWidth - 44,
-			maxLetters = 7 + (alpha ~= nil and 2 or 0),
+			maxLetters = 7 + (alpha and 2 or 0),
 			fontObject = "GameFontWhiteSmall",
 			onChar = function(self) self:SetText(self:GetText():gsub("^(#?)([%x]*).*", "%1%2")) end,
 			onEnterPressed = function(self)
@@ -2895,32 +2938,32 @@ if not WidgetToolbox[ns.WidgetToolsVersion] then
 		})
 		--State & dependencies
 		if t.disabled then
-			if label ~= nil then label:SetFontObject("GameFontDisable") end
+			if label then label:SetFontObject("GameFontDisable") end
 			pickerButton:Disable()
 			hexBox:Disable()
 			hexBox:SetFontObject("GameFontDisableSmall")
 		end
-		if t.dependencies ~= nil then SetDependencies(t.dependencies, function(state)
-			if label ~= nil then label:SetFontObject(state and "GameFontNormal" or "GameFontDisable") end
+		if t.dependencies then SetDependencies(t.dependencies, function(state)
+			if label then label:SetFontObject(state and "GameFontNormal" or "GameFontDisable") end
 			pickerButton:SetEnabled(state)
 			hexBox:SetEnabled(state)
 			hexBox:SetFontObject(state and "GameFontHighlightSmall" or "GameFontDisableSmall")
 		end) end
-		--Assemble the color widget table
-		local colorPicker = {
-			frame = pickerFrame,
-			getObjectType = function() return "ColorPicker" end,
-			isObjectType = function(type) return type == "ColorPicker" end,
-			getColor = function() return pickerButton:GetBackdropColor() end,
-			setColor = function(r, g, b, a)
-				pickerButton:SetBackdropColor(r, g, b, a or 1)
-				backgroundGradient:SetVertexColor(r, g, b, 1)
-				hexBox:SetText(WidgetToolbox[ns.WidgetToolsVersion].ColorToHex(r, g, b, a))
-			end,
-		}
+		--Add custom functions to the frame
+		colorPicker.getUniqueType = function() return "ColorPicker" end
+		colorPicker.isUniqueType = function(type) return type == "ColorPicker" end
+		colorPicker.getColor = function() return pickerButton:GetBackdropColor() end
+		colorPicker.setColor = function(r, g, b, a)
+			pickerButton:SetBackdropColor(r, g, b, a or 1)
+			backgroundGradient:SetVertexColor(r, g, b, 1)
+			hexBox:SetText(WidgetToolbox[ns.WidgetToolsVersion].ColorToHex(r, g, b, a))
+		end
 		--Add to options data management
-		if t.optionsData ~= nil or t.onSave ~= nil or t.onLoad ~= nil then
-			WidgetToolbox[ns.WidgetToolsVersion].AddOptionsData(colorPicker, colorPicker.getObjectType(), t.onSave, t.onLoad, t.optionsTable, t.optionsData)
+		if t.optionsData then
+			local o = t.optionsData
+			WidgetToolbox[ns.WidgetToolsVersion].AddOptionsData(
+				colorPicker, colorPicker.getUniqueType(), o.optionsKey, o.storageTable, o.storageKey, o.convertSave, o.convertLoad, o.onSave, o.onLoad
+			)
 		end
 		return colorPicker
 	end
