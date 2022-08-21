@@ -6,7 +6,7 @@
 - See your own movement speed (in percentage and/or yards per second) within a customizable and repositionable text display.
 - View the movement speed of other players or NPCs as well integrated into the inspect tooltip that appears when mousing over them.
 - Set up Movement Speed in the Interface Options, access select options via the **/movespeed** chat command.
-- Includes multi-version support for Retail, Classic and Burning Crusade Classic!
+- Includes multi-version support for Retail, Classic, Burning Crusade Classic and Wrath of the Lich King Classic!
 
 ## Other Addons
 *If you like minimalistic solutions, you might want to check out these Addons as well:*
