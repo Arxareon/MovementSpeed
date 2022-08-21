@@ -572,14 +572,14 @@ local function CreateSupportInfo(parentFrame)
 		color = { r = 0.6, g = 0.8, b = 1, a = 1 },
 		colorOnMouse = { r = 0.75, g = 0.95, b = 1, a = 1 },
 	})
-	--Copybox: BitBucket
+	--Copybox: Repository
 	wt.CreateCopyBox({
 		parent = parentFrame,
-		name = "BitBucket",
-		title = strings.options.main.support.bitBucket .. ":",
+		name = "Repository",
+		title = strings.options.main.support.repository .. ":",
 		position = { offset = { x = 16, y = -70 } },
 		width = parentFrame:GetWidth() / 2 - 22,
-		text = "bitbucket.org/Arxareon/movement-speed",
+		text = "github.com/Arxareon/MovementSpeed",
 		template = "GameFontNormalSmall",
 		color = { r = 0.6, g = 0.8, b = 1, a = 1 },
 		colorOnMouse = { r = 0.75, g = 0.95, b = 1, a = 1 },
@@ -594,7 +594,7 @@ local function CreateSupportInfo(parentFrame)
 			offset = { x = (parentFrame:GetWidth() / 2 - 22) / 2 + 8, y = -70 }
 		},
 		width = parentFrame:GetWidth() / 2 - 22,
-		text = "bitbucket.org/Arxareon/movement-speed/issues",
+		text = "github.com/Arxareon/MovementSpeed/issues",
 		template = "GameFontNormalSmall",
 		color = { r = 0.6, g = 0.8, b = 1, a = 1 },
 		colorOnMouse = { r = 0.75, g = 0.95, b = 1, a = 1 },

@@ -124,6 +124,8 @@ local changelogDB = {
 		[1] = "#N_Update:_#",
 		[2] = "Added 9.2.7 (Retail) and 3.4 (WotLK Classic) support.",
 		[3] = "Under the hood changes & improvements.",
+		[4] = "#C_Change_# - left out of 2.2.6, included in a hotfix: #V_Version 2.2.6.1_# #H_(8/21/2022)_#:",
+		[5] = "Movement Speed has moved from Bitbucket to GitHub. Links to the Repository & Issues have been updated.\n#H_There is now an opportunity to Sponsor my work on GitHub to support and justify the continued development of my addons should you wish and have the means to do so. Every bit of help is appreciated!_#",
 	},
 }
 
@@ -188,8 +190,8 @@ local english = {
 				description = "Follow the links to see how you can provide feedback, report bugs, get help and support development.", --# flags will be replaced with code
 				curseForge = "CurseForge Page",
 				wago = "Wago Page",
-				bitBucket = "BitBucket Repository",
-				issues = "Issues & Ideas",
+				repository = "GitHub Repository",
+				issues = "Issues & Feedback",
 			},
 			feedback = {
 				title = "Feedback",
