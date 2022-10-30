@@ -1,5 +1,10 @@
---Addon namespace table
-local _, ns = ...
+--[[ ADDON INFO ]]
+
+--Addon namespace string & table
+local addonNameSpace, ns = ...
+
+--Addon root folder
+local root = "Interface/AddOns/" .. addonNameSpace .. "/"
 
 
 --[[ CHANGELOG ]]
@@ -127,8 +132,21 @@ local changelogDB = {
 		[4] = "#C_Change_# - left out of 2.2.6, included in a hotfix: #V_Version 2.2.6.1_# #H_(8/21/2022)_#:",
 		[5] = "Movement Speed has moved from Bitbucket to GitHub. Links to the Repository & Issues have been updated.\n#H_There is now an opportunity to Sponsor my work on GitHub to support and justify the continued development of my addons should you wish and have the means to do so. Every bit of help is appreciated!_#",
 	},
+	[15] = {
+		[0] = "#V_Version 2.3_# #H_(11/28/2022)_#",
+		[1] = "#N_Update:_#",
+		[2] = "Added Dragonflight (Retail 10.0) support.",
+		[3] = "Added vehicle speed support for Wrath of the Lich King Classic.",
+		[4] = "Significant under the hood changes & improvements, including new UI widgets and more functionality.",
+		[5] = "Apply quick display presets right from the context menu (Dragonflight only, for now).",
+		[6] = "Other smaller changes like an updated logo or improved data restoration from older versions of the addon.",
+		[7] = "#H_If you encounter any issues, do not hesitate reporting them! Try including when & how they occur, and which other addons are you using to give me the best chance to be able to reproduce and fix them. If you know how, try proving taint logs as well if relevant. Thanks for helping!_#",
+		[8] = "#F_Fix:_#",
+		[9] = "Fixed an uncommon target speed tooltip related issue.",
+	},
 }
 
+--Get an assembled & formatted string of the full changelog
 ns.GetChangelog = function()
 	--Colors
 	local version = "FFFFFFFF"
@@ -164,8 +182,6 @@ end
 
 local english = {
 	options = {
-		name = "#ADDON options",
-		defaults = "The default options and the Custom preset have been reset.",
 		main = {
 			name = "Main page",
 			description = "Customize #ADDON to fit your needs. Type #KEYWORD for chat commands.", --# flags will be replaced with code
@@ -187,7 +203,7 @@ local english = {
 			},
 			support = {
 				title = "Support",
-				description = "Follow the links to see how you can provide feedback, report bugs, get help and support development.", --# flags will be replaced with code
+				description = "Follow the links to see how you can provide feedback, report bugs, get help and support development.",
 				curseForge = "CurseForge Page",
 				wago = "Wago Page",
 				repository = "GitHub Repository",
@@ -240,7 +256,7 @@ local english = {
 					label = "Apply a Preset",
 					tooltip = "Swiftly change the position and visibility of the speed display by choosing and applying one of these presets.",
 					list = {
-						[0] = "Under Minimap Clock",
+						[0] = "Under Default Minimap",
 					},
 					select = "Select a preset…",
 				},
@@ -340,7 +356,7 @@ local english = {
 			description = "Configure #ADDON settings further, change options manually or backup your data by importing, exporting settings.", --# flags will be replaced with code
 			profiles = {
 				title = "Profiles",
-				description = "Create, edit and apply unique options profiles to customize #ADDON separately between your characters. (Soon™)", --# flags will be replaced with 
+				description = "Create, edit and apply unique options profiles to customize #ADDON separately between your characters. (Soon™)", --# flags will be replaced with
 			},
 			backup = {
 				title = "Backup",
@@ -424,6 +440,11 @@ local english = {
 			unchanged = "The font size was not changed.",
 			error = "Please enter a valid number value (e.g. #SIZE).", --# flags will be replaced with code
 		},
+		reset = {
+			command = "reset",
+			description = "reset everything to defaults",
+			response = "The default options and the Custom preset have been reset.",
+		},
 		position = {
 			save = "The speed display position was saved.",
 			cancel = "The repositioning of the speed display was cancelled.",
@@ -437,7 +458,7 @@ local english = {
 			[1] = "#YARDS yards / second.", --# flags will be replaced with code
 			[2] = "#PERCENT of the base running speed.", --# flags will be replaced with code
 		},
-		hintOptions = "Right-click to open specific options.",
+		hintOptions = "Right-click to access specific options.",
 		hintMove = "Hold #SHIFT & drag to reposition.", --# flags will be replaced with code
 	},
 	targetSpeed = "Speed: #SPEED", --# flags will be replaced with code
@@ -447,23 +468,9 @@ local english = {
 		shift = "SHIFT",
 		enter = "ENTER",
 	},
-	points = {
-		left = "Left",
-		right = "Right",
-		center = "Center",
-		top = {
-			left = "Top Left",
-			right = "Top Right",
-			center = "Top Center",
-		},
-		bottom = {
-			left = "Bottom Left",
-			right = "Bottom Right",
-			center = "Bottom Center",
-		},
-	},
 	misc = {
 		date = "#MONTH/#DAY/#YEAR", --# flags will be replaced with code
+		options = "Options",
 		default = "Default",
 		custom = "Custom",
 		override = "Override",
@@ -476,11 +483,8 @@ local english = {
 	},
 }
 
-
---[[ Load Localization ]]
-
 --Load the proper localization table based on the client language
-ns.LoadLocale = function()
+local LoadLocale = function()
 	local strings
 	if (GetLocale() == "") then
 		--TODO: Add localization for other languages (locales: https://wowwiki-archive.fandom.com/wiki/API_GetLocale#Locales)
@@ -491,3 +495,44 @@ ns.LoadLocale = function()
 	end
 	return strings
 end
+
+
+--[[ ASSETS ]]
+
+--Strings
+ns.strings = LoadLocale()
+ns.strings.chat.keyword = "/movespeed"
+
+--Colors
+ns.colors = {
+	grey = {
+		[0] = { r = 0.54, g = 0.54, b = 0.54 },
+	},
+	green = {
+		[0] = { r = 0.31, g = 0.85, b = 0.21 },
+		[1] = { r = 0.56, g = 0.83, b = 0.43 },
+	},
+	yellow = {
+		[0] = { r = 1, g = 0.87, b = 0.28 },
+		[1] = { r = 1, g = 0.98, b = 0.60 },
+	},
+}
+
+--Fonts
+ns.fonts = {
+	[0] = { name = ns.strings.misc.default, path = ns.strings.options.speedDisplay.text.font.family.default },
+	[1] = { name = "Arbutus Slab", path = root .. "Fonts/ArbutusSlab.ttf" },
+	[2] = { name = "Caesar Dressing", path = root .. "Fonts/CaesarDressing.ttf" },
+	[3] = { name = "Germania One", path = root .. "Fonts/GermaniaOne.ttf" },
+	[4] = { name = "Mitr", path = root .. "Fonts/Mitr.ttf" },
+	[5] = { name = "Oxanium", path = root .. "Fonts/Oxanium.ttf" },
+	[6] = { name = "Pattaya", path = root .. "Fonts/Pattaya.ttf" },
+	[7] = { name = "Reem Kufi", path = root .. "Fonts/ReemKufi.ttf" },
+	[8] = { name = "Source Code Pro", path = root .. "Fonts/SourceCodePro.ttf" },
+	[9] = { name = ns.strings.misc.custom, path = root .. "Fonts/CUSTOM.ttf" },
+}
+
+--Textures
+ns.textures = {
+	logo = root .. "Textures/Logo.tga",
+}

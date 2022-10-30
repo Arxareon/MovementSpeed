@@ -1,0 +1,13 @@
+## Interface: 20504
+## Title: Widget Tools |TInterface/AddOns/WidgetTools/Textures/Logo.tga:0|t
+## Version: 1.5
+## X-Day: 28
+## X-Month: 11
+## X-Year: 2022
+## Author: Barnabas Nagy (Arxareon)
+## X-License: All Rights Reserved
+## Notes: Responsible for doing the heavy lifting for other addons in the background.
+
+Resources.lua
+WidgetTools.lua
+WidgetToolbox.lua

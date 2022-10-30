@@ -1,15 +1,16 @@
 ## Interface: 30400
-## Title: Movement Speed
-## Version: 2.2.6.1
-## X-Day: 21
-## X-Month: 8
+## Title: Movement Speed |TInterface/AddOns/MovementSpeed/Textures/Logo.tga:0|t
+## Version: 2.3
+## X-Day: 28
+## X-Month: 11
 ## X-Year: 2022
 ## Author: Barnabas Nagy (Arxareon)
 ## X-License: All Rights Reserved
 ## Notes: View the movement speed of anyone in customizable displays and tooltips with fast updates.
 ## SavedVariables: MovementSpeedDB, MovementSpeedCS
 ## SavedVariablesPerCharacter: MovementSpeedDBC
+## Dependencies: WidgetTools
 
-WidgetTools/WidgetTools.lua
-MovementSpeedLocalizations.lua
+Resources.lua
+WidgetToolbox.lua
 MovementSpeedClassic.lua
