@@ -104,7 +104,7 @@ dbDefault.customPreset = wt.Clone(presets[0].data)
 
 --[ Speed Display ]
 
---Create frames
+--Create frame & text
 local moveSpeed = CreateFrame("Frame", addonNameSpace, UIParent)
 local speedDisplay = CreateFrame("Frame", moveSpeed:GetName() .. "Display", moveSpeed, BackdropTemplateMixin and "BackdropTemplate")
 local speedDisplayText = speedDisplay:CreateFontString(speedDisplay:GetName() .. "Text", "OVERLAY")
@@ -119,6 +119,20 @@ moveSpeed:RegisterEvent("PET_BATTLE_CLOSE")
 moveSpeed:SetScript("OnEvent", function(self, event, ...)
 	return self[event] and self[event](self, ...)
 end)
+
+--[ Travel Display ]
+
+--Create frame & text
+local travelSpeed = CreateFrame("Frame", addonNameSpace .. "TravelDisplay", UIParent)
+local travelSpeedText = travelSpeed:CreateFontString(travelSpeed:GetName() .. "Text", "OVERLAY")
+
+travelSpeed:SetPoint("CENTER")
+travelSpeed:SetSize(100, 20)
+
+travelSpeedText:SetPoint("CENTER")
+travelSpeedText:SetFont(ns.fonts[0].path, 12, "THINOUTLINE")
+
+wt.SetMovability(travelSpeed, true, "SHIFT")
 
 --[ Target Speed ]
 
@@ -1859,9 +1873,45 @@ function moveSpeed:ADDON_LOADED(name)
 	StartSpeedDisplayUpdate()
 end
 
+local pastPosition
+local travelDistance
 function moveSpeed:PLAYER_ENTERING_WORLD()
 	--Toggle the visibility of the speed display (before OnUpdate would trigger)
 	wt.SetVisibility(speedDisplay, not db.speedDisplay.visibility.autoHide or GetPlayerSpeed() ~= 0)
 	--Visibility notice
 	if not moveSpeed:IsVisible() or not speedDisplay:IsVisible() then PrintStatus(true) end
+	--Test Update
+	local mapWidth, mapHeight = C_Map.GetMapWorldSize(C_Map.GetBestMapForUnit("player"))
+	-- travelSpeed:HookScript("OnUpdate", function()
+	-- 	local currentPosition
+	-- 	local mapID = C_Map.GetBestMapForUnit("player")
+
+	-- 	if (mapID) then currentPosition = C_Map.GetPlayerMapPosition(mapID, "player") or nil end
+
+	-- 	if (pastPosition and currentPosition --[[ and not IsInInstance() and not C_Garrison.IsOnGarrisonMap() ]]) then
+	-- 		currentPosition.x = currentPosition.x * mapWidth * 0.01
+	-- 		currentPosition.y = currentPosition.y * mapHeight * 0.01
+	-- 		travelDistance = math.sqrt((currentPosition.x - pastPosition.x) ^ 2 + (currentPosition.y - pastPosition.y) ^ 2) * 100 * GetFramerate()
+	-- 		-- travelSpeedText:SetText(wt.Round(travelDistance, 2))
+	-- 	--[[ else travelSpeedText:SetText("…") ]] end
+
+	-- 	pastPosition = currentPosition
+	-- end)
+	-- C_Timer.NewTicker(0.1, function() travelSpeedText:SetText(travelDistance and wt.Round(travelDistance, 2) or "…") end)
+	C_Timer.NewTicker(0.1, function()
+		local currentPosition
+		local mapID = C_Map.GetBestMapForUnit("player")
+
+		if (mapID) then currentPosition = C_Map.GetPlayerMapPosition(mapID, "player") or nil end
+
+		if (pastPosition and currentPosition --[[ and not IsInInstance() and not C_Garrison.IsOnGarrisonMap() ]]) then
+			currentPosition.x = currentPosition.x * mapWidth * 0.01
+			currentPosition.y = currentPosition.y * mapHeight * 0.01
+			travelDistance = math.sqrt((currentPosition.x - pastPosition.x) ^ 2 + (currentPosition.y - pastPosition.y) ^ 2) * 1000
+
+			travelSpeedText:SetText(wt.Round(travelDistance, 2))
+		else travelSpeedText:SetText("…") end
+
+		pastPosition = currentPosition
+	end)
 end
