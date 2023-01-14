@@ -1,15 +1,6 @@
---[[ ADDON INFO ]]
-
---Addon namespace string & table
-local addonNameSpace, ns = ...
-
---Addon display name
-local _, addonTitle = GetAddOnInfo(addonNameSpace)
-
-
 --[[ WIDGET TOOLS DATA ]]
 
---Local WidgetTools toolbox registry
+--Local toolbox registry
 local registry = { toolbox = {}, addons = {} }
 
 --Global WidgetTools table
@@ -37,27 +28,34 @@ WidgetTools.RegisterToolbox = function(addon, version, toolbox, logo)
 end
 
 
---[[ ABOUT ]]
+--[[ INITIALIZATION ]]
 
---Frame & events
+---Addon namespace
+---@class ns
+local addonNameSpace, ns = ...
+
+--Frame
 local frame = CreateFrame("Frame", addonNameSpace .. "Frame")
-frame:RegisterEvent("PLAYER_ENTERING_WORLD")
 
 --Event handler
 frame:SetScript("OnEvent", function(self, event, ...)
 	return self[event] and self[event](self, ...)
 end)
 
---[ Initialization ]
-
 --Add the WidgetTools about info to the Settings
+frame:RegisterEvent("PLAYER_ENTERING_WORLD")
 function frame:PLAYER_ENTERING_WORLD()
+	frame:UnregisterEvent("PLAYER_ENTERING_WORLD")
 
-	---@class WidgetToolbox
+
+	--[[ RESOURCES ]]
+
+	---WidgetTools toolbox
+	---@class wt
 	local wt = ns.WidgetToolbox
 
-	--Clean up the addon title
-	addonTitle = wt.Clear(addonTitle):gsub("^%s*(.-)%s*$", "%1")
+	--Addon display name
+	local addonTitle = wt.Clear(select(2, GetAddOnInfo(addonNameSpace))):gsub("^%s*(.-)%s*$", "%1")
 
 
 	--[[ SETTINGS CATEGORY PAGES ]]
@@ -98,7 +96,7 @@ function frame:PLAYER_ENTERING_WORLD()
 		name = "Shortcuts",
 		title = ns.strings.shortcuts.title,
 		description = ns.strings.shortcuts.description:gsub("#ADDON", addonTitle),
-		position = { offset = { x = 10, y = -82 } },
+		position = { offset = { x = wt.classic and 16 or 10, y = -82 } },
 		size = { height = 64 },
 	})
 
@@ -108,8 +106,8 @@ function frame:PLAYER_ENTERING_WORLD()
 		name = "AddonsPage",
 		title = ns.strings.addons.title,
 		tooltip = { lines = {
-			[0] = { text =  ns.strings.addons.description:gsub("#ADDON", addonTitle), },
-			[1] = not wt.classic and { text = (wt.GetStrings("dfOpenSettings") or ""):gsub("#ADDON",  addonTitle), color = { r = 1, g = 0.24, b = 0.13 }, } or nil,
+			{ text =  ns.strings.addons.description:gsub("#ADDON", addonTitle), },
+			[2] = not wt.classic and { text = (wt.GetStrings("dfOpenSettings") or ""):gsub("#ADDON",  addonTitle), color = { r = 1, g = 0.24, b = 0.13 }, } or nil,
 		} },
 		position = { offset = { x = 10, y = -30 } },
 		size = { width = 160, },
@@ -131,164 +129,334 @@ function frame:PLAYER_ENTERING_WORLD()
 			relativePoint = "BOTTOMLEFT",
 			offset = { y = -32 }
 		},
-		size = { height = 257 },
+		size = { height = 260 },
 	})
 
 	--Text: Version
 	local version = wt.CreateText({
 		parent = aboutPanel,
+		name = "VersionTitle",
+		position = { offset = { x = 16, y = -32 } },
+		width = 45,
+		text = ns.strings.about.version .. ":",
+		font = "GameFontNormalSmall",
+		justify = { h = "RIGHT", },
+	})
+	wt.CreateText({
+		parent = aboutPanel,
 		name = "Version",
-		position = { offset = { x = 16, y = -33 } },
-		width = 84,
-		text = ns.strings.about.version:gsub("#VERSION", WrapTextInColorCode(GetAddOnMetadata(addonNameSpace, "Version"), "FFFFFFFF")),
-		template = "GameFontNormalSmall",
-		justify = "LEFT",
+		position = {
+			relativeTo = version,
+			relativePoint = "TOPRIGHT",
+			offset = { x = 5 }
+		},
+		width = 140,
+		text = GetAddOnMetadata(addonNameSpace, "Version"),
+		font = "GameFontHighlightSmall",
+		justify = { h = "LEFT", },
 	})
 
 	--Text: Date
 	local date = wt.CreateText({
 		parent = aboutPanel,
-		name = "Date",
+		name = "DateTitle",
 		position = {
 			relativeTo = version,
-			relativePoint = "TOPRIGHT",
-			offset = { x = 10, }
+			relativePoint = "BOTTOMLEFT",
+			offset = { y = -8 }
 		},
-		width = 102,
-		text = ns.strings.about.date:gsub(
-			"#DATE", WrapTextInColorCode(ns.strings.about.dateFormat:gsub(
-				"#DAY", GetAddOnMetadata(addonNameSpace, "X-Day")
-			):gsub(
-				"#MONTH", GetAddOnMetadata(addonNameSpace, "X-Month")
-			):gsub(
-				"#YEAR", GetAddOnMetadata(addonNameSpace, "X-Year")
-			), "FFFFFFFF")
+		width = 45,
+		text = ns.strings.about.date .. ":",
+		font = "GameFontNormalSmall",
+		justify = { h = "RIGHT", },
+	})
+	wt.CreateText({
+		parent = aboutPanel,
+		name = "Date",
+		position = {
+			relativeTo = date,
+			relativePoint = "TOPRIGHT",
+			offset = { x = 5 }
+		},
+		width = 140,
+		text = ns.strings.about.dateFormat:gsub(
+			"#DAY", GetAddOnMetadata(addonNameSpace, "X-Day")
+		):gsub(
+			"#MONTH", GetAddOnMetadata(addonNameSpace, "X-Month")
+		):gsub(
+			"#YEAR", GetAddOnMetadata(addonNameSpace, "X-Year")
 		),
-		template = "GameFontNormalSmall",
-		justify = "LEFT",
+		font = "GameFontHighlightSmall",
+		justify = { h = "LEFT", },
 	})
 
 	--Text: Author
 	local author = wt.CreateText({
 		parent = aboutPanel,
-		name = "Author",
+		name = "AuthorTitle",
 		position = {
 			relativeTo = date,
-			relativePoint = "TOPRIGHT",
-			offset = { x = 10, }
+			relativePoint = "BOTTOMLEFT",
+			offset = { y = -8 }
 		},
-		width = 186,
-		text = ns.strings.about.author:gsub("#AUTHOR", WrapTextInColorCode(GetAddOnMetadata(addonNameSpace, "Author"), "FFFFFFFF")),
-		template = "GameFontNormalSmall",
-		justify = "LEFT",
+		width = 45,
+		text = ns.strings.about.author .. ":",
+		font = "GameFontNormalSmall",
+		justify = { h = "RIGHT", },
+	})
+	wt.CreateText({
+		parent = aboutPanel,
+		name = "Author",
+		position = {
+			relativeTo = author,
+			relativePoint = "TOPRIGHT",
+			offset = { x = 5 }
+		},
+		width = 140,
+		text = GetAddOnMetadata(addonNameSpace, "Author"),
+		font = "GameFontHighlightSmall",
+		justify = { h = "LEFT", },
 	})
 
 	--Text: License
+	local license = wt.CreateText({
+		parent = aboutPanel,
+		name = "LicenseTitle",
+		position = {
+			relativeTo = author,
+			relativePoint = "BOTTOMLEFT",
+			offset = { y = -8 }
+		},
+		width = 45,
+		text = ns.strings.about.license .. ":",
+		font = "GameFontNormalSmall",
+		justify = { h = "RIGHT", },
+	})
 	wt.CreateText({
 		parent = aboutPanel,
 		name = "License",
 		position = {
-			relativeTo = author,
+			relativeTo = license,
 			relativePoint = "TOPRIGHT",
-			offset = { x = 10, }
+			offset = { x = 5 }
 		},
-		width = 156,
-		text = ns.strings.about.license:gsub("#LICENSE", WrapTextInColorCode(GetAddOnMetadata(addonNameSpace, "X-License"), "FFFFFFFF")),
-		template = "GameFontNormalSmall",
-		justify = "LEFT",
-	})
-
-	--EditScrollBox: Changelog
-	wt.CreateEditScrollBox({
-		parent = aboutPanel,
-		name = "Changelog",
-		title = ns.strings.about.changelog.label,
-		tooltip = { lines = { [0] = { text = ns.strings.about.changelog.tooltip, }, } },
-		position = {
-			relativeTo = version,
-			relativePoint = "BOTTOMLEFT",
-			offset = { y = -12 }
-		},
-		size = { width = aboutPanel:GetWidth() - 32, height = 165 },
-		text = ns.GetChangelog(),
-		font = "GameFontDisableSmall",
-		readOnly = true,
-		scrollSpeed = 45,
-	})
-
-	--[ Support ]
-
-	--Main panel
-	local supportPanel = wt.CreatePanel({
-		parent = mainPage.canvas,
-		name = "Support",
-		title = ns.strings.support.title,
-		description = ns.strings.support.description,
-		position = {
-			relativeTo = aboutPanel,
-			relativePoint = "BOTTOMLEFT",
-			offset = { y = -32 }
-		},
-		size = { height = 111 },
+		width = 140,
+		text = GetAddOnMetadata(addonNameSpace, "X-License"),
+		font = "GameFontHighlightSmall",
+		justify = { h = "LEFT", },
 	})
 
 	--Copybox: CurseForge
-	wt.CreateCopyBox({
-		parent = supportPanel,
+	local curse = wt.CreateCopyBox({
+		parent = aboutPanel,
 		name = "CurseForge",
-		title = ns.strings.support.curseForge .. ":",
-		position = { offset = { x = 16, y = -33 } },
-		size = { width = supportPanel:GetWidth() / 2 - 22, },
+		title = ns.strings.about.curseForge .. ":",
+		position = {
+			relativeTo = license,
+			relativePoint = "BOTTOMLEFT",
+			offset = { y = -11 }
+		},
+		size = { width = 190, },
 		text = "curseforge.com/wow/addons/widget-tools",
-		template = "GameFontNormalSmall",
+		font = "GameFontNormalSmall",
 		color = { r = 0.6, g = 0.8, b = 1, a = 1 },
 		colorOnMouse = { r = 0.8, g = 0.95, b = 1, a = 1 },
 	})
 
 	--Copybox: Wago
-	wt.CreateCopyBox({
-		parent = supportPanel,
+	local wago = wt.CreateCopyBox({
+		parent = aboutPanel,
 		name = "Wago",
-		title = ns.strings.support.wago .. ":",
+		title = ns.strings.about.wago .. ":",
 		position = {
-			anchor = "TOP",
-			offset = { x = (supportPanel:GetWidth() / 2 - 22) / 2 + 8, y = -33 }
+			relativeTo = curse,
+			relativePoint = "BOTTOMLEFT",
+			offset = { y = -8 }
 		},
-		size = { width = supportPanel:GetWidth() / 2 - 22, },
+		size = { width = 190, },
 		text = "addons.wago.io/addons/widget-tools",
-		template = "GameFontNormalSmall",
+		font = "GameFontNormalSmall",
 		color = { r = 0.6, g = 0.8, b = 1, a = 1 },
 		colorOnMouse = { r = 0.8, g = 0.95, b = 1, a = 1 },
 	})
 
 	--Copybox: Repository
-	wt.CreateCopyBox({
-		parent = supportPanel,
+	local repo = wt.CreateCopyBox({
+		parent = aboutPanel,
 		name = "Repository",
-		title = ns.strings.support.repository .. ":",
-		position = { offset = { x = 16, y = -70 } },
-		size = { width = supportPanel:GetWidth() / 2 - 22, },
+		title = ns.strings.about.repository .. ":",
+		position = {
+			relativeTo = wago,
+			relativePoint = "BOTTOMLEFT",
+			offset = { y = -8 }
+		},
+		size = { width = 190, },
 		text = "github.com/Arxareon/widgetTools",
-		template = "GameFontNormalSmall",
+		font = "GameFontNormalSmall",
 		color = { r = 0.6, g = 0.8, b = 1, a = 1 },
 		colorOnMouse = { r = 0.8, g = 0.95, b = 1, a = 1 },
 	})
 
 	--Copybox: Issues
 	wt.CreateCopyBox({
-		parent = supportPanel,
+		parent = aboutPanel,
 		name = "Issues",
-		title = ns.strings.support.issues .. ":",
+		title = ns.strings.about.issues .. ":",
 		position = {
-			anchor = "TOP",
-			offset = { x = (supportPanel:GetWidth() / 2 - 22) / 2 + 8, y = -70 }
+			relativeTo = repo,
+			relativePoint = "BOTTOMLEFT",
+			offset = { y = -8 }
 		},
-		size = { width = supportPanel:GetWidth() / 2 - 22, },
+		size = { width = 190, },
 		text = "github.com/Arxareon/WidgetTools/issues",
-		template = "GameFontNormalSmall",
+		font = "GameFontNormalSmall",
 		color = { r = 0.6, g = 0.8, b = 1, a = 1 },
 		colorOnMouse = { r = 0.8, g = 0.95, b = 1, a = 1 },
 	})
+
+	--EditScrollBox: Changelog
+	local _, changelog = wt.CreateEditScrollBox({
+		parent = aboutPanel,
+		name = "Changelog",
+		title = ns.strings.about.changelog.label,
+		tooltip = { lines = { { text = ns.strings.about.changelog.tooltip, }, } },
+		position = {
+			anchor = "TOPRIGHT",
+			offset = { x = -17.5, y = -30 }
+		},
+		size = { width = aboutPanel:GetWidth() - 235.5, height = 192 },
+		text = ns.GetChangelog(true),
+		font = { normal = "GameFontDisableSmall", },
+		color = ns.colors.grey[0],
+		readOnly = true,
+		scrollSpeed = 45,
+	})
+
+	--Button: Full changelog
+	local changelogFrame
+	wt.CreateButton({
+		parent = aboutPanel,
+		name = "OpenFullChangelog",
+		title = ns.strings.about.openFullChangelog.label,
+		tooltip = { lines = { { text = ns.strings.about.openFullChangelog.tooltip, }, } },
+		position = {
+			anchor = "BOTTOMRIGHT",
+			relativeTo = changelog,
+			relativePoint = "TOPRIGHT",
+			offset = { x = 2.5, y = 6 }
+		},
+		size = { width = 180, height = 14 },
+		font = {
+			normal = "GameFontNormalSmall",
+			highlight = "GameFontHighlightSmall",
+		},
+		events = { OnClick = function()
+			if changelogFrame then changelogFrame:Show()
+			else
+				--Create the full changelog frame
+				changelogFrame = wt.CreatePanel({
+					parent = UIParent,
+					name = addonNameSpace .. "Changelog",
+					append = false,
+					title = ns.strings.about.fullChangelog.label:gsub("#ADDON", addonTitle),
+					position = { anchor = "CENTER", },
+					size = { width = 740, height = 560 },
+					background = { color = { a = 0.9 }, },
+				})
+				wt.SetPosition(_G[changelogFrame:GetName() .. "Title"], { offset = { x = 16, y = -16 } })
+				wt.SetMovability(changelogFrame, true)
+				changelogFrame:SetClampedToScreen(true)
+				changelogFrame:SetFrameStrata("DIALOG")
+				changelogFrame:IsToplevel(true)
+
+				--EditScrollBox: Full changelog
+				local _, fullChangelog = wt.CreateEditScrollBox({
+					parent = changelogFrame,
+					name = "FullChangelog",
+					label = false,
+					tooltip = { lines = { { text = ns.strings.about.fullChangelog.tooltip, }, } },
+					position = {
+						anchor = "TOPRIGHT",
+						offset = { x = -16, y = -42 }
+					},
+					size = { width = changelogFrame:GetWidth() - 32, height = changelogFrame:GetHeight() - 90.5 },
+					text = ns.GetChangelog(),
+					font = { normal = "GameFontDisable", },
+					color = ns.colors.grey[0],
+					readOnly = true,
+					scrollSpeed = 90,
+				})
+
+				--Button: Close
+				wt.CreateButton({
+					parent = changelogFrame,
+					name = "CancelButton",
+					title = wt.GetStrings("Close"),
+					position = {
+						anchor = "TOPRIGHT",
+						relativeTo = fullChangelog,
+						relativePoint = "BOTTOMRIGHT",
+						offset = { x = 6, y = -13 }
+					},
+					events = { OnClick = function() changelogFrame:Hide() end },
+				})
+			end
+		end, },
+	})
+
+	--[ Sponsors ]
+
+	local top = GetAddOnMetadata(addonNameSpace, "X-TopSponsors")
+	local normal = GetAddOnMetadata(addonNameSpace, "X-Sponsors")
+	if top or normal then
+		--Main panel
+		local sponsorsPanel = wt.CreatePanel({
+			parent = mainPage.canvas,
+			name = "Sponsors",
+			title = ns.strings.sponsors.title,
+			description = ns.strings.sponsors.description,
+			position = {
+				relativeTo = aboutPanel,
+				relativePoint = "BOTTOMLEFT",
+				offset = { y = -32 }
+			},
+			size = { height = 64 + (top and normal and 24 or 0) },
+		})
+		wt.CreateText({
+			parent = sponsorsPanel,
+			name = "DescriptionHeart",
+			position = { offset = { x = _G[sponsorsPanel:GetName() .. "Description"]:GetStringWidth() + 16, y = -10 } },
+			text = "♥",
+			font = "ChatFontSmall",
+			justify = { h = "LEFT", },
+		})
+
+		--Top sponsors
+		if top then
+			wt.CreateText({
+				parent = sponsorsPanel,
+				name = "Top",
+				position = { offset = { x = 16, y = -33 } },
+				width = sponsorsPanel:GetWidth() - 32,
+				text = top:gsub("|", " • "),
+				font = "GameFontNormalLarge",
+				justify = { h = "LEFT", },
+			})
+		end
+
+		--Sponsors
+		if normal then
+			wt.CreateText({
+				parent = sponsorsPanel,
+				name = "Normal",
+				position = { offset = { x = 16, y = -33 -(top and 24 or 0) } },
+				width = sponsorsPanel:GetWidth() - 32,
+				text = normal:gsub("|", " • "),
+				font = "GameFontHighlightMedium",
+				justify = { h = "LEFT", },
+			})
+		end
+	end
 
 
 	--[[ ADDON LIST ]]
@@ -306,12 +474,12 @@ function frame:PLAYER_ENTERING_WORLD()
 		local toolboxPanel = wt.CreatePanel({
 			parent = addonsPage.scrollChild,
 			name = "Toolbox" .. key,
-			title = ns.strings.addons.toolbox:gsub("#VERSION", ns.strings.about.version:gsub("#VERSION", WrapTextInColorCode(key, "FFFFFFFF"))),
+			title = ns.strings.addons.toolbox:gsub("#VERSION", ns.strings.about.compactVersion:gsub("#VERSION", WrapTextInColorCode(key, "FFFFFFFF"))),
 			position = {
 				anchor = "TOPLEFT",
 				relativeTo = previousToolbox,
 				relativePoint = "BOTTOMLEFT",
-				offset = { x = previousToolbox and 0 or 10, y = previousToolbox and -32 or -78 }
+				offset = { x = previousToolbox and 0 or (wt.classic and 16 or 10), y = previousToolbox and -32 or -78 }
 			},
 			size = { width = addonsPage.scrollChild:GetWidth() - 32, height = 32 },
 		})
@@ -364,22 +532,27 @@ function frame:PLAYER_ENTERING_WORLD()
 			local addonVersion = wt.CreateText({
 				parent = addonPanel,
 				name = "Version",
-				text = ns.strings.about.version:gsub("#VERSION", WrapTextInColorCode(GetAddOnMetadata(k, "Version") or "?", "FFFFFFFF")),
 				position = {
 					anchor = "BOTTOMLEFT",
 					relativeTo = logo,
 					relativePoint = "BOTTOMRIGHT",
 					offset = { x = 8, y = 9 }
 				},
-				template = "GameFontNormalSmall",
-				justify = "LEFT",
+				text = ns.strings.about.compactVersion:gsub("#VERSION", WrapTextInColorCode(GetAddOnMetadata(k, "Version") or "?", "FFFFFFFF")),
+				font = "GameFontNormalSmall",
+				justify = { h = "LEFT", },
 			})
 
 			--Text: Date
 			local addonDate = wt.CreateText({
 				parent = addonPanel,
 				name = "Date",
-				text = ns.strings.about.date:gsub(
+				position = {
+					relativeTo = addonVersion,
+					relativePoint = "TOPRIGHT",
+					offset = { x = 10, }
+				},
+				text = ns.strings.about.compactDate:gsub(
 					"#DATE", WrapTextInColorCode(ns.strings.about.dateFormat:gsub(
 						"#DAY", GetAddOnMetadata(k, "X-Day") or "?"
 					):gsub(
@@ -388,12 +561,7 @@ function frame:PLAYER_ENTERING_WORLD()
 						"#YEAR", GetAddOnMetadata(k, "X-Year") or "?"
 					), "FFFFFFFF")
 				),
-				position = {
-					relativeTo = addonVersion,
-					relativePoint = "TOPRIGHT",
-					offset = { x = 10, }
-				},
-				template = "GameFontNormalSmall",
+				font = "GameFontNormalSmall",
 				justify = "LEFT",
 			})
 
@@ -401,28 +569,28 @@ function frame:PLAYER_ENTERING_WORLD()
 			local addonAuthor = wt.CreateText({
 				parent = addonPanel,
 				name = "Credits",
-				text = ns.strings.about.author:gsub("#AUTHOR", WrapTextInColorCode(GetAddOnMetadata(k, "Author") or "?", "FFFFFFFF")),
 				position = {
 					relativeTo = addonDate,
 					relativePoint = "TOPRIGHT",
 					offset = { x = 10, }
 				},
-				template = "GameFontNormalSmall",
-				justify = "LEFT",
+				text = ns.strings.about.compactAuthor:gsub("#AUTHOR", WrapTextInColorCode(GetAddOnMetadata(k, "Author") or "?", "FFFFFFFF")),
+				font = "GameFontNormalSmall",
+				justify = { h = "LEFT", },
 			})
 
 			--Text: License
 			wt.CreateText({
 				parent = addonPanel,
 				name = "License",
-				text = ns.strings.about.license:gsub("#LICENSE", WrapTextInColorCode(GetAddOnMetadata(k, "X-License") or "?", "FFFFFFFF")),
 				position = {
 					relativeTo = addonAuthor,
 					relativePoint = "TOPRIGHT",
 					offset = { x = 10, }
 				},
-				template = "GameFontNormalSmall",
-				justify = "LEFT",
+				text = ns.strings.about.compactLicense:gsub("#LICENSE", WrapTextInColorCode(GetAddOnMetadata(k, "X-License") or "?", "FFFFFFFF")),
+				font = "GameFontNormalSmall",
+				justify = { h = "LEFT", },
 			})
 
 			--Increase the toolbox height
@@ -444,7 +612,7 @@ function frame:PLAYER_ENTERING_WORLD()
 		parent = addonsPage.scrollChild,
 		name = "OldList",
 		title = ns.strings.addons.old.title,
-		description = ns.strings.addons.old.description:gsub("#ADDON", addonTitle),
+		description = ns.strings.addons.old.description,
 		position = {
 			relativeTo = previousToolbox,
 			relativePoint = "BOTTOMLEFT",
@@ -458,19 +626,19 @@ function frame:PLAYER_ENTERING_WORLD()
 	if WidgetToolbox then if next(WidgetToolbox) then
 		local toolboxes = ""
 		for key, _ in wt.SortedPairs(WidgetToolbox) do toolboxes = toolboxes .. " • " .. key end
-		oldToolboxesText = WrapTextInColorCode(ns.strings.addons.old.inUse:gsub("#ADDON", addonTitle):gsub(
-				"#TOOLBOXES",  WrapTextInColorCode(toolboxes:sub(5),  "FFFFFFFF")
-			), wt.ColorToHex(NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b, 1, true, false))
+		oldToolboxesText = WrapTextInColorCode(ns.strings.addons.old.inUse:gsub(
+			"#TOOLBOXES",  WrapTextInColorCode(toolboxes:sub(5),  "FFFFFFFF")
+		), wt.ColorToHex(NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b, 1, true, false))
 	end end
 
 	--Text: Old toolboxes
 	wt.CreateText({
 		parent = oldToolboxes,
 		name = "OldToolboxes",
-		text = oldToolboxesText,
 		position = { offset = { x = 16, y = -33 } },
-		template = "GameFontDisableSmall",
-		justify = "LEFT",
+		text = oldToolboxesText,
+		font = "GameFontDisableSmall",
+		justify = { h = "LEFT", },
 	})
 
 	--Increase the scroll height

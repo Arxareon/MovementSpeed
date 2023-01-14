@@ -1,28 +1,23 @@
---[[ ADDON INFO ]]
-
---Addon namespace string & table
-local addonNameSpace, ns = ...
-
---Addon display name
-local _, addonTitle = GetAddOnInfo(addonNameSpace)
-
-
 --[[ RESOURCES ]]
 
----@class WidgetToolbox
+---Addon namespace
+---@class ns
+local addonNameSpace, ns = ...
+
+---WidgetTools toolbox
+---@class wt
 local wt = ns.WidgetToolbox
 
---Clean up the addon title
-addonTitle = wt.Clear(addonTitle):gsub("^%s*(.-)%s*$", "%1")
+--Addon title
+local addonTitle = wt.Clear(select(2, GetAddOnInfo(addonNameSpace))):gsub("^%s*(.-)%s*$", "%1")
 
+--Custom Tooltip
+ns.tooltip = wt.CreateGameTooltip(addonNameSpace)
 
---[[ DATA TABLES ]]
+--[ Data Tables ]
 
---[ Addon DBs ]
-
---References
-local db --Account-wide options
-local dbc --Character-specific options
+local db = {} --Account-wide options
+local dbc = {} --Character-specific options
 local cs --Cross-session account-wide data
 
 --Default values
@@ -37,15 +32,10 @@ local dbDefault = {
 			autoHide = false,
 			statusNotice = true,
 		},
-		text = {
-			valueType = 0,
-			decimals = 0,
-			noTrim = false,
-			font = {
-				family = ns.fonts[0].path,
-				size = 11,
-				color = { r = 1, g = 1, b = 1, a = 1 },
-			},
+		font = {
+			family = ns.fonts[0].path,
+			size = 11,
+			color = { r = 1, g = 1, b = 1, a = 1 },
 		},
 		background = {
 			visible = false,
@@ -54,15 +44,29 @@ local dbDefault = {
 				border = { r = 1, g = 1, b = 1, a = 0.4 },
 			},
 		},
+		value = {
+			type = 0,
+			decimals = 0,
+			noTrim = false,
+		},
+	},
+	playerSpeed = {
+		enabled = true,
+		throttle = false,
+		frequency = 0.1,
+	},
+	travelSpeed = {
+		enabled = false,
+		replacement = false,
+		throttle = true,
+		frequency = 0.1,
 	},
 	targetSpeed = {
-		tooltip = {
-			enabled = true,
-			text = {
-				valueType = 2,
-				decimals = 0,
-				noTrim = false,
-			},
+		enabled = true,
+		value = {
+			type = 2,
+			decimals = 0,
+			noTrim = false,
 		},
 	},
 }
@@ -70,8 +74,7 @@ local dbcDefault = {
 	hidden = false,
 }
 
---[ Preset Data ]
-
+--Preset data
 local presets = {
 	[0] = {
 		name = ns.strings.misc.custom, --Custom
@@ -99,54 +102,34 @@ local presets = {
 --Add custom preset to DB
 dbDefault.customPreset = wt.Clone(presets[0].data)
 
+--[ References ]
 
---[[ FRAMES & EVENTS ]]
-
---[ Speed Display ]
-
---Create frame & text
-local moveSpeed = CreateFrame("Frame", addonNameSpace, UIParent)
-local speedDisplay = CreateFrame("Frame", moveSpeed:GetName() .. "Display", moveSpeed, BackdropTemplateMixin and "BackdropTemplate")
-local speedDisplayText = speedDisplay:CreateFontString(speedDisplay:GetName() .. "Text", "OVERLAY")
-
---Register events
-moveSpeed:RegisterEvent("ADDON_LOADED")
-moveSpeed:RegisterEvent("PLAYER_ENTERING_WORLD")
-moveSpeed:RegisterEvent("PET_BATTLE_OPENING_START")
-moveSpeed:RegisterEvent("PET_BATTLE_CLOSE")
-
---Event handler
-moveSpeed:SetScript("OnEvent", function(self, event, ...)
-	return self[event] and self[event](self, ...)
-end)
-
---[ Travel Display ]
-
---Create frame & text
-local travelSpeed = CreateFrame("Frame", addonNameSpace .. "TravelDisplay", UIParent)
-local travelSpeedText = travelSpeed:CreateFontString(travelSpeed:GetName() .. "Text", "OVERLAY")
-
-travelSpeed:SetPoint("CENTER")
-travelSpeed:SetSize(100, 20)
-
-travelSpeedText:SetPoint("CENTER")
-travelSpeedText:SetFont(ns.fonts[0].path, 12, "THINOUTLINE")
-
-wt.SetMovability(travelSpeed, true, "SHIFT")
-
---[ Target Speed ]
-
---Create frame
-local targetSpeed = CreateFrame("Frame", addonNameSpace .. "TargetSpeed", UIParent)
-
---Event handler
-targetSpeed:SetScript("OnEvent", function(self, event, ...)
-	return self[event] and self[event](self, ...)
-end)
-
---[ Custom Tooltip ]
-
-ns.tooltip = wt.CreateGameTooltip(addonNameSpace)
+--Local frame references
+local frames = {
+	playerSpeed = {},
+	travelSpeed = {},
+	options = {
+		main = {},
+		speedDisplays = {
+			position = {},
+			font = {},
+			visibility = {},
+			background = {
+				colors = {},
+				size = {},
+			},
+			value = {},
+		},
+		playerSpeed = {},
+		travelSpeed = {},
+		targetSpeed = {
+			value = {},
+		},
+		advanced = {
+			backup = {},
+		},
+	},
+}
 
 
 --[[ UTILITIES ]]
@@ -194,17 +177,20 @@ local function RestoreOldData(data, characterData, recoveredData, recoveredChara
 		elseif k == "appearance.backdrop.color.g" then data.speedDisplay.background.colors.bg.g = v
 		elseif k == "appearance.backdrop.color.b" then data.speedDisplay.background.colors.bg.b = v
 		elseif k == "appearance.backdrop.color.a" then data.speedDisplay.background.colors.bg.a = v
-		elseif k == "fontSize" or k == "font.size" then data.speedDisplay.text.font.size = v
-		elseif k == "font.family" then data.speedDisplay.text.font.family = v
-		elseif k == "font.color.r" then data.speedDisplay.text.font.color.r = v
-		elseif k == "font.color.g" then data.speedDisplay.text.font.color.g = v
-		elseif k == "font.color.b" then data.speedDisplay.text.font.color.b = v
-		elseif k == "font.color.a" then data.speedDisplay.text.font.color.a = v
-		elseif k == "visibility.hidden" or k == "appearance.hidden" then characterData.hidden = v
-		elseif k == "targetSpeed.enabled" then data.targetSpeed.tooltip.enabled = v
-		elseif k == "targetSpeed.text.valueType" then data.targetSpeed.tooltip.text.valueType = v
-		elseif k == "targetSpeed.text.decimals" then data.targetSpeed.tooltip.text.decimals = v
-		elseif k == "targetSpeed.text.noTrim" then data.targetSpeed.tooltip.text.noTrim = v end
+		elseif k == "fontSize" or k == "font.size" then data.speedDisplay.font.size = v
+		elseif k == "font.family" then data.speedDisplay.font.family = v
+		elseif k == "font.color.r" then data.speedDisplay.font.color.r = v
+		elseif k == "font.color.g" then data.speedDisplay.font.color.g = v
+		elseif k == "font.color.b" then data.speedDisplay.font.color.b = v
+		elseif k == "font.color.a" then data.speedDisplay.font.color.a = v
+		elseif k == "speedDisplay.font.text.valueType" then data.speedDisplay.value.type = v
+		elseif k == "speedDisplay.font.text.decimals" then data.speedDisplay.value.decimals = v
+		elseif k == "speedDisplay.font.text.noTrim" then data.speedDisplay.value.noTrim = v
+		elseif k == "targetSpeed.tooltip.enabled" then data.targetSpeed.enabled = v
+		elseif k == "targetSpeed.tooltip.text.valueType" then data.targetSpeed.value.type = v
+		elseif k == "targetSpeed.tooltip.text.decimals" then data.targetSpeed.value.decimals = v
+		elseif k == "targetSpeed.tooltip.text.noTrim" then data.targetSpeed.value.noTrim = v
+		elseif k == "visibility.hidden" or k == "appearance.hidden" then characterData.hidden = v end
 	end end
 	if recoveredCharacterData ~= nil then for k, v in pairs(recoveredCharacterData) do
 		if k == "hidden" then characterData.hidden = v
@@ -216,39 +202,58 @@ end
 ---Load the addon databases from the SavedVariables tables specified in the TOC
 ---@return boolean firstLoad True is returned when the addon SavedVariables tabled didn't exist prior to loading, false otherwise
 local function LoadDBs()
-	local firstLoad = false
-	--First load
-	if MovementSpeedDB == nil then
-		MovementSpeedDB = wt.Clone(dbDefault)
-		firstLoad = true
-	end
-	if MovementSpeedDBC == nil then MovementSpeedDBC = wt.Clone(dbcDefault) end
-	if MovementSpeedCS == nil then MovementSpeedCS = {} end
-	--Load the DBs
-	db = wt.Clone(MovementSpeedDB) --Account-wide options DB copy
-	dbc = wt.Clone(MovementSpeedDBC) --Character-specific options DB copy
-	cs = MovementSpeedCS --Cross-session account-wide data direct reference
+	local firstLoad = not MovementSpeedDB
+
+	--Load storage DBs
+	MovementSpeedDB = MovementSpeedDB or wt.Clone(dbDefault)
+	MovementSpeedDBC = MovementSpeedDBC or wt.Clone(dbcDefault)
+
 	--DB checkup & fix
-	wt.RemoveEmpty(db, CheckValidity)
-	wt.RemoveEmpty(dbc, CheckValidity)
-	wt.AddMissing(db, dbDefault)
-	wt.AddMissing(dbc, dbcDefault)
-	RestoreOldData(db, dbc, wt.RemoveMismatch(db, dbDefault), wt.RemoveMismatch(dbc, dbcDefault))
-	--Apply any potential fixes to the SavedVariables DBs
-	MovementSpeedDB = wt.Clone(db)
-	MovementSpeedDBC = wt.Clone(dbc)
+	wt.RemoveEmpty(MovementSpeedDB, CheckValidity)
+	wt.RemoveEmpty(MovementSpeedDBC, CheckValidity)
+	wt.AddMissing(MovementSpeedDB, dbDefault)
+	wt.AddMissing(MovementSpeedDBC, dbcDefault)
+	RestoreOldData(MovementSpeedDB, MovementSpeedDBC, wt.RemoveMismatch(MovementSpeedDB, dbDefault), wt.RemoveMismatch(MovementSpeedDBC, dbcDefault))
+
+	--Load working DBs
+	db = wt.Clone(MovementSpeedDB)
+	dbc = wt.Clone(MovementSpeedDBC)
+
+	--Load cross-session data
+	if MovementSpeedCS == nil then MovementSpeedCS = {} end
+	cs = MovementSpeedCS
+
 	return firstLoad
 end
 
 --[ Speed Update ]
 
----Get the current player speed in yards / second
----@return number
-local function GetPlayerSpeed()
-	return GetUnitSpeed(UnitInVehicle("player") and "vehicle" or "player")
+local playerSpeed, travelSpeed = 0, 0
+local pastPosition, mapWidth, mapHeight
+
+---Get the current Player Speed in yards per seconds accessible through the local **playerSpeed**
+local function UpdatePlayerSpeed()
+	playerSpeed = GetUnitSpeed(UnitInVehicle("player") and "vehicle" or "player")
 end
 
----Assemble the detailed text lines for player speed tooltip
+---Updates the current Travel Speed in yards since the last sample accessible through the local **travelSpeed**
+---@param samplesPerSecond? number ***Default:*** 1
+local function UpdateTravelSpeed(samplesPerSecond)
+	local currentPosition
+	local mapID = C_Map.GetBestMapForUnit("player")
+	if mapID then currentPosition = C_Map.GetPlayerMapPosition(mapID, "player") or nil end
+
+	if (pastPosition and currentPosition and not IsInInstance() and not C_Garrison.IsOnGarrisonMap()) then
+		currentPosition.x = currentPosition.x * mapWidth
+		currentPosition.y = currentPosition.y * mapHeight
+
+		travelSpeed = math.sqrt((currentPosition.x - pastPosition.x) ^ 2 + (currentPosition.y - pastPosition.y) ^ 2) * (samplesPerSecond or 1)
+	else travelSpeed = 0 end
+
+	pastPosition = currentPosition
+end
+
+---Assemble the detailed text lines for Player Speed tooltip
 ---@return table textLines Table containing text lines to be added to the tooltip [indexed, 0-based]
 --- - **text** string ― Text to be added to the line
 --- - **font**? string | FontObject *optional* ― The FontObject to set for this line [Default: GameTooltipTextSmall]
@@ -258,29 +263,22 @@ end
 --- 	- **b** number ― Blue [Range: 0 - 1]
 --- - **wrap**? boolean *optional* ― Allow this line to be wrapped [Default: true]
 local function GetSpeedTooltipLines()
-	local speed = GetPlayerSpeed()
 	return {
-		[0] = {
-			text = ns.strings.speedTooltip.text[0],
-		},
-		[1] = {
-			text = "\n" .. ns.strings.speedTooltip.text[1]:gsub(
-				"#YARDS", wt.Color(wt.FormatThousands(speed, 4, true),  ns.colors.yellow[0])
-			),
+		{ text = ns.strings.speedTooltip.text[0], },
+		{
+			text = "\n" .. ns.strings.speedTooltip.text[1]:gsub("#YARDS", wt.Color(wt.FormatThousands(playerSpeed, 4, true),  ns.colors.yellow[0])),
 			color = ns.colors.yellow[1],
 		},
-		[2] = {
-			text = "\n" .. ns.strings.speedTooltip.text[2]:gsub(
-				"#PERCENT", wt.Color(wt.FormatThousands(speed / 7 * 100, 4, true) .. "%%", ns.colors.green[0])
-			),
+		{
+			text = "\n" .. ns.strings.speedTooltip.text[2]:gsub("#PERCENT", wt.Color(wt.FormatThousands(playerSpeed / 7 * 100, 4, true) .. "%%", ns.colors.green[0])),
 			color = ns.colors.green[1],
 		},
-		[3] = {
+		{
 			text = "\n" .. ns.strings.speedTooltip.hintOptions,
 			font = GameFontNormalTiny,
 			color = ns.colors.grey[0],
 		},
-		[4] = {
+		{
 			text = ns.strings.speedTooltip.hintMove:gsub("#SHIFT", ns.strings.keys.shift),
 			font = GameFontNormalTiny,
 			color = ns.colors.grey[0],
@@ -288,41 +286,21 @@ local function GetSpeedTooltipLines()
 	}
 end
 
----Assemble the text for the mouseover target's speed
----@return string
-local function GetTargetSpeedText()
-	local speed = GetUnitSpeed("mouseover")
-	local text
-	if db.targetSpeed.tooltip.text.valueType == 0 then
-		text = wt.Color(wt.FormatThousands(speed / 7 * 100, db.targetSpeed.tooltip.text.decimals, true, not db.targetSpeed.tooltip.text.noTrim) .. "%%", ns.colors.green[0])
-	elseif db.targetSpeed.tooltip.text.valueType == 1 then
-		text = wt.Color(ns.strings.yardsps:gsub(
-			"#YARDS", wt.Color(wt.FormatThousands(speed, db.targetSpeed.tooltip.text.decimals, true, not db.targetSpeed.tooltip.text.noTrim), ns.colors.green[0])
-		), ns.colors.green[1])
-	elseif db.targetSpeed.tooltip.text.valueType == 2 then
-		text = wt.Color(wt.FormatThousands(speed / 7 * 100, db.targetSpeed.tooltip.text.decimals, true, not db.targetSpeed.tooltip.text.noTrim) .. "%%", ns.colors.green[0]) .. " ("
-		text = text .. wt.Color(ns.strings.yardsps:gsub(
-			"#YARDS", wt.Color(wt.FormatThousands(speed, db.targetSpeed.tooltip.text.decimals, true, not db.targetSpeed.tooltip.text.noTrim), ns.colors.yellow[0])
-		) .. ")", ns.colors.yellow[1])
-	end
-	return "|T" .. ns.textures.logo .. ":0|t" .. " " .. ns.strings.targetSpeed:gsub("#SPEED", text)
-end
-
---[ Speed Display ]
+--[ Speed Displays ]
 
 ---Set the size of the speed display
 ---@param height? number Text height [Default: speedDisplayText:GetStringHeight()]
----@param valueType? number Height:Width ratio [Default: db.speedDisplay.text.valueType]
----@param decimals? number Height:Width ratio [Default: db.speedDisplay.text.decimals]
-local function SetDisplaySize(height, valueType, decimals)
-	height = math.ceil(height or speedDisplayText:GetStringHeight()) + 2
-	local ratio = 3.08 + ((decimals or db.speedDisplay.text.decimals) > 0 and 0.25 + (decimals or db.speedDisplay.text.decimals) * 0.58 or 0)
-	if (valueType or db.speedDisplay.text.valueType) == 1 then ratio = ratio + 0.46
-	elseif (valueType or db.speedDisplay.text.valueType) == 2 then
-		ratio = ratio + 3.37 + ((decimals or db.speedDisplay.text.decimals) > 0 and 0.25 + (decimals or db.speedDisplay.text.decimals) * 0.58 or 0)
+---@param valueType? number Height:Width ratio [Default: db.speedDisplay.value.type]
+---@param decimals? number Height:Width ratio [Default: db.speedDisplay.value.decimals]
+local function SetDisplaySize(display, height, valueType, decimals)
+	height = math.ceil(height or frames[display].text:GetStringHeight()) + 2
+	local ratio = 3.08 + ((decimals or db.speedDisplay.value.decimals) > 0 and 0.25 + (decimals or db.speedDisplay.value.decimals) * 0.58 or 0)
+	if (valueType or db.speedDisplay.value.type) == 1 then ratio = ratio + 0.46
+	elseif (valueType or db.speedDisplay.value.type) == 2 then
+		ratio = ratio + 3.37 + ((decimals or db.speedDisplay.value.decimals) > 0 and 0.25 + (decimals or db.speedDisplay.value.decimals) * 0.58 or 0)
 	end
 	local width = height * ratio - 4
-	speedDisplay:SetSize(width, height)
+	frames[display].display:SetSize(width, height)
 end
 
 ---Set the backdrop of the speed display elements
@@ -337,8 +315,8 @@ end
 --- - **g** number ― Green (Range: 0 - 1)
 --- - **b** number ― Blue (Range: 0 - 1)
 --- - **a** number ― Opacity (Range: 0 - 1)
-local function SetDisplayBackdrop(enabled, bgColor, borderColor)
-	wt.SetBackdrop(speedDisplay, enabled and {
+local function SetDisplayBackdrop(display, enabled, bgColor, borderColor)
+	wt.SetBackdrop(frames[display].display, enabled and {
 		background = {
 			texture = { size = 5, },
 			color = bgColor
@@ -356,36 +334,183 @@ end
 ---Set the visibility, backdrop, font family, size and color of the speed display to the currently saved values
 ---@param data table Account-wide data table to set the speed display values from
 ---@param characterData table Character-specific data table to set the speed display values from
-local function SetDisplayValues(data, characterData)
+local function SetDisplayValues(display, data, characterData)
 	--Visibility
-	moveSpeed:SetFrameStrata(data.speedDisplay.visibility.frameStrata)
-	wt.SetVisibility(moveSpeed, not characterData.hidden)
+	frames.main:SetFrameStrata(data.speedDisplay.visibility.frameStrata)
+	wt.SetVisibility(frames.main, not characterData.hidden)
 	--Display
-	SetDisplaySize(data.speedDisplay.text.font.size, data.speedDisplay.text.valueType, data.speedDisplay.text.decimals)
-	SetDisplayBackdrop(data.speedDisplay.background.visible, data.speedDisplay.background.colors.bg, data.speedDisplay.background.colors.border)
+	SetDisplaySize(display, data.speedDisplay.font.size, data.speedDisplay.value.type, data.speedDisplay.value.decimals)
+	SetDisplayBackdrop(display, data.speedDisplay.background.visible, data.speedDisplay.background.colors.bg, data.speedDisplay.background.colors.border)
 	--Font & text
-	speedDisplayText:SetFont(data.speedDisplay.text.font.family, data.speedDisplay.text.font.size, "THINOUTLINE")
-	speedDisplayText:SetTextColor(wt.UnpackColor(data.speedDisplay.text.font.color))
+	frames[display].text:SetFont(data.speedDisplay.font.family, data.speedDisplay.font.size, "THINOUTLINE")
+	frames[display].text:SetTextColor(wt.UnpackColor(data.speedDisplay.font.color))
+end
+
+--Set up the speed display frame parameters
+local function LoadSpeedDisplays()
+	--Separator text
+	-- frames.main.separator = frames.main:CreateFontString(frames.main:GetName() .. "SeparatorText", "OVERLAY")
+
+	--Player Speed
+	-- frames.playerSpeed.text:SetPoint("CENTER", 0.9, math.fmod(db.speedDisplay.font.size, 2) ~= 0 and 0.1 or 0)
+	SetDisplayValues("playerSpeed", db, dbc)
+
+	--Travel Speed
+	if db.travelSpeed.replacement then wt.SetPosition(frames.travelSpeed.display, { anchor = "CENTER", }) end
+	SetDisplayValues("travelSpeed", db, dbc)
+	wt.SetVisibility(frames.travelSpeed.display, db.travelSpeed.enabled)
+	if not db.travelSpeed.enabled then frames.travelSpeed.display:UnregisterEvent("ZONE_CHANGED") end
+
+	--Tooltip
+	wt.AddTooltip({
+		parent = frames.playerSpeed.display,
+		tooltip = ns.tooltip,
+		title = ns.strings.speedTooltip.title,
+		lines = GetSpeedTooltipLines(),
+		flipColors = true,
+		anchor = "ANCHOR_BOTTOMRIGHT",
+		offset = { y = frames.playerSpeed.display:GetHeight() },
+	})
+end
+
+---Format the specified speed value based on the DB specifications
+---@param speed number
+---@return string
+local function FormatSpeedValue(speed)
+	local text = ""
+	if db.speedDisplay.value.type == 0 then
+		text = wt.FormatThousands(speed / 7 * 100, db.speedDisplay.value.decimals, true, not db.speedDisplay.value.noTrim) .. "%"
+	elseif db.speedDisplay.value.type == 1 then
+		text = ns.strings.yps:gsub(
+			"#YARDS", wt.FormatThousands(speed, db.speedDisplay.value.decimals, true, not db.speedDisplay.value.noTrim)
+		)
+	elseif db.speedDisplay.value.type == 2 then
+		text = wt.FormatThousands(speed / 7 * 100, db.speedDisplay.value.decimals, true, not db.speedDisplay.value.noTrim) .. "%" .. " ("
+		text = text .. ns.strings.yps:gsub(
+			"#YARDS", wt.FormatThousands(speed, db.speedDisplay.value.decimals, true, not db.speedDisplay.value.noTrim)
+		) .. ")"
+	end
+	return text
+end
+
+--[ Player Speed ]
+
+--Start updating the Player Speed display
+local function StartPlayerSpeedUpdates()
+	if db.playerSpeed.throttle then
+		--Start a repeating timer
+		frames.playerSpeed.updater.ticker = C_Timer.NewTicker(db.playerSpeed.frequency, function()
+			UpdatePlayerSpeed()
+			frames.playerSpeed.text:SetText(FormatSpeedValue(playerSpeed))
+			wt.SetVisibility(frames.playerSpeed.display, not (db.speedDisplay.visibility.autoHide or (db.travelSpeed.replacement and travelSpeed ~= 0)) or playerSpeed ~= 0)
+		end)
+	else
+		--Set an update event
+		frames.playerSpeed.updater:SetScript("OnUpdate", function()
+			UpdatePlayerSpeed()
+			frames.playerSpeed.text:SetText(FormatSpeedValue(playerSpeed))
+			wt.SetVisibility(frames.playerSpeed.display, not (db.speedDisplay.visibility.autoHide or (db.travelSpeed.replacement and travelSpeed ~= 0)) or playerSpeed ~= 0)
+		end)
+	end
+end
+
+--Stop updating the Player Speed display
+local function StopPlayerSpeedUpdates()
+	frames.playerSpeed.updater:SetScript("OnUpdate", nil)
+	if frames.playerSpeed.updater.ticker then frames.playerSpeed.updater.ticker:Cancel() end
+end
+
+--[ Travel Speed ]
+
+--Start updating the Travel Speed display
+local function StartTravelSpeedUpdates()
+	--Update map size
+	frames.travelSpeed.updater:RegisterEvent("ZONE_CHANGED_NEW_AREA")
+	mapWidth, mapHeight = C_Map.GetMapWorldSize(C_Map.GetBestMapForUnit("player"))
+	--Start speed updates
+	if db.travelSpeed.throttle then
+		--Start a repeating timer
+		frames.travelSpeed.updater.ticker = C_Timer.NewTicker(db.travelSpeed.frequency, function()
+			UpdateTravelSpeed(db.travelSpeed.frequency ^ -1)
+			frames.travelSpeed.text:SetText(FormatSpeedValue(travelSpeed))
+			wt.SetVisibility(frames.travelSpeed.display, (not db.speedDisplay.visibility.autoHide or travelSpeed ~= 0) and not (db.travelSpeed.replacement and playerSpeed ~= 0))
+		end)
+	else
+		--Set an update event
+		frames.travelSpeed.updater:SetScript("OnUpdate", function()
+			UpdateTravelSpeed(GetFramerate())
+			frames.travelSpeed.text:SetText(FormatSpeedValue(travelSpeed))
+			wt.SetVisibility(frames.travelSpeed.display, (not db.speedDisplay.visibility.autoHide or travelSpeed ~= 0) and not (db.travelSpeed.replacement and playerSpeed ~= 0))
+		end)
+	end
+end
+
+--Stop updating the Travel Speed display
+local function StopTravelSpeedUpdates()
+	--Stop map size updates
+	frames.travelSpeed.updater:UnregisterEvent("ZONE_CHANGED_NEW_AREA")
+	--Stop speed updates
+	frames.travelSpeed.updater:SetScript("OnUpdate", nil)
+	if frames.travelSpeed.updater.ticker then frames.travelSpeed.updater.ticker:Cancel() end
+end
+
+--[ Target Speed ]
+
+---Assemble the text for the mouseover target's speed
+---@return string
+local function GetTargetSpeedText()
+	local speed = GetUnitSpeed("mouseover")
+	local text
+	if db.targetSpeed.value.type == 0 then
+		text = wt.Color(wt.FormatThousands(speed / 7 * 100, db.targetSpeed.value.decimals, true, not db.targetSpeed.value.noTrim) .. "%%", ns.colors.green[0])
+	elseif db.targetSpeed.value.type == 1 then
+		text = wt.Color(ns.strings.yardsps:gsub(
+			"#YARDS", wt.Color(wt.FormatThousands(speed, db.targetSpeed.value.decimals, true, not db.targetSpeed.value.noTrim), ns.colors.green[0])
+		), ns.colors.green[1])
+	elseif db.targetSpeed.value.type == 2 then
+		text = wt.Color(wt.FormatThousands(speed / 7 * 100, db.targetSpeed.value.decimals, true, not db.targetSpeed.value.noTrim) .. "%%", ns.colors.green[0]) .. " ("
+		text = text .. wt.Color(ns.strings.yardsps:gsub(
+			"#YARDS", wt.Color(wt.FormatThousands(speed, db.targetSpeed.value.decimals, true, not db.targetSpeed.value.noTrim), ns.colors.yellow[0])
+		) .. ")", ns.colors.yellow[1])
+	end
+	return "|T" .. ns.textures.logo .. ":0|t" .. " " .. ns.strings.targetSpeed:gsub("#SPEED", text)
+end
+
+--Set up the Target Speed unit tooltip integration
+local function SetUpTargetSpeedUpdates()
+	--Start mouseover Target Speed updates
+	TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Unit, function(tooltip)
+		if not db.targetSpeed.enabled then return end
+
+		frames.targetSpeed:SetScript("OnUpdate", function()
+			if UnitName("mouseover") == nil then return end
+
+			--Find the speed line
+			local lineAdded = false
+			for i = 2, tooltip:NumLines() do
+				local line = _G["GameTooltipTextLeft" .. i]
+				if line then if string.match(line:GetText() or "", "|T" .. ns.textures.logo .. ":0|t") then
+					--Update the speed line
+					line:SetText(GetTargetSpeedText())
+					lineAdded = true
+					break
+				end end
+			end
+
+			--Add the speed line if the target is moving
+			if not lineAdded and GetUnitSpeed("mouseover") ~= 0 then
+				tooltip:AddLine(GetTargetSpeedText(), ns.colors.yellow[1].r, ns.colors.yellow[1].g, ns.colors.yellow[1].b, true)
+				tooltip:Show() --Force the tooltip to be resized
+			end
+		end)
+	end)
+
+	--Stop mouseover Target Speed updates
+	GameTooltip:HookScript("OnTooltipCleared", function() frames.targetSpeed:SetScript("OnUpdate", nil) end)
 end
 
 
 --[[ INTERFACE OPTIONS ]]
-
---Options frame references
-local options = {
-	about = {},
-	position = {},
-	text = {
-		font = {},
-	},
-	visibility = {},
-	background = {
-		colors = {},
-		size = {},
-	},
-	mouseover = {},
-	backup = {},
-}
 
 --[ Options Widgets ]
 
@@ -397,12 +522,12 @@ local function CreateOptionsShortcuts(parentFrame)
 		name = "SpeedDisplayPage",
 		title = ns.strings.options.speedDisplay.title,
 		tooltip = { lines = {
-			[0] = { text = ns.strings.options.speedDisplay.description:gsub("#ADDON", addonTitle), },
-			[1] = { text = (wt.GetStrings("dfOpenSettings") or ""):gsub("#ADDON", addonTitle), color = { r = 1, g = 0.24, b = 0.13 }, },
+			{ text = ns.strings.options.speedDisplay.description:gsub("#ADDON", addonTitle), },
+			{ text = (wt.GetStrings("dfOpenSettings") or ""):gsub("#ADDON", addonTitle), color = { r = 1, g = 0.24, b = 0.13 }, },
 		} },
 		position = { offset = { x = 10, y = -30 } },
 		size = { width = 120, },
-		events = { OnClick = function() options.speedDisplayOptions.open() end, },
+		events = { OnClick = function() frames.options.speedDisplays.page.open() end, },
 		disabled = true,
 	})
 	--Button: Target Speed page
@@ -411,8 +536,8 @@ local function CreateOptionsShortcuts(parentFrame)
 		name = "TargetSpeedPage",
 		title = ns.strings.options.targetSpeed.title,
 		tooltip = { lines = {
-			[0] = { text = ns.strings.options.targetSpeed.description:gsub("#ADDON", addonTitle), },
-			[1] = { text = (wt.GetStrings("dfOpenSettings") or ""):gsub("#ADDON", addonTitle), color = { r = 1, g = 0.24, b = 0.13 }, },
+			{ text = ns.strings.options.targetSpeed.description:gsub("#ADDON", addonTitle), },
+			{ text = (wt.GetStrings("dfOpenSettings") or ""):gsub("#ADDON", addonTitle), color = { r = 1, g = 0.24, b = 0.13 }, },
 		} },
 		position = {
 			relativeTo = speedDisplayPage,
@@ -420,7 +545,7 @@ local function CreateOptionsShortcuts(parentFrame)
 			offset = { x = 10, }
 		},
 		size = { width = 120, },
-		events = { OnClick = function() options.targetSpeedOptions.open() end, },
+		events = { OnClick = function() frames.options.targetSpeed.page.open() end, },
 		disabled = true,
 	})
 	--Button: Advanced page
@@ -429,15 +554,15 @@ local function CreateOptionsShortcuts(parentFrame)
 		name = "AdvancedPage",
 		title = ns.strings.options.advanced.title,
 		tooltip = { lines = {
-			[0] = { text = ns.strings.options.advanced.description:gsub("#ADDON", addonTitle), },
-			[1] = { text = (wt.GetStrings("dfOpenSettings") or ""):gsub("#ADDON", addonTitle), color = { r = 1, g = 0.24, b = 0.13 }, },
+			{ text = ns.strings.options.advanced.description:gsub("#ADDON", addonTitle), },
+			{ text = (wt.GetStrings("dfOpenSettings") or ""):gsub("#ADDON", addonTitle), color = { r = 1, g = 0.24, b = 0.13 }, },
 		} },
 		position = {
 			anchor = "TOPRIGHT",
 			offset = { x = -10, y = -30 }
 		},
 		size = { width = 120 },
-		events = { OnClick = function() options.advancedOptions.open() end, },
+		events = { OnClick = function() frames.options.advanced.page.open() end, },
 		disabled = true,
 	})
 end
@@ -445,118 +570,158 @@ local function CreateAboutInfo(parentFrame)
 	--Text: Version
 	local version = wt.CreateText({
 		parent = parentFrame,
+		name = "VersionTitle",
+		position = { offset = { x = 16, y = -32 } },
+		width = 45,
+		text = ns.strings.options.main.about.version .. ":",
+		font = "GameFontNormalSmall",
+		justify = { h = "RIGHT", },
+	})
+	wt.CreateText({
+		parent = parentFrame,
 		name = "Version",
-		position = { offset = { x = 16, y = -33 } },
-		width = 84,
-		text = ns.strings.options.main.about.version:gsub("#VERSION", WrapTextInColorCode(GetAddOnMetadata(addonNameSpace, "Version"), "FFFFFFFF")),
-		template = "GameFontNormalSmall",
-		justify = "LEFT",
+		position = {
+			relativeTo = version,
+			relativePoint = "TOPRIGHT",
+			offset = { x = 5 }
+		},
+		width = 140,
+		text = GetAddOnMetadata(addonNameSpace, "Version"),
+		font = "GameFontHighlightSmall",
+		justify = { h = "LEFT", },
 	})
 	--Text: Date
 	local date = wt.CreateText({
 		parent = parentFrame,
-		name = "Date",
+		name = "DateTitle",
 		position = {
 			relativeTo = version,
-			relativePoint = "TOPRIGHT",
-			offset = { x = 10, }
+			relativePoint = "BOTTOMLEFT",
+			offset = { y = -8 }
 		},
-		width = 102,
-		text = ns.strings.options.main.about.date:gsub(
-			"#DATE", WrapTextInColorCode(ns.strings.misc.date:gsub(
-				"#DAY", GetAddOnMetadata(addonNameSpace, "X-Day")
-			):gsub(
-				"#MONTH", GetAddOnMetadata(addonNameSpace, "X-Month")
-			):gsub(
-				"#YEAR", GetAddOnMetadata(addonNameSpace, "X-Year")
-			), "FFFFFFFF")
+		width = 45,
+		text = ns.strings.options.main.about.date .. ":",
+		font = "GameFontNormalSmall",
+		justify = { h = "RIGHT", },
+	})
+	wt.CreateText({
+		parent = parentFrame,
+		name = "Date",
+		position = {
+			relativeTo = date,
+			relativePoint = "TOPRIGHT",
+			offset = { x = 5 }
+		},
+		width = 140,
+		text = ns.strings.misc.date:gsub(
+			"#DAY", GetAddOnMetadata(addonNameSpace, "X-Day")
+		):gsub(
+			"#MONTH", GetAddOnMetadata(addonNameSpace, "X-Month")
+		):gsub(
+			"#YEAR", GetAddOnMetadata(addonNameSpace, "X-Year")
 		),
-		template = "GameFontNormalSmall",
-		justify = "LEFT",
+		font = "GameFontHighlightSmall",
+		justify = { h = "LEFT", },
 	})
 	--Text: Author
 	local author = wt.CreateText({
 		parent = parentFrame,
-		name = "Author",
+		name = "AuthorTitle",
 		position = {
 			relativeTo = date,
-			relativePoint = "TOPRIGHT",
-			offset = { x = 10, }
+			relativePoint = "BOTTOMLEFT",
+			offset = { y = -8 }
 		},
-		width = 186,
-		text = ns.strings.options.main.about.author:gsub("#AUTHOR", WrapTextInColorCode(GetAddOnMetadata(addonNameSpace, "Author"), "FFFFFFFF")),
-		template = "GameFontNormalSmall",
-		justify = "LEFT",
+		width = 45,
+		text = ns.strings.options.main.about.author .. ":",
+		font = "GameFontNormalSmall",
+		justify = { h = "RIGHT", },
+	})
+	wt.CreateText({
+		parent = parentFrame,
+		name = "Author",
+		position = {
+			relativeTo = author,
+			relativePoint = "TOPRIGHT",
+			offset = { x = 5 }
+		},
+		width = 140,
+		text = GetAddOnMetadata(addonNameSpace, "Author"),
+		font = "GameFontHighlightSmall",
+		justify = { h = "LEFT", },
 	})
 	--Text: License
+	local license = wt.CreateText({
+		parent = parentFrame,
+		name = "LicenseTitle",
+		position = {
+			relativeTo = author,
+			relativePoint = "BOTTOMLEFT",
+			offset = { y = -8 }
+		},
+		width = 45,
+		text = ns.strings.options.main.about.license .. ":",
+		font = "GameFontNormalSmall",
+		justify = { h = "RIGHT", },
+	})
 	wt.CreateText({
 		parent = parentFrame,
 		name = "License",
 		position = {
-			relativeTo = author,
+			relativeTo = license,
 			relativePoint = "TOPRIGHT",
-			offset = { x = 10, }
+			offset = { x = 5 }
 		},
-		width = 156,
-		text = ns.strings.options.main.about.license:gsub("#LICENSE", WrapTextInColorCode(GetAddOnMetadata(addonNameSpace, "X-License"), "FFFFFFFF")),
-		template = "GameFontNormalSmall",
-		justify = "LEFT",
+		width = 140,
+		text = GetAddOnMetadata(addonNameSpace, "X-License"),
+		font = "GameFontHighlightSmall",
+		justify = { h = "LEFT", },
 	})
-	--EditScrollBox: Changelog
-	options.about.changelog = wt.CreateEditScrollBox({
-		parent = parentFrame,
-		name = "Changelog",
-		title = ns.strings.options.main.about.changelog.label,
-		tooltip = { lines = { [0] = { text = ns.strings.options.main.about.changelog.tooltip, }, } },
-		position = {
-			relativeTo = version,
-			relativePoint = "BOTTOMLEFT",
-			offset = { y = -12 }
-		},
-		size = { width = parentFrame:GetWidth() - 32, height = 165 },
-		font = "GameFontDisableSmall",
-		text = ns.GetChangelog(),
-		readOnly = true,
-		scrollSpeed = 45,
-	})
-end
-local function CreateSupportInfo(parentFrame)
 	--Copybox: CurseForge
-	wt.CreateCopyBox({
+	local curse = wt.CreateCopyBox({
 		parent = parentFrame,
 		name = "CurseForge",
-		title = ns.strings.options.main.support.curseForge .. ":",
-		position = { offset = { x = 16, y = -33 } },
-		size = { width = parentFrame:GetWidth() / 2 - 22, },
+		title = ns.strings.options.main.about.curseForge .. ":",
+		position = {
+			relativeTo = license,
+			relativePoint = "BOTTOMLEFT",
+			offset = { y = -11 }
+		},
+		size = { width = 190, },
 		text = "curseforge.com/wow/addons/movement-speed",
-		template = "GameFontNormalSmall",
+		font = "GameFontNormalSmall",
 		color = { r = 0.6, g = 0.8, b = 1, a = 1 },
 		colorOnMouse = { r = 0.8, g = 0.95, b = 1, a = 1 },
 	})
 	--Copybox: Wago
-	wt.CreateCopyBox({
+	local wago = wt.CreateCopyBox({
 		parent = parentFrame,
 		name = "Wago",
-		title = ns.strings.options.main.support.wago .. ":",
+		title = ns.strings.options.main.about.wago .. ":",
 		position = {
-			anchor = "TOP",
-			offset = { x = (parentFrame:GetWidth() / 2 - 22) / 2 + 8, y = -33 }
+			relativeTo = curse,
+			relativePoint = "BOTTOMLEFT",
+			offset = { y = -8 }
 		},
-		size = { width = parentFrame:GetWidth() / 2 - 22, },
+		size = { width = 190, },
 		text = "addons.wago.io/addons/movement-speed",
-		template = "GameFontNormalSmall",
+		font = "GameFontNormalSmall",
 		color = { r = 0.6, g = 0.8, b = 1, a = 1 },
 		colorOnMouse = { r = 0.8, g = 0.95, b = 1, a = 1 },
 	})
 	--Copybox: Repository
-	wt.CreateCopyBox({
+	local repo = wt.CreateCopyBox({
 		parent = parentFrame,
 		name = "Repository",
-		title = ns.strings.options.main.support.repository .. ":",
-		position = { offset = { x = 16, y = -70 } },
-		size = { width = parentFrame:GetWidth() / 2 - 22, },
+		title = ns.strings.options.main.about.repository .. ":",
+		position = {
+			relativeTo = wago,
+			relativePoint = "BOTTOMLEFT",
+			offset = { y = -8 }
+		},
+		size = { width = 190, },
 		text = "github.com/Arxareon/MovementSpeed",
-		template = "GameFontNormalSmall",
+		font = "GameFontNormalSmall",
 		color = { r = 0.6, g = 0.8, b = 1, a = 1 },
 		colorOnMouse = { r = 0.8, g = 0.95, b = 1, a = 1 },
 	})
@@ -564,73 +729,146 @@ local function CreateSupportInfo(parentFrame)
 	wt.CreateCopyBox({
 		parent = parentFrame,
 		name = "Issues",
-		title = ns.strings.options.main.support.issues .. ":",
+		title = ns.strings.options.main.about.issues .. ":",
 		position = {
-			anchor = "TOP",
-			offset = { x = (parentFrame:GetWidth() / 2 - 22) / 2 + 8, y = -70 }
+			relativeTo = repo,
+			relativePoint = "BOTTOMLEFT",
+			offset = { y = -8 }
 		},
-		size = { width = parentFrame:GetWidth() / 2 - 22, },
+		size = { width = 190, },
 		text = "github.com/Arxareon/MovementSpeed/issues",
-		template = "GameFontNormalSmall",
+		font = "GameFontNormalSmall",
 		color = { r = 0.6, g = 0.8, b = 1, a = 1 },
 		colorOnMouse = { r = 0.8, g = 0.95, b = 1, a = 1 },
 	})
+	--EditScrollBox: Changelog
+	local _, changelog = wt.CreateEditScrollBox({
+		parent = parentFrame,
+		name = "Changelog",
+		title = ns.strings.options.main.about.changelog.label,
+		tooltip = { lines = { { text = ns.strings.options.main.about.changelog.tooltip, }, } },
+		position = {
+			anchor = "TOPRIGHT",
+			offset = { x = -17.5, y = -30 }
+		},
+		size = { width = parentFrame:GetWidth() - 235.5, height = 192 },
+		text = ns.GetChangelog(true),
+		font = { normal = "GameFontDisableSmall", },
+		color = ns.colors.grey[1],
+		readOnly = true,
+		scrollSpeed = 45,
+	})
+	--Button: Full changelog
+	local changelogFrame
+	wt.CreateButton({
+		parent = parentFrame,
+		name = "OpenFullChangelog",
+		title = ns.strings.options.main.about.openFullChangelog.label,
+		tooltip = { lines = { { text = ns.strings.options.main.about.openFullChangelog.tooltip, }, } },
+		position = {
+			anchor = "BOTTOMRIGHT",
+			relativeTo = changelog,
+			relativePoint = "TOPRIGHT",
+			offset = { x = 2.5, y = 6 }
+		},
+		size = { width = 180, height = 14 },
+		font = {
+			nornal = "GameFontNormalSmall",
+			highlight = "GameFontHighlightSmall",
+		},
+		events = { OnClick = function()
+			if changelogFrame then changelogFrame:Show()
+			else
+				--Create the full changelog frame
+				changelogFrame = wt.CreatePanel({
+					parent = UIParent,
+					name = addonNameSpace .. "Changelog",
+					append = false,
+					title = ns.strings.options.main.about.fullChangelog.label:gsub("#ADDON", addonTitle),
+					position = { anchor = "CENTER", },
+					size = { width = 740, height = 560 },
+					background = { color = { a = 0.9 }, },
+				})
+				wt.SetPosition(_G[changelogFrame:GetName() .. "Title"], { offset = { x = 16, y = -16 } })
+				wt.SetMovability(changelogFrame, true)
+				changelogFrame:SetClampedToScreen(true)
+				changelogFrame:SetFrameStrata("DIALOG")
+				changelogFrame:IsToplevel(true)
+
+				--EditScrollBox: Full changelog
+				local _, fullChangelog = wt.CreateEditScrollBox({
+					parent = changelogFrame,
+					name = "FullChangelog",
+					label = false,
+					tooltip = { lines = { { text = ns.strings.options.main.about.fullChangelog.tooltip, }, } },
+					position = {
+						anchor = "TOPRIGHT",
+						offset = { x = -16, y = -42 }
+					},
+					size = { width = changelogFrame:GetWidth() - 32, height = changelogFrame:GetHeight() - 90.5 },
+					text = ns.GetChangelog(),
+					font = { normal = "GameFontDisable", },
+					color = ns.colors.grey[1],
+					readOnly = true,
+					scrollSpeed = 90,
+				})
+
+				--Button: Close
+				wt.CreateButton({
+					parent = changelogFrame,
+					name = "CancelButton",
+					title = wt.GetStrings("Close"),
+					position = {
+						anchor = "TOPRIGHT",
+						relativeTo = fullChangelog,
+						relativePoint = "BOTTOMRIGHT",
+						offset = { x = 6, y = -13 }
+					},
+					events = { OnClick = function() changelogFrame:Hide() end },
+				})
+			end
+		end, },
+	})
 end
-local function CreateMainCategoryPanels(parentFrame) --Add the main page widgets to the category panel frame
-	--Shortcuts
-	local shortcutsPanel = wt.CreatePanel({
-		parent = parentFrame,
-		name = "Shortcuts",
-		title = ns.strings.options.main.shortcuts.title,
-		description = ns.strings.options.main.shortcuts.description:gsub("#ADDON", addonTitle),
-		position = { offset = { x = 10, y = -82 } },
-		size = { height = 64 },
-	})
-	CreateOptionsShortcuts(shortcutsPanel)
-	--About
-	local aboutPanel = wt.CreatePanel({
-		parent = parentFrame,
-		name = "About",
-		title = ns.strings.options.main.about.title,
-		description = ns.strings.options.main.about.description:gsub("#ADDON", addonTitle),
-		position = {
-			relativeTo = shortcutsPanel,
-			relativePoint = "BOTTOMLEFT",
-			offset = { y = -32 }
-		},
-		size = { height = 257 },
-	})
-	CreateAboutInfo(aboutPanel)
-	--Support
-	local supportPanel = wt.CreatePanel({
-		parent = parentFrame,
-		name = "Support",
-		title = ns.strings.options.main.support.title,
-		description = ns.strings.options.main.support.description,
-		position = {
-			relativeTo = aboutPanel,
-			relativePoint = "BOTTOMLEFT",
-			offset = { y = -32 }
-		},
-		size = { height = 111 },
-	})
-	CreateSupportInfo(supportPanel)
+local function CreateSponsorInfo(parentFrame, top, normal)
+	if top then
+		wt.CreateText({
+			parent = parentFrame,
+			name = "Top",
+			position = { offset = { x = 16, y = -33 } },
+			text = top:gsub("|", " • "),
+			font = "GameFontNormalLarge",
+			justify = { h = "LEFT", },
+			width = parentFrame:GetWidth() - 32,
+		})
+	end
+	if normal then
+		wt.CreateText({
+			parent = parentFrame,
+			name = "Normal",
+			position = { offset = { x = 16, y = -33 -(top and 24 or 0) } },
+			text = normal:gsub("|", " • "),
+			font = "GameFontHighlightMedium",
+			justify = { h = "LEFT", },
+			width = parentFrame:GetWidth() - 32,
+		})
+	end
 end
 
 --Speed Display page
 local function CreateQuickOptions(parentFrame)
 	--Checkbox: Hidden
-	options.visibility.hidden = wt.CreateCheckbox({
+	frames.options.speedDisplays.visibility.hidden = wt.CreateCheckbox({
 		parent = parentFrame,
 		name = "Hidden",
 		title = ns.strings.options.speedDisplay.quick.hidden.label,
-		tooltip = { lines = { [0] = { text = ns.strings.options.speedDisplay.quick.hidden.tooltip:gsub("#ADDON", addonTitle), }, } },
+		tooltip = { lines = { { text = ns.strings.options.speedDisplay.quick.hidden.tooltip:gsub("#ADDON", addonTitle), }, } },
 		position = { offset = { x = 8, y = -30 } },
-		events = { OnClick = function(_, state) wt.SetVisibility(moveSpeed, not state) end, },
 		optionsData = {
-			optionsKey = addonNameSpace,
-			storageTable = dbc,
+			optionsKey = addonNameSpace .. "SpeedDisplays",
+			workingTable = dbc,
 			storageKey = "hidden",
+			onChange = { DispalyToggle = function() wt.SetVisibility(frames.main, not dbc.hidden) end }
 		}
 	})
 	--Dropdown: Apply a preset
@@ -640,33 +878,33 @@ local function CreateQuickOptions(parentFrame)
 		presetItems[i].title = presets[i].name
 		presetItems[i].onSelect = function()
 			--Update the speed display
-			moveSpeed:Show()
-			moveSpeed:SetFrameStrata(presets[i].data.visibility.frameStrata)
-			wt.SetPosition(moveSpeed, presets[i].data.position)
+			frames.main:Show()
+			frames.main:SetFrameStrata(presets[i].data.visibility.frameStrata)
+			wt.SetPosition(frames.main, presets[i].data.position)
 			--Update the options
-			options.position.anchor.setSelected(presets[i].data.position.anchor)
-			options.position.xOffset:SetValue(presets[i].data.position.offset.x)
-			options.position.yOffset:SetValue(presets[i].data.position.offset.y)
-			options.visibility.raise:SetChecked(presets[i].data.visibility.frameStrata == "HIGH")
+			frames.options.speedDisplays.position.anchor.setSelected(presets[i].data.position.anchor)
+			frames.options.speedDisplays.position.xOffset.setValue(presets[i].data.position.offset.x)
+			frames.options.speedDisplays.position.yOffset.setValue(presets[i].data.position.offset.y)
+			frames.options.speedDisplays.visibility.raise:SetChecked(presets[i].data.visibility.frameStrata == "HIGH")
 			--Update the DBs
 			db.speedDisplay.position = presets[i].data.position
 			db.speedDisplay.visibility.frameStrata = presets[i].data.visibility.frameStrata
 		end
 	end
-	options.visibility.presets = wt.CreateDropdown({
+	frames.options.speedDisplays.visibility.presets = wt.CreateDropdown({
 		parent = parentFrame,
 		name = "ApplyPreset",
 		title = ns.strings.options.speedDisplay.quick.presets.label,
-		tooltip = { lines = { [0] = { text = ns.strings.options.speedDisplay.quick.presets.tooltip, }, } },
+		tooltip = { lines = { { text = ns.strings.options.speedDisplay.quick.presets.tooltip, }, } },
 		position = {
 			anchor = "TOP",
 			offset = { y = -30 }
 		},
 		width = 180,
 		items = presetItems,
-		dependencies = { [0] = { frame = options.visibility.hidden, evaluate = function(state) return not state end }, },
+		dependencies = { { frame = frames.options.speedDisplays.visibility.hidden, evaluate = function(state) return not state end }, },
 		optionsData = {
-			optionsKey = addonNameSpace,
+			optionsKey = addonNameSpace .. "SpeedDisplays",
 			onLoad = function(self) self.setSelected(nil, ns.strings.options.speedDisplay.quick.presets.select) end,
 		}
 	})
@@ -678,8 +916,8 @@ local function CreateQuickOptions(parentFrame)
 		accept = ns.strings.misc.override,
 		onAccept = function()
 			--Update the Custom preset
-			presets[0].data.position = wt.PackPosition(moveSpeed:GetPoint())
-			presets[0].data.visibility.frameStrata = options.visibility.raise:GetChecked() and "HIGH" or "MEDIUM"
+			presets[0].data.position = wt.PackPosition(frames.main:GetPoint())
+			presets[0].data.visibility.frameStrata = frames.options.speedDisplays.visibility.raise:GetChecked() and "HIGH" or "MEDIUM"
 			--Save the Custom preset
 			db.customPreset = wt.Clone(presets[0].data)
 			--Response
@@ -690,263 +928,393 @@ local function CreateQuickOptions(parentFrame)
 		parent = parentFrame,
 		name = "SavePreset",
 		title = ns.strings.options.speedDisplay.quick.savePreset.label,
-		tooltip = { lines = { [0] = { text = ns.strings.options.speedDisplay.quick.savePreset.tooltip, }, } },
+		tooltip = { lines = { { text = ns.strings.options.speedDisplay.quick.savePreset.tooltip, }, } },
 		position = {
 			anchor = "TOPRIGHT",
 			offset = { x = -10, y = -43 }
 		},
-		size = { width = 160, },
+		size = { width = 170, },
 		events = { OnClick = function() StaticPopup_Show(savePopup) end, },
-		dependencies = { [0] = { frame = options.visibility.hidden, evaluate = function(state) return not state end }, },
+		dependencies = { { frame = frames.options.speedDisplays.visibility.hidden, evaluate = function(state) return not state end }, },
 	})
 end
-local function CreatePositionOptions(parentFrame)
-	--Selector: Anchor point
-	options.position.anchor = wt.CreateAnchorSelector({
+local function CreatePlayerSpeedOptions(parentFrame)
+	--Checkbox: Throttle
+	frames.options.playerSpeed.throttle = wt.CreateCheckbox({
 		parent = parentFrame,
-		name = "AnchorPoint",
-		title = ns.strings.options.speedDisplay.position.anchor.label,
-		tooltip = { lines = { [0] = { text = ns.strings.options.speedDisplay.position.anchor.tooltip, }, } },
+		name = "Throttle",
+		title = ns.strings.options.speedDisplay.update.throttle.label,
+		tooltip = { lines = { { text = ns.strings.options.speedDisplay.update.throttle.tooltip, }, } },
 		position = { offset = { x = 8, y = -30 } },
-		width = 140,
-		onSelection = function(point)
-			--Update the display position
-			wt.SetPosition(moveSpeed, wt.PackPosition(point, nil, nil, options.position.xOffset:GetValue(), options.position.yOffset:GetValue()))
-			--Clear the presets dropdown selection
-			options.visibility.presets.setSelected(nil, ns.strings.options.speedDisplay.quick.presets.select)
-		end,
-		dependencies = { [0] = { frame = options.visibility.hidden, evaluate = function(state) return not state end }, },
+		dependencies = { { frame = frames.options.speedDisplays.visibility.hidden, evaluate = function(state) return not state end }, },
 		optionsData = {
-			optionsKey = addonNameSpace,
-			storageTable = db.speedDisplay.position,
-			storageKey = "anchor",
+			optionsKey = addonNameSpace .. "SpeedDisplays",
+			workingTable = db.playerSpeed,
+			storageKey = "throttle",
+			onChange = { RefreshPlayerSpeedUpdates = function()
+				StopPlayerSpeedUpdates()
+				StartPlayerSpeedUpdates()
+			end, }
 		}
 	})
-	--Slider: X offset
-	options.position.xOffset = wt.CreateSlider({
+	--Slider: Frequency
+	frames.options.playerSpeed.frequency = wt.CreateSlider({
 		parent = parentFrame,
-		name = "OffsetX",
-		title = ns.strings.options.speedDisplay.position.xOffset.label,
-		tooltip = { lines = { [0] = { text = ns.strings.options.speedDisplay.position.xOffset.tooltip, }, } },
+		name = "Frequency",
+		title = ns.strings.options.speedDisplay.update.frequency.label,
+		tooltip = { lines = { { text = ns.strings.options.speedDisplay.update.frequency.tooltip, }, } },
 		position = {
 			anchor = "TOP",
 			offset = { y = -30 }
 		},
-		value = { min = -500, max = 500, fractional = 2 },
-		events = { OnValueChanged = function(_, value, user)
-			if not user then return end
-			--Update the display position
-			wt.SetPosition(moveSpeed, wt.PackPosition(options.position.anchor.getSelected(), nil, nil, value, options.position.yOffset:GetValue()))
-			--Clear the presets dropdown selection
-			options.visibility.presets.setSelected(nil, ns.strings.options.speedDisplay.quick.presets.select)
-		end, },
-		dependencies = { [0] = { frame = options.visibility.hidden, evaluate = function(state) return not state end }, },
-		optionsData = {
-			optionsKey = addonNameSpace,
-			storageTable = db.speedDisplay.position.offset,
-			storageKey = "x",
-		}
-	}).slider
-	--Slider: Y offset
-	options.position.yOffset = wt.CreateSlider({
-		parent = parentFrame,
-		name = "OffsetY",
-		title = ns.strings.options.speedDisplay.position.yOffset.label,
-		tooltip = { lines = { [0] = { text = ns.strings.options.speedDisplay.position.yOffset.tooltip, }, } },
-		position = {
-			anchor = "TOPRIGHT",
-			offset = { x = -8, y = -30 }
+		value = { min = 0.05, max = 1, step = 0.05 },
+		dependencies = {
+			{ frame = frames.options.speedDisplays.visibility.hidden, evaluate = function(state) return not state end },
+			{ frame = frames.options.playerSpeed.throttle },
 		},
-		value = { min = -500, max = 500, fractional = 2 },
-		events = { OnValueChanged = function(_, value, user)
-			if not user then return end
-			--Update the display position
-			wt.SetPosition(moveSpeed, wt.PackPosition(options.position.anchor.getSelected(), nil, nil, options.position.xOffset:GetValue(), value))
-			--Clear the presets dropdown selection
-			options.visibility.presets.setSelected(nil, ns.strings.options.speedDisplay.quick.presets.select)
-		end, },
-		dependencies = { [0] = { frame = options.visibility.hidden, evaluate = function(state) return not state end }, },
 		optionsData = {
-			optionsKey = addonNameSpace,
-			storageTable = db.speedDisplay.position.offset,
-			storageKey = "y",
+			optionsKey = addonNameSpace .. "SpeedDisplays",
+			workingTable = db.playerSpeed,
+			storageKey = "frequency",
+			onChange = { "RefreshPlayerSpeedUpdates", }
 		}
-	}).slider
+	})
 end
-local function CreateTextOptions(parentFrame)
+local function CreateTravelSpeedOptions(parentFrame)
+	--Checkbox: Enabled
+	frames.options.travelSpeed.enabled = wt.CreateCheckbox({
+		parent = parentFrame,
+		name = "Toggle",
+		title = ns.strings.options.speedDisplay.travelSpeed.enabled.label,
+		tooltip = { lines = { { text = ns.strings.options.speedDisplay.travelSpeed.enabled.tooltip, }, } },
+		position = { offset = { x = 8, y = -30 } },
+		dependencies = { { frame = frames.options.speedDisplays.visibility.hidden, evaluate = function(state) return not state end }, },
+		optionsData = {
+			optionsKey = addonNameSpace .. "SpeedDisplays",
+			workingTable = db.travelSpeed,
+			storageKey = "enabled",
+			onChange = { ToggleTravelSpeedUpdates = function()
+				wt.SetVisibility(frames.travelSpeed.display, db.travelSpeed.enabled)
+				if db.travelSpeed.enabled then StartTravelSpeedUpdates() else StopTravelSpeedUpdates() end
+			end, }
+		}
+	})
+	--Checkbox: Replacement
+	frames.options.travelSpeed.replacement = wt.CreateCheckbox({
+		parent = parentFrame,
+		name = "Replacement",
+		title = ns.strings.options.speedDisplay.travelSpeed.replacement.label,
+		tooltip = { lines = { { text = ns.strings.options.speedDisplay.travelSpeed.replacement.tooltip, }, } },
+		position = {
+			anchor = "TOP",
+			offset = { y = -30 }
+		},
+		autoOffset = true,
+		dependencies = {
+			{ frame = frames.options.speedDisplays.visibility.hidden, evaluate = function(state) return not state end },
+			{ frame = frames.options.travelSpeed.enabled, },
+		},
+		optionsData = {
+			optionsKey = addonNameSpace .. "SpeedDisplays",
+			workingTable = db.travelSpeed,
+			storageKey = "replacement",
+			onChange = { ToggleTravelSpeedReplacement = function() wt.SetPosition(frames.travelSpeed.display, {
+				anchor = "CENTER",
+				offset = { y = db.travelSpeed.replacement and 0 or -14 }
+			}) end, }
+		}
+	})
+	--Checkbox: Throttle
+	frames.options.travelSpeed.throttle = wt.CreateCheckbox({
+		parent = parentFrame,
+		name = "Throttle",
+		title = ns.strings.options.speedDisplay.update.throttle.label,
+		tooltip = { lines = { { text = ns.strings.options.speedDisplay.update.throttle.tooltip, }, } },
+		position = {
+			relativeTo = frames.options.travelSpeed.enabled,
+			relativePoint = "BOTTOMLEFT",
+			offset = { y = -4 }
+		},
+		dependencies = {
+			{ frame = frames.options.speedDisplays.visibility.hidden, evaluate = function(state) return not state end },
+			{ frame = frames.options.travelSpeed.enabled, },
+		},
+		optionsData = {
+			optionsKey = addonNameSpace .. "SpeedDisplays",
+			workingTable = db.travelSpeed,
+			storageKey = "throttle",
+			onChange = { RefreshTravelSpeedUpdates = function()
+				StopTravelSpeedUpdates()
+				if frames.options.travelSpeed.enabled:GetChecked() then StartTravelSpeedUpdates() end
+			end, }
+		}
+	})
+	--Slider: Frequency
+	frames.options.travelSpeed.frequency = wt.CreateSlider({
+		parent = parentFrame,
+		name = "Frequency",
+		title = ns.strings.options.speedDisplay.update.frequency.label,
+		tooltip = { lines = { { text = ns.strings.options.speedDisplay.update.frequency.tooltip, }, } },
+		position = {
+			anchor = "TOP",
+			offset = { y = -62 }
+		},
+		value = { min = 0.05, max = 1, step = 0.05 },
+		dependencies = { { frame = frames.options.speedDisplays.visibility.hidden, evaluate = function(state) return not state end }, },
+		optionsData = {
+			optionsKey = addonNameSpace .. "SpeedDisplays",
+			workingTable = db.travelSpeed,
+			storageKey = "frequency",
+			onChange = { "RefreshTravelSpeedUpdates", }
+		}
+	})
+end
+local function CreateValueOptions(parentFrame)
 	--Selector: Value type
 	local valueTypes = {}
 	for i = 0, 2 do
 		valueTypes[i] = {}
-		valueTypes[i].title = ns.strings.options.speedText.valueType.list[i].label
-		valueTypes[i].tooltip = { lines = { [0] = { text = ns.strings.options.speedText.valueType.list[i].tooltip, }, } }
-		valueTypes[i].onSelect = function()
-			db.speedDisplay.text.valueType = i
-			SetDisplaySize()
-		end
+		valueTypes[i].title = ns.strings.options.speedValue.type.list[i].label
+		valueTypes[i].tooltip = { lines = { { text = ns.strings.options.speedValue.type.list[i].tooltip, }, } }
 	end
-	options.text.valueType = wt.CreateSelector({
+	frames.options.speedDisplays.value.type = wt.CreateSelector({
 		parent = parentFrame,
-		name = "ValueType",
-		title = ns.strings.options.speedText.valueType.label,
-		tooltip = { lines = { [0] = { text = ns.strings.options.speedText.valueType.tooltip, }, } },
-		position = { offset = { x = 8, y = -30 } },
+		name = "Type",
+		title = ns.strings.options.speedValue.type.label,
+		tooltip = { lines = { { text = ns.strings.options.speedValue.type.tooltip, }, } },
+		position = { offset = { x = 12, y = -30 } },
 		items = valueTypes,
-		dependencies = { [0] = { frame = options.visibility.hidden, evaluate = function(state) return not state end }, },
+		dependencies = { { frame = frames.options.speedDisplays.visibility.hidden, evaluate = function(state) return not state end }, },
 		optionsData = {
-			optionsKey = addonNameSpace,
-			storageTable = db.speedDisplay.text,
-			storageKey = "valueType",
+			optionsKey = addonNameSpace .. "SpeedDisplays",
+			workingTable = db.speedDisplay.value,
+			storageKey = "type",
+			onChange = { UpdateDisplaySizes = function()
+				SetDisplaySize("playerSpeed")
+				SetDisplaySize("travelSpeed")
+			end, }
 		}
 	})
 	--Slider: Decimals
-	options.text.decimals = wt.CreateSlider({
+	frames.options.speedDisplays.value.decimals = wt.CreateSlider({
 		parent = parentFrame,
 		name = "Decimals",
-		title = ns.strings.options.speedText.decimals.label,
-		tooltip = { lines = { [0] = { text = ns.strings.options.speedText.decimals.tooltip, }, } },
+		title = ns.strings.options.speedValue.decimals.label,
+		tooltip = { lines = { { text = ns.strings.options.speedValue.decimals.tooltip, }, } },
 		position = {
 			anchor = "TOP",
 			offset = { y = -30 }
 		},
 		value = { min = 0, max = 4, step = 1 },
-		events = { OnValueChanged = function(_, value, user)
-			if not user then return end
-			db.speedDisplay.text.decimals = value
-			SetDisplaySize()
-		end, },
-		dependencies = { [0] = { frame = options.visibility.hidden, evaluate = function(state) return not state end }, },
+		dependencies = { { frame = frames.options.speedDisplays.visibility.hidden, evaluate = function(state) return not state end }, },
 		optionsData = {
-			optionsKey = addonNameSpace,
-			storageTable = db.speedDisplay.text,
+			optionsKey = addonNameSpace .. "SpeedDisplays",
+			workingTable = db.speedDisplay.value,
 			storageKey = "decimals",
+			onChange = { "UpdateDisplaySizes", }
 		}
-	}).slider
+	})
 	--Checkbox: No trim
-	options.text.noTrim = wt.CreateCheckbox({
+	frames.options.speedDisplays.value.noTrim = wt.CreateCheckbox({
 		parent = parentFrame,
 		name = "NoTrim",
-		title = ns.strings.options.speedText.noTrim.label,
-		tooltip = { lines = { [0] = { text = ns.strings.options.speedText.noTrim.tooltip, }, } },
+		title = ns.strings.options.speedValue.noTrim.label,
+		tooltip = { lines = { { text = ns.strings.options.speedValue.noTrim.tooltip, }, } },
 		position = {
 			anchor = "TOPRIGHT",
 			offset = { y = -30 }
 		},
 		autoOffset = true,
-		events = { OnClick = function(_, state) db.speedDisplay.text.noTrim = state end, },
 		dependencies = {
-			[0] = { frame = options.visibility.hidden, evaluate = function(state) return not state end },
-			[1] = { frame = options.text.decimals, evaluate = function(value) return value > 0 end },
+			{ frame = frames.options.speedDisplays.visibility.hidden, evaluate = function(state) return not state end },
+			{ frame = frames.options.speedDisplays.value.decimals, evaluate = function(value) return value > 0 end },
 		},
 		optionsData = {
-			optionsKey = addonNameSpace,
-			storageTable = db.speedDisplay.text,
+			optionsKey = addonNameSpace .. "SpeedDisplays",
+			workingTable = db.speedDisplay.value,
 			storageKey = "noTrim",
 		}
 	})
+end
+local function CreatePositionOptions(parentFrame)
+	--Selector: Anchor point
+	frames.options.speedDisplays.position.anchor = wt.CreateAnchorSelector({
+		parent = parentFrame,
+		name = "AnchorPoint",
+		title = ns.strings.options.speedDisplay.position.anchor.label,
+		tooltip = { lines = { { text = ns.strings.options.speedDisplay.position.anchor.tooltip, }, } },
+		position = { offset = { x = 12, y = -30 } },
+		width = 140,
+		onSelection = function() frames.options.speedDisplays.visibility.presets.setSelected(nil, ns.strings.options.speedDisplay.quick.presets.select) end,
+		dependencies = { { frame = frames.options.speedDisplays.visibility.hidden, evaluate = function(state) return not state end }, },
+		optionsData = {
+			optionsKey = addonNameSpace .. "SpeedDisplays",
+			workingTable = db.speedDisplay.position,
+			storageKey = "anchor",
+			onChange = { UpdateDisplayPositions = function() wt.SetPosition(frames.main, db.speedDisplay.position) end, }
+		}
+	})
+	--Slider: X offset
+	frames.options.speedDisplays.position.xOffset = wt.CreateSlider({
+		parent = parentFrame,
+		name = "OffsetX",
+		title = ns.strings.options.speedDisplay.position.xOffset.label,
+		tooltip = { lines = { { text = ns.strings.options.speedDisplay.position.xOffset.tooltip, }, } },
+		position = {
+			anchor = "TOP",
+			offset = { y = -30 }
+		},
+		value = { min = -500, max = 500, fractional = 2 },
+		events = { OnValueChanged = function() frames.options.speedDisplays.visibility.presets.setSelected(nil, ns.strings.options.speedDisplay.quick.presets.select) end, },
+		dependencies = { { frame = frames.options.speedDisplays.visibility.hidden, evaluate = function(state) return not state end }, },
+		optionsData = {
+			optionsKey = addonNameSpace .. "SpeedDisplays",
+			workingTable = db.speedDisplay.position.offset,
+			storageKey = "x",
+			onChange = { "UpdateDisplayPositions", }
+		}
+	})
+	--Slider: Y offset
+	frames.options.speedDisplays.position.yOffset = wt.CreateSlider({
+		parent = parentFrame,
+		name = "OffsetY",
+		title = ns.strings.options.speedDisplay.position.yOffset.label,
+		tooltip = { lines = { { text = ns.strings.options.speedDisplay.position.yOffset.tooltip, }, } },
+		position = {
+			anchor = "TOPRIGHT",
+			offset = { x = -12, y = -30 }
+		},
+		value = { min = -500, max = 500, fractional = 2 },
+		events = { OnValueChanged = function() frames.options.speedDisplays.visibility.presets.setSelected(nil, ns.strings.options.speedDisplay.quick.presets.select) end, },
+		dependencies = { { frame = frames.options.speedDisplays.visibility.hidden, evaluate = function(state) return not state end }, },
+		optionsData = {
+			optionsKey = addonNameSpace .. "SpeedDisplays",
+			workingTable = db.speedDisplay.position.offset,
+			storageKey = "y",
+			onChange = { "UpdateDisplayPositions", }
+		}
+	})
+end
+local function CreateFontOptions(parentFrame)
 	--Dropdown: Font family
 	local fontItems = {}
 	for i = 0, #ns.fonts do
 		fontItems[i] = {}
 		fontItems[i].title = ns.fonts[i].name
-		fontItems[i].onSelect = function()
-			speedDisplayText:SetFont(ns.fonts[i].path, options.text.font.size:GetValue(), "THINOUTLINE")
-			--Refresh the text so the font will be applied even the first time as well not just subsequent times
-			local text = speedDisplayText:GetText()
-			speedDisplayText:SetText("")
-			speedDisplayText:SetText(text)
-		end
 	end
-	options.text.font.family = wt.CreateDropdown({
+	frames.options.speedDisplays.font.family = wt.CreateDropdown({
 		parent = parentFrame,
 		name = "FontFamily",
-		title = ns.strings.options.speedDisplay.text.font.family.label,
+		title = ns.strings.options.speedDisplay.font.family.label,
 		tooltip = { lines = {
-			[0] = { text = ns.strings.options.speedDisplay.text.font.family.tooltip[0], },
-			[1] = { text = "\n" .. ns.strings.options.speedDisplay.text.font.family.tooltip[1], },
-			[2] = { text = "\n" .. ns.strings.options.speedDisplay.text.font.family.tooltip[2]:gsub("#OPTION_CUSTOM", ns.strings.misc.custom):gsub("#FILE_CUSTOM", "CUSTOM.ttf"), },
-			[3] = { text = "[WoW]\\Interface\\AddOns\\" .. addonNameSpace .. "\\Fonts\\", color = { r = 0.185, g = 0.72, b = 0.84 }, wrap = false },
-			[4] = { text = ns.strings.options.speedDisplay.text.font.family.tooltip[3]:gsub("#FILE_CUSTOM", "CUSTOM.ttf"), },
-			[5] = { text = ns.strings.options.speedDisplay.text.font.family.tooltip[4], color = { r = 0.89, g = 0.65, b = 0.40 }, },
+			{ text = ns.strings.options.speedDisplay.font.family.tooltip[0], },
+			{ text = "\n" .. ns.strings.options.speedDisplay.font.family.tooltip[1], },
+			{ text = "\n" .. ns.strings.options.speedDisplay.font.family.tooltip[2]:gsub("#OPTION_CUSTOM", ns.strings.misc.custom):gsub("#FILE_CUSTOM", "CUSTOM.ttf"), },
+			{ text = "[WoW]\\Interface\\AddOns\\" .. addonNameSpace .. "\\Fonts\\", color = { r = 0.185, g = 0.72, b = 0.84 }, wrap = false },
+			{ text = ns.strings.options.speedDisplay.font.family.tooltip[3]:gsub("#FILE_CUSTOM", "CUSTOM.ttf"), },
+			{ text = ns.strings.options.speedDisplay.font.family.tooltip[4], color = { r = 0.89, g = 0.65, b = 0.40 }, },
 		} },
-		position = { offset = { x = 8, y = -101 } },
+		position = { offset = { x = 10, y = -30 } },
 		items = fontItems,
-		dependencies = { [0] = { frame = options.visibility.hidden, evaluate = function(state) return not state end }, },
+		dependencies = { { frame = frames.options.speedDisplays.visibility.hidden, evaluate = function(state) return not state end }, },
 		optionsData = {
-			optionsKey = addonNameSpace,
-			storageTable = db.speedDisplay.text.font,
+			optionsKey = addonNameSpace .. "SpeedDisplays",
+			workingTable = db.speedDisplay.font,
 			storageKey = "family",
 			convertSave = function(value) return ns.fonts[value].path end,
 			convertLoad = function(font) return GetFontID(font) end,
+			onChange = {
+				UpdateDisplayFonts = function()
+					--Player Speed
+					frames.playerSpeed.text:SetFont(db.speedDisplay.font.family, db.speedDisplay.font.size, "THINOUTLINE")
+					--Travel Speed
+					frames.travelSpeed.text:SetFont(db.speedDisplay.font.family, db.speedDisplay.font.size, "THINOUTLINE")
+				end,
+				RefreshDisplayTexts = function() --Refresh the text so the font will be applied right away
+					local text = frames.playerSpeed.text:GetText()
+					frames.playerSpeed.text:SetText("")
+					frames.playerSpeed.text:SetText(text)
+				end,
+			}
 		}
 	})
 	--Slider: Font size
-	options.text.font.size = wt.CreateSlider({
+	frames.options.speedDisplays.font.size = wt.CreateSlider({
 		parent = parentFrame,
 		name = "FontSize",
-		title = ns.strings.options.speedDisplay.text.font.size.label,
-		tooltip = { lines = {
-			[0] = { text = ns.strings.options.speedDisplay.text.font.size.tooltip .. "\n\n" .. ns.strings.misc.default .. ": " .. dbDefault.speedDisplay.text.font.size, },
-		} },
+		title = ns.strings.options.speedDisplay.font.size.label,
+		tooltip = { lines = { { text = ns.strings.options.speedDisplay.font.size.tooltip .. "\n\n" .. ns.strings.misc.default .. ": " .. dbDefault.speedDisplay.font.size, }, } },
 		position = {
 			anchor = "TOP",
-			offset = { y = -101 }
+			offset = { y = -30 }
 		},
 		value = { min = 8, max = 64, step = 1 },
-		events = { OnValueChanged = function(_, value, user)
-			if not user then return end
-			speedDisplayText:SetFont(speedDisplayText:GetFont(), value, "THINOUTLINE")
-			speedDisplayText:SetPoint("CENTER", 0.9, math.fmod(db.speedDisplay.text.font.size, 2) ~= 0 and 0.1 or 0)
-			SetDisplaySize()
-		end, },
-		dependencies = { [0] = { frame = options.visibility.hidden, evaluate = function(state) return not state end }, },
+		dependencies = { { frame = frames.options.speedDisplays.visibility.hidden, evaluate = function(state) return not state end }, },
 		optionsData = {
-			optionsKey = addonNameSpace,
-			storageTable = db.speedDisplay.text.font,
+			optionsKey = addonNameSpace .. "SpeedDisplays",
+			workingTable = db.speedDisplay.font,
 			storageKey = "size",
+			onChange = {
+				"UpdateDisplayFonts",
+				UpdateDisplayTextPlacements = function()
+					--Player Speed
+					frames.playerSpeed.text:SetPoint("CENTER", 0.9, math.fmod(db.speedDisplay.font.size, 2) ~= 0 and 0.1 or 0)
+					SetDisplaySize("playerSpeed")
+					--Travel Speed
+					frames.travelSpeed.text:SetPoint("CENTER", 0.9, math.fmod(db.speedDisplay.font.size, 2) ~= 0 and 0.1 or 0)
+					SetDisplaySize("travelSpeed")
+				end,
+			}
 		}
-	}).slider
+	})
 	--Color Picker: Font color
-	options.text.font.color = wt.CreateColorPicker({
+	frames.options.speedDisplays.font.color = wt.CreateColorPicker({
 		parent = parentFrame,
 		name = "FontColor",
-		title = ns.strings.options.speedDisplay.text.font.color.label,
+		title = ns.strings.options.speedDisplay.font.color.label,
 		position = {
 			anchor = "TOPRIGHT",
-			offset = { x = -12, y = -101 }
+			offset = { x = -12, y = -30 }
 		},
 		opacity = true,
-		setColors = function() return speedDisplayText:GetTextColor() end,
-		onColorUpdate = function(r, g, b, a) speedDisplayText:SetTextColor(r, g, b, a) end,
-		onCancel = function(r, g, b, a) speedDisplayText:SetTextColor(r, g, b, a) end,
-		dependencies = { [0] = { frame = options.visibility.hidden, evaluate = function(state) return not state end }, },
+		setColors = function() return frames.playerSpeed.text:GetTextColor() end,
+		dependencies = { { frame = frames.options.speedDisplays.visibility.hidden, evaluate = function(state) return not state end }, },
 		optionsData = {
-			optionsKey = addonNameSpace,
-			storageTable = db.speedDisplay.text.font,
+			optionsKey = addonNameSpace .. "SpeedDisplays",
+			workingTable = db.speedDisplay.font,
 			storageKey = "color",
+			onChange = { UpdateDisplayFontColors = function()
+				--Player Speed
+				frames.playerSpeed.text:SetTextColor(wt.UnpackColor(db.speedDisplay.font.color))
+				--Travel Speed
+				frames.travelSpeed.text:SetTextColor(wt.UnpackColor(db.speedDisplay.font.color))
+			end, }
 		}
 	})
 end
 local function CreateBackgroundOptions(parentFrame)
 	--Checkbox: Visible
-	options.background.visible = wt.CreateCheckbox({
+	frames.options.speedDisplays.background.visible = wt.CreateCheckbox({
 		parent = parentFrame,
 		name = "Visible",
 		title = ns.strings.options.speedDisplay.background.visible.label,
-		tooltip = { lines = { [0] = { text = ns.strings.options.speedDisplay.background.visible.tooltip, }, } },
+		tooltip = { lines = { { text = ns.strings.options.speedDisplay.background.visible.tooltip, }, } },
 		position = { offset = { x = 8, y = -30 } },
-		events = { OnClick = function(_, state)
-			SetDisplayBackdrop(state, wt.PackColor(options.background.colors.bg.getColor()), wt.PackColor(options.background.colors.border.getColor()))
-		end, },
-		dependencies = { [0] = { frame = options.visibility.hidden, evaluate = function(state) return not state end }, },
+		dependencies = { { frame = frames.options.speedDisplays.visibility.hidden, evaluate = function(state) return not state end }, },
 		optionsData = {
-			optionsKey = addonNameSpace,
-			storageTable = db.speedDisplay.background,
+			optionsKey = addonNameSpace .. "SpeedDisplays",
+			workingTable = db.speedDisplay.background,
 			storageKey = "visible",
+			onChange = { ToggleDisplayBackdrops = function()
+				--Player Speed
+				SetDisplayBackdrop("playerSpeed", db.speedDisplay.background.visible, db.speedDisplay.background.colors.bg, db.speedDisplay.background.colors.border)
+				--Travel Speed
+				SetDisplayBackdrop("travelSpeed", db.speedDisplay.background.visible, db.speedDisplay.background.colors.bg, db.speedDisplay.background.colors.border)
+			end, }
 		}
 	})
 	--Color Picker: Background color
-	options.background.colors.bg = wt.CreateColorPicker({
+	frames.options.speedDisplays.background.colors.bg = wt.CreateColorPicker({
 		parent = parentFrame,
 		name = "BackgroundColor",
 		title = ns.strings.options.speedDisplay.background.colors.bg.label,
@@ -956,23 +1324,27 @@ local function CreateBackgroundOptions(parentFrame)
 		},
 		opacity = true,
 		setColors = function()
-			if options.background.visible:GetChecked() then return speedDisplay:GetBackdropColor() end
+			if frames.options.speedDisplays.background.visible:GetChecked() then return frames.playerSpeed.display:GetBackdropColor() end
 			return wt.UnpackColor(db.speedDisplay.background.colors.bg)
 		end,
-		onColorUpdate = function(r, g, b, a) if speedDisplay:GetBackdrop() ~= nil then speedDisplay:SetBackdropColor(r, g, b, a) end end,
-		onCancel = function(r, g, b, a) if speedDisplay:GetBackdrop() ~= nil then speedDisplay:SetBackdropColor(r, g, b, a) end end,
 		dependencies = {
-			[0] = { frame = options.visibility.hidden, evaluate = function(state) return not state end },
-			[1] = { frame = options.background.visible, },
+			{ frame = frames.options.speedDisplays.visibility.hidden, evaluate = function(state) return not state end },
+			{ frame = frames.options.speedDisplays.background.visible, },
 		},
 		optionsData = {
-			optionsKey = addonNameSpace,
-			storageTable = db.speedDisplay.background.colors,
+			optionsKey = addonNameSpace .. "SpeedDisplays",
+			workingTable = db.speedDisplay.background.colors,
 			storageKey = "bg",
+			onChange = { UpdateDisplayBackdropBackgroundColors = function()
+				--Player Speed
+				if frames.playerSpeed.display:GetBackdrop() ~= nil then frames.playerSpeed.display:SetBackdropColor(wt.UnpackColor(db.speedDisplay.background.colors.bg)) end
+				--Travel Speed
+				if frames.travelSpeed.display:GetBackdrop() ~= nil then frames.travelSpeed.display:SetBackdropColor(wt.UnpackColor(db.speedDisplay.background.colors.bg)) end
+			end }
 		}
 	})
 	--Color Picker: Border color
-	options.background.colors.border = wt.CreateColorPicker({
+	frames.options.speedDisplays.background.colors.border = wt.CreateColorPicker({
 		parent = parentFrame,
 		name = "BorderColor",
 		title = ns.strings.options.speedDisplay.background.colors.border.label,
@@ -982,163 +1354,98 @@ local function CreateBackgroundOptions(parentFrame)
 		},
 		opacity = true,
 		setColors = function()
-			if options.background.visible:GetChecked() then return speedDisplay:GetBackdropBorderColor() end
+			if frames.options.speedDisplays.background.visible:GetChecked() then return frames.playerSpeed.display:GetBackdropBorderColor() end
 			return wt.UnpackColor(db.speedDisplay.background.colors.border)
 		end,
-		onColorUpdate = function(r, g, b, a) if speedDisplay:GetBackdrop() ~= nil then speedDisplay:SetBackdropBorderColor(r, g, b, a) end end,
-		onCancel = function(r, g, b, a) if speedDisplay:GetBackdrop() ~= nil then speedDisplay:SetBackdropBorderColor(r, g, b, a) end end,
 		dependencies = {
-			[0] = { frame = options.visibility.hidden, evaluate = function(state) return not state end },
-			[1] = { frame = options.background.visible, },
+			{ frame = frames.options.speedDisplays.visibility.hidden, evaluate = function(state) return not state end },
+			{ frame = frames.options.speedDisplays.background.visible, },
 		},
 		optionsData = {
-			optionsKey = addonNameSpace,
-			storageTable = db.speedDisplay.background.colors,
+			optionsKey = addonNameSpace .. "SpeedDisplays",
+			workingTable = db.speedDisplay.background.colors,
 			storageKey = "border",
+			onChange = { UpdateDisplayBackdropBorderColors = function()
+				--Player Speed
+				if frames.playerSpeed.display:GetBackdrop() ~= nil then
+					frames.playerSpeed.display:SetBackdropBorderColor(wt.UnpackColor(db.speedDisplay.background.colors.border))
+				end
+				--Travel Speed
+				if frames.travelSpeed.display:GetBackdrop() ~= nil then
+					frames.travelSpeed.display:SetBackdropBorderColor(wt.UnpackColor(db.speedDisplay.background.colors.border))
+				end
+			end }
 		}
 	})
 end
 local function CreateVisibilityOptions(parentFrame)
 	--Checkbox: Raise
-	options.visibility.raise = wt.CreateCheckbox({
+	frames.options.speedDisplays.visibility.raise = wt.CreateCheckbox({
 		parent = parentFrame,
 		name = "Raise",
 		title = ns.strings.options.speedDisplay.visibility.raise.label,
-		tooltip = { lines = { [0] = { text = ns.strings.options.speedDisplay.visibility.raise.tooltip, }, } },
+		tooltip = { lines = { { text = ns.strings.options.speedDisplay.visibility.raise.tooltip, }, } },
 		position = { offset = { x = 8, y = -30 } },
-		events = { OnClick = function(_, state)
-			moveSpeed:SetFrameStrata(state and "HIGH" or "MEDIUM")
-			--Clear the presets dropdown selection
-			options.visibility.presets.setSelected(nil, ns.strings.options.speedDisplay.quick.presets.select)
-		end, },
-		dependencies = { [0] = { frame = options.visibility.hidden, evaluate = function(state) return not state end }, },
+		events = { OnClick = function() frames.options.speedDisplays.visibility.presets.setSelected(nil, ns.strings.options.speedDisplay.quick.presets.select) end, },
+		dependencies = { { frame = frames.options.speedDisplays.visibility.hidden, evaluate = function(state) return not state end }, },
 		optionsData = {
-			optionsKey = addonNameSpace,
-			storageTable = db.speedDisplay.visibility,
+			optionsKey = addonNameSpace .. "SpeedDisplays",
+			workingTable = db.speedDisplay.visibility,
 			storageKey = "frameStrata",
 			convertSave = function(enabled) return enabled and "HIGH" or "MEDIUM" end,
 			convertLoad = function(strata) return strata == "HIGH" end,
+			onChange = { UpdateDisplayFrameStratas = function() frames.main:SetFrameStrata(db.speedDisplay.visibility.frameStrata) end, }
 		}
 	})
 	--Checkbox: Auto-hide toggle
-	options.visibility.autoHide = wt.CreateCheckbox({
+	frames.options.speedDisplays.visibility.autoHide = wt.CreateCheckbox({
 		parent = parentFrame,
 		name = "AutoHide",
 		title = ns.strings.options.speedDisplay.visibility.autoHide.label,
-		tooltip = { lines = { [0] = { text = ns.strings.options.speedDisplay.visibility.autoHide.tooltip, }, } },
+		tooltip = { lines = { { text = ns.strings.options.speedDisplay.visibility.autoHide.tooltip, }, } },
 		position = {
-			relativeTo = options.visibility.raise,
+			relativeTo = frames.options.speedDisplays.visibility.raise,
 			relativePoint = "BOTTOMLEFT",
 			offset = { y = -4 }
 		},
-		events = { OnClick = function(_, state) db.speedDisplay.visibility.autoHide = state end, },
-		dependencies = { [0] = { frame = options.visibility.hidden, evaluate = function(state) return not state end }, },
+		dependencies = { { frame = frames.options.speedDisplays.visibility.hidden, evaluate = function(state) return not state end }, },
 		optionsData = {
-			optionsKey = addonNameSpace,
-			storageTable = db.speedDisplay.visibility,
+			optionsKey = addonNameSpace .. "SpeedDisplays",
+			workingTable = db.speedDisplay.visibility,
 			storageKey = "autoHide",
 		}
 	})
 	--Checkbox: Status notice
-	options.visibility.status = wt.CreateCheckbox({
+	frames.options.speedDisplays.visibility.status = wt.CreateCheckbox({
 		parent = parentFrame,
 		name = "StatusNotice",
 		title = ns.strings.options.speedDisplay.visibility.statusNotice.label,
-		tooltip = { lines = { [0] = { text = ns.strings.options.speedDisplay.visibility.statusNotice.tooltip:gsub("#ADDON", addonTitle), }, } },
+		tooltip = { lines = { { text = ns.strings.options.speedDisplay.visibility.statusNotice.tooltip:gsub("#ADDON", addonTitle), }, } },
 		position = {
-			relativeTo = options.visibility.autoHide,
+			relativeTo = frames.options.speedDisplays.visibility.autoHide,
 			relativePoint = "BOTTOMLEFT",
 			offset = { y = -4 }
 		},
 		optionsData = {
-			optionsKey = addonNameSpace,
-			storageTable = db.speedDisplay.visibility,
+			optionsKey = addonNameSpace .. "SpeedDisplays",
+			workingTable = db.speedDisplay.visibility,
 			storageKey = "statusNotice",
 		}
 	})
 end
-local function CreateSpeedDisplayCategoryPanels(parentFrame) --Add the speed display page widgets to the category panel frame
-	--Quick settings
-	local quickOptions = wt.CreatePanel({
-		parent = parentFrame,
-		name = "QuickSettings",
-		title = ns.strings.options.speedDisplay.quick.title,
-		description = ns.strings.options.speedDisplay.quick.description:gsub("#ADDON", addonTitle),
-		position = { offset = { x = 10, y = -78 } },
-		size = { height = 77 },
-	})
-	CreateQuickOptions(quickOptions)
-	--Position
-	local positionOptions = wt.CreatePanel({
-		parent = parentFrame,
-		name = "Position",
-		title = ns.strings.options.speedDisplay.position.title,
-		description = ns.strings.options.speedDisplay.position.description:gsub("#SHIFT", ns.strings.keys.shift),
-		position = {
-			relativeTo = quickOptions,
-			relativePoint = "BOTTOMLEFT",
-			offset = { y = -32 }
-		},
-		size = { height = 103 },
-	})
-	CreatePositionOptions(positionOptions)
-	--Text
-	local textOptions = wt.CreatePanel({
-		parent = parentFrame,
-		name = "Text",
-		title = ns.strings.options.speedDisplay.text.title,
-		description = ns.strings.options.speedDisplay.text.description,
-		position = {
-			relativeTo = positionOptions,
-			relativePoint = "BOTTOMLEFT",
-			offset = { y = -32 }
-		},
-		size = { height = 159 },
-	})
-	CreateTextOptions(textOptions)
-	--Background
-	local backgroundOptions = wt.CreatePanel({
-		parent = parentFrame,
-		name = "Background",
-		title = ns.strings.options.speedDisplay.background.title,
-		description = ns.strings.options.speedDisplay.background.description:gsub("#ADDON", addonTitle),
-		position = {
-			relativeTo = textOptions,
-			relativePoint = "BOTTOMLEFT",
-			offset = { y = -32 }
-		},
-		size = { height = 80 },
-	})
-	CreateBackgroundOptions(backgroundOptions)
-	--Visibility
-	local visibilityOptions = wt.CreatePanel({
-		parent = parentFrame,
-		name = "Visibility",
-		title = ns.strings.options.speedDisplay.visibility.title,
-		description = ns.strings.options.speedDisplay.visibility.description:gsub("#ADDON", addonTitle),
-		position = {
-			relativeTo = backgroundOptions,
-			relativePoint = "BOTTOMLEFT",
-			offset = { y = -32 }
-		},
-		size = { height = 123 },
-	})
-	CreateVisibilityOptions(visibilityOptions)
-end
 
 --Target Speed page
-local function CreateTooltipOptions(parentFrame)
+local function CreateTargetSpeedOptions(parentFrame)
 	--Checkbox: Enabled
-	options.mouseover.enabled = wt.CreateCheckbox({
+	frames.options.targetSpeed.enabled = wt.CreateCheckbox({
 		parent = parentFrame,
 		name = "Enabled",
 		title = ns.strings.options.targetSpeed.mouseover.enabled.label,
-		tooltip = { lines = { [0] = { text = ns.strings.options.targetSpeed.mouseover.enabled.tooltip:gsub("#ADDON", addonTitle), }, } },
+		tooltip = { lines = { { text = ns.strings.options.targetSpeed.mouseover.enabled.tooltip:gsub("#ADDON", addonTitle), }, } },
 		position = { offset = { x = 8, y = -30 } },
-		events = { OnClick = function(_, state) db.targetSpeed.tooltip.enabled = state end, },
 		optionsData = {
-			optionsKey = addonNameSpace,
-			storageTable = db.targetSpeed.tooltip,
+			optionsKey = addonNameSpace .. "TargetSpeed",
+			workingTable = db.targetSpeed,
 			storageKey = "enabled",
 		}
 	})
@@ -1146,80 +1453,62 @@ local function CreateTooltipOptions(parentFrame)
 	local valueTypes = {}
 	for i = 0, 2 do
 		valueTypes[i] = {}
-		valueTypes[i].title = ns.strings.options.speedText.valueType.list[i].label
-		valueTypes[i].tooltip = { lines = { [0] = { text = ns.strings.options.speedText.valueType.list[i].tooltip, }, } }
-		valueTypes[i].onSelect = function() db.targetSpeed.tooltip.text.valueType = i end
+		valueTypes[i].title = ns.strings.options.speedValue.type.list[i].label
+		valueTypes[i].tooltip = { lines = { { text = ns.strings.options.speedValue.type.list[i].tooltip, }, } }
 	end
-	options.mouseover.valueType = wt.CreateSelector({
+	frames.options.targetSpeed.value.type = wt.CreateSelector({
 		parent = parentFrame,
 		name = "ValueType",
-		title = ns.strings.options.speedText.valueType.label,
-		tooltip = { lines = { [0] = { text = ns.strings.options.speedText.valueType.tooltip, }, } },
-		position = { offset = { x = 8, y = -60 } },
+		title = ns.strings.options.speedValue.type.label,
+		tooltip = { lines = { { text = ns.strings.options.speedValue.type.tooltip, }, } },
+		position = { offset = { x = 12, y = -60 } },
 		items = valueTypes,
-		dependencies = { [0] = { frame = options.mouseover.enabled, }, },
+		dependencies = { { frame = frames.options.targetSpeed.enabled, }, },
 		optionsData = {
-			optionsKey = addonNameSpace,
-			storageTable = db.targetSpeed.tooltip.text,
-			storageKey = "valueType",
+			optionsKey = addonNameSpace .. "TargetSpeed",
+			workingTable = db.targetSpeed.value,
+			storageKey = "type",
 		}
 	})
 	--Slider: Decimals
-	options.mouseover.decimals = wt.CreateSlider({
+	frames.options.targetSpeed.value.decimals = wt.CreateSlider({
 		parent = parentFrame,
 		name = "Decimals",
-		title = ns.strings.options.speedText.decimals.label,
-		tooltip = { lines = { [0] = { text = ns.strings.options.speedText.decimals.tooltip, }, } },
+		title = ns.strings.options.speedValue.decimals.label,
+		tooltip = { lines = { { text = ns.strings.options.speedValue.decimals.tooltip, }, } },
 		position = {
 			anchor = "TOP",
 			offset = { y = -60 }
 		},
 		value = { min = 0, max = 4, step = 1 },
-		events = { OnValueChanged = function(_, value, user)
-			if not user then return end
-			db.targetSpeed.tooltip.text.decimals = value end,
-		},
-		dependencies = { [0] = { frame = options.mouseover.enabled, }, },
+		dependencies = { { frame = frames.options.targetSpeed.enabled, }, },
 		optionsData = {
-			optionsKey = addonNameSpace,
-			storageTable = db.targetSpeed.tooltip.text,
+			optionsKey = addonNameSpace .. "TargetSpeed",
+			workingTable = db.targetSpeed.value,
 			storageKey = "decimals",
 		}
-	}).slider
+	})
 	--Checkbox: No trim
-	options.mouseover.noTrim = wt.CreateCheckbox({
+	frames.options.targetSpeed.value.noTrim = wt.CreateCheckbox({
 		parent = parentFrame,
 		name = "NoTrim",
-		title = ns.strings.options.speedText.noTrim.label,
-		tooltip = { lines = { [0] = { text = ns.strings.options.speedText.noTrim.tooltip, }, } },
+		title = ns.strings.options.speedValue.noTrim.label,
+		tooltip = { lines = { { text = ns.strings.options.speedValue.noTrim.tooltip, }, } },
 		position = {
 			anchor = "TOPRIGHT",
 			offset = { y = -60 }
 		},
 		autoOffset = true,
-		events = { OnClick = function(_, state) db.targetSpeed.tooltip.text.noTrim = state end, },
 		dependencies = {
-			[0] = { frame = options.mouseover.enabled, },
-			[1] = { frame = options.mouseover.decimals, evaluate = function(value) return value > 0 end },
+			{ frame = frames.options.targetSpeed.enabled, },
+			{ frame = frames.options.targetSpeed.value.decimals, evaluate = function(value) return value > 0 end },
 		},
 		optionsData = {
-			optionsKey = addonNameSpace,
-			storageTable = db.targetSpeed.tooltip.text,
+			optionsKey = addonNameSpace .. "TargetSpeed",
+			workingTable = db.targetSpeed.value,
 			storageKey = "noTrim",
 		}
 	})
-end
-local function CreateTargetSpeedCategoryPanels(parentFrame) --Add the speed display page widgets to the category panel frame
-	--Mouseover
-	local mouseoverOptions = wt.CreatePanel({
-		parent = parentFrame,
-		name = "Mouseover",
-		title = ns.strings.options.targetSpeed.mouseover.title,
-		description = ns.strings.options.targetSpeed.mouseover.description,
-		position = { offset = { x = 10, y = -82 } },
-		size = { height = 134 },
-	})
-	CreateTooltipOptions(mouseoverOptions)
 end
 
 --Advanced page
@@ -1235,7 +1524,7 @@ local function CreateBackupOptions(parentFrame)
 		accept = ns.strings.options.advanced.backup.import,
 		onAccept = function()
 			--Load from string to a temporary table
-			local success, t = pcall(loadstring("return " .. wt.Clear(options.backup.string:GetText())))
+			local success, t = pcall(loadstring("return " .. wt.Clear(frames.options.advanced.backup.string:GetText())))
 			if success and type(t) == "table" then
 				--Run DB checkup on the loaded table
 				wt.RemoveEmpty(t.account, CheckValidity)
@@ -1243,65 +1532,67 @@ local function CreateBackupOptions(parentFrame)
 				wt.AddMissing(t.account, db)
 				wt.AddMissing(t.character, dbc)
 				RestoreOldData(t.account, t.character, wt.RemoveMismatch(t.account, db), wt.RemoveMismatch(t.character, dbc))
+
 				--Copy values from the loaded DBs to the addon DBs
 				wt.CopyValues(t.account, db)
 				wt.CopyValues(t.character, dbc)
-				--Update the custom preset
+
+				--Load the custom preset
 				presets[0].data = wt.Clone(db.customPreset)
-				--Update the speed display
-				wt.SetPosition(moveSpeed, db.speedDisplay.position)
-				SetDisplayValues(db, dbc)
-				--Update the interface options
-				wt.LoadOptionsData(addonNameSpace)
+
+				--Load the options data & update the interface options
+				frames.options.speedDisplays.page.load(true)
+				frames.options.targetSpeed.page.load(true)
+				frames.options.advanced.page.load(true)
 			else print(wt.Color(addonTitle .. ":", ns.colors.green[0]) .. " " .. wt.Color(ns.strings.options.advanced.backup.error, ns.colors.yellow[1])) end
 		end
 	})
 	local backupBox
-	options.backup.string, backupBox = wt.CreateEditScrollBox({
+	frames.options.advanced.backup.string, backupBox = wt.CreateEditScrollBox({
 		parent = parentFrame,
 		name = "ImportExport",
 		title = ns.strings.options.advanced.backup.backupBox.label,
 		tooltip = { lines = {
-			[0] = { text = ns.strings.options.advanced.backup.backupBox.tooltip[0], },
-			[1] = { text = "\n" .. ns.strings.options.advanced.backup.backupBox.tooltip[1], },
-			[2] = { text = "\n" .. ns.strings.options.advanced.backup.backupBox.tooltip[2]:gsub("#ENTER", ns.strings.keys.enter), },
-			[3] = { text = ns.strings.options.advanced.backup.backupBox.tooltip[3], color = { r = 0.89, g = 0.65, b = 0.40 }, },
-			[4] = { text = "\n" .. ns.strings.options.advanced.backup.backupBox.tooltip[4], color = { r = 0.92, g = 0.34, b = 0.23 }, },
+			{ text = ns.strings.options.advanced.backup.backupBox.tooltip[0], },
+			{ text = "\n" .. ns.strings.options.advanced.backup.backupBox.tooltip[1], },
+			{ text = "\n" .. ns.strings.options.advanced.backup.backupBox.tooltip[2]:gsub("#ENTER", ns.strings.keys.enter), },
+			{ text = ns.strings.options.advanced.backup.backupBox.tooltip[3], color = { r = 0.89, g = 0.65, b = 0.40 }, },
+			{ text = "\n" .. ns.strings.options.advanced.backup.backupBox.tooltip[4], color = { r = 0.92, g = 0.34, b = 0.23 }, },
 		}, },
-		position = { offset = { x = 16, y = -30 } },
-		size = { width = parentFrame:GetWidth() - 32, height = 302 },
-		font = "GameFontWhiteSmall",
-		maxLetters = 3500,
+		position = { offset = { x = 17.5, y = -30 } },
+		size = { width = parentFrame:GetWidth() - 35, height = 302 },
+		font = { normal = "GameFontWhiteSmall", },
+		maxLetters = 4000,
 		scrollSpeed = 60,
 		events = {
 			OnEnterPressed = function() StaticPopup_Show(importPopup) end,
-			OnEscapePressed = function(self) self.setText(wt.TableToString({ account = db, character = dbc }, options.backup.compact:GetChecked(), true)) end,
+			OnEscapePressed = function(self) self.setText(wt.TableToString({ account = db, character = dbc }, frames.options.advanced.backup.compact:GetChecked(), true)) end,
 		},
 		optionsData = {
-			optionsKey = addonNameSpace,
-			onLoad = function(self) self.setText(wt.TableToString({ account = db, character = dbc }, options.backup.compact:GetChecked(), true)) end,
+			optionsKey = addonNameSpace .. "Advanced",
+			onLoad = function(self) self.setText(wt.TableToString({ account = db, character = dbc }, frames.options.advanced.backup.compact:GetChecked(), true)) end,
 		}
 	})
 	--Checkbox: Compact
-	options.backup.compact = wt.CreateCheckbox({
+	frames.options.advanced.backup.compact = wt.CreateCheckbox({
 		parent = parentFrame,
 		name = "Compact",
 		title = ns.strings.options.advanced.backup.compact.label,
-		tooltip = { lines = { [0] = { text = ns.strings.options.advanced.backup.compact.tooltip, }, } },
+		tooltip = { lines = { { text = ns.strings.options.advanced.backup.compact.tooltip, }, } },
 		position = {
 			relativeTo = backupBox,
 			relativePoint = "BOTTOMLEFT",
 			offset = { x = -8, y = -13 }
 		},
 		events = { OnClick = function(_, state)
-			options.backup.string.setText(wt.TableToString({ account = db, character = dbc }, state, true))
+			frames.options.advanced.backup.string.setText(wt.TableToString({ account = db, character = dbc }, state, true))
 			--Set focus after text change to set the scroll to the top and refresh the position character counter
-			options.backup.string:SetFocus()
-			options.backup.string:ClearFocus()
+			frames.options.advanced.backup.string:SetFocus()
+			frames.options.advanced.backup.string:ClearFocus()
 		end, },
 		optionsData = {
-			optionsKey = addonNameSpace,
-			storageTable = cs,
+			optionsKey = addonNameSpace .. "Advanced",
+			workingTable = cs,
 			storageKey = "compactBackup",
 		}
 	})
@@ -1310,7 +1601,7 @@ local function CreateBackupOptions(parentFrame)
 		parent = parentFrame,
 		name = "Load",
 		title = ns.strings.options.advanced.backup.load.label,
-		tooltip = { lines = { [0] = { text = ns.strings.options.advanced.backup.load.tooltip, }, } },
+		tooltip = { lines = { { text = ns.strings.options.advanced.backup.load.tooltip, }, } },
 		position = {
 			anchor = "TOPRIGHT",
 			relativeTo = backupBox,
@@ -1324,7 +1615,7 @@ local function CreateBackupOptions(parentFrame)
 		parent = parentFrame,
 		name = "Reset",
 		title = ns.strings.options.advanced.backup.reset.label,
-		tooltip = { lines = { [0] = { text = ns.strings.options.advanced.backup.reset.tooltip, }, } },
+		tooltip = { lines = { { text = ns.strings.options.advanced.backup.reset.tooltip, }, } },
 		position = {
 			anchor = "TOPRIGHT",
 			relativeTo = load,
@@ -1332,27 +1623,325 @@ local function CreateBackupOptions(parentFrame)
 			offset = { x = -10, }
 		},
 		events = { OnClick = function()
-			options.backup.string.setText(wt.TableToString({ account = db, character = dbc }, options.backup.compact:GetChecked(), true))
+			frames.options.advanced.backup.string.setText(wt.TableToString({ account = db, character = dbc }, frames.options.advanced.backup.compact:GetChecked(), true))
 			--Set focus after text change to set the scroll to the top and refresh the position character counter
-			options.backup.string:SetFocus()
-			options.backup.string:ClearFocus()
+			frames.options.advanced.backup.string:SetFocus()
+			frames.options.advanced.backup.string:ClearFocus()
 		end, },
 	})
 end
-local function CreateAdvancedCategoryPanels(parentFrame) --Add the advanced page widgets to the category panel frame
+
+--[ Options Category Panels ]
+
+--Create and add the options panels to the WoW Interface options
+local function LoadInterfaceOptions()
+
+	--[[ MAIN ]]
+
+	--[ Options Category Page ]
+
+	frames.options.main.page = wt.CreateOptionsCategory({
+		addon = addonNameSpace,
+		name = "Main",
+		description = ns.strings.options.main.description:gsub("#ADDON", addonTitle):gsub("#KEYWORD", ns.strings.chat.keyword),
+		logo = ns.textures.logo,
+		titleLogo = true,
+	})
+
+	--[ Category Panels ]
+
+	--Shortcuts
+	local shortcutsPanel = wt.CreatePanel({
+		parent = frames.options.main.page.canvas,
+		name = "Shortcuts",
+		title = ns.strings.options.main.shortcuts.title,
+		description = ns.strings.options.main.shortcuts.description:gsub("#ADDON", addonTitle),
+		position = { offset = { x = 10, y = -82 } },
+		size = { height = 64 },
+	})
+	CreateOptionsShortcuts(shortcutsPanel) --Add widgets
+
+	--About
+	local aboutPanel = wt.CreatePanel({
+		parent = frames.options.main.page.canvas,
+		name = "About",
+		title = ns.strings.options.main.about.title,
+		description = ns.strings.options.main.about.description:gsub("#ADDON", addonTitle),
+		position = {
+			relativeTo = shortcutsPanel,
+			relativePoint = "BOTTOMLEFT",
+			offset = { y = -32 }
+		},
+		size = { height = 260 },
+	})
+	CreateAboutInfo(aboutPanel) --Add widgets
+
+	--Sponsors
+	local top = GetAddOnMetadata(addonNameSpace, "X-TopSponsors")
+	local normal = GetAddOnMetadata(addonNameSpace, "X-Sponsors")
+	if top or normal then
+		local sponsorsPanel = wt.CreatePanel({
+			parent = frames.options.main.page.canvas,
+			name = "Sponsors",
+			title = ns.strings.options.main.sponsors.title,
+			description = ns.strings.options.main.sponsors.description,
+			position = {
+				relativeTo = aboutPanel,
+				relativePoint = "BOTTOMLEFT",
+				offset = { y = -32 }
+			},
+			size = { height = 64 + (top and normal and 24 or 0) },
+		})
+		wt.CreateText({
+			parent = sponsorsPanel,
+			name = "DescriptionHeart",
+			position = { offset = { x = _G[sponsorsPanel:GetName() .. "Description"]:GetStringWidth() + 16, y = -10 } },
+			text = "♥",
+			font = "ChatFontSmall",
+			justify = { h = "LEFT", },
+		})
+		CreateSponsorInfo(sponsorsPanel, top, normal) --Add names
+	end
+
+
+	--[[ SPEED DISPLAYS ]]
+
+	--[ Options Category Page ]
+
+	frames.options.speedDisplays.page = wt.CreateOptionsCategory({
+		parent = frames.options.main.page.category,
+		addon = addonNameSpace,
+		name = "SpeedDisplays",
+		title = ns.strings.options.speedDisplay.title,
+		description = ns.strings.options.speedDisplay.description:gsub("#ADDON", addonTitle),
+		logo = ns.textures.logo,
+		scroll = {
+			height = 1104,
+			speed = 130,
+		},
+		optionsKeys = { addonNameSpace .. "SpeedDisplays" },
+		storage = {
+			{
+				workingTable =  dbc,
+				storageTable = MovementSpeedDBC,
+				defaultsTable = dbcDefault,
+			},
+			{
+				workingTable =  db.playerSpeed,
+				storageTable = MovementSpeedDB.playerSpeed,
+				defaultsTable = dbDefault.playerSpeed,
+			},
+			{
+				workingTable =  db.travelSpeed,
+				storageTable = MovementSpeedDB.travelSpeed,
+				defaultsTable = dbDefault.travelSpeed,
+			},
+			{
+				workingTable =  db.speedDisplay,
+				storageTable = MovementSpeedDB.speedDisplay,
+				defaultsTable = dbDefault.speedDisplay,
+			},
+		},
+		onSave = function()
+			MovementSpeedDB = wt.Clone(db)
+		end,
+		onDefault = function()
+			--Reset the Custom preset and set it as selected
+			presets[0].data = wt.Clone(db.customPreset)
+			frames.options.speedDisplays.visibility.presets.setSelected(0)
+			--Notification
+			print(wt.Color(addonTitle .. ":", ns.colors.green[0]) .. " " .. wt.Color(ns.strings.chat.reset.response, ns.colors.yellow[1]))
+		end
+	})
+
+	--[ Category Panels ]
+
+	--Quick settings
+	local quickOptions = wt.CreatePanel({
+		parent = frames.options.speedDisplays.page.scrollChild,
+		name = "QuickSettings",
+		title = ns.strings.options.speedDisplay.quick.title,
+		description = ns.strings.options.speedDisplay.quick.description:gsub("#ADDON", addonTitle),
+		position = { offset = { x = 10, y = -78 } },
+		size = { height = 77 },
+	})
+	CreateQuickOptions(quickOptions) --Add widgets
+
+	--Player Speed
+	local playerSpeedOptions = wt.CreatePanel({
+		parent = frames.options.speedDisplays.page.scrollChild,
+		name = "PlayerSpeed",
+		title = ns.strings.options.speedDisplay.playerSpeed.title,
+		description = ns.strings.options.speedDisplay.playerSpeed.description,
+		position = {
+			relativeTo = quickOptions,
+			relativePoint = "BOTTOMLEFT",
+			offset = { y = -32 }
+		},
+		size = { height = 91 },
+	})
+	CreatePlayerSpeedOptions(playerSpeedOptions) --Add widgets
+
+	--Travel Speed
+	local travelSpeedOptions = wt.CreatePanel({
+		parent = frames.options.speedDisplays.page.scrollChild,
+		name = "TravelSpeed",
+		title = ns.strings.options.speedDisplay.travelSpeed.title,
+		description = ns.strings.options.speedDisplay.travelSpeed.description,
+		position = {
+			relativeTo = playerSpeedOptions,
+			relativePoint = "BOTTOMLEFT",
+			offset = { y = -32 }
+		},
+		size = { height = 123 },
+	})
+	CreateTravelSpeedOptions(travelSpeedOptions) --Add widgets
+
+	--Value
+	local valueOptions = wt.CreatePanel({
+		parent = frames.options.speedDisplays.page.scrollChild,
+		name = "Value",
+		title = ns.strings.options.speedValue.title,
+		description = ns.strings.options.speedValue.description,
+		position = {
+			relativeTo = travelSpeedOptions,
+			relativePoint = "BOTTOMLEFT",
+			offset = { y = -32 }
+		},
+		size = { height = 103 },
+	})
+	CreateValueOptions(valueOptions) --Add widgets
+
+	--Position
+	local positionOptions = wt.CreatePanel({
+		parent = frames.options.speedDisplays.page.scrollChild,
+		name = "Position",
+		title = ns.strings.options.speedDisplay.position.title,
+		description = ns.strings.options.speedDisplay.position.description:gsub("#SHIFT", ns.strings.keys.shift),
+		position = {
+			relativeTo = valueOptions,
+			relativePoint = "BOTTOMLEFT",
+			offset = { y = -32 }
+		},
+		size = { height = 103 },
+	})
+	CreatePositionOptions(positionOptions) --Add widgets
+
+	--Font
+	local fontOptions = wt.CreatePanel({
+		parent = frames.options.speedDisplays.page.scrollChild,
+		name = "Font",
+		title = ns.strings.options.speedDisplay.font.title,
+		description = ns.strings.options.speedDisplay.font.description,
+		position = {
+			relativeTo = positionOptions,
+			relativePoint = "BOTTOMLEFT",
+			offset = { y = -32 }
+		},
+		size = { height = 91 },
+	})
+	CreateFontOptions(fontOptions) --Add widgets
+
+	--Background
+	local backgroundOptions = wt.CreatePanel({
+		parent = frames.options.speedDisplays.page.scrollChild,
+		name = "Background",
+		title = ns.strings.options.speedDisplay.background.title,
+		description = ns.strings.options.speedDisplay.background.description:gsub("#ADDON", addonTitle),
+		position = {
+			relativeTo = fontOptions,
+			relativePoint = "BOTTOMLEFT",
+			offset = { y = -32 }
+		},
+		size = { height = 80 },
+	})
+	CreateBackgroundOptions(backgroundOptions) --Add widgets
+
+	--Visibility
+	local visibilityOptions = wt.CreatePanel({
+		parent = frames.options.speedDisplays.page.scrollChild,
+		name = "Visibility",
+		title = ns.strings.options.speedDisplay.visibility.title,
+		description = ns.strings.options.speedDisplay.visibility.description:gsub("#ADDON", addonTitle),
+		position = {
+			relativeTo = backgroundOptions,
+			relativePoint = "BOTTOMLEFT",
+			offset = { y = -32 }
+		},
+		size = { height = 123 },
+	})
+	CreateVisibilityOptions(visibilityOptions) --Add widgets
+
+
+	--[[ TARGET SPEED ]]
+
+	--[ Options Category Page ]
+
+	frames.options.targetSpeed.page = wt.CreateOptionsCategory({
+		parent = frames.options.main.page.category,
+		addon = addonNameSpace,
+		name = "TargetSpeed",
+		title = ns.strings.options.targetSpeed.title,
+		description = ns.strings.options.targetSpeed.description:gsub("#ADDON", addonTitle),
+		logo = ns.textures.logo,
+		optionsKeys = { addonNameSpace .. "TargetSpeed" },
+		storage = {
+			{
+				workingTable =  db.targetSpeed,
+				storageTable = MovementSpeedDB.targetSpeed,
+				defaultsTable = dbDefault.targetSpeed,
+			},
+		},
+		onDefault = function()
+			--Notification
+			print(wt.Color(addonTitle .. ":", ns.colors.green[0]) .. " " .. wt.Color(ns.strings.chat.reset.response, ns.colors.yellow[1]))
+		end
+	})
+
+	--[ Category Panels ]
+
+	--Target Speed
+	local targetSpeedOptions = wt.CreatePanel({
+		parent = frames.options.targetSpeed.page.canvas,
+		name = "TargetSpeed",
+		title = ns.strings.options.targetSpeed.mouseover.title,
+		description = ns.strings.options.targetSpeed.mouseover.description,
+		position = { offset = { x = 10, y = -82 } },
+		size = { height = 133 },
+	})
+	CreateTargetSpeedOptions(targetSpeedOptions) --Add widgets
+
+
+	--[[ ADVANCED ]]
+
+	--[ Options Category Page ]
+
+	frames.options.advanced.page = wt.CreateOptionsCategory({
+		parent = frames.options.main.page.category,
+		addon = addonNameSpace,
+		name = "Advanced",
+		title = ns.strings.options.advanced.title,
+		description = ns.strings.options.advanced.description:gsub("#ADDON", addonTitle),
+		logo = ns.textures.logo,
+		optionsKeys = { addonNameSpace .. "Advanced" },
+	})
+
+	--[ Category Panels ]
+
 	--Profiles
 	local profilesPanel = wt.CreatePanel({
-		parent = parentFrame,
+		parent = frames.options.advanced.page.canvas,
 		name = "Profiles",
 		title = ns.strings.options.advanced.profiles.title,
 		description = ns.strings.options.advanced.profiles.description:gsub("#ADDON", addonTitle),
 		position = { offset = { x = 10, y = -82 } },
 		size = { height = 64 },
 	})
-	CreateOptionsProfiles(profilesPanel)
-	---Backup
+	CreateOptionsProfiles(profilesPanel) --Add widgets
+
+	--Backup
 	local backupOptions = wt.CreatePanel({
-		parent = parentFrame,
+		parent = frames.options.advanced.page.canvas,
 		name = "Backup",
 		title = ns.strings.options.advanced.backup.title,
 		description = ns.strings.options.advanced.backup.description:gsub("#ADDON", addonTitle),
@@ -1363,111 +1952,7 @@ local function CreateAdvancedCategoryPanels(parentFrame) --Add the advanced page
 		},
 		size = { height = 400 },
 	})
-	CreateBackupOptions(backupOptions)
-end
-
---[ Options Category Panels ]
-
---Save the pending changes
-local function SaveOptions()
-	--Update the SavedVariabes DBs
-	MovementSpeedDB = wt.Clone(db)
-	MovementSpeedDBC = wt.Clone(dbc)
-end
---Cancel all potential changes made in all option categories
-local function CancelChanges()
-	LoadDBs()
-	--Speed Display
-	wt.SetPosition(moveSpeed, db.speedDisplay.position)
-	SetDisplayValues(db, dbc)
-end
---Restore all the settings under the main option category to their default values
-local function DefaultOptions()
-	--Reset the DBs
-	MovementSpeedDB = wt.Clone(dbDefault)
-	MovementSpeedDBC = wt.Clone(dbcDefault)
-	wt.CopyValues(dbDefault, db)
-	wt.CopyValues(dbcDefault, dbc)
-	--Reset the Custom preset
-	presets[0].data = wt.Clone(db.customPreset)
-	--Reset the speed display
-	wt.SetPosition(moveSpeed, db.speedDisplay.position)
-	SetDisplayValues(db, dbc)
-	--Update the interface options
-	wt.LoadOptionsData(addonNameSpace)
-	--Set the preset selection to Custom
-	options.visibility.presets.setSelected(0)
-	--Notification
-	print(wt.Color(addonTitle .. ":", ns.colors.green[0]) .. " " .. wt.Color(ns.strings.chat.reset.response, ns.colors.yellow[1]))
-end
-
---Create and add the options panels to the WoW Interface options
-local function LoadInterfaceOptions()
-	--Main options panel
-	options.mainOptions = wt.CreateOptionsCategory({
-		addon = addonNameSpace,
-		name = "Main",
-		description = ns.strings.options.main.description:gsub("#ADDON", addonTitle):gsub("#KEYWORD", ns.strings.chat.keyword),
-		logo = ns.textures.logo,
-		titleLogo = true,
-		save = SaveOptions,
-		cancel = CancelChanges,
-		default = DefaultOptions,
-		optionsKey = addonNameSpace,
-	})
-	CreateMainCategoryPanels(options.mainOptions.canvas) --Add categories & GUI elements to the panel
-	--Display options panel
-	options.speedDisplayOptions = wt.CreateOptionsCategory({
-		parent = options.mainOptions.category,
-		addon = addonNameSpace,
-		name = "MainDisplay",
-		title = ns.strings.options.speedDisplay.title,
-		description = ns.strings.options.speedDisplay.description:gsub("#ADDON", addonTitle),
-		logo = ns.textures.logo,
-		scroll = {
-			height = 759,
-			speed = 58,
-		},
-		save = SaveOptions,
-		cancel = CancelChanges,
-		default = DefaultOptions,
-		optionsKey = addonNameSpace,
-		autoSave = false,
-		autoLoad = false,
-	})
-	CreateSpeedDisplayCategoryPanels(options.speedDisplayOptions.scrollChild) --Add categories & GUI elements to the panel
-	--Target Speed options panel
-	options.targetSpeedOptions = wt.CreateOptionsCategory({
-		parent = options.mainOptions.category,
-		addon = addonNameSpace,
-		name = "TargetSpeed",
-		title = ns.strings.options.targetSpeed.title,
-		description = ns.strings.options.targetSpeed.description:gsub("#ADDON", addonTitle),
-		logo = ns.textures.logo,
-		save = SaveOptions,
-		cancel = CancelChanges,
-		default = DefaultOptions,
-		optionsKey = addonNameSpace,
-		autoSave = false,
-		autoLoad = false,
-	})
-	CreateTargetSpeedCategoryPanels(options.targetSpeedOptions.canvas) --Add categories & GUI elements to the panel
-	--Advanced options panel
-	options.advancedOptions = wt.CreateOptionsCategory({
-		parent = options.mainOptions.category,
-		addon = addonNameSpace,
-		name = "Advanced",
-		title = ns.strings.options.advanced.title,
-		description = ns.strings.options.advanced.description:gsub("#ADDON", addonTitle),
-		logo = ns.textures.logo,
-		save = SaveOptions,
-		cancel = CancelChanges,
-		default = DefaultOptions,
-		optionsKey = addonNameSpace,
-		autoSave = false,
-		autoLoad = false,
-	})
-	CreateAdvancedCategoryPanels(options.advancedOptions.canvas) --Add categories & GUI elements to the panel
+	CreateBackupOptions(backupOptions) --Add widgets
 end
 
 
@@ -1479,8 +1964,8 @@ end
 ---@param load boolean [Default: false]
 local function PrintStatus(load)
 	if load == true and not db.speedDisplay.visibility.statusNotice then return end
-	print(wt.Color(addonTitle .. ":", ns.colors.green[0]) .. " " .. wt.Color(moveSpeed:IsVisible() and (
-		not speedDisplay:IsVisible() and ns.strings.chat.status.notVisible or ns.strings.chat.status.visible
+	print(wt.Color(addonTitle .. ":", ns.colors.green[0]) .. " " .. wt.Color(frames.main:IsVisible() and (
+		not frames.playerSpeed.display:IsVisible() and ns.strings.chat.status.notVisible or ns.strings.chat.status.visible
 	) or ns.strings.chat.status.hidden, ns.colors.yellow[0]):gsub(
 		"#AUTO", wt.Color(ns.strings.chat.status.auto:gsub(
 			"#STATE", wt.Color(db.speedDisplay.visibility.autoHide and ns.strings.misc.enabled or ns.strings.misc.disabled, ns.colors.green[1])
@@ -1528,7 +2013,7 @@ local function PrintCommands()
 		[5] = {
 			command = ns.strings.chat.size.command,
 			description =  ns.strings.chat.size.description:gsub(
-				"#SIZE", wt.Color(ns.strings.chat.size.command .. " " .. dbDefault.speedDisplay.text.font.size, ns.colors.green[1])
+				"#SIZE", wt.Color(ns.strings.chat.size.command .. " " .. dbDefault.speedDisplay.font.size, ns.colors.green[1])
 			)
 		},
 		[6] = {
@@ -1546,15 +2031,20 @@ local resetPopup = wt.CreatePopup({
 	addon = addonNameSpace,
 	name = "DefaultOptions",
 	text = (wt.GetStrings("warning") or ""):gsub("#TITLE", wt.Clear(addonTitle)),
-	onAccept = DefaultOptions,
+	onAccept = function()
+		--Reset the options data & update the interface options
+		frames.options.speedDisplays.page.default()
+		frames.options.targetSpeed.page.default()
+		frames.options.advanced.page.default()
+	end,
 })
 
 --[ Slash Command Handlers ]
 
 local function SaveCommand()
 	--Update the Custom preset
-	presets[0].data.position = wt.PackPosition(moveSpeed:GetPoint())
-	presets[0].data.visibility.frameStrata = options.visibility.raise:GetChecked() and "HIGH" or "MEDIUM"
+	presets[0].data.position = wt.PackPosition(frames.main:GetPoint())
+	presets[0].data.visibility.frameStrata = frames.options.speedDisplays.visibility.raise:GetChecked() and "HIGH" or "MEDIUM"
 	--Save the Custom preset in the DB
 	wt.CopyValues(presets[0].data, db.customPreset)
 	--Update in the SavedVariabes DB
@@ -1566,16 +2056,16 @@ local function PresetCommand(parameter)
 	local i = tonumber(parameter)
 	if i ~= nil and i >= 0 and i <= #presets then
 		--Update the speed display
-		moveSpeed:Show()
-		moveSpeed:SetFrameStrata(presets[i].data.visibility.frameStrata)
-		wt.SetPosition(moveSpeed, presets[i].data.position)
+		frames.main:Show()
+		frames.main:SetFrameStrata(presets[i].data.visibility.frameStrata)
+		wt.SetPosition(frames.main, presets[i].data.position)
 		--Update the GUI options in case the window was open
-		options.visibility.hidden:SetChecked(false)
-		options.visibility.hidden:SetAttribute("loaded", true) --Update dependent widgets
-		options.position.anchor.setSelected(presets[i].data.position.anchor)
-		options.position.xOffset:SetValue(presets[i].data.position.offset.x)
-		options.position.yOffset:SetValue(presets[i].data.position.offset.y)
-		options.visibility.raise:SetChecked(presets[i].data.visibility.frameStrata == "HIGH")
+		frames.options.speedDisplays.visibility.hidden:SetChecked(false)
+		frames.options.speedDisplays.visibility.hidden:SetAttribute("loaded", true) --Update dependent widgets
+		frames.options.speedDisplays.position.anchor.setSelected(presets[i].data.position.anchor)
+		frames.options.speedDisplays.position.xOffset.setValue(presets[i].data.position.offset.x)
+		frames.options.speedDisplays.position.yOffset.setValue(presets[i].data.position.offset.y)
+		frames.options.speedDisplays.visibility.raise:SetChecked(presets[i].data.visibility.frameStrata == "HIGH")
 		--Update the DBs
 		dbc.hidden = false
 		wt.CopyValues(presets[i].data.position, db.speedDisplay.position)
@@ -1605,10 +2095,10 @@ local function ToggleCommand()
 	dbc.hidden = not dbc.hidden
 	MovementSpeedDBC.hidden = dbc.hidden
 	--Update the GUI option in case it was open
-	options.visibility.hidden:SetChecked(dbc.hidden)
-	options.visibility.hidden:SetAttribute("loaded", true) --Update dependent widgets
+	frames.options.speedDisplays.visibility.hidden:SetChecked(dbc.hidden)
+	frames.options.speedDisplays.visibility.hidden:SetAttribute("loaded", true) --Update dependent widgets
 	--Update the visibility
-	wt.SetVisibility(moveSpeed, not dbc.hidden)
+	wt.SetVisibility(frames.main, not dbc.hidden)
 	--Response
 	print(wt.Color(addonTitle .. ":", ns.colors.green[0]) .. " " .. wt.Color(dbc.hidden and ns.strings.chat.toggle.hiding or ns.strings.chat.toggle.unhiding, ns.colors.yellow[1]))
 end
@@ -1617,8 +2107,8 @@ local function AutoCommand()
 	db.speedDisplay.visibility.autoHide = not db.speedDisplay.visibility.autoHide
 	MovementSpeedDB.speedDisplay.visibility.autoHide = db.speedDisplay.visibility.autoHide
 	--Update the GUI option in case it was open
-	options.visibility.autoHide:SetChecked(db.speedDisplay.visibility.autoHide)
-	options.visibility.autoHide:SetAttribute("loaded", true) --Update dependent widgets
+	frames.options.speedDisplays.visibility.autoHide:SetChecked(db.speedDisplay.visibility.autoHide)
+	frames.options.speedDisplays.visibility.autoHide:SetAttribute("loaded", true) --Update dependent widgets
 	--Response
 	print(wt.Color(addonTitle .. ":", ns.colors.green[0]) .. " " .. wt.Color(ns.strings.chat.auto.response:gsub(
 		"#STATE", wt.Color(db.speedDisplay.visibility.autoHide and ns.strings.misc.enabled or ns.strings.misc.disabled, ns.colors.green[1])
@@ -1628,21 +2118,22 @@ local function SizeCommand(parameter)
 	local size = tonumber(parameter)
 	if size ~= nil then
 		--Update the DBs
-		db.speedDisplay.text.font.size = size
-		MovementSpeedDB.speedDisplay.text.font.size = db.speedDisplay.text.font.size
+		db.speedDisplay.font.size = size
+		MovementSpeedDB.speedDisplay.text.font.size = db.speedDisplay.font.size
 		--Update the GUI option in case it was open
-		options.text.font.size:SetValue(size)
+		frames.options.speedDisplays.font.size.setValue(size)
 		--Update the font
-		speedDisplayText:SetFont(db.speedDisplay.text.font.family, db.speedDisplay.text.font.size, "THINOUTLINE")
-		speedDisplayText:SetPoint("CENTER", 0.9, math.fmod(db.speedDisplay.text.font.size, 2) ~= 0 and 0.1 or 0)
-		SetDisplaySize()
+		frames.playerSpeed.text:SetFont(db.speedDisplay.font.family, db.speedDisplay.font.size, "THINOUTLINE")
+		frames.playerSpeed.text:SetPoint("CENTER", 0.9, math.fmod(db.speedDisplay.font.size, 2) ~= 0 and 0.1 or 0)
+		SetDisplaySize("playerSpeed")
+		SetDisplaySize("travelSpeed")
 		--Response
 		print(wt.Color(addonTitle .. ":", ns.colors.green[0]) .. " " .. wt.Color(ns.strings.chat.size.response:gsub("#VALUE", wt.Color(size, ns.colors.green[1])), ns.colors.yellow[1]))
 	else
 		--Error
 		print(wt.Color(addonTitle .. ":", ns.colors.green[0]) .. " " .. wt.Color(ns.strings.chat.size.unchanged, ns.colors.yellow[0]))
 		print(wt.Color(ns.strings.chat.size.error:gsub(
-			"#SIZE", wt.Color(ns.strings.chat.size.command .. " " .. dbDefault.speedDisplay.text.font.size, ns.colors.green[1])
+			"#SIZE", wt.Color(ns.strings.chat.size.command .. " " .. dbDefault.speedDisplay.font.size, ns.colors.green[1])
 		), ns.colors.yellow[1]))
 	end
 end
@@ -1654,7 +2145,7 @@ SLASH_MOVESPEED1 = ns.strings.chat.keyword
 function SlashCmdList.MOVESPEED(line)
 	local command, parameter = strsplit(" ", line)
 	if command == ns.strings.chat.help.command then PrintCommands()
-	elseif command == ns.strings.chat.options.command then options.mainOptions.open()
+	elseif command == ns.strings.chat.options.command then frames.options.main.page.open()
 	elseif command == ns.strings.chat.save.command then SaveCommand()
 	elseif command == ns.strings.chat.preset.command then PresetCommand(parameter)
 	elseif command == ns.strings.chat.toggle.command then ToggleCommand()
@@ -1665,128 +2156,60 @@ function SlashCmdList.MOVESPEED(line)
 end
 
 
---[[ SPEED DISPLAY UPDATE ]]
-
---Recalculate the movement speed value and update the displayed text
-local function StartSpeedDisplayUpdate()
-	moveSpeed:SetScript("OnUpdate", function()
-		--Calculate the current player movement speed
-		local speed = GetPlayerSpeed()
-		--Toggle the visibility of the speed display (if auto-hide is enabled)
-		wt.SetVisibility(speedDisplay, not db.speedDisplay.visibility.autoHide or speed ~= 0)
-		--Update the speed display tooltip
-		if speedDisplay:IsMouseOver() and ns.tooltip:IsVisible() then wt.UpdateTooltip({
-			parent = speedDisplay,
-			tooltip = ns.tooltip,
-			title = ns.strings.speedTooltip.title,
-			lines = GetSpeedTooltipLines(),
-			flipColors = true,
-			anchor = "ANCHOR_BOTTOMRIGHT",
-			offset = { y = speedDisplay:GetHeight() },
-		}) end
-		--Update the speed display text
-		local text = ""
-		if db.speedDisplay.text.valueType == 0 then
-			text = wt.FormatThousands(speed / 7 * 100, db.speedDisplay.text.decimals, true, not db.speedDisplay.text.noTrim) .. "%"
-		elseif db.speedDisplay.text.valueType == 1 then
-			text = ns.strings.yps:gsub(
-				"#YARDS", wt.FormatThousands(speed, db.speedDisplay.text.decimals, true, not db.speedDisplay.text.noTrim)
-			)
-		elseif db.speedDisplay.text.valueType == 2 then
-			text = wt.FormatThousands(speed / 7 * 100, db.speedDisplay.text.decimals, true, not db.speedDisplay.text.noTrim) .. "%" .. " ("
-			text = text .. ns.strings.yps:gsub(
-				"#YARDS", wt.FormatThousands(speed, db.speedDisplay.text.decimals, true, not db.speedDisplay.text.noTrim)
-			) .. ")"
-		end
-		speedDisplayText:SetText(text)
-	end)
-end
-
-
---[[ MOUSEOVER TARGET SPEED ]]
-
-TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Unit, function(tooltip)
-	if not db.targetSpeed.tooltip.enabled then return end
-	--Start mouseover target speed updates
-	targetSpeed:SetScript("OnUpdate", function()
-		if UnitName("mouseover") == nil then return end
-		--Find the speed line
-		local lineAdded = false
-		for i = 2, tooltip:NumLines() do
-			local line = _G["GameTooltipTextLeft" .. i]
-			if line then if string.match(line:GetText() or "", "|T" .. ns.textures.logo .. ":0|t") then
-				--Update the speed line
-				line:SetText(GetTargetSpeedText())
-				lineAdded = true
-				break
-			end end
-		end
-		--Add the speed line if the target is moving
-		if not lineAdded and GetUnitSpeed("mouseover") ~= 0 then
-			tooltip:AddLine(GetTargetSpeedText(), ns.colors.yellow[1].r, ns.colors.yellow[1].g, ns.colors.yellow[1].b, true)
-			tooltip:Show() --Force the tooltip to be resized
-		end
-	end)
-end)
-
-GameTooltip:HookScript("OnTooltipCleared", function()
-	--Stop mouseover target speed updates
-	targetSpeed:SetScript("OnUpdate", nil)
-end)
-
-
 --[[ INITIALIZATION ]]
+
+--[ Frames & Events ]
 
 --Set up the speed display context menu
 local function CreateContextMenu()
-	local contextMenu = wt.CreateContextMenu({ parent = speedDisplay, })
+	local contextMenu = wt.CreateContextMenu({ parent = frames.playerSpeed.display, })
 
 	--[ Items ]
 
 	wt.AddContextLabel(contextMenu, { text = addonTitle, })
 
 	--Options submenu
-	local optionsMenu = wt.AddContextSubmenu(contextMenu, nil, {
+	local optionsMenu = wt.AddContextSubmenu(contextMenu, {
 		title = ns.strings.misc.options,
 	})
 
 	wt.AddContextButton(optionsMenu, contextMenu, {
 		title = ns.strings.options.main.name,
-		tooltip = { lines = { [0] = { text = ns.strings.options.main.description:gsub("#ADDON", addonTitle):gsub("#KEYWORD", ns.strings.chat.keyword), }, } },
-		events = { OnClick = function() options.mainOptions.open() end, },
+		tooltip = { lines = { { text = ns.strings.options.main.description:gsub("#ADDON", addonTitle):gsub("#KEYWORD", ns.strings.chat.keyword), }, } },
+		events = { OnClick = function() frames.options.main.page.open() end, },
 	})
 	wt.AddContextButton(optionsMenu, contextMenu, {
 		title = ns.strings.options.speedDisplay.title,
 		tooltip = { lines = {
-			[0] = { text = ns.strings.options.speedDisplay.description:gsub("#ADDON", addonTitle), },
-			[1] = { text = (wt.GetStrings("dfOpenSettings") or ""):gsub("#ADDON", addonTitle), color = { r = 1, g = 0.24, b = 0.13 }, }
+			{ text = ns.strings.options.speedDisplay.description:gsub("#ADDON", addonTitle), },
+			{ text = (wt.GetStrings("dfOpenSettings") or ""):gsub("#ADDON", addonTitle), color = { r = 1, g = 0.24, b = 0.13 }, },
 		} },
-		events = { OnClick = function() options.speedDisplayOptions.open() end, },
+		events = { OnClick = function() frames.options.speedDisplays.page.open() end, },
 		disabled = true,
 	})
 	wt.AddContextButton(optionsMenu, contextMenu, {
 		title = ns.strings.options.targetSpeed.title,
 		tooltip = { lines = {
-			[0] = { text = ns.strings.options.targetSpeed.description:gsub("#ADDON", addonTitle), },
-			[1] = { text = (wt.GetStrings("dfOpenSettings") or ""):gsub("#ADDON", addonTitle), color = { r = 1, g = 0.24, b = 0.13 }, }
+			{ text = ns.strings.options.targetSpeed.description:gsub("#ADDON", addonTitle), },
+			{ text = (wt.GetStrings("dfOpenSettings") or ""):gsub("#ADDON", addonTitle), color = { r = 1, g = 0.24, b = 0.13 }, },
 		} },
-		events = { OnClick = function() options.targetSpeedOptions.open() end, },
+		events = { OnClick = function() frames.options.targetSpeed.page.open() end, },
 		disabled = true,
 	})
 	wt.AddContextButton(optionsMenu, contextMenu, {
 		title = ns.strings.options.advanced.title,
 		tooltip = { lines = {
-			[0] = { text = ns.strings.options.advanced.description:gsub("#ADDON", addonTitle), },
-			[1] = { text = (wt.GetStrings("dfOpenSettings") or ""):gsub("#ADDON", addonTitle), color = { r = 1, g = 0.24, b = 0.13 }, }
+			{ text = ns.strings.options.advanced.description:gsub("#ADDON", addonTitle), },
+			{ text = (wt.GetStrings("dfOpenSettings") or ""):gsub("#ADDON", addonTitle), color = { r = 1, g = 0.24, b = 0.13 }, },
 		} },
-		events = { OnClick = function() options.advancedOptions.open() end, },
+		events = { OnClick = function() frames.options.advanced.page.open() end, },
 		disabled = true,
 	})
 
 	--Presets submenu
-	local presetsMenu = wt.AddContextSubmenu(contextMenu, nil, {
+	local presetsMenu = wt.AddContextSubmenu(contextMenu, {
 		title = ns.strings.options.speedDisplay.quick.presets.label,
-		tooltip = { lines = { [0] = { text = ns.strings.options.speedDisplay.quick.presets.tooltip, }, } },
+		tooltip = { lines = { { text = ns.strings.options.speedDisplay.quick.presets.tooltip, }, } },
 	})
 
 	wt.AddContextButton(presetsMenu, contextMenu, {
@@ -1799,119 +2222,141 @@ local function CreateContextMenu()
 	})
 end
 
---[ Speed Display Setup ]
+--Main frame
+frames.main = wt.CreateFrame({
+	parent = UIParent,
+	name = addonNameSpace,
+	keepInBounds = true,
+	size = { width = 33, height = 10 },
+	keepOnTop = true,
+	onEvent = {
+		ADDON_LOADED = function(self, addon)
+			if addon ~= addonNameSpace then return end
+			self:UnregisterEvent("ADDON_LOADED")
 
---Set frame parameters
-local function SetUpSpeedDisplayFrame()
-	--Main frame
-	moveSpeed:SetToplevel(true)
-	moveSpeed:SetSize(33, 10)
-	wt.SetPosition(moveSpeed, db.speedDisplay.position)
-	--Display elements
-	speedDisplay:SetPoint("CENTER")
-	speedDisplayText:SetPoint("CENTER", 0.9, math.fmod(db.speedDisplay.text.font.size, 2) ~= 0 and 0.1 or 0)
-	SetDisplayValues(db, dbc)
-	--Make movable
-	wt.SetMovability(moveSpeed, true, "SHIFT", speedDisplay, {
-		onStop = function()
-			--Save the position (for account-wide use)
-			wt.CopyValues(wt.PackPosition(moveSpeed:GetPoint()), db.speedDisplay.position)
-			--Update in the SavedVariabes DB
-			MovementSpeedDB.speedDisplay.position = wt.Clone(db.speedDisplay.position)
-			--Update the GUI options in case the window was open
-			options.position.anchor.setSelected(db.speedDisplay.position.anchor)
-			options.position.xOffset:SetValue(db.speedDisplay.position.offset.x)
-			options.position.yOffset:SetValue(db.speedDisplay.position.offset.y)
-			--Chat response
-			print(wt.Color(addonTitle .. ":", ns.colors.green[0]) .. " " .. wt.Color(ns.strings.chat.position.save, ns.colors.yellow[1]))
+			--[ DBs ]
+
+			--Load & check the DBs
+			if LoadDBs() then PrintInfo() end
+
+			--Load the custom preset
+			presets[0].data = wt.Clone(db.customPreset)
+
+			--Create cross-session character-specific variables
+			if cs.compactBackup == nil then cs.compactBackup = true end
+
+			--[ Frame Setup ]
+
+			--Position
+			wt.SetPosition(self, db.speedDisplay.position)
+
+			--Make movable
+			wt.SetMovability(frames.main, true, "SHIFT", { frames.playerSpeed.display, frames.travelSpeed.display }, {
+				onStop = function()
+					--Save the position (for account-wide use)
+					wt.CopyValues(wt.PackPosition(frames.main:GetPoint()), db.speedDisplay.position)
+
+					--Update in the SavedVariabes DB
+					MovementSpeedDB.speedDisplay.position = wt.Clone(db.speedDisplay.position)
+
+					--Update the GUI options in case the window was open
+					frames.options.speedDisplays.position.anchor.setSelected(db.speedDisplay.position.anchor)
+					frames.options.speedDisplays.position.xOffset.setValue(db.speedDisplay.position.offset.x)
+					frames.options.speedDisplays.position.yOffset.setValue(db.speedDisplay.position.offset.y)
+
+					--Chat response
+					print(wt.Color(addonTitle .. ":", ns.colors.green[0]) .. " " .. wt.Color(ns.strings.chat.position.save, ns.colors.yellow[1]))
+				end,
+				onCancel = function()
+					--Reset the position
+					wt.SetPosition(frames.main, db.speedDisplay.position)
+
+					--Chat response
+					print(wt.Color(addonTitle .. ":", ns.colors.green[0]) .. " " .. wt.Color(ns.strings.chat.position.cancel, ns.colors.yellow[0]))
+					print(wt.Color(ns.strings.chat.position.error:gsub("#SHIFT", ns.strings.keys.shift), ns.colors.yellow[1]))
+				end
+			})
+
+			--Speed displays
+			LoadSpeedDisplays()
+			CreateContextMenu()
+
+			--Set up the interface options
+			LoadInterfaceOptions()
 		end,
-		onCancel = function()
-			--Reset the position
-			wt.SetPosition(moveSpeed, db.speedDisplay.position)
-			--Chat response
-			print(wt.Color(addonTitle .. ":", ns.colors.green[0]) .. " " .. wt.Color(ns.strings.chat.position.cancel, ns.colors.yellow[0]))
-			print(wt.Color(ns.strings.chat.position.error:gsub("#SHIFT", ns.strings.keys.shift), ns.colors.yellow[1]))
-		end
-	})
-	--Context menu
-	CreateContextMenu()
-	--Tooltip
-	wt.AddTooltip({
-		parent = speedDisplay,
-		tooltip = ns.tooltip,
-		title = ns.strings.speedTooltip.title,
-		lines = GetSpeedTooltipLines(),
-		flipColors = true,
-		anchor = "ANCHOR_BOTTOMRIGHT",
-		offset = { y = speedDisplay:GetHeight() },
-	})
-end
+		PLAYER_ENTERING_WORLD = function(self)
+			self:UnregisterEvent("PLAYER_ENTERING_WORLD")
 
---Hide during Pet Battle
-function moveSpeed:PET_BATTLE_OPENING_START()
-	moveSpeed:Hide()
-end
-function moveSpeed:PET_BATTLE_CLOSE()
-	moveSpeed:Show()
-end
+			--Visibility notice
+			if not self:IsVisible() or not frames.playerSpeed.display:IsVisible() then PrintStatus(true) end
 
---[ Loading ]
+			--Start speed updates
+			StartPlayerSpeedUpdates()
+			if db.travelSpeed.enabled then StartTravelSpeedUpdates() end
+			if db.targetSpeed.enabled then SetUpTargetSpeedUpdates() end
+		end,
+		PET_BATTLE_OPENING_START = function(self) self:Hide() end,
+		PET_BATTLE_CLOSE = function(self) self:Show() end,
+	}
+})
 
-function moveSpeed:ADDON_LOADED(name)
-	if name ~= addonNameSpace then return end
-	moveSpeed:UnregisterEvent("ADDON_LOADED")
-	--Load & check the DB
-	if LoadDBs() then PrintInfo() end
-	--Create cross-session character-specific variables
-	if cs.compactBackup == nil then cs.compactBackup = true end
-	--Load the custom preset
-	presets[0].data = wt.Clone(db.customPreset)
-	--Set up the interface options
-	LoadInterfaceOptions()
-	--Set up the main frame & text
-	SetUpSpeedDisplayFrame()
-	StartSpeedDisplayUpdate()
-end
+--Player Speed display
+frames.playerSpeed.display = wt.CreateFrame({
+	parent = frames.main,
+	name = "PlayerSpeed",
+	customizable = true,
+	position = { anchor = "CENTER" },
+	keepInBounds = true,
+	events = {
+		OnUpdate = function()
+			--Update the speed display tooltip
+			if frames.playerSpeed.display:IsMouseOver() and ns.tooltip:IsVisible() then wt.UpdateTooltip({
+				parent = frames.playerSpeed.display,
+				tooltip = ns.tooltip,
+				title = ns.strings.speedTooltip.title,
+				lines = GetSpeedTooltipLines(),
+				flipColors = true,
+				anchor = "ANCHOR_BOTTOMRIGHT",
+				offset = { y = frames.playerSpeed.display:GetHeight() },
+			}) end
+		end,
+	},
+})
+frames.playerSpeed.text = wt.CreateText({
+	parent = frames.playerSpeed.display,
+	position = { anchor = "CENTER", },
+	layer = "OVERLAY",
+})
+frames.playerSpeed.updater = wt.CreateFrame({
+	parent = frames.main,
+	name = "PlayerSpeedUpdater",
+})
 
-local pastPosition
-local travelDistance
-function moveSpeed:PLAYER_ENTERING_WORLD()
-	--Toggle the visibility of the speed display (before OnUpdate would trigger)
-	wt.SetVisibility(speedDisplay, not db.speedDisplay.visibility.autoHide or GetPlayerSpeed() ~= 0)
-	--Visibility notice
-	if not moveSpeed:IsVisible() or not speedDisplay:IsVisible() then PrintStatus(true) end
-	--Test Update
-	local mapWidth, mapHeight = C_Map.GetMapWorldSize(C_Map.GetBestMapForUnit("player"))
-	-- travelSpeed:HookScript("OnUpdate", function()
-	-- 	local currentPosition
-	-- 	local mapID = C_Map.GetBestMapForUnit("player")
+--Travel Speed display
+frames.travelSpeed.display = wt.CreateFrame({
+	parent = frames.main,
+	name = "TravelSpeed",
+	customizable = true,
+	position = {
+		anchor = "CENTER",
+		offset = { y = -14 }
+	},
+	keepInBounds = true,
+})
+frames.travelSpeed.text = wt.CreateText({
+	parent = frames.travelSpeed.display,
+	position = { anchor = "CENTER", },
+	layer = "OVERLAY",
+})
+frames.travelSpeed.updater = wt.CreateFrame({
+	parent = frames.main,
+	name = "TravelSpeedUpdater",
+	onEvent = { ZONE_CHANGED_NEW_AREA = function() mapWidth, mapHeight = C_Map.GetMapWorldSize(C_Map.GetBestMapForUnit("player")) end, }
+})
 
-	-- 	if (mapID) then currentPosition = C_Map.GetPlayerMapPosition(mapID, "player") or nil end
-
-	-- 	if (pastPosition and currentPosition --[[ and not IsInInstance() and not C_Garrison.IsOnGarrisonMap() ]]) then
-	-- 		currentPosition.x = currentPosition.x * mapWidth * 0.01
-	-- 		currentPosition.y = currentPosition.y * mapHeight * 0.01
-	-- 		travelDistance = math.sqrt((currentPosition.x - pastPosition.x) ^ 2 + (currentPosition.y - pastPosition.y) ^ 2) * 100 * GetFramerate()
-	-- 		-- travelSpeedText:SetText(wt.Round(travelDistance, 2))
-	-- 	--[[ else travelSpeedText:SetText("…") ]] end
-
-	-- 	pastPosition = currentPosition
-	-- end)
-	-- C_Timer.NewTicker(0.1, function() travelSpeedText:SetText(travelDistance and wt.Round(travelDistance, 2) or "…") end)
-	C_Timer.NewTicker(0.1, function()
-		local currentPosition
-		local mapID = C_Map.GetBestMapForUnit("player")
-
-		if (mapID) then currentPosition = C_Map.GetPlayerMapPosition(mapID, "player") or nil end
-
-		if (pastPosition and currentPosition --[[ and not IsInInstance() and not C_Garrison.IsOnGarrisonMap() ]]) then
-			currentPosition.x = currentPosition.x * mapWidth * 0.01
-			currentPosition.y = currentPosition.y * mapHeight * 0.01
-			travelDistance = math.sqrt((currentPosition.x - pastPosition.x) ^ 2 + (currentPosition.y - pastPosition.y) ^ 2) * 1000
-
-			travelSpeedText:SetText(wt.Round(travelDistance, 2))
-		else travelSpeedText:SetText("…") end
-
-		pastPosition = currentPosition
-	end)
-end
+--Target Speed updater
+frames.targetSpeed = wt.CreateFrame({
+	parent = frames.main,
+	name = addonNameSpace .. "TargetSpeed",
+	append = false,
+})

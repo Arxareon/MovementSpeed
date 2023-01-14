@@ -1,6 +1,7 @@
---[[ ADDON INFO ]]
+--[[ RESOURCES ]]
 
---Addon namespace string & table
+---Addon namespace
+---@class ns
 local addonNameSpace, ns = ...
 
 --Addon root folder
@@ -10,157 +11,177 @@ local root = "Interface/AddOns/" .. addonNameSpace .. "/"
 --[[ CHANGELOG ]]
 
 local changelogDB = {
-	[0] = {
-		[0] = "#V_Version 1.0_# #H_(10/26/2020)_#",
-		[1] = "#H_It's alive!_#",
-		[2] = "If you have suggestions or problems, please don't hesitate to let me know in a comment!",
-		[3] = "You can use the #H_/movespeed_# chat command to set up the text display as you'd like.",
+	{
+		"#V_Version 1.0_# #H_(10/26/2020)_#",
+		"#H_It's alive!_#",
+		"If you have suggestions or problems, please don't hesitate to let me know in a comment!",
+		"You can use the #H_/movespeed_# chat command to set up the text display as you'd like.",
 	},
-	[1] = {
-		[0] = "#V_Version 1.0.1_# #H_(10/26/2020)_#",
-		[1] = "#F_Hotfix:_#",
-		[2] = "Fixed an issue with #H_/movespeed_# and #H_/movespeed help_# commands bringing up Remaining XP messages instead (if you were using both addons - check that out too btw). Oops.. how could that even happen?",
+	{
+		"#V_Version 1.0.1_# #H_(10/26/2020)_#",
+		"#F_Hotfix:_#",
+		"Fixed an issue with #H_/movespeed_# and #H_/movespeed help_# commands bringing up Remaining XP messages instead (if you were using both addons - check that out too btw). Oops.. how could that even happen?",
 	},
-	[2] = {
-		[0] = "#V_Version: 1.1.0_# #H_(3/12/2021)_#",
-		[1] = "#C_Update:_#",
-		[2] = "Expanded functionality to also calculate the movement speed while in a vehicle. Finally!",
-		[3] = "#F_Hotfix:_#",
-		[4] = "Fixed all potential issues with previously non-local functions.",
+	{
+		"#V_Version: 1.1.0_# #H_(3/12/2021)_#",
+		"#C_Update:_#",
+		"Expanded functionality to also calculate the movement speed while in a vehicle. Finally!",
+		"#F_Hotfix:_#",
+		"Fixed all potential issues with previously non-local functions.",
 	},
-	[3] = {
-		[0] = "#V_Version 1.2_# #H_(4/19/2021)_#",
-		[1] = "#C_Update:_#",
-		[2] = "Added 9.1 (with 9.0.5 still being supported!), Classic (1.13.7) and Burning Crusade Classic (2.5.1) multi-version support.",
+	{
+		"#V_Version 1.2_# #H_(4/19/2021)_#",
+		"#C_Update:_#",
+		"Added 9.1 (with 9.0.5 still being supported!), Classic (1.13.7) and Burning Crusade Classic (2.5.1) multi-version support.",
 	},
-	[4] = {
-		[0] = "#V_Version 1.3_# #H_(6/30/2021)_#",
-		[1] = "#C_Updates:_#",
-		[2] = "Added the ability to change the font size of the text display via chat commands. See #H_/movespeed help_# for details.",
-		[3] = "Added data table checkup to allow for feature expansion in the future - like changing fonts, colors and more.",
-		[4] = "Code cleanup.",
+	{
+		"#V_Version 1.3_# #H_(6/30/2021)_#",
+		"#C_Updates:_#",
+		"Added the ability to change the font size of the text display via chat commands. See #H_/movespeed help_# for details.",
+		"Added data table checkup to allow for feature expansion in the future - like changing fonts, colors and more.",
+		"Code cleanup.",
 	},
-	[5] = {
-		[0] = "#V_Version 2.0_# #H_(11/3/2021)_#",
-		[1] = "Support for 9.1.5 has been added (support for Season of Mastery will be added when it launches).",
-		[2] = "#N_New features:_#",
-		[3] = "#H_Interface Options:_# buttons, sliders, dropdowns and more have been added as alternatives to chat commands (some new options are not available as chat commands).",
-		[4] = " • #H_New options:_# Font family & color customization options have been added besides font size (with a fully custom font type option - see the in-game tooltip in the settings)\n • #H_New option:_# Background graphic (with customizable color)\n • #H_New option:_# Raise (or lower) display among other UI elements\n • #H_New feature:_# Import/Export to backup or move your settings between accounts (with the ability to manually edit them - for advanced coders)",
-		[5] = "The main display will be moved to the default position when the preset or the options are being reset.",
-		[6] = "The display now hides during pet battles (thanks for the request! <3).",
-		[7] = "Added localization support, so more languages can be supported besides English in the future (more info soon on how you can help me translate!).",
-		[8] = "Various other improvements, fixes & cleanup.",
+	{
+		"#V_Version 2.0_# #H_(11/3/2021)_#",
+		"Support for 9.1.5 has been added (support for Season of Mastery will be added when it launches).",
+		"#N_New features:_#",
+		"#H_Interface Options:_# buttons, sliders, dropdowns and more have been added as alternatives to chat commands (some new options are not available as chat commands).",
+		" • #H_New options:_# Font family & color customization options have been added besides font size (with a fully custom font type option - see the in-game tooltip in the settings)\n • #H_New option:_# Background graphic (with customizable color)\n • #H_New option:_# Raise (or lower) display among other UI elements\n • #H_New feature:_# Import/Export to backup or move your settings between accounts (with the ability to manually edit them - for advanced coders)",
+		"The main display will be moved to the default position when the preset or the options are being reset.",
+		"The display now hides during pet battles (thanks for the request! <3).",
+		"Added localization support, so more languages can be supported besides English in the future (more info soon on how you can help me translate!).",
+		"Various other improvements, fixes & cleanup.",
 	},
-	[6] = {
-		[0] = "#V_Version 2.1_# #H_(11/16/2021)_#",
-		[1] = "#C_Update:_#",
-		[2] = "Added support for Season of Mastery.",
+	{
+		"#V_Version 2.1_# #H_(11/16/2021)_#",
+		"#C_Update:_#",
+		"Added support for Season of Mastery.",
 	},
-	[7] = {
-		[0] = "#V_Version 2.1.1_# #H_(11/18/2021)_#",
-		[1] = "#F_Hotfix:_#",
-		[2] = "Minor under the hood fixes and changes.",
+	{
+		"#V_Version 2.1.1_# #H_(11/18/2021)_#",
+		"#F_Hotfix:_#",
+		"Minor under the hood fixes and changes.",
 	},
-	[8] = {
-		[0] = "#V_Version 2.2_# #H_(3/17/2022)_#",
-		[1] = "#O_Movement Speed has been released on Wago!_#\n#H_Next to CurseForge, it can now also be updated through the Wago app as well as WoWUp if you enable Wago.io as an addon provider._#",
-		[2] = "#H_Thank you for using my addons! Should you wish to support their development further, the Wago Subscription is now a new way to do so. <3_#",
-		[3] = "#N_New:_#",
-		[4] = "#H_New feature: Target speed!_#\nView the current movement speed of any player or NPC you inspect via mouseover. (Customize this integration in the interface options.)",
-		[5] = "Added 9.2 (Retail), 1.14.2 (Classic) and 2.5.3 (BCC) multi-version support.",
-		[6] = "Updated the look and feel of the interface options to be on par with the Remaining XP addon. #H_Right-click on the speed display to open specific options pages._#",
-		[7] = "Added an about page with options page shortcuts, addon info with a changelog, and useful links.",
-		[8] = "Added speed value text customization options: % and/or y/s & decimal places.",
-		[9] = "Added an option to auto-hide the display when your character is not moving.",
-		[10] = "Added the option to fine-tune the position of the speed display.",
-		[11] = "Added a preset selector (with room to add more display presets in the future).",
-		[12] = "Added an option to change the border color of the display background.",
-		[13] = "Added a helpful tooltip to the display which currently shows your movement speed percentage and its equivalent in yards / second.",
-		[14] = "#C_Changes:_#",
-		[15] = "The saved display position will now be automatically applied on login for all characters.",
-		[16] = "Hiding the speed display will now be character-specific.",
-		[17] = "The Import/Export string editor can now be switched off of compact mode, making code review and manual edits easier. Also, the contents have been color coded for better readability.",
-		[18] = "Several chat command descriptions and responses have been updated.",
-		[19] = "The addon description has been updated.",
-		[20] = "Additional changes & small fixes.",
-		[21] = "#O_Coming soon:_#",
-		[22] = "Options profiles for character-specific customization.",
-		[23] = "Different styles and looks for the speed display.",
-		[24] = "Some cool new features are being explored, more on that soon™!",
+	{
+		"#V_Version 2.2_# #H_(3/17/2022)_#",
+		"#O_Movement Speed has been released on Wago!_#\n#H_Next to CurseForge, it can now also be updated through the Wago app as well as WoWUp if you enable Wago.io as an addon provider._#",
+		"#H_Thank you for using my addons! Should you wish to support their development further, the Wago Subscription is now a new way to do so. <3_#",
+		"#N_New:_#",
+		"#H_New feature: Target speed!_#\nView the current movement speed of any player or NPC you inspect via mouseover. (Customize this integration in the interface options.)",
+		"Added 9.2 (Retail), 1.14.2 (Classic) and 2.5.3 (BCC) multi-version support.",
+		"Updated the look and feel of the interface options to be on par with the Remaining XP addon. #H_Right-click on the speed display to open specific options pages._#",
+		"Added an about page with options page shortcuts, addon info with a changelog, and useful links.",
+		"Added speed value text customization options: % and/or y/s & decimal places.",
+		"Added an option to auto-hide the display when your character is not moving.",
+		"Added the option to fine-tune the position of the speed display.",
+		"Added a preset selector (with room to add more display presets in the future).",
+		"Added an option to change the border color of the display background.",
+		"Added a helpful tooltip to the display which currently shows your movement speed percentage and its equivalent in yards / second.",
+		"#C_Changes:_#",
+		"The saved display position will now be automatically applied on login for all characters.",
+		"Hiding the speed display will now be character-specific.",
+		"The Import/Export string editor can now be switched off of compact mode, making code review and manual edits easier. Also, the contents have been color coded for better readability.",
+		"Several chat command descriptions and responses have been updated.",
+		"The addon description has been updated.",
+		"Additional changes & small fixes.",
+		"#O_Coming soon:_#",
+		"Options profiles for character-specific customization.",
+		"Different styles and looks for the speed display.",
+		"Some cool new features are being explored, more on that soon™!",
 	},
-	[9] = {
-		[0] = "#V_Version 2.2.1_# #H_(3/19/2022)_#",
-		[1] = "#F_Hotfix:_# #H_Thank you for your reports! Expect further fixes in the coming days should any problems remain._#",
-		[2] = "I wasn't able to reproduce any of the problems reported recently, but hopefully this quick patch should help. \nPlease, keep reporting them with information such as when/how they occur, what WoW version and other addons you are using if you can. If the bugs don't happen for me, it's hard to get a grip on them - but I try! :)",
-		[3] = "Fixed the issue of the speed display tooltip not disappearing under the bags or other frames.",
+	{
+		"#V_Version 2.2.1_# #H_(3/19/2022)_#",
+		"#F_Hotfix:_# #H_Thank you for your reports! Expect further fixes in the coming days should any problems remain._#",
+		"I wasn't able to reproduce any of the problems reported recently, but hopefully this quick patch should help. \nPlease, keep reporting them with information such as when/how they occur, what WoW version and other addons you are using if you can. If the bugs don't happen for me, it's hard to get a grip on them - but I try! :)",
+		"Fixed the issue of the speed display tooltip not disappearing under the bags or other frames.",
 	},
-	[10] = {
-		[0] = "#V_Version 2.2.2_# #H_(3/20/2022)_#",
-		[1] = "#F_Hotfix:_# #H_Thank you for your reports!_#",
-		[2] = "Fixed an error that popped up when mousing over the speed display in the Retail version.",
+	{
+		"#V_Version 2.2.2_# #H_(3/20/2022)_#",
+		"#F_Hotfix:_# #H_Thank you for your reports!_#",
+		"Fixed an error that popped up when mousing over the speed display in the Retail version.",
 	},
-	[11] = {
-		[0] = "#V_Version 2.2.3_# #H_(3/23/2022)_#",
-		[1] = "#N_Update:_#",
-		[2] = "New hints have been added to the speed display tooltip.",
-		[3] = "Chat responses have been added when the speed display is dragged to confirm when the position is saved.",
-		[4] = "Added 2.5.4 (BCC) support.",
-		[5] = "#C_Change:_#",
-		[6] = "The repositioning of the speed display will now be cancelled when SHIFT is released before the mouse button.",
-		[7] = "The tooltips have been adjusted to fit in more with the base UI.",
-		[8] = "#F_Hotfix:_# #H_Thank you for your reports!_#",
-		[9] = "Further minor fixes to dodge LUA errors and improve reliability.\n#H_If you encounter any more issues, please, consider reporting them! Try to include when/how they occur, and which addons are you using to give me the best chance to be able to reproduce and fix them._#",
+	{
+		"#V_Version 2.2.3_# #H_(3/23/2022)_#",
+		"#N_Update:_#",
+		"New hints have been added to the speed display tooltip.",
+		"Chat responses have been added when the speed display is dragged to confirm when the position is saved.",
+		"Added 2.5.4 (BCC) support.",
+		"#C_Change:_#",
+		"The repositioning of the speed display will now be cancelled when SHIFT is released before the mouse button.",
+		"The tooltips have been adjusted to fit in more with the base UI.",
+		"#F_Hotfix:_# #H_Thank you for your reports!_#",
+		"Further minor fixes to dodge LUA errors and improve reliability.\n#H_If you encounter any more issues, please, consider reporting them! Try to include when/how they occur, and which addons are you using to give me the best chance to be able to reproduce and fix them._#",
 	},
-	[12] = {
-		[0] = "#V_Version 2.2.4_# #H_(7/5/2022)_#",
-		[1] = "#N_Update:_#",
-		[2] = "Added 9.2.5 (Retail) and 1.14.3 (Classic) support.",
-		[3] = "Numerous under the hood changes & improvements.",
-		[4] = "#F_Hotfix:_# #H_Thank you for your reports!_#",
-		[5] = "Fixed the issue of the Speed Display tooltip sometimes appearing and being stuck on the screen.",
+	{
+		"#V_Version 2.2.4_# #H_(7/5/2022)_#",
+		"#N_Update:_#",
+		"Added 9.2.5 (Retail) and 1.14.3 (Classic) support.",
+		"Numerous under the hood changes & improvements.",
+		"#F_Hotfix:_# #H_Thank you for your reports!_#",
+		"Fixed the issue of the Speed Display tooltip sometimes appearing and being stuck on the screen.",
 	},
-	[13] = {
-		[0] = "#V_Version 2.2.5_# #H_(7/9/2022)_#",
-		[1] = "#F_Hotfix:_#",
-		[2] = "Fixed an error that popped up when clicking on a color picker button.",
+	{
+		"#V_Version 2.2.5_# #H_(7/9/2022)_#",
+		"#F_Hotfix:_#",
+		"Fixed an error that popped up when clicking on a color picker button.",
 	},
-	[14] = {
-		[0] = "#V_Version 2.2.6_# #H_(8/20/2022)_#",
-		[1] = "#N_Update:_#",
-		[2] = "Added 9.2.7 (Retail) and 3.4 (WotLK Classic) support.",
-		[3] = "Under the hood changes & improvements.",
-		[4] = "#C_Change_# - left out of 2.2.6, included in a hotfix: #V_Version 2.2.6.1_# #H_(8/21/2022)_#:",
-		[5] = "Movement Speed has moved from Bitbucket to GitHub. Links to the Repository & Issues have been updated.\n#H_There is now an opportunity to Sponsor my work on GitHub to support and justify the continued development of my addons should you wish and have the means to do so. Every bit of help is appreciated!_#",
+	{
+		"#V_Version 2.2.6_# #H_(8/20/2022)_#",
+		"#N_Update:_#",
+		"Added 9.2.7 (Retail) and 3.4 (WotLK Classic) support.",
+		"Under the hood changes & improvements.",
+		"#C_Change_# - left out of 2.2.6, included in a hotfix: #V_Version 2.2.6.1_# #H_(8/21/2022)_#:",
+		"Movement Speed has moved from Bitbucket to GitHub. Links to the Repository & Issues have been updated.\n#H_There is now an opportunity to Sponsor my work on GitHub to support and justify the continued development of my addons should you wish and have the means to do so. Every bit of help is appreciated!_#",
 	},
-	[15] = {
-		[0] = "#V_Version 2.3_# #H_(11/28/2022)_#",
-		[1] = "#N_Update:_#",
-		[2] = "Added Dragonflight (Retail 10.0) support.",
-		[3] = "Added vehicle speed support for Wrath of the Lich King Classic.",
-		[4] = "Significant under the hood changes & improvements, including new UI widgets and more functionality.",
-		[5] = "Apply quick display presets right from the context menu (Dragonflight only, for now).",
-		[6] = "Other smaller changes like an updated logo or improved data restoration from older versions of the addon.",
-		[7] = "#H_If you encounter any issues, do not hesitate reporting them! Try including when & how they occur, and which other addons are you using to give me the best chance to be able to reproduce and fix them. If you know how, try proving taint logs as well if relevant. Thanks for helping!_#",
-		[8] = "#F_Fix:_#",
-		[9] = "Fixed an uncommon target speed tooltip related issue.",
+	{
+		"#V_Version 2.3_# #H_(11/28/2022)_#",
+		"#N_Update:_#",
+		"Added Dragonflight (Retail 10.0) support.",
+		"Added vehicle speed support for Wrath of the Lich King Classic.",
+		"Significant under the hood changes & improvements, including new UI widgets and more functionality.",
+		"Apply quick display presets right from the context menu (Dragonflight only, for now).",
+		"Other smaller changes like an updated logo or improved data restoration from older versions of the addon.",
+		"#H_If you encounter any issues, do not hesitate reporting them! Try including when & how they occur, and which other addons are you using to give me the best chance to be able to reproduce and fix them. If you know how, try proving taint logs as well if relevant. Thanks for helping!_#",
+		"#F_Fix:_#",
+		"Fixed an uncommon target speed tooltip related issue.",
 	},
+	{
+		"#V_Version 2.4_# #H_(2/6/2023)_#",
+		"#N_Updates:_#",
+		"A new Sponsors section has been added to the main Settings page.\n#H_Thank you for your support! It helps me continue to spend time on developing and maintaing these addons. If you are considering supporting development as well, follow the links to see what ways are currently available._#",
+		"#H_New feature: Travel Speed! (Dragonflight-only, currently in beta)_# Enable this feature to caltulate an estmated value of the actual speed at which you are moving through the game world horizontally at any given moment.\nThe old functionality only showed what your character was capable of moving, or in other words, your maximum speed at any time. Moving up or down in elevation would reduce your effective travel speed.\nThere was no way for addons to access your player speed information while Dragonriding, however, this new feature will still work and provide speed info while soaring the skies.",
+		"Added the option to slow down and specify the rate at which movement speed values are recalculated.",
+		"The About info has been rearranged and combined with the Support links.",
+		"Only the most recent update notes will be loaded now. The full Changelog is available in a bigger window when clicking on a new button.",
+		"Made checkboxes more easily clickable, their tooltips are now visible even when the input is disabled.",
+		"The backup string in the Advanced settings will now be updated live as changes are made.",
+		"Added 10.0.5 (Dragonflight) & 3.4.1 (WotLK Classic) support.",
+		"Numerous less notable changes & improvements.",
+		"#F_Fixes:_#",
+		"Widget Tools will no longer copies of its Settings after each loading screen.",
+		"Settings should now be properly saved in Dragonflight, the custom Restore Defaults and Revert Changes functionalitis should also work as expected now, on a per Settings page basis (with the option of restoring defalts for the whole addon kept).",
+		"Many other under the hood fixes.",
+		"#H_If you encounter any issues, do not hesitate to report them! Try including when & how they occur, and which other addons are you using to give me the best chance of being able to reproduce & fix them. If you know how, try proving taint logs as well (if relevant). Thanks a lot for helping!_#",
+	}
 }
 
---Get an assembled & formatted string of the full changelog
-ns.GetChangelog = function()
+---Get an assembled & formatted string of the full changelog
+---@param latest? boolean Whether to get the update notes of the latest version or the entire changelog | ***Default:*** false
+---@return string
+ns.GetChangelog = function(latest)
 	--Colors
-	local version = "FFFFFFFF"
+	local highlight = "FFFFFFFF"
 	local new = "FF66EE66"
 	local fix = "FFEE4444"
 	local change = "FF8888EE"
 	local note = "FFEEEE66"
-	local highlight = "FFBBBBBB"
 	--Assemble the changelog
 	local changelog = ""
-		for i = #changelogDB, 0, -1 do
-			for j = 0, #changelogDB[i] do
-				changelog = changelog .. (j > 0 and "\n\n" or "") .. changelogDB[i][j]:gsub(
-					"#V_(.-)_#", (i < #changelogDB and "\n\n\n" or "") .. "|c" .. version .. "%1|r"
+		for i = #changelogDB, 1, -1 do
+			local firstLine = latest and 2 or 1
+			for j = firstLine, #changelogDB[i] do
+				changelog = changelog .. (j > firstLine and "\n\n" or "") .. changelogDB[i][j]:gsub(
+					"#V_(.-)_#", (i < #changelogDB and "\n\n\n" or "") .. "|c" .. highlight .. "• %1|r"
 				):gsub(
 					"#N_(.-)_#", "|c".. new .. "%1|r"
 				):gsub(
@@ -173,6 +194,7 @@ ns.GetChangelog = function()
 					"#H_(.-)_#", "|c".. highlight .. "%1|r"
 				)
 			end
+			if latest then break end
 		end
 	return changelog
 end
@@ -191,31 +213,41 @@ local english = {
 			},
 			about = {
 				title = "About",
-				description = "Thank you for using #ADDON!", --# flags will be replaced with code
-				version = "Version: #VERSION", --# flags will be replaced with code
-				date = "Date: #DATE", --# flags will be replaced with code
-				author = "Author: #AUTHOR", --# flags will be replaced with code
-				license = "License: #LICENSE", --# flags will be replaced with code
-				changelog = {
-					label = "Changelog",
-					tooltip = "Notes of all the changes included in the addon updates for all versions.\n\nThe changelog is only available in English for now.", --\n represents the newline character
-				},
-			},
-			support = {
-				title = "Support",
-				description = "Follow the links to see how you can provide feedback, report bugs, get help and support development.",
+				description = "Thanks for using #ADDON! Copy the links to see how to share feedback, get help & support development.", --# flags will be replaced with code
+				version = "Version",
+				date = "Date",
+				author = "Author",
+				license = "License",
 				curseForge = "CurseForge Page",
 				wago = "Wago Page",
 				repository = "GitHub Repository",
 				issues = "Issues & Feedback",
+				changelog = {
+					label = "Update Notes",
+					tooltip = "Notes of all the changes, updates & fixes introduced with the latest version.\n\nThe changelog is only available in English for now.", --\n represents the newline character
+				},
+				openFullChangelog = {
+					label = "Open the full Changelog",
+					tooltip = "Access the full list of update notes of all addon versions.", --\n represents the newline character
+				},
+				fullChangelog = {
+					label = "#ADDON Changelog", --# flags will be replaced with code
+					tooltip = "Notes of all the changes included in the addon updates for all versions.\n\nThe changelog is only available in English for now.", --\n represents the newline character
+				},
+			},
+			sponsors = {
+				title = "Sponsors",
+				description = "Your continued support is greatly appreciated! Thank you!",
 			},
 			feedback = {
 				title = "Feedback",
 				description = "Visit #ADDON online if you have something to report.", --# flags will be replaced with code
 			},
 		},
-		speedText = {
-			valueType = {
+		speedValue = {
+			title = "Speed Value",
+			description = "Customize how should the speed value appear.",
+			type = {
 				label = "Show Speed as…",
 				tooltip = "Show the movement speed value as a percentage of the base running speed, its equivalent in yards/second instead or both.",
 				list = {
@@ -267,6 +299,32 @@ local english = {
 					response = "The current speed display position and visibility have been applied to the Custom preset and will be saved along with the other options.",
 				},
 			},
+			playerSpeed = {
+				title = "Player Speed",
+				description = "Select how to display the player (or vehivle) speed value.",
+			},
+			travelSpeed = {
+				title = "Travel Speed (BETA)",
+				description = "Calculate the estimated speed at which you are moving through the zone horizontally.",
+				enabled = {
+					label = "Enable Functionality",
+					tooltip = "Enable the Travel Speed functionality, allowing you to view an estimation of the effective speed you are travelling through the world horizontally (moving up & down in elevation can't be calculated).",
+				},
+				replacement = {
+					label = "As a Replacement",
+					tooltip = "Replace the Player Speed value with the estimated horizontal Travel Speed value in the speed display when movement is detected but no information about your speed is available (e.g. during Dragonriding) instead of having Travel Speed always visible in the secondary display.",
+				},
+			},
+			update = {
+				throttle = {
+					label = "Throttle Updates",
+					tooltip = "Update the speed value slower at the specified frequency instead of the framerate.",
+				},
+				frequency = {
+					label = "Update Frequency",
+					tooltip = "Set how many times the speed value should be updated every second.",
+				},
+			},
 			position = {
 				title = "Position",
 				description = "Drag & drop the speed display while holding #SHIFT to position it anywhere on the screen, fine-tune it here.", --# flags will be replaced with code
@@ -283,27 +341,25 @@ local english = {
 					tooltip = "Set the amount of vertical offset (Y axis) of the speed display from the selected anchor point.",
 				},
 			},
-			text = {
-				title = "Text & Font",
+			font = {
+				title = "Font",
 				description = "Customize what information shown in the speed display text overlay and how it is presented.",
-				font = {
-					family = {
-						label = "Font Family", --font family or type
-						tooltip = {
-							[0] = "Select the font of the displayed percentage value.",
-							[1] = "The default option is the font used by Blizzard.",
-							[2] = "You may set the #OPTION_CUSTOM option to any font of your liking by replacing the #FILE_CUSTOM file with another TrueType Font file found in:", --# flags will be replaced with code
-							[3] = "while keeping the original #FILE_CUSTOM name.", --# flags will be replaced with code
-							[4] = "You may need to restart the game client after replacing the Custom font.",
-						},
+				family = {
+					label = "Font Family", --font family or type
+					tooltip = {
+						[0] = "Select the font of the displayed percentage value.",
+						[1] = "The default option is the font used by Blizzard.",
+						[2] = "You may set the #OPTION_CUSTOM option to any font of your liking by replacing the #FILE_CUSTOM file with another TrueType Font file found in:", --# flags will be replaced with code
+						[3] = "while keeping the original #FILE_CUSTOM name.", --# flags will be replaced with code
+						[4] = "You may need to restart the game client after replacing the Custom font.",
 					},
-					size = {
-						label = "Font Size",
-						tooltip = "Specify the font size of the displayed percentage value.",
-					},
-					color = {
-						label = "Font Color",
-					},
+				},
+				size = {
+					label = "Font Size",
+					tooltip = "Specify the font size of the displayed percentage value.",
+				},
+				color = {
+					label = "Font Color",
 				},
 			},
 			background = {
@@ -491,7 +547,7 @@ local LoadLocale = function()
 		--Different font locales: https://github.com/tomrus88/BlizzardInterfaceCode/blob/master/Interface/FrameXML/Fonts.xml
 	else --Default: English (UK & US)
 		strings = english
-		strings.options.speedDisplay.text.font.family.default = UNIT_NAME_FONT_ROMAN:gsub("\\", "/")
+		strings.options.speedDisplay.font.family.default = UNIT_NAME_FONT_ROMAN:gsub("\\", "/")
 	end
 	return strings
 end
@@ -507,6 +563,7 @@ ns.strings.chat.keyword = "/movespeed"
 ns.colors = {
 	grey = {
 		[0] = { r = 0.54, g = 0.54, b = 0.54 },
+		[1] = { r = 0.7, g = 0.7, b = 0.7 },
 	},
 	green = {
 		[0] = { r = 0.31, g = 0.85, b = 0.21 },
@@ -520,7 +577,7 @@ ns.colors = {
 
 --Fonts
 ns.fonts = {
-	[0] = { name = ns.strings.misc.default, path = ns.strings.options.speedDisplay.text.font.family.default },
+	[0] = { name = ns.strings.misc.default, path = ns.strings.options.speedDisplay.font.family.default },
 	[1] = { name = "Arbutus Slab", path = root .. "Fonts/ArbutusSlab.ttf" },
 	[2] = { name = "Caesar Dressing", path = root .. "Fonts/CaesarDressing.ttf" },
 	[3] = { name = "Germania One", path = root .. "Fonts/GermaniaOne.ttf" },

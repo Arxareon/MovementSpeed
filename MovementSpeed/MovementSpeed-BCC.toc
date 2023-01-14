@@ -1,10 +1,11 @@
 ## Interface: 20504
 ## Title: Movement Speed |TInterface/AddOns/MovementSpeed/Textures/Logo.tga:0|t
-## Version: 2.3
-## X-Day: 28
-## X-Month: 11
-## X-Year: 2022
+## Version: 2.4
+## X-Day: 6
+## X-Month: 2
+## X-Year: 2023
 ## Author: Barnabas Nagy (Arxareon)
+## X-Sponsors: Celierra
 ## X-License: All Rights Reserved
 ## Notes: View the movement speed of anyone in customizable displays and tooltips with fast updates.
 ## SavedVariables: MovementSpeedDB, MovementSpeedCS

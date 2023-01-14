@@ -1,4 +1,5 @@
 <Ui>
+	<!-- Kept for backwards compatibility with Toolbox version 1.5 (when the Blizzard template was broken). -->
 	<Frame name="WidgetToolsInputScrollFrameTemplate" virtual="true" inherits="InputScrollFrameTemplate">
 		<Scripts>
 			<OnLoad inherit="append">
