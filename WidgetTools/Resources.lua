@@ -18,7 +18,7 @@ local changelogDB = {
 		"Added Dragonflight (Retail 10.0) support with backwards compatibility.",
 	},
 	{
-		"#V_Version 1.6_# #H_(2/6/2023)_#",
+		"#V_Version 1.6_# #H_(2/7/2023)_#",
 		"#N_Updates:_#",
 		"A new Sponsors section has been added to the main Settings page.\n#H_Thank you for your support! It helps me continue to spend time on developing and maintaing these addons. If you are considering supporting development as well, follow the links to see what ways are currently available._#",
 		"The About info has been rearranged and combined with the Support links.",

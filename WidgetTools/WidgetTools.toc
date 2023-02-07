@@ -1,7 +1,7 @@
 ## Interface: 100005 #Fallback to the Mainline version
 ## Title: Widget Tools |TInterface/AddOns/WidgetTools/Textures/Logo.tga:0|t
 ## Version: 1.6
-## X-Day: 6
+## X-Day: 7
 ## X-Month: 2
 ## X-Year: 2023
 ## Author: Barnabas Nagy (Arxareon)

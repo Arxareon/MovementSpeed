@@ -146,7 +146,7 @@ local changelogDB = {
 		"Fixed an uncommon target speed tooltip related issue.",
 	},
 	{
-		"#V_Version 2.4_# #H_(2/6/2023)_#",
+		"#V_Version 2.4_# #H_(2/7/2023)_#",
 		"#N_Updates:_#",
 		"A new Sponsors section has been added to the main Settings page.\n#H_Thank you for your support! It helps me continue to spend time on developing and maintaing these addons. If you are considering supporting development as well, follow the links to see what ways are currently available._#",
 		"#H_New feature: Travel Speed! (Dragonflight-only, currently in beta)_# Enable this feature to caltulate an estmated value of the actual speed at which you are moving through the game world horizontally at any given moment.\nThe old functionality only showed what your character was capable of moving, or in other words, your maximum speed at any time. Moving up or down in elevation would reduce your effective travel speed.\nThere was no way for addons to access your player speed information while Dragonriding, however, this new feature will still work and provide speed info while soaring the skies.",
