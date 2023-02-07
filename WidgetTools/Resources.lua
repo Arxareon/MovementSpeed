@@ -20,7 +20,7 @@ local changelogDB = {
 	{
 		"#V_Version 1.6_# #H_(2/7/2023)_#",
 		"#N_Updates:_#",
-		"A new Sponsors section has been added to the main Settings page.\n#H_Thank you for your support! It helps me continue to spend time on developing and maintaing these addons. If you are considering supporting development as well, follow the links to see what ways are currently available._#",
+		"A new Sponsors section has been added to the main Settings page.\n#H_Thank you for your support! It helps me continue to spend time on developing and maintaining these addons. If you are considering supporting development as well, follow the links to see what ways are currently available._#",
 		"The About info has been rearranged and combined with the Support links.",
 		"Only the most recent update notes will be loaded now. The full Changelog is available in a bigger window when clicking on a new button.",
 		"Made checkboxes more easily clickable, their tooltips are now visible even when the input is disabled.",
@@ -28,7 +28,7 @@ local changelogDB = {
 		"Numerous less notable changes & improvements.",
 		"#F_Fixes:_#",
 		"Widget Tools will no longer copies of its Settings after each loading screen.",
-		"Settings should now be properly saved in Dragonflight, the custom Restore Defaults and Revert Changes functionalitis should also work as expected now, on a per Settings page basis (with the option of restoring defalts for the whole addon kept).",
+		"Settings should now be properly saved in Dragonflight, the custom Restore Defaults and Revert Changes functionalities should also work as expected now, on a per Settings page basis (with the option of restoring defaults for the whole addon kept).",
 		"All other open custom Context Submenus on the same level should now close when one is opened (more Context Menu improvements are planned for a later release).",
 		"Many other under the hood fixes.",
 		"#H_If you encounter any issues, do not hesitate to report them! Try including when & how they occur, and which other addons are you using to give me the best chance of being able to reproduce & fix them. If you know how, try proving taint logs as well (if relevant). Thanks a lot for helping!_#",

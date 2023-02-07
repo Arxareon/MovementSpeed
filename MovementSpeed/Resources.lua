@@ -148,8 +148,8 @@ local changelogDB = {
 	{
 		"#V_Version 2.4_# #H_(2/7/2023)_#",
 		"#N_Updates:_#",
-		"A new Sponsors section has been added to the main Settings page.\n#H_Thank you for your support! It helps me continue to spend time on developing and maintaing these addons. If you are considering supporting development as well, follow the links to see what ways are currently available._#",
-		"#H_New feature: Travel Speed! (Dragonflight-only, currently in beta)_# Enable this feature to caltulate an estmated value of the actual speed at which you are moving through the game world horizontally at any given moment.\nThe old functionality only showed what your character was capable of moving, or in other words, your maximum speed at any time. Moving up or down in elevation would reduce your effective travel speed.\nThere was no way for addons to access your player speed information while Dragonriding, however, this new feature will still work and provide speed info while soaring the skies.",
+		"A new Sponsors section has been added to the main Settings page.\n#H_Thank you for your support! It helps me continue to spend time on developing and maintaining these addons. If you are considering supporting development as well, follow the links to see what ways are currently available._#",
+		"#H_New feature: Travel Speed! (Dragonflight-only, currently in beta)_# Enable this feature to calculate an estimated value of the actual speed at which you are moving through the game world horizontally at any given moment.\nThe old functionality only showed what your character was capable of moving, or in other words, your maximum speed at any time. Moving up or down in elevation would reduce your effective travel speed.\nThere was no way for addons to access your player speed information while Dragonriding, however, this new feature will still work and provide speed info while soaring the skies.",
 		"Added the option to slow down and specify the rate at which movement speed values are recalculated.",
 		"The About info has been rearranged and combined with the Support links.",
 		"Only the most recent update notes will be loaded now. The full Changelog is available in a bigger window when clicking on a new button.",
@@ -159,7 +159,7 @@ local changelogDB = {
 		"Numerous less notable changes & improvements.",
 		"#F_Fixes:_#",
 		"Widget Tools will no longer copies of its Settings after each loading screen.",
-		"Settings should now be properly saved in Dragonflight, the custom Restore Defaults and Revert Changes functionalitis should also work as expected now, on a per Settings page basis (with the option of restoring defalts for the whole addon kept).",
+		"Settings should now be properly saved in Dragonflight, the custom Restore Defaults and Revert Changes functionalities should also work as expected now, on a per Settings page basis (with the option of restoring defaults for the whole addon kept).",
 		"Many other under the hood fixes.",
 		"#H_If you encounter any issues, do not hesitate to report them! Try including when & how they occur, and which other addons are you using to give me the best chance of being able to reproduce & fix them. If you know how, try proving taint logs as well (if relevant). Thanks a lot for helping!_#",
 	}
@@ -301,7 +301,7 @@ local english = {
 			},
 			playerSpeed = {
 				title = "Player Speed",
-				description = "Select how to display the player (or vehivle) speed value.",
+				description = "Select how to display the player (or vehicle) speed value.",
 			},
 			travelSpeed = {
 				title = "Travel Speed (BETA)",
