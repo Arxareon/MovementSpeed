@@ -26,6 +26,8 @@ Celierra
 | *Coming soon™:* <br><img src="https://wago-addons.ams3.digitaloceanspaces.com/thumbnails/CmtzQg7JfpeZBchDcOx4qF7mUz5QaCCJrf22knx4.png" alt="Party Targets Logo" width="20" height="20" align="top"> **Party Targets** | See who all of your party or raid members are targeting<br>simultaneously. Useful for PvP! | [GitHub](https://github.com/Arxareon/PartyTargets) • [CurseForge](https://www.curseforge.com/wow/addons/party-targets-addon) • [Wago](https://addons.wago.io/addons/party-targets) |
 | *Coming soon™:* <br><img src="https://wago-addons.ams3.digitaloceanspaces.com/thumbnails/ItNTG9RkclzoxYCape4RAavnM9s3TePvcwMz4u1p.png" alt="RP Keyboard Logo" width="20" height="20" align="top"> **RP Keyboard** | Type with fantasy fonts, runes & symbols in chat to talk<br>to other RP Keyboard users in style! | [GitHub](https://github.com/Arxareon/RPKeyboard) • [CurseForge](https://www.curseforge.com/wow/addons/rp-keyboard) • [Wago](https://addons.wago.io/addons/rp-keyboard) |
 
+Movement Speed was built with [Widget Tools](https://github.com/Arxareon/WidgetTools).
+
 ## License
 All Rights Reserved.
 
