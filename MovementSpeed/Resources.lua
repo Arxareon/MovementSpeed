@@ -141,7 +141,6 @@ local changelogDB = {
 		"Significant under the hood changes & improvements, including new UI widgets and more functionality.",
 		"Apply quick display presets right from the context menu (Dragonflight only, for now).",
 		"Other smaller changes like an updated logo or improved data restoration from older versions of the addon.",
-		"#H_If you encounter any issues, do not hesitate reporting them! Try including when & how they occur, and which other addons are you using to give me the best chance to be able to reproduce and fix them. If you know how, try proving taint logs as well if relevant. Thanks for helping!_#",
 		"#F_Fix:_#",
 		"Fixed an uncommon target speed tooltip related issue.",
 	},
@@ -161,7 +160,25 @@ local changelogDB = {
 		"Widget Tools will no longer copies of its Settings after each loading screen.",
 		"Settings should now be properly saved in Dragonflight, the custom Restore Defaults and Revert Changes functionalities should also work as expected now, on a per Settings page basis (with the option of restoring defaults for the whole addon kept).",
 		"Many other under the hood fixes.",
-		"#H_If you encounter any issues, do not hesitate to report them! Try including when & how they occur, and which other addons are you using to give me the best chance of being able to reproduce & fix them. If you know how, try proving taint logs as well (if relevant). Thanks a lot for helping!_#",
+	},
+	{
+		"#V_Version 2.5_# #H_(3/10/2023)_#",
+		"#H_The new Travel Speed (Dragonflight only) beta feature added in the previous version will still remain as it is for now. If you have thoughts on it, I'd love to hear your feedback!_#",
+		"#N_Updates:_#",
+		"Added a new option to change the text alignment of the Speed Display.",
+		"The Position Offset sliders now support changing the value by 1 point via holding the ALT key to allow for quick fine tuning.",
+		"Added 10.0.7 (Dragonflight) support.",
+		"#C_Changes:_#",
+		"The Shortcuts section form the main settings page has been removed in Dragonflight (since the new expansion broke the feature - I may readd it when the issue gets resolved).",
+		"The Font Family selection dropdown menu now provides a preview of how the fonts look.",
+		"Several other under the hood changes & improvements.",
+		"#F_Fixes:_#",
+		"Fixed the \"Invalid region point\" error caused after adjusting the anchor point of the display via the settings or when loading the incorrectly saved position data.\nThe Speed Display Anchor Point setting has been restored to its default value for those affected.",
+		"Fixed the issue of the font family only being changed when flipping through the menu with the side buttons and not when opening the menu and selecting them directly.",
+		"The \"size\" chat command will now also update the font size of the Travel Speed display without requiring a UI reload.",
+		"The Travel Speed and Player Speed displays will no longer overlap each other.",
+		"Other smaller fixes.",
+		"#H_If you encounter any issues, do not hesitate to report them! Try including when & how they occur, and which other addons are you using to give me the best chance of being able to reproduce & fix them. Try proving any LUA script error messages and if you know how, taint logs as well (when relevant). Thanks a lot for helping!_#",
 	}
 }
 
@@ -228,7 +245,7 @@ local english = {
 				},
 				openFullChangelog = {
 					label = "Open the full Changelog",
-					tooltip = "Access the full list of update notes of all addon versions.", --\n represents the newline character
+					tooltip = "Access the full list of update notes of all addon versions.",
 				},
 				fullChangelog = {
 					label = "#ADDON Changelog", --# flags will be replaced with code
@@ -288,7 +305,10 @@ local english = {
 					label = "Apply a Preset",
 					tooltip = "Swiftly change the position and visibility of the speed display by choosing and applying one of these presets.",
 					list = {
-						[0] = "Under Default Minimap",
+						"Under Default Minimap",
+					},
+					classicList = {
+						"Under Minimap Clock",
 					},
 					select = "Select a preset…",
 				},
@@ -308,7 +328,7 @@ local english = {
 				description = "Calculate the estimated speed at which you are moving through the zone horizontally.",
 				enabled = {
 					label = "Enable Functionality",
-					tooltip = "Enable the Travel Speed functionality, allowing you to view an estimation of the effective speed you are travelling through the world horizontally (moving up & down in elevation can't be calculated).",
+					tooltip = "Enable the Travel Speed functionality, allowing you to view an estimation of the effective speed you are traveling through the world horizontally (moving up & down in elevation can't be calculated).",
 				},
 				replacement = {
 					label = "As a Replacement",
@@ -342,16 +362,16 @@ local english = {
 				},
 			},
 			font = {
-				title = "Font",
+				title = "Font & Text",
 				description = "Customize what information shown in the speed display text overlay and how it is presented.",
 				family = {
 					label = "Font Family", --font family or type
-					tooltip = {
-						[0] = "Select the font of the displayed percentage value.",
-						[1] = "The default option is the font used by Blizzard.",
-						[2] = "You may set the #OPTION_CUSTOM option to any font of your liking by replacing the #FILE_CUSTOM file with another TrueType Font file found in:", --# flags will be replaced with code
-						[3] = "while keeping the original #FILE_CUSTOM name.", --# flags will be replaced with code
-						[4] = "You may need to restart the game client after replacing the Custom font.",
+					tooltip = "Select the font of the displayed speed value.",
+					default = "This is a default font used by Blizzard.",
+					custom = {
+						"You may set the #OPTION_CUSTOM option to any font of your liking by replacing the #FILE_CUSTOM file with another TrueType Font file found in:", --# flags will be replaced with code
+						"while keeping the original #FILE_CUSTOM name.", --# flags will be replaced with code
+						"You may need to restart the game client after replacing the Custom font file.",
 					},
 				},
 				size = {
@@ -360,6 +380,10 @@ local english = {
 				},
 				color = {
 					label = "Font Color",
+				},
+				alignment = {
+					label = "Text Alignment",
+					tooltip = "Select the alignment of the text inside the speed display.",
 				},
 			},
 			background = {
@@ -420,11 +444,11 @@ local english = {
 				backupBox = {
 					label = "Import & Export",
 					tooltip = {
-						[0] = "The backup string in this box contains the currently saved addon data and frame positions.",
-						[1] = "Copy it to save, share or use it for another account.",
-						[2] = "If you have a string, just override the text inside this box. Select it, and paste your string here. Press #ENTER to load the data stored in it.", --# flags will be replaced with code
-						[3] = "Note: If you are using a custom font file, that file can not carry over with this string. It will need to be inserted into the addon folder to be applied.",
-						[4] = "Only load strings that you have verified yourself or trust the source of!",
+						"The backup string in this box contains the currently saved addon data and frame positions.",
+						"Copy it to save, share or use it for another account.",
+						"If you have a string, just override the text inside this box. Select it, and paste your string here. Press #ENTER to load the data stored in it.", --# flags will be replaced with code
+						"Note: If you are using a custom font file, that file can not carry over with this string. It will need to be inserted into the addon folder to be applied.",
+						"Only load strings that you have verified yourself or trust the source of!",
 					},
 				},
 				compact = {
@@ -510,9 +534,9 @@ local english = {
 	speedTooltip = {
 		title = "Speed info:",
 		text = {
-			[0] = "Displaying your current movement speed.",
-			[1] = "#YARDS yards / second.", --# flags will be replaced with code
-			[2] = "#PERCENT of the base running speed.", --# flags will be replaced with code
+			"Displaying your current movement speed.",
+			"#YARDS yards / second.", --# flags will be replaced with code
+			"#PERCENT of the base running speed.", --# flags will be replaced with code
 		},
 		hintOptions = "Right-click to access specific options.",
 		hintMove = "Hold #SHIFT & drag to reposition.", --# flags will be replaced with code
@@ -547,7 +571,7 @@ local LoadLocale = function()
 		--Different font locales: https://github.com/tomrus88/BlizzardInterfaceCode/blob/master/Interface/FrameXML/Fonts.xml
 	else --Default: English (UK & US)
 		strings = english
-		strings.options.speedDisplay.font.family.default = UNIT_NAME_FONT_ROMAN:gsub("\\", "/")
+		strings.defaultFont = UNIT_NAME_FONT_ROMAN:gsub("\\", "/")
 	end
 	return strings
 end
@@ -577,7 +601,7 @@ ns.colors = {
 
 --Fonts
 ns.fonts = {
-	[0] = { name = ns.strings.misc.default, path = ns.strings.options.speedDisplay.font.family.default },
+	[0] = { name = ns.strings.misc.default, path = ns.strings.defaultFont },
 	[1] = { name = "Arbutus Slab", path = root .. "Fonts/ArbutusSlab.ttf" },
 	[2] = { name = "Caesar Dressing", path = root .. "Fonts/CaesarDressing.ttf" },
 	[3] = { name = "Germania One", path = root .. "Fonts/GermaniaOne.ttf" },

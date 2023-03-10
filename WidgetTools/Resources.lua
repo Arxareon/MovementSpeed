@@ -31,7 +31,18 @@ local changelogDB = {
 		"Settings should now be properly saved in Dragonflight, the custom Restore Defaults and Revert Changes functionalities should also work as expected now, on a per Settings page basis (with the option of restoring defaults for the whole addon kept).",
 		"All other open custom Context Submenus on the same level should now close when one is opened (more Context Menu improvements are planned for a later release).",
 		"Many other under the hood fixes.",
-		"#H_If you encounter any issues, do not hesitate to report them! Try including when & how they occur, and which other addons are you using to give me the best chance of being able to reproduce & fix them. If you know how, try proving taint logs as well (if relevant). Thanks a lot for helping!_#",
+	},
+	{
+		"#V_Version 1.7_# #H_(3/11/2023)_#",
+		"#N_Updates:_#",
+		"Added an option to disable addons using Widget Toolboxes from the Widget Tools settings.",
+		"Added 10.0.7 (Dragonflight) support.",
+		"#C_Changes:_#",
+		"The Shortcuts section form the main settings page has been removed in Dragonflight (since the new expansion broke the feature - I may readd it if it gets resolved).",
+		"Other smaller changes.",
+		"#F_Fixes:_#",
+		"Several under the hood fixes & improvements.",
+		"#H_If you encounter any issues, do not hesitate to report them! Try including when & how they occur, and which other addons are you using to give me the best chance of being able to reproduce & fix them. Try proving any LUA script error messages and if you know how, taint logs as well (when relevant). Thanks a lot for helping!_#",
 	}
 }
 
@@ -99,11 +110,15 @@ local english = {
 		},
 		openFullChangelog = {
 			label = "Open the full Changelog",
-			tooltip = "Access the full list of update notes of all addon versions.", --\n represents the newline character
+			tooltip = "Access the full list of update notes of all addon versions.",
 		},
 		fullChangelog = {
 			label = "#ADDON Changelog", --# flags will be replaced with code
 			tooltip = "Notes of all the changes included in the addon updates for all versions.\n\nThe changelog is only available in English for now.", --\n represents the newline character
+		},
+		toggle = {
+			label = "Enabled",
+			tooltip = "Shortcut to disable this addon.\n\nThis change will only take effect after the interface is reloaded. Once it has been disabled, this addon will not show up in this list until it's reenabled within the main AddOns menu.", --\n represents the newline character
 		},
 	},
 	sponsors = {
@@ -165,9 +180,11 @@ ns.textures = {
 --[[ ALIASES ]]
 
 ---@alias UniqueFrameType
----|"ValueSlider"
+---|"Toggle"
 ---|"Selector"
 ---|"Dropdown"
+---|"TextBox"
+---|"ValueSlider"
 ---|"ColorPicker"
 
 ---@alias ModifierKey

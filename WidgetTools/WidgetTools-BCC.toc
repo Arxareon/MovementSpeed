@@ -1,8 +1,8 @@
 ## Interface: 20504
 ## Title: Widget Tools |TInterface/AddOns/WidgetTools/Textures/Logo.tga:0|t
-## Version: 1.6
-## X-Day: 7
-## X-Month: 2
+## Version: 1.7
+## X-Day: 15
+## X-Month: 3
 ## X-Year: 2023
 ## Author: Barnabas Nagy (Arxareon)
 ## X-Sponsors: Celierra

@@ -14,16 +14,16 @@ $clients = @()
 
 #List of client tags used by Blizzard to target
 $clients += "_retail_" #Dragonflight
-$clients += "_classic_era_" #Classic
-$clients += "_classic_" #Wrath of the Lich King
 $clients += "_ptr_" #Dragonflight PTR
-$clients += "_classic_era_ptr_" #Classic PTR
+$clients += "_ptr2_" #Dragonflight PTR 2
+$clients += "_classic_" #Wrath of the Lich King
 $clients += "_classic_ptr_" #Wrath of the Lick King PTR
+$clients += "_classic_era_" #Classic
 
 
 <# INSTALLATION #>
 
-<# Addemble the paths #>
+<# Assemble the paths #>
 
 $source = Get-Location
 
