@@ -43,7 +43,16 @@ local changelogDB = {
 		"#F_Fixes:_#",
 		"Several under the hood fixes & improvements.",
 		"#H_If you encounter any issues, do not hesitate to report them! Try including when & how they occur, and which other addons are you using to give me the best chance of being able to reproduce & fix them. Try proving any LUA script error messages and if you know how, taint logs as well (when relevant). Thanks a lot for helping!_#",
-	}
+	},
+	{
+		"#V_Version 1.7_# #H_(3/11/2023)_#",
+		"#N_Updates:_#",
+		"Added 10.1 (Dragonflight) support.",
+		"#F_Fixes:_#",
+		"The old scrollbars have been replaced with the new scrollbars in Dragonflight, fixing any bugs that emerged with 10.1 as a result of deprecation.",
+		"Several other under the hood fixes & improvements.",
+		"#H_If you encounter any issues, do not hesitate to report them! Try including when & how they occur, and which other addons are you using to give me the best chance of being able to reproduce & fix them. Try proving any LUA script error messages and if you know how, taint logs as well (when relevant). Thanks a lot for helping!_#",
+	},
 }
 
 ---Get an assembled & formatted string of the full changelog
@@ -83,14 +92,17 @@ end
 
 --[[ LOCALIZATIONS ]]
 
+--# flags will be replaced with code
+--\n represents the newline character
+
 local english = {
 	shortcuts = {
 		title = "Shortcuts",
-		description = "Access specific information by expanding the #ADDON categories on the left or by clicking a button here.", --# flags will be replaced with code
+		description = "Access specific information by expanding the #ADDON categories on the left or by clicking a button here.",
 	},
 	about = {
 		title = "About",
-		description = "Thanks for using #ADDON! Copy the links to see how to share feedback, get help & support development.", --# flags will be replaced with code
+		description = "Thanks for using #ADDON! Copy the links to see how to share feedback, get help & support development.",
 		version = "Version",
 		date = "Date",
 		author = "Author",
@@ -99,26 +111,26 @@ local english = {
 		wago = "Wago Page",
 		repository = "GitHub Repository",
 		issues = "Issues & Feedback",
-		compactVersion = "Version: #VERSION", --# flags will be replaced with code
-		compactDate = "Date: #DATE", --# flags will be replaced with code
-		compactAuthor = "Author: #AUTHOR", --# flags will be replaced with code
-		compactLicense = "License: #LICENSE", --# flags will be replaced with code
-		dateFormat = "#MONTH/#DAY/#YEAR", --# flags will be replaced with code
+		compactVersion = "Version: #VERSION",
+		compactDate = "Date: #DATE",
+		compactAuthor = "Author: #AUTHOR",
+		compactLicense = "License: #LICENSE",
+		dateFormat = "#MONTH/#DAY/#YEAR",
 		changelog = {
 			label = "Update Notes",
-			tooltip = "Notes of all the changes, updates & fixes introduced with the latest version.\n\nThe changelog is only available in English for now.", --\n represents the newline character
+			tooltip = "Notes of all the changes, updates & fixes introduced with the latest version.\n\nThe changelog is only available in English for now.",
 		},
 		openFullChangelog = {
 			label = "Open the full Changelog",
 			tooltip = "Access the full list of update notes of all addon versions.",
 		},
 		fullChangelog = {
-			label = "#ADDON Changelog", --# flags will be replaced with code
-			tooltip = "Notes of all the changes included in the addon updates for all versions.\n\nThe changelog is only available in English for now.", --\n represents the newline character
+			label = "#ADDON Changelog",
+			tooltip = "Notes of all the changes included in the addon updates for all versions.\n\nThe changelog is only available in English for now.",
 		},
 		toggle = {
 			label = "Enabled",
-			tooltip = "Shortcut to disable this addon.\n\nThis change will only take effect after the interface is reloaded. Once it has been disabled, this addon will not show up in this list until it's reenabled within the main AddOns menu.", --\n represents the newline character
+			tooltip = "Shortcut to disable this addon.\n\nThis change will only take effect after the interface is reloaded. Once it has been disabled, this addon will not show up in this list until it's reenabled within the main AddOns menu.",
 		},
 	},
 	sponsors = {
@@ -127,14 +139,14 @@ local english = {
 	},
 	addons = {
 		title = "Addons & Toolboxes",
-		description = "The list of currently loaded addons using specific versions of registered #ADDON toolboxes.", --# flags will be replaced with code
+		description = "The list of currently loaded addons using specific versions of registered #ADDON toolboxes.",
 		old = {
 			title = "Old versions",
 			description = "Versions of toolboxes older than 1.5 don't have addon data. It is visible if they are in use, however.",
-			none = "There are no recognized older versions of #ADDON toolboxes currently in use.", --# flags will be replaced with code
-			inUse = "Old toolboxes currently in use:#TOOLBOXES", --# flags will be replaced with code
+			none = "There are no recognized older versions of #ADDON toolboxes currently in use.",
+			inUse = "Old toolboxes currently in use:#TOOLBOXES",
 		},
-		toolbox = "Toolbox (#VERSION)", --# flags will be replaced with code
+		toolbox = "Toolbox (#VERSION)",
 	},
 }
 
@@ -159,12 +171,12 @@ ns.strings = LoadLocale()
 --Colors
 ns.colors = {
 	grey = {
-		[0] = { r = 0.7, g = 0.7, b = 0.7 },
-		[1] = { r = 0.54, g = 0.54, b = 0.54 },
+		{ r = 0.7, g = 0.7, b = 0.7 },
+		{ r = 0.54, g = 0.54, b = 0.54 },
 	},
 	gold = {
-		[0] = { r = 1, g = 0.76, b = 0.07 },
-		[1] = { r = 0.8, g = 0.62, b = 0.1 },
+		{ r = 1, g = 0.76, b = 0.07 },
+		{ r = 0.8, g = 0.62, b = 0.1 },
 	},
 }
 

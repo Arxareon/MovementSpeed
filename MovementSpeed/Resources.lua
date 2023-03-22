@@ -178,8 +178,34 @@ local changelogDB = {
 		"The \"size\" chat command will now also update the font size of the Travel Speed display without requiring a UI reload.",
 		"The Travel Speed and Player Speed displays will no longer overlap each other.",
 		"Other smaller fixes.",
+	},
+	{
+		"#V_Version 2.6_# #H_(5/3/2023)_#",
+		"#N_New:_#",
+		"Added 10.1 (Dragonflight) support.",
+		"The (Dragonflight-only) Travel Speed feature is now out of beta as the speed value accuracy has been greatly improved.\n#H_This doesn't mean the feature won't be further improved with more functionality and customization options! If you have some ideas and valuable feedback, I'd love to hear it (see the About info for links)!_#",
+		"Added coordinates per second as a speed vale unit type option (for Dragonflight only). Any combination of the current 3 types can be selected.",
+		"The speed display tooltip will now include the size of the current zone map in yards (in Dragonflight only).",
+		"There's now an option to use the speed value text coloring used in the Target Speed inspect tooltip for the main displays as well.",
+		"Replaced the \"Appear on top\" checkbox with a new Screen Layer selector (now in the Position section) to allow for more adjustability.",
+		"Added a Reset Custom Preset button to the settings.",
+		"Added a new \"defaults\" chat command, replacing the old \"reset\" command which now performs the Custom preset restoring functionality.",
+		"#C_Changes:_#",
+		"Some settings have been rearranged, the preset options have been moved to the Position panel.",
+		"The options shortcuts in the speed display right-click context menu have been replaced with a single button opening the main addon settings page in Dragonflight (until Blizzard readds the support for addons to open settings subcategories).",
+		"The default value of the throttled speed update frequency will now be once every 0.15 seconds to be a bit more readable from the start.",
+		"The \"As a Replacement\" option for the Travel Speed display will now be on by default.",
+		"The Travel Speed display will now also have a detailed speed tooltip displaying Travel Speed values. It will also support the right-click menu.",
+		"General polish & other smaller changes.",
+		"#F_Fixes:_#",
+		"The old scrollbars have been replaced with the new scrollbars in Dragonflight, fixing any bugs that emerged with 10.1 as a result of deprecation.",
+		"The Target Speed feature will now be properly enabled without requiring a UI reload.",
+		"Turning on the Travel Speed feature for the first time after logging in should now hopefully set up its position and background properly.",
+		"The Speed Display Anchor Point setting will properly be updated when a preset is applied or the display is moved manually.",
+		"Several old and inaccurate descriptions and tooltips have been updated.",
+		"Other minor fixes & improvements.",
 		"#H_If you encounter any issues, do not hesitate to report them! Try including when & how they occur, and which other addons are you using to give me the best chance of being able to reproduce & fix them. Try proving any LUA script error messages and if you know how, taint logs as well (when relevant). Thanks a lot for helping!_#",
-	}
+	},
 }
 
 ---Get an assembled & formatted string of the full changelog
@@ -219,18 +245,21 @@ end
 
 --[[ LOCALIZATIONS ]]
 
+--# flags will be replaced with code
+--\n represents the newline character
+
 local english = {
 	options = {
 		main = {
 			name = "Main page",
-			description = "Customize #ADDON to fit your needs. Type #KEYWORD for chat commands.", --# flags will be replaced with code
+			description = "Customize #ADDON to fit your needs. Type #KEYWORD for chat commands.",
 			shortcuts = {
 				title = "Shortcuts",
-				description = "Access specific options by expanding the #ADDON categories on the left or by clicking a button here.", --# flags will be replaced with code
+				description = "Access specific options by expanding the #ADDON categories on the left or by clicking a button here.",
 			},
 			about = {
 				title = "About",
-				description = "Thanks for using #ADDON! Copy the links to see how to share feedback, get help & support development.", --# flags will be replaced with code
+				description = "Thanks for using #ADDON! Copy the links to see how to share feedback, get help & support development.",
 				version = "Version",
 				date = "Date",
 				author = "Author",
@@ -241,15 +270,15 @@ local english = {
 				issues = "Issues & Feedback",
 				changelog = {
 					label = "Update Notes",
-					tooltip = "Notes of all the changes, updates & fixes introduced with the latest version.\n\nThe changelog is only available in English for now.", --\n represents the newline character
+					tooltip = "Notes of all the changes, updates & fixes introduced with the latest version.\n\nThe changelog is only available in English for now.",
 				},
 				openFullChangelog = {
 					label = "Open the full Changelog",
 					tooltip = "Access the full list of update notes of all addon versions.",
 				},
 				fullChangelog = {
-					label = "#ADDON Changelog", --# flags will be replaced with code
-					tooltip = "Notes of all the changes included in the addon updates for all versions.\n\nThe changelog is only available in English for now.", --\n represents the newline character
+					label = "#ADDON Changelog",
+					tooltip = "Notes of all the changes included in the addon updates for all versions.\n\nThe changelog is only available in English for now.",
 				},
 			},
 			sponsors = {
@@ -258,52 +287,64 @@ local english = {
 			},
 			feedback = {
 				title = "Feedback",
-				description = "Visit #ADDON online if you have something to report.", --# flags will be replaced with code
+				description = "Visit #ADDON online if you have something to report.",
 			},
 		},
 		speedValue = {
 			title = "Speed Value",
-			description = "Customize how should the speed value appear.",
-			type = {
-				label = "Show Speed as…",
-				tooltip = "Show the movement speed value as a percentage of the base running speed, its equivalent in yards/second instead or both.",
+			description = "Specify how the speed value should be displayed.",
+			units = {
+				label = "Displayed Units",
+				tooltip = "Select which unit types should be present in the speed value text.",
 				list = {
-					[0] = {
+					{
 						label = "Percentage",
-						tooltip = "Show the speed value as a percentage of the base running speed without any speed altering effects."
+						tooltip = "Show the speed value as a percentage of the base running speed (which is 7 yards per second)."
 					},
-					[1] = {
+					{
 						label = "Yards/second",
-						tooltip = "Show the movement speed value in yards/second instead of a percentage of the base running speed.",
+						tooltip = "Show the speed value as distance in yards traveled per second.",
 					},
-					[2] = {
-						label = "Both",
-						tooltip = "Show both the percentage value and its equivalent in yards/second.",
+					{
+						label = "Coordinates/second",
+						tooltip = "Show the speed value as distance in coordinates traveled per second.",
 					},
 				},
 			},
-			decimals = {
-				label = "Max Displayed Decimals",
-				tooltip = "Set the maximal number of decimals places displayed in the movement speed value.",
+			fractionals = {
+				label = "Max Fractional Digits",
+				tooltip = "Set the maximal number of decimal places that should be displayed in the fractional part of the speed values.\n\nEach speed value will be rounded to the nearest number based on the decimal accuracy specified here.\n\nCoordinate values are always displayed with at least one fractional digit.",
 			},
 			noTrim = {
 				label = "Don't trim zeros",
-				tooltip = "Always show the specified number of decimal digits - don't trim trailing zeros.",
+				tooltip = "Always show the specified number of decimal digits, don't trim trailing zeros.",
 			},
 		},
 		speedDisplay = {
 			title = "Speed Display",
-			description = "Customize the main #ADDON display where you view your own movement speed.", --# flags will be replaced with code
-			quick = {
-				title = "Quick settings",
-				description = "Quickly settings enable or disable the #ADDON display or set it up via presets.", --# flags will be replaced with code
+			description = "Customize the main #ADDON display where you view your own movement speed.",
+			visibility = {
+				title = "Visibility",
+				description = "Set the visibility and behavior of the #ADDON display.",
 				hidden = {
 					label = "Hidden",
-					tooltip = "Hide or show the #ADDON main display.", --# flags will be replaced with code
+					tooltip = "Enable or disable the #ADDON displays.",
 				},
+				autoHide = {
+					label = "Hide while stationary",
+					tooltip = "Automatically hide the speed display while you are not moving.",
+				},
+				statusNotice = {
+					label = "Chat notice if hidden",
+					tooltip = "Get a chat notification about the status of the speed display if they're not visible after the interface loads.",
+				},
+			},
+			position = {
+				title = "Position",
+				description = "Drag & drop the speed display while holding SHIFT to position it anywhere on the screen, fine-tune it here.",
 				presets = {
 					label = "Apply a Preset",
-					tooltip = "Swiftly change the position and visibility of the speed display by choosing and applying one of these presets.",
+					tooltip = "Change the position of the speed display by choosing and applying one of these presets.",
 					list = {
 						"Under Default Minimap",
 					},
@@ -313,19 +354,39 @@ local english = {
 					select = "Select a preset…",
 				},
 				savePreset = {
-					label = "Update Custom Preset",
-					tooltip = "Save the current position and visibility of the speed display to the Custom preset.",
-					warning = "Are you sure you want to override the Custom Preset with the current customizations?\n\nThe Custom preset is account-wide.", --\n represents the newline character
-					response = "The current speed display position and visibility have been applied to the Custom preset and will be saved along with the other options.",
+					label = "Update #CUSTOM Preset",
+					tooltip = "Save the current position and visibility of the speed display to the #CUSTOM preset.",
+					warning = "Are you sure you want to override the #CUSTOM Preset with the current customizations?\n\nThe #CUSTOM preset is account-wide.",
+				},
+				resetPreset = {
+					label = "Reset #CUSTOM Preset",
+					tooltip = "Override currently saved #CUSTOM preset data with the default values, then apply it.",
+					warning = "Are you sure you want to override the #CUSTOM Preset with the default values?\n\nThe #CUSTOM preset is account-wide.",
+				},
+				anchor = {
+					label = "Screen Anchor Point",
+					tooltip = "Select which point of the screen should the speed display be anchored to.",
+				},
+				xOffset = {
+					label = "Horizontal Offset",
+					tooltip = "Set the amount of horizontal offset (X axis) of the speed display from the selected #ANCHOR.",
+				},
+				yOffset = {
+					label = "Vertical Offset",
+					tooltip = "Set the amount of vertical offset (Y axis) of the speed display from the selected #ANCHOR.",
+				},
+				strata = {
+					label = "Screen Layer",
+					tooltip = "Raise or lower the speed display to be in front of or behind other UI elements.",
 				},
 			},
 			playerSpeed = {
 				title = "Player Speed",
-				description = "Select how to display the player (or vehicle) speed value.",
+				description = "Calculate your speed, modified by your Speed stat, mounts, buffs, debuffs or the type movement activity.",
 			},
 			travelSpeed = {
-				title = "Travel Speed (BETA)",
-				description = "Calculate the estimated speed at which you are moving through the zone horizontally.",
+				title = "Travel Speed",
+				description = "Calculate the estimated speed at which you are actually traveling through the current zone horizontally.",
 				enabled = {
 					label = "Enable Functionality",
 					tooltip = "Enable the Travel Speed functionality, allowing you to view an estimation of the effective speed you are traveling through the world horizontally (moving up & down in elevation can't be calculated).",
@@ -338,60 +399,49 @@ local english = {
 			update = {
 				throttle = {
 					label = "Throttle Updates",
-					tooltip = "Update the speed value slower at the specified frequency instead of the framerate.",
+					tooltip = "Slow the update rate of the speed value to match the specified #FREQUENCY instead of the framerate.\n\nThis will improve CPU performance by a small amount.",
 				},
 				frequency = {
 					label = "Update Frequency",
 					tooltip = "Set how many times the speed value should be updated every second.",
 				},
 			},
-			position = {
-				title = "Position",
-				description = "Drag & drop the speed display while holding #SHIFT to position it anywhere on the screen, fine-tune it here.", --# flags will be replaced with code
-				anchor = {
-					label = "Screen Anchor Point",
-					tooltip = "Select which point of the screen should the speed display be anchored to.",
-				},
-				xOffset = {
-					label = "Horizontal Offset",
-					tooltip = "Set the amount of horizontal offset (X axis) of the speed display from the selected anchor point.",
-				},
-				yOffset = {
-					label = "Vertical Offset",
-					tooltip = "Set the amount of vertical offset (Y axis) of the speed display from the selected anchor point.",
-				},
-			},
 			font = {
 				title = "Font & Text",
-				description = "Customize what information shown in the speed display text overlay and how it is presented.",
+				description = "Customize the appearance of the speed value text.",
 				family = {
-					label = "Font Family", --font family or type
-					tooltip = "Select the font of the displayed speed value.",
+					label = "Font",
+					tooltip = "Select the font of the speed value text.",
 					default = "This is a default font used by Blizzard.",
 					custom = {
-						"You may set the #OPTION_CUSTOM option to any font of your liking by replacing the #FILE_CUSTOM file with another TrueType Font file found in:", --# flags will be replaced with code
-						"while keeping the original #FILE_CUSTOM name.", --# flags will be replaced with code
+						"You may set the #OPTION_CUSTOM option to any font of your liking by replacing the #FILE_CUSTOM file with another TrueType Font file found in:",
+						"while keeping the original #FILE_CUSTOM name.",
 						"You may need to restart the game client after replacing the Custom font file.",
 					},
 				},
 				size = {
 					label = "Font Size",
-					tooltip = "Specify the font size of the displayed percentage value.",
+					tooltip = "Set the size of the displayed text.",
+				},
+				valueColoring = {
+					label = "Individual Value Coloring",
+					tooltip = "Color the speed values in the display with the default #ADDON color palette.",
 				},
 				color = {
 					label = "Font Color",
+					tooltip = "The color of the entire speed value text when the #VALUE_COLORING option is turned off.",
 				},
 				alignment = {
 					label = "Text Alignment",
-					tooltip = "Select the alignment of the text inside the speed display.",
+					tooltip = "Select the horizontal alignment of the text inside the speed display.",
 				},
 			},
 			background = {
 				title = "Background",
-				description = "Customize the background graphic element of the speed display.",
+				description = "Toggle and customize the background graphic.",
 				visible = {
 					label = "Visible",
-					tooltip = "Toggle the visibility of the backdrop elements of the main XP display.",
+					tooltip = "Toggle the visibility of the background elements of speed display.",
 				},
 				colors = {
 					bg = {
@@ -400,22 +450,6 @@ local english = {
 					border = {
 						label = "Border Color",
 					},
-				},
-			},
-			visibility = {
-				title = "Visibility",
-				description = "Set the visibility and behavior of the #ADDON display.", --# flags will be replaced with code
-				raise = {
-					label = "Appear on top",
-					tooltip = "Raise the display above most of the other UI elements (like the World Map Pane).",
-				},
-				autoHide = {
-					label = "Hide while stationary",
-					tooltip = "Automatically hide the speed display while you are not moving.",
-				},
-				statusNotice = {
-					label = "Status notice on load",
-					tooltip = "Get a notice in chat about the visibility of the #ADDON display after the interface loads.", --# flags will be replaced with code
 				},
 			},
 		},
@@ -427,26 +461,26 @@ local english = {
 				description = "Toggle and specify how the movement speed of your mouseover target is shown in the inspect tooltip.",
 				enabled = {
 					label = "Enable Integration",
-					tooltip = "Enable or disable the #ADDON integration in the mouseover inspect tooltip."
+					tooltip = "Enable or disable the #ADDON integration within the mouseover target inspect tooltip."
 				},
 			},
 		},
 		advanced = {
 			title = "Advanced",
-			description = "Configure #ADDON settings further, change options manually or backup your data by importing, exporting settings.", --# flags will be replaced with code
+			description = "Configure #ADDON settings further, change options manually or backup your data by importing, exporting settings.",
 			profiles = {
 				title = "Profiles",
 				description = "Create, edit and apply unique options profiles to customize #ADDON separately between your characters. (Soon™)", --# flags will be replaced with
 			},
 			backup = {
 				title = "Backup",
-				description = "Import or export #ADDON options to save, share or apply them between your accounts.", --# flags will be replaced with code
+				description = "Import or export #ADDON options to save, share or apply them between your accounts.",
 				backupBox = {
 					label = "Import & Export",
 					tooltip = {
 						"The backup string in this box contains the currently saved addon data and frame positions.",
 						"Copy it to save, share or use it for another account.",
-						"If you have a string, just override the text inside this box. Select it, and paste your string here. Press #ENTER to load the data stored in it.", --# flags will be replaced with code
+						"If you have a string, just override the text inside this box. Select it, and paste your string here. Press ENTER to load the data stored in it.",
 						"Note: If you are using a custom font file, that file can not carry over with this string. It will need to be inserted into the addon folder to be applied.",
 						"Only load strings that you have verified yourself or trust the source of!",
 					},
@@ -464,92 +498,100 @@ local english = {
 					tooltip = "Reset the string to reflect the currently stored values.",
 				},
 				import = "Load the string",
-				warning = "Are you sure you want to attempt to load the currently inserted string?\n\nIf you've copied it from an online source or someone else has sent it to you, only load it after you've checked the code inside and you know what you are doing.\n\nIf don't trust the source, you may want to cancel to prevent any unwanted actions.", --\n represents the newline character
+				warning = "Are you sure you want to attempt to load the currently inserted string?\n\nIf you've copied it from an online source or someone else has sent it to you, only load it after you've checked the code inside and you know what you are doing.\n\nIf don't trust the source, you may want to cancel to prevent any unwanted actions.",
 				error = "The provided backup string could not be validated and no data was loaded. It might be missing some characters or errors may have been introduced if it was edited.",
 			},
 		},
 	},
 	chat = {
 		status = {
-			visible = "The speed display is visible (#AUTO).", --# flags will be replaced with code
-			notVisible = "The speed display is not visible (#AUTO).", --# flags will be replaced with code
-			hidden = "The speed display is hidden (#AUTO).", --# flags will be replaced with code
-			auto = "auto-hide: #STATE", --# flags will be replaced with code
+			visible = "The speed display is visible (#AUTO).",
+			notVisible = "The speed display is not visible (#AUTO).",
+			hidden = "The speed display is hidden (#AUTO).",
+			auto = "auto-hide: #STATE",
 		},
 		help = {
-			command = "help",
-			thanks = "Thank you for using #ADDON!", --# flags will be replaced with code
-			hint = "Type #HELP_COMMAND to see the full command list.", --# flags will be replaced with code
-			move = "Hold #SHIFT to drag the #ADDON display anywhere you like.", --# flags will be replaced with code
+			thanks = "Thank you for using #ADDON!",
+			hint = "Type #HELP_COMMAND to see the full command list.",
+			move = "Hold SHIFT to drag the #ADDON display anywhere you like.",
 			list = "chat command list",
 		},
 		options = {
-			command = "options",
-			description = "open the #ADDON options", --# flags will be replaced with code
-		},
-		save = {
-			command = "save",
-			description = "save this speed display setup as the Custom preset",
-			response = "The current speed display position and visibility was saved to the Custom preset.",
+			description = "open the #ADDON options",
 		},
 		preset = {
-			command = "preset",
-			description = "apply a speed display preset (e.g. #INDEX)", --# flags will be replaced with code
-			response = "The #PRESET speed display preset was applied.", --# flags will be replaced with code
+			description = "apply a speed display preset (e.g. #INDEX)",
+			response = "The #PRESET speed display preset was applied.",
 			unchanged = "The preset could not be applied, no changes were made.",
-			error = "Please enter a valid preset index (e.g. #INDEX).", --# flags will be replaced with code
+			error = "Please enter a valid preset index (e.g. #INDEX).",
 			list = "The following presets are available:",
 		},
+		save = {
+			description = "save this speed display setup as the #CUSTOM preset",
+			response = "The current speed display position and visibility was saved to the #CUSTOM preset.",
+		},
+		reset = {
+			description = "reset the #CUSTOM preset to its default state",
+			response = "The #CUSTOM preset has been reset to the default preset.",
+		},
 		toggle = {
-			command = "toggle",
-			description = "show or hide the speed display (#HIDDEN)", --# flags will be replaced with code
+			description = "show or hide the speed display (#HIDDEN)",
 			hiding = "The speed display has been hidden.",
 			unhiding = "The speed display has been made visible.",
 			hidden = "hidden",
 			notHidden = "not hidden",
 		},
 		auto = {
-			command = "auto",
 			description = "hide the speed display while stationary (#STATE)",
-			response = "The speed display automatic hide was set to #STATE.", --# flags will be replaced with code
+			response = "The speed display automatic hide was set to #STATE.",
 		},
 		size = {
-			command = "size",
-			description = "change the font size (e.g. #SIZE)", --# flags will be replaced with code
-			response = "The font size was set to #VALUE.", --# flags will be replaced with code
+			description = "change the font size (e.g. #SIZE)",
+			response = "The font size was set to #VALUE.",
 			unchanged = "The font size was not changed.",
-			error = "Please enter a valid number value (e.g. #SIZE).", --# flags will be replaced with code
+			error = "Please enter a valid number value (e.g. #SIZE).",
 		},
-		reset = {
-			command = "reset",
-			description = "reset everything to defaults",
-			response = "The default options and the Custom preset have been reset.",
+		defaults = {
+			description = "restore everything to defaults",
+			response = "The #CATEGORY options have been reset to defaults.",
 		},
 		position = {
 			save = "The speed display position was saved.",
 			cancel = "The repositioning of the speed display was cancelled.",
-			error = "Hold #SHIFT until the mouse button is released to save the position.", --# flags will be replaced with code
+			error = "Hold SHIFT until the mouse button is released to save the position.",
 		},
 	},
+	playerSpeed = {
+		title = "Player Speed details:",
+		text = "Calculated from the Speed stat, modified by various effects, movement activity.",
+	},
+	travelSpeed = {
+		title = "Travel Speed details:",
+		text = "Calculated from tracking your horizontal movement through the world map.",
+	},
+	targetSpeed = "Speed: #SPEED",
 	speedTooltip = {
-		title = "Speed info:",
 		text = {
-			"Displaying your current movement speed.",
-			"#YARDS yards / second.", --# flags will be replaced with code
-			"#PERCENT of the base running speed.", --# flags will be replaced with code
+			"#YARDS yards / second.",
+			"#PERCENT of the base running speed.",
+			"#COORDS coordinates / second.",
 		},
+		mapTitle = "Current zone: #MAP",
+		mapSize = "Map size: #SIZE",
+		mapSizeValues = "#W x #H yards",
 		hintOptions = "Right-click to access specific options.",
-		hintMove = "Hold #SHIFT & drag to reposition.", --# flags will be replaced with code
+		hintMove = "Hold SHIFT & drag to reposition.",
 	},
-	targetSpeed = "Speed: #SPEED", --# flags will be replaced with code
-	yardsps = "#YARDS yards/s", --# flags will be replaced with code
-	yps = "#YARDS y/s", --# flags will be replaced with code
-	keys = {
-		shift = "SHIFT",
-		enter = "ENTER",
+	speedValue = {
+		yardsps = "#YARDS yards/s",
+		yps = "#YARDS y/s",
+		coordsps = "#COORDS coords/s",
+		cps = "#COORDS c/s",
+		coordPair = "(#X, #Y)",
+		separator = " | ",
 	},
 	misc = {
-		date = "#MONTH/#DAY/#YEAR", --# flags will be replaced with code
+		date = "#MONTH/#DAY/#YEAR",
 		options = "Options",
 		default = "Default",
 		custom = "Custom",
@@ -566,13 +608,22 @@ local english = {
 --Load the proper localization table based on the client language
 local LoadLocale = function()
 	local strings
-	if (GetLocale() == "") then
+	local locale = GetLocale()
+
+	if (locale == "") then
 		--TODO: Add localization for other languages (locales: https://wowwiki-archive.fandom.com/wiki/API_GetLocale#Locales)
 		--Different font locales: https://github.com/tomrus88/BlizzardInterfaceCode/blob/master/Interface/FrameXML/Fonts.xml
 	else --Default: English (UK & US)
 		strings = english
 		strings.defaultFont = UNIT_NAME_FONT_ROMAN:gsub("\\", "/")
 	end
+
+	--Fill internal references
+	strings.options.speedDisplay.position.xOffset.tooltip = strings.options.speedDisplay.position.xOffset.tooltip:gsub("#ANCHOR", strings.options.speedDisplay.position.anchor.label)
+	strings.options.speedDisplay.position.yOffset.tooltip = strings.options.speedDisplay.position.yOffset.tooltip:gsub("#ANCHOR", strings.options.speedDisplay.position.anchor.label)
+	strings.options.speedDisplay.update.throttle.tooltip = strings.options.speedDisplay.update.throttle.tooltip:gsub("#FREQUENCY", strings.options.speedDisplay.update.frequency.label)
+	strings.options.speedDisplay.font.color.tooltip = strings.options.speedDisplay.font.color.tooltip:gsub("#VALUE_COLORING", strings.options.speedDisplay.font.valueColoring.label)
+
 	return strings
 end
 
@@ -581,36 +632,55 @@ end
 
 --Strings
 ns.strings = LoadLocale()
-ns.strings.chat.keyword = "/movespeed"
+
+--Chat commands
+ns.chat = {
+	keyword = "movespeed",
+	commands = {
+		help = "help",
+		options = "options",
+		preset = "preset",
+		save = "save",
+		reset = "reset",
+		toggle = "toggle",
+		auto = "auto",
+		size = "size",
+		defaults = "defaults",
+	}
+}
 
 --Colors
 ns.colors = {
 	grey = {
-		[0] = { r = 0.54, g = 0.54, b = 0.54 },
-		[1] = { r = 0.7, g = 0.7, b = 0.7 },
-	},
-	green = {
-		[0] = { r = 0.31, g = 0.85, b = 0.21 },
-		[1] = { r = 0.56, g = 0.83, b = 0.43 },
+		{ r = 0.54, g = 0.54, b = 0.54 },
+		{ r = 0.7, g = 0.7, b = 0.7 },
 	},
 	yellow = {
-		[0] = { r = 1, g = 0.87, b = 0.28 },
-		[1] = { r = 1, g = 0.98, b = 0.60 },
+		{ r = 1, g = 0.87, b = 0.28 },
+		{ r = 1, g = 0.98, b = 0.60 },
+	},
+	green = {
+		{ r = 0.31, g = 0.85, b = 0.21 },
+		{ r = 0.56, g = 0.91, b = 0.49 },
+	},
+	blue = {
+		{ r = 0.33, g = 0.69, b = 0.91 },
+		{ r = 0.62, g = 0.83, b = 0.96 },
 	},
 }
 
 --Fonts
 ns.fonts = {
-	[0] = { name = ns.strings.misc.default, path = ns.strings.defaultFont },
-	[1] = { name = "Arbutus Slab", path = root .. "Fonts/ArbutusSlab.ttf" },
-	[2] = { name = "Caesar Dressing", path = root .. "Fonts/CaesarDressing.ttf" },
-	[3] = { name = "Germania One", path = root .. "Fonts/GermaniaOne.ttf" },
-	[4] = { name = "Mitr", path = root .. "Fonts/Mitr.ttf" },
-	[5] = { name = "Oxanium", path = root .. "Fonts/Oxanium.ttf" },
-	[6] = { name = "Pattaya", path = root .. "Fonts/Pattaya.ttf" },
-	[7] = { name = "Reem Kufi", path = root .. "Fonts/ReemKufi.ttf" },
-	[8] = { name = "Source Code Pro", path = root .. "Fonts/SourceCodePro.ttf" },
-	[9] = { name = ns.strings.misc.custom, path = root .. "Fonts/CUSTOM.ttf" },
+	{ name = ns.strings.misc.default, path = ns.strings.defaultFont, widthRatio = 1 },
+	{ name = "Arbutus Slab", path = root .. "Fonts/ArbutusSlab.ttf", widthRatio = 1.07 },
+	{ name = "Caesar Dressing", path = root .. "Fonts/CaesarDressing.ttf", widthRatio = 0.84 },
+	{ name = "Germania One", path = root .. "Fonts/GermaniaOne.ttf", widthRatio = 0.86 },
+	{ name = "Mitr", path = root .. "Fonts/Mitr.ttf", widthRatio = 1.07 },
+	{ name = "Oxanium", path = root .. "Fonts/Oxanium.ttf", widthRatio = 0.94 },
+	{ name = "Pattaya", path = root .. "Fonts/Pattaya.ttf", widthRatio = 0.87 },
+	{ name = "Reem Kufi", path = root .. "Fonts/ReemKufi.ttf", widthRatio = 0.92 },
+	{ name = "Source Code Pro", path = root .. "Fonts/SourceCodePro.ttf", widthRatio = 1.11 },
+	{ name = ns.strings.misc.custom, path = root .. "Fonts/CUSTOM.ttf", widthRatio = 1.2 },
 }
 
 --Textures

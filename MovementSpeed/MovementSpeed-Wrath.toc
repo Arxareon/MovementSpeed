@@ -1,8 +1,8 @@
 ## Interface: 30401
 ## Title: Movement Speed |TInterface/AddOns/MovementSpeed/Textures/Logo.tga:0|t
-## Version: 2.5
-## X-Day: 15
-## X-Month: 3
+## Version: 2.6
+## X-Day: 3
+## X-Month: 5
 ## X-Year: 2023
 ## Author: Barnabas Nagy (Arxareon)
 ## X-Sponsors: Celierra

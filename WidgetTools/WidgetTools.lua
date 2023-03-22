@@ -295,9 +295,8 @@ function frame:PLAYER_ENTERING_WORLD()
 						size = { width = panel:GetWidth() - 225, height = panel:GetHeight() - 42 },
 						text = ns.GetChangelog(true),
 						font = { normal = "GameFontDisableSmall", },
-						color = ns.colors.grey[0],
+						color = ns.colors.grey[1],
 						readOnly = true,
-						scrollSpeed = 50,
 					})
 
 					--Button: Full changelog
@@ -343,9 +342,8 @@ function frame:PLAYER_ENTERING_WORLD()
 											size = { width = windowPanel:GetWidth() - 32, height = windowPanel:GetHeight() - 88 },
 											text = ns.GetChangelog(),
 											font = { normal = "GameFontDisable", },
-											color = ns.colors.grey[0],
+											color = ns.colors.grey[1],
 											readOnly = true,
-											scrollSpeed = 120,
 										})
 
 										--Button: Close
@@ -434,7 +432,7 @@ function frame:PLAYER_ENTERING_WORLD()
 		title = ns.strings.addons.title,
 		description = ns.strings.addons.description:gsub("#ADDON", addonTitle),
 		logo = ns.textures.logo,
-		scroll = { speed = 72, },
+		scroll = { speed = 0.2 },
 		optionsKeys = { addonNameSpace, },
 		initialize = function(canvas)
 			--List Toolbox versions in use
@@ -505,7 +503,7 @@ function frame:PLAYER_ENTERING_WORLD()
 											onSave = function(_, state) if not state then wt.CreateReloadNotice() end end,
 											onLoad = function(_, state) toggleAddon(state) end,
 										}
-									})
+									}):SetIgnoreParentAlpha(true)
 
 									--Text: Version
 									local addonVersion = wt.CreateText({
