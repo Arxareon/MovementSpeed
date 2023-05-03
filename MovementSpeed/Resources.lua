@@ -180,7 +180,7 @@ local changelogDB = {
 		"Other smaller fixes.",
 	},
 	{
-		"#V_Version 2.6_# #H_(5/3/2023)_#",
+		"#V_Version 2.6_# #H_(5/4/2023)_#",
 		"#N_New:_#",
 		"Added 10.1 (Dragonflight) support.",
 		"The (Dragonflight-only) Travel Speed feature is now out of beta as the speed value accuracy has been greatly improved.\n#H_This doesn't mean the feature won't be further improved with more functionality and customization options! If you have some ideas and valuable feedback, I'd love to hear it (see the About info for links)!_#",
