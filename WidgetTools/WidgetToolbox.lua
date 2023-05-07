@@ -8,8 +8,8 @@ local addonNameSpace, ns = ...
 --[[ WIDGET TOOLBOX ]]
 
 --Register the toolbox
-local toolboxVersion = "1.8"
-ns.WidgetToolbox = WidgetTools.RegisterToolbox(addonNameSpace, toolboxVersion, nil, ns.textures.logo) or {}
+local toolboxVersion = "1.9"
+ns.WidgetToolbox = WidgetTools.RegisterToolbox(addonNameSpace, toolboxVersion, nil) or {}
 
 --Create a new toolbox
 if not next(ns.WidgetToolbox) then
@@ -142,7 +142,9 @@ if not next(ns.WidgetToolbox) then
 	--Load the current localization
 	local function LoadLocale()
 		local strings
-		if (GetLocale() == "") then
+		local locale = GetLocale()
+
+		if (locale == "") then
 			--TODO: Add localization for other languages (locales: https://wowpedia.fandom.com/wiki/API_GetLocale#Values)
 			--Different font locales: https://github.com/tomrus88/BlizzardInterfaceCode/blob/master/Interface/FrameXML/Fonts.xml#L8
 		else --Default: English (UK & US)
@@ -156,6 +158,9 @@ if not next(ns.WidgetToolbox) then
 
 	--[[ UTILITIES ]]
 
+	--Classic vs Dragonflight code separation
+	wt.classic = select(4, GetBuildInfo()) < 30402
+
 	--[ Table Management ]
 
 	---Get the sorted key value pairs of a table ([Documentation: Sort](https://www.lua.org/pil/19.3.html))
@@ -163,14 +168,16 @@ if not next(ns.WidgetToolbox) then
 	---@return function iterator Function returning the Key, Value pairs of the table in order
 	wt.SortedPairs = function(t)
 		local a = {}
+
 		for n in pairs(t) do table.insert(a, n) end
 		table.sort(a, function(x, y) if type(x) == "number" and type(y) == "number" then return x < y else return tostring(x) < tostring(y) end end)
+
 		local i = 0
 		local iterator = function ()
 			i = i + 1
-			if a[i] == nil then return nil
-			else return a[i], t[a[i]] end
+			if a[i] == nil then return nil else return a[i], t[a[i]] end
 		end
+
 		return iterator
 	end
 
@@ -278,12 +285,14 @@ if not next(ns.WidgetToolbox) then
 	---@return string chunk
 	wt.TableToString = function(table, compact, colored, currentLevel)
 		if type(table) ~= "table" then return tostring(table) end
+
 		--Set whitespaces, calculate indentation based on the current depth level
 		local s = not compact and " " or ""
 		local nl = not compact and "\n" or ""
 		local indentation = ""
 		currentLevel = currentLevel or 0
 		if not compact then for i = 0, currentLevel do indentation = indentation .. "    " end end
+
 		--Set coloring escape sequences
 		local c = "|cFF999999" --base color (grey)
 		local ck = "|cFFFFFFFF" --key (white)
@@ -293,11 +302,13 @@ if not next(ns.WidgetToolbox) then
 		local cs = "|cFF55DD55" --string value (green)
 		local cv = "|cFFDD99FF" --misc value (purple)
 		local r = "|r" --end end previously defined coloring
+
 		--Assemble
 		local chunk = c .. "{"
 		for k, v in pairs(table) do
 			--Key
 			chunk = chunk .. nl .. indentation .. (type(k) ~= "string" and "[" .. ck .. tostring(k) .. r .. "]" or ck .. k .. r) .. s .. "="
+
 			--Value
 			chunk = chunk .. s
 			if type(v) == "table" then
@@ -311,9 +322,11 @@ if not next(ns.WidgetToolbox) then
 			else
 				chunk = chunk .. cv .. tostring(v) .. r
 			end
+
 			--Add separator
 			chunk = chunk .. ","
 		end
+
 		return ((chunk .. "}"):gsub("," .. "}", (not compact and "," or "") .. nl .. indentation:gsub("%s%s%s%s(.*)", "%1") .. "}") .. r)
 	end
 
@@ -323,10 +336,10 @@ if not next(ns.WidgetToolbox) then
 	wt.Clone = function(object)
 		if type(object) ~= "table" then return object end
 		if object.GetObjectType and object.IsObjectType then if object:IsObjectType(object:GetObjectType()) then return object end end
+
 		local copy = {}
-		for k, v in pairs(object) do
-			copy[k] = wt.Clone(v)
-		end
+		for k, v in pairs(object) do copy[k] = wt.Clone(v) end
+
 		return copy
 	end
 
@@ -336,15 +349,14 @@ if not next(ns.WidgetToolbox) then
 	---@return table? targetTable Reference to **targetTable** (the values were already overwritten during the operation, no need to set it again)
 	wt.CopyValues = function(tableToCopy, targetTable)
 		if type(tableToCopy) ~= "table" or type(targetTable) ~= "table" then return end
-		if next(targetTable) == nil then return end --The target table is empty
+		if next(targetTable) == nil then return end
+
 		for k, v in pairs(targetTable) do
-			if tableToCopy[k] == nil then return end --This key doesn't exist in the sample table
-			if type(v) == "table" then
-				wt.CopyValues(tableToCopy[k], v)
-			else
-				targetTable[k] = tableToCopy[k]
-			end
+			if tableToCopy[k] == nil then return end
+
+			if type(v) == "table" then wt.CopyValues(tableToCopy[k], v) else targetTable[k] = tableToCopy[k] end
 		end
+
 		return targetTable
 	end
 
@@ -357,19 +369,17 @@ if not next(ns.WidgetToolbox) then
 	---@return table? tableToCheck Reference to **tableToCheck** (it was already overwritten during the operation, no need for setting it again)
 	wt.RemoveEmpty = function(tableToCheck, valueChecker)
 		if type(tableToCheck) ~= "table" then return end
+
 		for k, v in pairs(tableToCheck) do
 			if type(v) == "table" then
-				if next(v) == nil then --The subtable is empty
-					tableToCheck[k] = nil --Remove the empty subtable
-				else
-					wt.RemoveEmpty(v, valueChecker)
-				end
+				if next(v) == nil then tableToCheck[k] = nil else wt.RemoveEmpty(v, valueChecker) end --Remove the subtable if it's empty
 			else
 				local remove = v == nil or v == "" --The value is empty or doesn't exist
-				if valueChecker and not remove then remove = not valueChecker(k, v) end--The value is invalid
-				if remove then tableToCheck[k] = nil end --Remove the key value pair
+				if valueChecker and not remove then remove = not valueChecker(k, v) end --Check if the value is invalid
+				if remove then tableToCheck[k] = nil end --Remove the value
 			end
 		end
+
 		return tableToCheck
 	end
 
@@ -379,17 +389,14 @@ if not next(ns.WidgetToolbox) then
 	---@return table? tableToCheck Reference to **tableToCheck** (it was already overwritten during the operation, no need for setting it again)
 	wt.AddMissing = function(tableToCheck, tableToSample)
 		if type(tableToSample) ~= "table" then return end
-		if next(tableToSample) == nil then return end --The sample table is empty
+		if next(tableToSample) == nil then return end
+
 		tableToCheck = type(tableToCheck) ~= "table" and {} or tableToCheck --The table to check isn't actually a table - turn it into a new one
 		for k, v in pairs(tableToSample) do
-			if tableToCheck[k] == nil then --The sample key doesn't exist in the table to check
-				if v ~= nil and v ~= "" then
-					tableToCheck[k] = v --Add the item if the value is not empty or nil
-				end
-			else
-				wt.AddMissing(tableToCheck[k], tableToSample[k])
-			end
+			if tableToCheck[k] == nil then if v ~= nil and v ~= "" then tableToCheck[k] = v end --Add the missing item if the value is not empty or nil
+			else wt.AddMissing(tableToCheck[k], tableToSample[k]) end
 		end
+
 		return tableToCheck
 	end
 
@@ -403,30 +410,33 @@ if not next(ns.WidgetToolbox) then
 	wt.RemoveMismatch = function(tableToCheck, tableToSample, recoveredData, recoveredKey)
 		if not recoveredData then recoveredData = {} end
 		if type(tableToCheck) ~= "table" or type(tableToSample) ~= "table" then return recoveredData end
-		if next(tableToCheck) == nil then return end --The table to check is empty
+		if next(tableToCheck) == nil then return end
+
 		for key, value in pairs(tableToCheck) do
-			local rk = recoveredKey or ""
-			rk = rk .. key .. "."
-			if tableToSample[key] == nil then --The checked key doesn't exist in the sample table
+			local rk = (recoveredKey or "") .. key .. "."
+
+			if tableToSample[key] == nil then
 				--Save the old item to the recovered data container
-				if type(value) ~= "table" then recoveredData[rk:sub(1, -2)] = value
-				else
+				if type(value) ~= "table" then recoveredData[rk:sub(1, -2)] = value else
 					--Go deeper to fully map out recoverable keys
 					local function GoDeeper(ttc, rck)
 						if type(ttc) ~= "table" then return end
-						local r = rck
+
 						for k, v in pairs(ttc) do
-							r = rck .. k .. "."
-							GoDeeper(v, r)
-							if type(v) ~= "table" then recoveredData[r:sub(1, -2)] = v end
+							rck = rck .. k .. "."
+							GoDeeper(v, rck)
+							if type(v) ~= "table" then recoveredData[rck:sub(1, -2)] = v end
 						end
 					end
+
 					GoDeeper(value, rk)
 				end
+
 				--Remove the unneeded item
 				tableToCheck[key] = nil
 			else recoveredData = wt.RemoveMismatch(tableToCheck[key], tableToSample[key], recoveredData, rk) end
 		end
+
 		return recoveredData, tableToCheck
 	end
 
@@ -436,11 +446,14 @@ if not next(ns.WidgetToolbox) then
 	---@return any|nil match Value found at **keyToFind**, returns the first match only
 	wt.FindKey = function(tableToCheck, keyToFind)
 		if type(tableToCheck) ~= "table" then return nil end
+
 		for k, v in pairs(tableToCheck) do
 			if k == keyToFind then return v end
+
 			local match = wt.FindKey(v, keyToFind)
 			if match then return match end
 		end
+
 		return nil
 	end
 
@@ -510,6 +523,7 @@ if not next(ns.WidgetToolbox) then
 	---@return number? offsetY ***Default:*** 0
 	wt.UnpackPosition = function(t)
 		if type(t) ~= "table" then return "TOPLEFT" end
+
 		t.offset = t.offset or {}
 		return t.anchor or "TOPLEFT", type(t.relativeTo) == "string" and wt.ToFrame(t.relativeTo) or t.relativeTo, t.relativePoint, t.offset.x or 0, t.offset.y or 0
 	end
@@ -557,6 +571,7 @@ if not next(ns.WidgetToolbox) then
 		if a and alphaFirst then hex = hex .. string.format("%02x", math.ceil(a * 255)) end
 		hex = hex .. string.format("%02x", math.ceil(r * 255)) .. string.format("%02x", math.ceil(g * 255)) .. string.format("%02x", math.ceil(b * 255))
 		if a and not alphaFirst then hex = hex .. string.format("%02x", math.ceil(a * 255)) end
+
 		return hex:upper()
 	end
 
@@ -569,15 +584,12 @@ if not next(ns.WidgetToolbox) then
 	wt.HexToColor = function(hex)
 		hex = hex:gsub("#", "")
 		if hex:len() ~= 6 and hex:len() ~= 8 then return 1, 1, 1 end
+
 		local r = tonumber(hex:sub(1, 2), 16) / 255
 		local g = tonumber(hex:sub(3, 4), 16) / 255
 		local b = tonumber(hex:sub(5, 6), 16) / 255
-		if hex:len() == 8 then
-			local a = tonumber(hex:sub(7, 8), 16) / 255
-			return r, g, b, a
-		else
-			return r, g, b
-		end
+
+		if hex:len() == 8 then return r, g, b, tonumber(hex:sub(7, 8), 16) / 255 else return r, g, b end
 	end
 
 	--[ String Formatting ]
@@ -1120,8 +1132,8 @@ if not next(ns.WidgetToolbox) then
 	---@return boolean state
 	wt.CheckDependencies = function(rules)
 		local state = true
+
 		for i = 1, #rules do
-			--Blizzard widgets
 			if rules[i].frame:IsObjectType("CheckButton") then
 				if rules[i].evaluate then state = rules[i].evaluate(rules[i].frame:GetChecked()) else state = rules[i].frame:GetChecked() end
 			elseif rules[i].frame:IsObjectType("EditBox") then state = rules[i].evaluate(rules[i].frame:GetText())
@@ -1134,8 +1146,10 @@ if not next(ns.WidgetToolbox) then
 				elseif rules[i].frame.isUniqueType("TextBox") then state = rules[i].evaluate(rules[i].frame.getText())
 				elseif rules[i].frame.isUniqueType("ValueSlider") then state = rules[i].evaluate(rules[i].frame.getValue())  end
 			end
+
 			if not state then break end
 		end
+
 		return state
 	end
 
@@ -1158,8 +1172,10 @@ if not next(ns.WidgetToolbox) then
 	wt.SetDependencies = function(rules, setState)
 		for i = 1, #rules do
 			if rules[i].frame.HookScript and rules[i].frame.IsObjectType then
+				--Watch value load events
 				rules[i].frame:HookScript("OnAttributeChanged", function(_, attribute, state) if attribute == "loaded" and state then setState(wt.CheckDependencies(rules)) end end)
-				--Blizzard Widgets
+
+				--Watch value change events
 				if rules[i].frame:IsObjectType("CheckButton") then rules[i].frame:HookScript("OnClick", function() setState(wt.CheckDependencies(rules)) end)
 				elseif rules[i].frame:IsObjectType("EditBox") then rules[i].frame:HookScript("OnTextChanged", function() setState(wt.CheckDependencies(rules)) end)
 				elseif rules[i].frame:IsObjectType("Slider") then rules[i].frame:HookScript("OnValueChanged", function() setState(wt.CheckDependencies(rules)) end)
@@ -1333,15 +1349,22 @@ if not next(ns.WidgetToolbox) then
 
 	--[ Hyperlink Handlers ]
 
-	---Format a string to be a clickable hyperlink text via escape sequences
+	---Format a clickable hyperlink text via escape sequences
 	---@param type HyperlinkType [Type of the hyperlink](https://wowpedia.fandom.com/wiki/Hyperlinks#Types) determining how it's being handled and what payload it carries
-	--- - ***Note:*** To make a custom hyperlink handled by an addon, *"item"* may be used as **type**. (Following details are to be provided in **content** to be able to use ***WidgetToolbox*.SetHyperlinkHandler(...)** to set a function to handle clicks on the custom hyperlink).
-	---@param content string A colon-separated chain of parameters determined by the [type of the hyperlink](https://wowpedia.fandom.com/wiki/Hyperlinks#Types) (Example: "parameter1:parameter2:parameter3")
-	--- - ***Note:*** When using *"item"* as **type** with the intention of setting a custom hyperlink to be handled by an addon, set the first parameter of **content** to a unique addon identifier key, and the second parameter to a unique key signifying the type of the hyperlink specific to the addon (if the addon handles multiple different custom types of hyperlinks), in order to be able to set unique hyperlink click handlers via ***WidgetToolbox*.SetHyperlinkHandler(...)**.
+	---@param content string A colon-separated chain of parameters determined by **type** (Example: "content1:content2:content3")
 	---@param text string Clickable text to be displayed as the hyperlink
 	---@return string
 	wt.Hyperlink = function(type, content, text)
 		return "\124H" .. type .. ":" .. content .. "\124h" .. text .. "\124h"
+	end
+
+	---Format a custom clickable addon hyperlink text via escape sequences
+	---@param addon string The name of the addon's folder (the addon namespace, not its displayed title)
+	---@param type? string A unique key signifying the type of the hyperlink specific to the addon (if the addon handles multiple different custom types of hyperlinks) in order to be able to set unique hyperlink click handlers via ***WidgetToolbox*.SetHyperlinkHandler(...)** | ***Default:*** "-"
+	---@param content string A colon-separated chain of data strings carried by the hyperlink to be provided to the handler function (Example: "content1:content2:content3")
+	---@param text string Clickable text to be displayed as the hyperlink
+	wt.CustomHyperlink = function(addon, type, content, text)
+		return wt.Hyperlink(wt.classic and "item" or "addon", addon .. ":" .. (type or "-") .. ":" .. content, text)
 	end
 
 	--Collection of hyperlink handler scripts
@@ -1349,26 +1372,30 @@ if not next(ns.WidgetToolbox) then
 
 	---Register a function to handle custom hyperlink clicks
 	---@param addon string The name of the addon's folder (the addon namespace, not its displayed title)
-	---@param handlerKey string Unique custom hyperlink type key used to identify the specific handler function
-	---@param handlerFunction function Function to be called by clicking on a hyperlink text created via |Hitem:**addon**:**handlerKey**:*payload*|h*Text*|h
-	--- - ***Note:*** The handler function receives all content from the payload of the hyperlink in one string. If multiple values are to be used, concatenate them using a colon as a delimiter character when creating the hyperlink text. Then, [strsplit](https://wowpedia.fandom.com/wiki/API_strsplit) or [strsplittable](https://wowpedia.fandom.com/wiki/API_strsplit) can be used in the handler function to separate them.
-	wt.SetHyperlinkHandler = function(addon, handlerKey, handlerFunction)
+	---@param type? string Unique custom hyperlink type key used to identify the specific handler function | ***Default:*** "-"
+	---@param handler function Function to be called by clicking on a hyperlink text created via ***WidgetToolbox*.CustomHyperlink(...)**
+	--- - @*param* `...` any ― List of content data strings carried by the hyperlink returned one by one
+	wt.SetHyperlinkHandler = function(addon, type, handler)
+		--Call the handler function if it has been registered
+		local function callHandler(addonID, handlerID, payload)
+			local handlerFunction = wt.FindKey(wt.FindKey(hyperlinkHandlers, addonID), handlerID)
+			if handlerFunction then handlerFunction(strsplit(":", payload)) end
+		end
+
 		--Hook the hyperlink handler caller
 		if not next(hyperlinkHandlers) then
-			hooksecurefunc(ItemRefTooltip, "SetHyperlink", function(...)
-				local _, linkType = ...
-				local _, addonID, handlerID, payload = strsplit(":", linkType, 4)
-
-				--Call the handler function if it has been registered
-				for addonKey, addonHandlers in pairs(hyperlinkHandlers) do if addonID == addonKey then for key, handler in pairs(addonHandlers) do
-					if handlerID == key then handler(payload) return end
-				end end end
-			end)
+			if not wt.classic then EventRegistry:RegisterCallback("SetItemRef", function(_, ...)
+				local linkType, addonID, handlerID, payload = strsplit(":", ..., 4)
+				if linkType == "addon" then callHandler(addonID, handlerID, payload) end
+			end) else hooksecurefunc(ItemRefTooltip, "SetHyperlink", function(_, ...)
+				local _, addonID, handlerID, payload = strsplit(":", ..., 4)
+				callHandler(addonID, handlerID, payload)
+			end) end
 		end
 
 		--Add the hyperlink handler function to the table
 		if not hyperlinkHandlers[addon] then hyperlinkHandlers[addon] = {} end
-		hyperlinkHandlers[addon][handlerKey] = handlerFunction
+		hyperlinkHandlers[addon][type or "-"] = handler
 	end
 
 	--[ Chat Control ]
@@ -1467,9 +1494,6 @@ if not next(ns.WidgetToolbox) then
 		gradientBG = "Interface/AddOns/" .. addonNameSpace .. "/Textures/GradientBG.tga",
 		contextBG = "Interface/AddOns/" .. addonNameSpace .. "/Textures/ContextBG.tga",
 	}
-
-	--Classic vs Dragonflight code separation
-	wt.classic = select(4, GetBuildInfo()) < 100000
 
 
 	--[[ UX HELPERS ]]
@@ -1799,6 +1823,13 @@ if not next(ns.WidgetToolbox) then
 
 		return t.name, font
 	end
+
+	--Create a custom disabled font for Classic
+	if select(4, GetBuildInfo()) < 100000 then wt.CreateFont({
+		name = "GameFontDisableMed2",
+		template = "GameFontHighlightMedium",
+		color = wt.PackColor(GameFontDisable:GetTextColor()),
+	}) end
 
 	--[ Text ]
 
@@ -2882,6 +2913,7 @@ if not next(ns.WidgetToolbox) then
 	wt.CreateOptionsCategory = function(t)
 		local name = (t.append ~= false and t.addon or "") .. (t.name and t.name:gsub("%s+", "") or t.addon)
 		local title = t.title or wt.Clear(GetAddOnMetadata(t.addon, "title")):gsub("^%s*(.-)%s*$", "%1")
+		local titleLogo =  t.logo and t.titleLogo and " |T" .. t.logo .. ":0|t" or ""
 
 		---Create the options page holder table
 		---@class optionsPage
@@ -2944,7 +2976,7 @@ if not next(ns.WidgetToolbox) then
 			optionsPage.category = optionsPage.canvas
 
 			--Set the category name
-			optionsPage.category.name = title .. (t.logo and t.titleLogo and " |T" .. t.logo .. ":0|t" or "")
+			optionsPage.category.name = title .. titleLogo
 
 			--Set as a subcategory or a parent category
 			if t.parent then optionsPage.category.parent = t.parent.name end
@@ -2970,8 +3002,8 @@ if not next(ns.WidgetToolbox) then
 			optionsPage.canvas.OnDefault = function() optionsPage.default(true) end
 
 			--Create the category or subcategory page
-			if t.parent then optionsPage.category = Settings.RegisterCanvasLayoutSubcategory(t.parent, optionsPage.canvas, title)
-			else optionsPage.category = Settings.RegisterCanvasLayoutCategory(optionsPage.canvas, title) end
+			if t.parent then optionsPage.category = Settings.RegisterCanvasLayoutSubcategory(t.parent, optionsPage.canvas, title .. titleLogo)
+			else optionsPage.category = Settings.RegisterCanvasLayoutCategory(optionsPage.canvas, title .. titleLogo) end
 
 			--Add save notice text
 			wt.CreateText({
@@ -3021,9 +3053,6 @@ if not next(ns.WidgetToolbox) then
 
 			--Add to the Settings
 			Settings.RegisterAddOnCategory(optionsPage.category)
-
-			--Set the category name
-			optionsPage.category.name = title .. (t.logo and t.titleLogo and " |T" .. t.logo .. ":0|t" or "")
 		end
 
 		--Title & description
@@ -6821,13 +6850,6 @@ if not next(ns.WidgetToolbox) then
 		if t.sideButtons ~= false then
 			local step = t.value.step or ((t.value.max - t.value.min) / 10)
 
-			--Create a custom disabled font for Classic
-			if wt.classic then wt.CreateFont({
-				name = "GameFontDisableMed2",
-				template = "GameFontHighlightMedium",
-				color = wt.PackColor(GameFontDisable:GetTextColor()),
-			}) end
-
 			--[ Decrease Value ]
 
 			--Create button frame
@@ -7087,17 +7109,18 @@ if not next(ns.WidgetToolbox) then
 	--- 		- **x**? number *optional* — ***Default:*** 0
 	--- 		- **y**? number *optional* — ***Default:*** 0
 	--- - **width**? number *optional* ― The height is defaulted to 36, the width may be specified | ***Default:*** 120
-	--- - **setColors** function — The function to be called to set the colors of the color picker on load or update
-	--- 	- @*return* `r` number ― Red | ***Range:*** (0, 1)
-	--- 	- @*return* `g` number ― Green | ***Range:*** (0, 1)
-	--- 	- @*return* `b` number ― Blue | ***Range:*** (0, 1)
-	--- 	- @*return* `a`? number ― Opacity | ***Range:*** (0, 1) | ***Default:*** 1
-	--- - **onColorUpdate** function — The function to be called when the color is changed by user interaction
+	--- - **startColor**? table *optional* — Values to use as the starting color | ***Default:*** **t.optionsData[t.optionsData.workingTable][t.optionsData.storageKey]**
+	--- 	- **r** number ― Red | ***Range:*** (0, 1) | ***Default:*** 1
+	--- 	- **g** number ― Green | ***Range:*** (0, 1) | ***Default:*** 1
+	--- 	- **b** number ― Blue | ***Range:*** (0, 1) | ***Default:*** 1
+	--- 	- **a**? number *optional* ― Opacity | ***Range:*** (0, 1) | ***Default:*** 1
+	--- 		- ***Note:*** If the alpha start value was not set, configure the color picker to handle RBG values exclusively instead of the full RGBA.
+	--- - **onColorUpdate**? function *optional* — The function to be called when the color is changed by user interaction
 	--- 	- @*param* `r` number ― Red | ***Range:*** (0, 1)
 	--- 	- @*param* `g` number ― Green | ***Range:*** (0, 1)
 	--- 	- @*param* `b` number ― Blue | ***Range:*** (0, 1)
 	--- 	- @*param* `a`? number *optional* ― Opacity | ***Range:*** (0, 1) | ***Default:*** 1
-	--- - **onCancel** function — The function to be called when the color change is cancelled (after calling **t.onColorUpdate**)
+	--- - **onCancel**? function *optional* — The function to be called when the color change is cancelled (after calling **t.onColorUpdate**)
 	--- - **disabled**? boolean *optional* — Set the state of this widget to be disabled on load | ***Default:*** false
 	--- 	- ***Note:*** Dependency evaluations described in **t.dependencies** may re-enable the widget.
 	--- - **dependencies**? table *optional* — Automatically disable or enable this widget based on the rules described in subtables
@@ -7218,7 +7241,9 @@ if not next(ns.WidgetToolbox) then
 	wt.CreateColorPicker = function(t)
 		local name = (t.append ~= false and t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "ColorPicker")
 		local title = t.title or t.name or "Color Picker"
-		local red, green, blue, alpha = t.setColors()
+		if not t.startColor then if t.optionsData then if t.optionsData.workingTable and t.optionsData.storageKey then
+			t.startColor = wt.Clone(t.optionsData.workingTable[t.optionsData.storageKey])
+		else t.startColor = {} end else t.startColor = {} end else t.startColor = {} end
 
 		--[ Main Frame ]
 
@@ -7249,7 +7274,7 @@ if not next(ns.WidgetToolbox) then
 			label = false,
 			tooltip = {
 				title = strings.color.picker.label,
-				lines = { { text = alpha and strings.color.picker.tooltip:gsub("#ALPHA", strings.color.picker.alpha) or strings.color.picker.tooltip:gsub("#ALPHA", ""), }, }
+				lines = { { text = t.startColor.a and strings.color.picker.tooltip:gsub("#ALPHA", strings.color.picker.alpha) or strings.color.picker.tooltip:gsub("#ALPHA", ""), }, }
 			},
 			position = { offset = { y = -14 } },
 			size = { width = 34, height = 22 },
@@ -7302,7 +7327,7 @@ if not next(ns.WidgetToolbox) then
 					size = 5,
 					insets = { l = 2.5, r = 2.5, t = 2.5, b = 2.5 },
 				},
-				color = { r = red, g = green, b = blue, a = alpha or 1 }
+				color = { r = t.startColor.r or 1, g = t.startColor.g or 1, b = t.startColor.b or 1, a = t.startColor.a or 1 }
 			},
 			border = {
 				texture = { width = 11, },
@@ -7364,7 +7389,7 @@ if not next(ns.WidgetToolbox) then
 			name = "HEXBox",
 			title = strings.color.hex.label,
 			label = false,
-			tooltip = { lines = { { text = strings.color.hex.tooltip .. "\n\n" .. strings.misc.example .. ": #2266BB" .. (alpha and "AA" or ""), }, } },
+			tooltip = { lines = { { text = strings.color.hex.tooltip .. "\n\n" .. strings.misc.example .. ": #2266BB" .. (t.startColor.a and "AA" or ""), }, } },
 			position = {
 				relativeTo = colorPicker.pickerButton,
 				relativePoint = "TOPRIGHT",
@@ -7376,7 +7401,7 @@ if not next(ns.WidgetToolbox) then
 				normal = "GameFontWhiteSmall",
 				disabled = "GameFontDisableSmall",
 			},
-			maxLetters = 7 + (alpha and 2 or 0),
+			maxLetters = 7 + (t.startColor.a and 2 or 0),
 			events = {
 				OnChar = function(self, _, text) self.setText(text:gsub("^(#?)([%x]*).*", "%1%2"), false) end,
 				OnEnterPressed = function(_, text)

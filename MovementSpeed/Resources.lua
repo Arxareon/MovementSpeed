@@ -204,6 +204,13 @@ local changelogDB = {
 		"The Speed Display Anchor Point setting will properly be updated when a preset is applied or the display is moved manually.",
 		"Several old and inaccurate descriptions and tooltips have been updated.",
 		"Other minor fixes & improvements.",
+	},
+	{
+		"#V_Version 2.7_# #H_(10/5/2023)_#",
+		"#F_Fixes:_#",
+		"Fixed an issue with actions being blocked after closing the Settings panel in certain situation (like changing Keybindings) in Dragonflight.",
+		"The current version will now run in the WotLK Classic 3.4.2 PTR but it's not yet fully polished (as parts of the UI are still being modernized).",
+		"Other minor improvements.",
 		"#H_If you encounter any issues, do not hesitate to report them! Try including when & how they occur, and which other addons are you using to give me the best chance of being able to reproduce & fix them. Try proving any LUA script error messages and if you know how, taint logs as well (when relevant). Thanks a lot for helping!_#",
 	},
 }
@@ -218,6 +225,7 @@ ns.GetChangelog = function(latest)
 	local fix = "FFEE4444"
 	local change = "FF8888EE"
 	local note = "FFEEEE66"
+
 	--Assemble the changelog
 	local changelog = ""
 		for i = #changelogDB, 1, -1 do
@@ -284,10 +292,6 @@ local english = {
 			sponsors = {
 				title = "Sponsors",
 				description = "Your continued support is greatly appreciated! Thank you!",
-			},
-			feedback = {
-				title = "Feedback",
-				description = "Visit #ADDON online if you have something to report.",
 			},
 		},
 		speedValue = {
@@ -605,7 +609,8 @@ local english = {
 	},
 }
 
---Load the proper localization table based on the client language
+---Load the proper localization table based on the client language
+---@return string
 local LoadLocale = function()
 	local strings
 	local locale = GetLocale()
@@ -618,7 +623,8 @@ local LoadLocale = function()
 		strings.defaultFont = UNIT_NAME_FONT_ROMAN:gsub("\\", "/")
 	end
 
-	--Fill internal references
+	--Fill static & internal references
+	strings.options.main.description = strings.options.main.description:gsub("#KEYWORD", "/" .. ns.chat.keyword)
 	strings.options.speedDisplay.position.xOffset.tooltip = strings.options.speedDisplay.position.xOffset.tooltip:gsub("#ANCHOR", strings.options.speedDisplay.position.anchor.label)
 	strings.options.speedDisplay.position.yOffset.tooltip = strings.options.speedDisplay.position.yOffset.tooltip:gsub("#ANCHOR", strings.options.speedDisplay.position.anchor.label)
 	strings.options.speedDisplay.update.throttle.tooltip = strings.options.speedDisplay.update.throttle.tooltip:gsub("#FREQUENCY", strings.options.speedDisplay.update.frequency.label)
@@ -629,9 +635,6 @@ end
 
 
 --[[ ASSETS ]]
-
---Strings
-ns.strings = LoadLocale()
 
 --Chat commands
 ns.chat = {
@@ -648,6 +651,9 @@ ns.chat = {
 		defaults = "defaults",
 	}
 }
+
+--Strings
+ns.strings = LoadLocale()
 
 --Colors
 ns.colors = {

@@ -42,15 +42,23 @@ local changelogDB = {
 		"Other smaller changes.",
 		"#F_Fixes:_#",
 		"Several under the hood fixes & improvements.",
-		"#H_If you encounter any issues, do not hesitate to report them! Try including when & how they occur, and which other addons are you using to give me the best chance of being able to reproduce & fix them. Try proving any LUA script error messages and if you know how, taint logs as well (when relevant). Thanks a lot for helping!_#",
 	},
 	{
-		"#V_Version 1.7_# #H_(3/11/2023)_#",
+		"#V_Version 1.8_# #H_(4/5/2023)_#",
 		"#N_Updates:_#",
 		"Added 10.1 (Dragonflight) support.",
 		"#F_Fixes:_#",
 		"The old scrollbars have been replaced with the new scrollbars in Dragonflight, fixing any bugs that emerged with 10.1 as a result of deprecation.",
 		"Several other under the hood fixes & improvements.",
+	},
+	{
+		"#V_Version 1.9_# #H_(10/5/2023)_#",
+		"#C_Changes:_#",
+		"Upgraded to the new Dragonflight addon logo handling. (Custom addon logos may not appear in the Interface Options in Classic clients.)",
+		"#F_Fixes:_#",
+		"Fixed an issue with actions being blocked after closing the Settings panel in certain situation (like changing Keybindings) in Dragonflight.",
+		"The current version will now run in the WotLK Classic 3.4.2 PTR but it's not yet fully polished (as parts of the UI are still being modernized).",
+		"Other small under the hood improvements & code cleanup.",
 		"#H_If you encounter any issues, do not hesitate to report them! Try including when & how they occur, and which other addons are you using to give me the best chance of being able to reproduce & fix them. Try proving any LUA script error messages and if you know how, taint logs as well (when relevant). Thanks a lot for helping!_#",
 	},
 }
@@ -153,7 +161,9 @@ local english = {
 --Load the proper localization table based on the client language
 local function LoadLocale()
 	local strings
-	if (GetLocale() == "") then
+	local locale = GetLocale()
+
+	if (locale == "") then
 		--TODO: Add localization for other languages (locales: https://wowpedia.fandom.com/wiki/API_GetLocale#Values)
 		--Different font locales: https://github.com/tomrus88/BlizzardInterfaceCode/blob/master/Interface/FrameXML/Fonts.xml#L8
 	else --Default: English (UK & US)

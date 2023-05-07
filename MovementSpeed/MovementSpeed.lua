@@ -915,7 +915,7 @@ end
 local function CreateMainOptions() frames.options.main.page = wt.CreateOptionsCategory({
 	addon = addonNameSpace,
 	name = "Main",
-	description = ns.strings.options.main.description:gsub("#ADDON", addonTitle):gsub("#KEYWORD", "/" .. ns.chat.keyword),
+	description = ns.strings.options.main.description:gsub("#ADDON", addonTitle),
 	logo = ns.textures.logo,
 	titleLogo = true,
 	initialize = function(canvas)
@@ -1336,6 +1336,7 @@ local function CreateSpeedValueOptions(panel)
 				UpdateDisplaySizes = function()
 					--Player Speed
 					SetDisplaySize("playerSpeed")
+
 					--Travel Speed
 					SetDisplaySize("travelSpeed")
 				end,
@@ -1411,6 +1412,7 @@ local function CreateFontOptions(panel)
 				UpdateDisplayFonts = function()
 					--Player Speed
 					frames.playerSpeed.text:SetFont(db.speedDisplay.font.family, db.speedDisplay.font.size, "THINOUTLINE")
+
 					--Travel Speed
 					frames.travelSpeed.text:SetFont(db.speedDisplay.font.family, db.speedDisplay.font.size, "THINOUTLINE")
 				end,
@@ -1420,6 +1422,7 @@ local function CreateFontOptions(panel)
 					local text = frames.playerSpeed.text:GetText()
 					frames.playerSpeed.text:SetText("")
 					frames.playerSpeed.text:SetText(text)
+
 					--Travel Speed
 					text = frames.travelSpeed.text:GetText()
 					frames.travelSpeed.text:SetText("")
@@ -1430,6 +1433,7 @@ local function CreateFontOptions(panel)
 					local label = _G[frames.options.speedDisplays.font.family.toggle:GetName() .. "Text"]
 					local _, size, flags = label:GetFont()
 					label:SetFont(ns.fonts[frames.options.speedDisplays.font.family.getSelected()].path, size, flags)
+
 					--Refresh the text so the font will be applied right away (if the font is loaded)
 					local text = label:GetText()
 					label:SetText("")
@@ -1483,6 +1487,7 @@ local function CreateFontOptions(panel)
 				--Player Speed
 				frames.playerSpeed.text:SetJustifyH(db.speedDisplay.font.alignment)
 				wt.SetPosition(frames.playerSpeed.text, { anchor = db.speedDisplay.font.alignment, })
+
 				--Travel Speed
 				frames.travelSpeed.text:SetJustifyH(db.speedDisplay.font.alignment)
 				wt.SetPosition(frames.travelSpeed.text, { anchor = db.speedDisplay.font.alignment, })
@@ -1505,6 +1510,7 @@ local function CreateFontOptions(panel)
 			onChange = { UpdateDisplayFontColors = function()
 				--Player Speed
 				frames.playerSpeed.text:SetTextColor(wt.UnpackColor(db.speedDisplay.font.valueColoring and ns.colors.grey[2] or db.speedDisplay.font.color))
+
 				--Travel Speed
 				frames.travelSpeed.text:SetTextColor(wt.UnpackColor(db.speedDisplay.font.valueColoring and ns.colors.grey[2] or db.speedDisplay.font.color))
 			end, }
@@ -1518,7 +1524,6 @@ local function CreateFontOptions(panel)
 		title = ns.strings.options.speedDisplay.font.color.label,
 		tooltip = { lines = { { text = ns.strings.options.speedDisplay.font.color.tooltip, }, } },
 		arrange = { newRow = false, },
-		setColors = function() return frames.playerSpeed.text:GetTextColor() end,
 		dependencies = {
 			{ frame = frames.options.speedDisplays.visibility.hidden, evaluate = function(state) return not state end },
 			{ frame = frames.options.speedDisplays.font.valueColoring, evaluate = function(state) return not state end },
@@ -1547,6 +1552,7 @@ local function CreateBackgroundOptions(panel)
 			onChange = { ToggleDisplayBackdrops = function()
 				--Player Speed
 				SetDisplayBackdrop("playerSpeed", db.speedDisplay.background.visible, db.speedDisplay.background.colors.bg, db.speedDisplay.background.colors.border)
+
 				--Travel Speed
 				SetDisplayBackdrop("travelSpeed", db.speedDisplay.background.visible, db.speedDisplay.background.colors.bg, db.speedDisplay.background.colors.border)
 			end, }
@@ -1556,13 +1562,9 @@ local function CreateBackgroundOptions(panel)
 	--Color Picker: Background color
 	frames.options.speedDisplays.background.colors.bg = wt.CreateColorPicker({
 		parent = panel,
-		name = "BackgroundColor",
+		name = "Color",
 		title = ns.strings.options.speedDisplay.background.colors.bg.label,
 		arrange = { newRow = false, },
-		setColors = function()
-			if frames.options.speedDisplays.background.visible.getState() then return frames.playerSpeed.display:GetBackdropColor() end
-			return wt.UnpackColor(db.speedDisplay.background.colors.bg)
-		end,
 		dependencies = {
 			{ frame = frames.options.speedDisplays.visibility.hidden, evaluate = function(state) return not state end },
 			{ frame = frames.options.speedDisplays.background.visible, },
@@ -1571,9 +1573,10 @@ local function CreateBackgroundOptions(panel)
 			optionsKey = addonNameSpace .. "SpeedDisplays",
 			workingTable = db.speedDisplay.background.colors,
 			storageKey = "bg",
-			onChange = { UpdateDisplayBackdropBackgroundColors = function()
+			onChange = { UpdateDisplayBackgroundColors = function()
 				--Player Speed
 				if frames.playerSpeed.display:GetBackdrop() ~= nil then frames.playerSpeed.display:SetBackdropColor(wt.UnpackColor(db.speedDisplay.background.colors.bg)) end
+
 				--Travel Speed
 				if frames.travelSpeed.display:GetBackdrop() ~= nil then frames.travelSpeed.display:SetBackdropColor(wt.UnpackColor(db.speedDisplay.background.colors.bg)) end
 			end }
@@ -1586,10 +1589,6 @@ local function CreateBackgroundOptions(panel)
 		name = "BorderColor",
 		title = ns.strings.options.speedDisplay.background.colors.border.label,
 		arrange = { newRow = false, },
-		setColors = function()
-			if frames.options.speedDisplays.background.visible.getState() then return frames.playerSpeed.display:GetBackdropBorderColor() end
-			return wt.UnpackColor(db.speedDisplay.background.colors.border)
-		end,
 		dependencies = {
 			{ frame = frames.options.speedDisplays.visibility.hidden, evaluate = function(state) return not state end },
 			{ frame = frames.options.speedDisplays.background.visible, },
@@ -1598,11 +1597,12 @@ local function CreateBackgroundOptions(panel)
 			optionsKey = addonNameSpace .. "SpeedDisplays",
 			workingTable = db.speedDisplay.background.colors,
 			storageKey = "border",
-			onChange = { UpdateDisplayBackdropBorderColors = function()
+			onChange = { UpdateDisplayBorderColors = function()
 				--Player Speed
 				if frames.playerSpeed.display:GetBackdrop() ~= nil then
 					frames.playerSpeed.display:SetBackdropBorderColor(wt.UnpackColor(db.speedDisplay.background.colors.border))
 				end
+
 				--Travel Speed
 				if frames.travelSpeed.display:GetBackdrop() ~= nil then
 					frames.travelSpeed.display:SetBackdropBorderColor(wt.UnpackColor(db.speedDisplay.background.colors.border))
@@ -1644,9 +1644,7 @@ local function CreateSpeedDisplayOptions() frames.options.speedDisplays.page = w
 			defaultsTable = dbDefault.speedDisplay,
 		},
 	},
-	onSave = function()
-		MovementSpeedDB = wt.Clone(db)
-	end,
+	onSave = function() MovementSpeedDB = wt.Clone(db) end,
 	onDefault = function(user)
 		ResetCustomPreset()
 		if not user then return end
@@ -1820,13 +1818,11 @@ local function CreateTargetSpeedOptions() frames.options.targetSpeed.page = wt.C
 	description = ns.strings.options.targetSpeed.description:gsub("#ADDON", addonTitle),
 	logo = ns.textures.logo,
 	optionsKeys = { addonNameSpace .. "TargetSpeed" },
-	storage = {
-		{
-			workingTable =  db.targetSpeed,
-			storageTable = MovementSpeedDB.targetSpeed,
-			defaultsTable = dbDefault.targetSpeed,
-		},
-	},
+	storage = { {
+		workingTable =  db.targetSpeed,
+		storageTable = MovementSpeedDB.targetSpeed,
+		defaultsTable = dbDefault.targetSpeed,
+	}, },
 	onDefault = function(user)
 		if not user then return end
 
@@ -2261,7 +2257,7 @@ local function CreateContextMenu(parent)
 	wt.AddContextButton(contextMenu, contextMenu, {
 		-- title = ns.strings.options.main.name,
 		title = ns.strings.misc.options,
-		tooltip = { lines = { { text = ns.strings.options.main.description:gsub("#ADDON", addonTitle):gsub("#KEYWORD", "/" .. ns.chat.keyword), }, } },
+		tooltip = { lines = { { text = ns.strings.options.main.description:gsub("#ADDON", addonTitle), }, } },
 		events = { OnClick = function() frames.options.main.page.open() end, },
 	})
 	-- wt.AddContextButton(optionsMenu, contextMenu, {
@@ -2285,15 +2281,10 @@ local function CreateContextMenu(parent)
 		title = ns.strings.options.speedDisplay.position.presets.label,
 		tooltip = { lines = { { text = ns.strings.options.speedDisplay.position.presets.tooltip, }, } },
 	})
-
-	wt.AddContextButton(presetsMenu, contextMenu, {
-		title = presets[1].name,
-		events = { OnClick = function() commandManager.handleCommand(ns.chat.commands.preset, 1) end, },
-	})
-	wt.AddContextButton(presetsMenu, contextMenu, {
-		title = presets[2].name,
-		events = { OnClick = function() commandManager.handleCommand(ns.chat.commands.preset, 2) end, },
-	})
+	for i = 1, #presets do wt.AddContextButton(presetsMenu, contextMenu, {
+		title = presets[i].name,
+		events = { OnClick = function() commandManager.handleCommand(ns.chat.commands.preset, i) end, },
+	}) end
 end
 
 --Frames & events

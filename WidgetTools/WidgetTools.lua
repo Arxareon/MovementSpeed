@@ -10,18 +10,16 @@ WidgetTools = {}
 ---@param addon string Addon namespace (the name of the addon's folder, not its display title) to register for WidgetTools usage
 ---@param version string Version key the **toolbox** should be registered under
 ---@param toolbox? table Reference to the table to register as a WidgetTools toolbox
----@param logo? string Path to the texture file used by **addon** as its logo (to be featured in the Widget Tools addon list)
---- - ***Note:*** The use of "/" as separator is recommended (Example: Interface/AddOns/**addon**/Textures/TextureImage.tga).
---- - ***Note - File format:*** Texture files must be in JPEG (no transparency, not recommended), PNG, TGA or BLP format.
---- - ***Note - Size:*** Texture files must have powers of 2 dimensions to be handled by the WoW client.
 ---@return table|nil? toolbox Reference to the toolbox table registered under the **version** key
-WidgetTools.RegisterToolbox = function(addon, version, toolbox, logo)
+WidgetTools.RegisterToolbox = function(addon, version, toolbox)
 	if not addon or not version or (not registry.toolbox[version] and not toolbox) then return nil end
+
 	--Register the addon
 	if IsAddOnLoaded(addon) then
 		registry.addons[version] = registry.addons[version] or {}
-		registry.addons[version][addon] = logo or false
+		table.insert(registry.addons[version], addon)
 	end
+
 	--Register the toolbox
 	registry.toolbox[version] = registry.toolbox[version] or toolbox
 	return registry.toolbox[version]
@@ -436,23 +434,23 @@ function frame:PLAYER_ENTERING_WORLD()
 		optionsKeys = { addonNameSpace, },
 		initialize = function(canvas)
 			--List Toolbox versions in use
-			for key, value in wt.SortedPairs(registry.addons) do
+			for k, v in wt.SortedPairs(registry.addons) do
 				--Panel: Toolbox
 				wt.CreatePanel({
 					parent = canvas,
-					name = "Toolbox" .. key,
-					title = ns.strings.addons.toolbox:gsub("#VERSION", ns.strings.about.compactVersion:gsub("#VERSION", WrapTextInColorCode(key, "FFFFFFFF"))),
+					name = "Toolbox" .. k,
+					title = ns.strings.addons.toolbox:gsub("#VERSION", ns.strings.about.compactVersion:gsub("#VERSION", WrapTextInColorCode(k, "FFFFFFFF"))),
 					arrange = {},
 					size = { height = 32 },
 					initialize = function(toolboxPanel)
 						--List reliant addons
-						for k, v in wt.SortedPairs(value) do
+						for i = 1, #v do
 							--Panel: Addon info
 							wt.CreatePanel({
 								parent = toolboxPanel,
-								name = k,
-								title = wt.Clear(GetAddOnMetadata(k, "title")),
-								description = GetAddOnMetadata(k, "Notes") or "…",
+								name = v[i],
+								title = wt.Clear(GetAddOnMetadata(v[i], "Title")),
+								description = GetAddOnMetadata(v[i], "Notes") or "…",
 								arrange = {},
 								size = { width = toolboxPanel:GetWidth() - 40, height = 48 },
 								background = { color = { r = 0.1, g = 0.1, b = 0.1, a = 0.6 } },
@@ -465,8 +463,8 @@ function frame:PLAYER_ENTERING_WORLD()
 											anchor = "LEFT",
 											offset = { x = -16, }
 										},
-										size = { width = 44, height = 44 },
-										path = v or ns.textures.missing,
+										size = { width = 42, height = 42 },
+										path = GetAddOnMetadata(v[i], "IconTexture") or ns.textures.missing,
 									})
 
 									--Update the addon info panel title & description
@@ -478,10 +476,10 @@ function frame:PLAYER_ENTERING_WORLD()
 									--Checkbox: Toggle
 									local function toggleAddon(state)
 										if state then
-											EnableAddOn(k)
+											EnableAddOn(v[i])
 											addonPanel:SetAlpha(1)
 										else
-											DisableAddOn(k)
+											DisableAddOn(v[i])
 											addonPanel:SetAlpha(0.5)
 										end
 									end
@@ -499,7 +497,7 @@ function frame:PLAYER_ENTERING_WORLD()
 										events = { OnClick = function(_, state) toggleAddon(state) end, },
 										optionsData = {
 											optionsKey = addonNameSpace,
-											convertLoad = function() return GetAddOnEnableState(nil, k) > 0 end,
+											convertLoad = function() return GetAddOnEnableState(nil, v[i]) > 0 end,
 											onSave = function(_, state) if not state then wt.CreateReloadNotice() end end,
 											onLoad = function(_, state) toggleAddon(state) end,
 										}
@@ -515,7 +513,7 @@ function frame:PLAYER_ENTERING_WORLD()
 											relativePoint = "BOTTOMRIGHT",
 											offset = { x = 8, y = 9 }
 										},
-										text = ns.strings.about.compactVersion:gsub("#VERSION", WrapTextInColorCode(GetAddOnMetadata(k, "Version") or "?", "FFFFFFFF")),
+										text = ns.strings.about.compactVersion:gsub("#VERSION", WrapTextInColorCode(GetAddOnMetadata(v[i], "Version") or "?", "FFFFFFFF")),
 										font = "GameFontNormalSmall",
 										justify = { h = "LEFT", },
 									})
@@ -531,11 +529,11 @@ function frame:PLAYER_ENTERING_WORLD()
 										},
 										text = ns.strings.about.compactDate:gsub(
 											"#DATE", WrapTextInColorCode(ns.strings.about.dateFormat:gsub(
-												"#DAY", GetAddOnMetadata(k, "X-Day") or "?"
+												"#DAY", GetAddOnMetadata(v[i], "X-Day") or "?"
 											):gsub(
-												"#MONTH", GetAddOnMetadata(k, "X-Month") or "?"
+												"#MONTH", GetAddOnMetadata(v[i], "X-Month") or "?"
 											):gsub(
-												"#YEAR", GetAddOnMetadata(k, "X-Year") or "?"
+												"#YEAR", GetAddOnMetadata(v[i], "X-Year") or "?"
 											), "FFFFFFFF")
 										),
 										font = "GameFontNormalSmall",
@@ -551,7 +549,7 @@ function frame:PLAYER_ENTERING_WORLD()
 											relativePoint = "TOPRIGHT",
 											offset = { x = 10, }
 										},
-										text = ns.strings.about.compactAuthor:gsub("#AUTHOR", WrapTextInColorCode(GetAddOnMetadata(k, "Author") or "?", "FFFFFFFF")),
+										text = ns.strings.about.compactAuthor:gsub("#AUTHOR", WrapTextInColorCode(GetAddOnMetadata(v[i], "Author") or "?", "FFFFFFFF")),
 										font = "GameFontNormalSmall",
 										justify = { h = "LEFT", },
 									})
@@ -565,7 +563,7 @@ function frame:PLAYER_ENTERING_WORLD()
 											relativePoint = "TOPRIGHT",
 											offset = { x = 10, }
 										},
-										text = ns.strings.about.compactLicense:gsub("#LICENSE", WrapTextInColorCode(GetAddOnMetadata(k, "X-License") or "?", "FFFFFFFF")),
+										text = ns.strings.about.compactLicense:gsub("#LICENSE", WrapTextInColorCode(GetAddOnMetadata(v[i], "X-License") or "?", "FFFFFFFF")),
 										font = "GameFontNormalSmall",
 										justify = { h = "LEFT", },
 									})
@@ -594,7 +592,7 @@ function frame:PLAYER_ENTERING_WORLD()
 					local oldToolboxes = ns.strings.addons.old.none:gsub("#ADDON", addonTitle)
 					if WidgetToolbox then if next(WidgetToolbox) then
 						local toolboxes = ""
-						for key, _ in wt.SortedPairs(WidgetToolbox) do toolboxes = toolboxes .. " • " .. key end
+						for k, _ in wt.SortedPairs(WidgetToolbox) do toolboxes = toolboxes .. " • " .. k end
 						oldToolboxes = WrapTextInColorCode(ns.strings.addons.old.inUse:gsub(
 							"#TOOLBOXES",  WrapTextInColorCode(toolboxes:sub(5),  "FFFFFFFF")
 						), wt.ColorToHex(NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b, 1, true, false))
