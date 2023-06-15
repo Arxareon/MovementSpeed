@@ -2282,7 +2282,7 @@ if not next(ns.WidgetToolbox) then
 	--- - **scrollSize** table
 	--- 	- **width**? number *optional* — Horizontal size of the scrollable child frame | ***Default:*** **t.size.width** - (***WidgetTools*.classic** and 22 or 16)
 	--- 	- **height** number *optional* — Vertical size of the scrollable child frame | ***Default:*** 0 *(no height)*
-	--- - **scrollSpeed**? number *optional* — Percentage of one page of content to scroll at a time | ***Range: (0, 1) | ***Default:*** 0.25
+	--- - **scrollSpeed**? number *optional* — Percentage of one page of content to scroll at a time | ***Range:*** (0, 1) | ***Default:*** 0.25
 	--- 	- ***Note:*** If ***WidgetTools*.classic** is true, **t.scrollSpeed** is used as the scroll step value of the classic scroll frames. | ***Default:*** *half of the height of the scrollbar*
 	--- - **initialize**? function *optional* ― Call this function while setting up the new scrollable frame to perform specific tasks like creating content child frames right away
 	--- 	- @*param* `scrollChild` Frame ― Reference to the new scrollable child frame
@@ -2875,7 +2875,7 @@ if not next(ns.WidgetToolbox) then
 	--- - **titleLogo**? boolean *optional* — Append the texture specified as **t.logo** to the title of the Settings button as well | ***Default:*** false
 	--- - **scroll**? table *optional* — If set, create an empty ScrollFrame for the category panel
 	--- 	- **height**? number *optional* — Set the height of the scrollable child frame to the specified value | ***Default:*** 0 *(no height)*
-	--- 	- **speed**? number *optional* — Percentage of one page of content to scroll at a time | ***Range: (0, 1) | ***Default:*** 0.25
+	--- 	- **speed**? number *optional* — Percentage of one page of content to scroll at a time | ***Range:*** (0, 1) | ***Default:*** 0.25
 	--- 		- ***Note:*** If ***WidgetTools*.classic** is true, **t.scroll.speed** is used as the scroll step value of the classic scroll frames. | ***Default:*** *half of the height of the scrollbar*
 	--- - **optionsKeys**? table *optional* ― A list of unique keys linking collections of widget options data to be saved & loaded with this options category page
 	--- 	- **[*value*]** any ― A unique key under which widget options data has been registered to options data management
@@ -6192,7 +6192,7 @@ if not next(ns.WidgetToolbox) then
 	--- - **maxLetters**? integer *optional* — The value to set by [EditBox:SetMaxLetters()](https://wowpedia.fandom.com/wiki/API_EditBox_SetMaxLetters) | ***Default:*** 0 (*no limit*)
 	--- - **charCount**? boolean *optional* — Show or hide the remaining number of characters | ***Default:*** **t.maxLetters** > 0
 	--- - **readOnly**? boolean *optional* — The text will be uneditable if true | ***Default:*** false
-	--- - **scrollSpeed**? number *optional* — Percentage of one page of content to scroll at a time | ***Range: (0, 1) | ***Default:*** 0.25
+	--- - **scrollSpeed**? number *optional* — Percentage of one page of content to scroll at a time | ***Range:*** (0, 1) | ***Default:*** 0.25
 	--- 	- ***Note:*** If ***WidgetTools*.classic** is true, **t.scrollSpeed** is used as the scroll step value of the classic scroll frames. | ***Default:*** *half of the height of the scrollbar*
 	--- - **scrollToTop**? boolean *optional* — Automatically scroll to the top when the text is loaded or changed while not being actively edited | ***Default:*** true
 	--- - **events**? table *optional* — Table of key, value pairs that holds script event handlers to be set for the editbox child frame
