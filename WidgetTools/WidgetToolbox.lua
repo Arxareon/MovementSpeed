@@ -1563,15 +1563,18 @@ if not next(ns.WidgetToolbox) then
 		table.insert(toggle.triggers, owner)
 		for i = 1, #toggle.triggers do
 			--Show tooltip
-			if toggle.triggers[i] ~= owner and toggle.replace == false then toggle.triggers[i]:HookScript("OnEnter", function()
-				if owner.tooltipData then if not owner.tooltipData.tooltip:IsVisible() then wt.UpdateTooltip(owner) end end
-			end) else toggle.triggers[i]:HookScript("OnEnter", function() wt.UpdateTooltip(owner) end) end
+			if toggle.triggers[i] ~= owner and toggle.replace == false then
+				toggle.triggers[i]:HookScript("OnEnter", function() if owner.tooltipData then if not owner.tooltipData.tooltip:IsVisible() then wt.UpdateTooltip(owner) end end end)
+			else toggle.triggers[i]:HookScript("OnEnter", function() wt.UpdateTooltip(owner) end) end
 
 			--Hide tooltip
-			if toggle.triggers[i] ~= owner and toggle.checkParent ~= false then toggle.triggers[i]:HookScript("OnLeave", function()
-				if not owner:IsMouseOver() then if owner.tooltipData then owner.tooltipData.tooltip:Hide() end end
-			end) else toggle.triggers[i]:HookScript("OnLeave", function() if owner.tooltipData then owner.tooltipData.tooltip:Hide() end end) end
+			if toggle.triggers[i] ~= owner and toggle.checkParent ~= false then
+				toggle.triggers[i]:HookScript("OnLeave", function() if not owner:IsMouseOver() then if owner.tooltipData then owner.tooltipData.tooltip:Hide() end end end)
+			else toggle.triggers[i]:HookScript("OnLeave", function() if owner.tooltipData then owner.tooltipData.tooltip:Hide() end end) end
 		end
+
+		--Hide with owner
+		owner:HookScript("OnHide", function() if owner.tooltipData then owner.tooltipData.tooltip:Hide() end end)
 	end
 
 	---Update and show a GameTooltip already set up to be toggled for a frame

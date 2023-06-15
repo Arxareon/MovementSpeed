@@ -206,7 +206,7 @@ local changelogDB = {
 		"Other minor fixes & improvements.",
 	},
 	{
-		"#V_Version 2.7_# #H_(5/10/2023)_#",
+		"#V_Version 2.7_# #H_(5/17/2023)_#",
 		"#F_Fixes:_#",
 		"Fixed an issue with actions being blocked after closing the Settings panel in certain situation (like changing Keybindings) in Dragonflight.",
 		"The current version will now run in the WotLK Classic 3.4.2 PTR but it's not yet fully polished (as parts of the UI are still being modernized).",
@@ -221,6 +221,7 @@ local changelogDB = {
 		"#F_Fixes:_#",
 		"The speed displays will not appear after a pet battle when they are set as hidden.",
 		"Importing addon data through the Backup Advanced options will keep the currently set values when filling in missing or invalid values instead of using defaults.",
+		"No tooltip will stay on the screen after its target was hidden.",
 		"Under the hood fixes & improvements.",
 		"#H_If you encounter any issues, do not hesitate to report them! Try including when & how they occur, and which other addons are you using to give me the best chance of being able to reproduce & fix them. Try proving any LUA script error messages and if you know how, taint logs as well (when relevant). Thanks a lot for helping!_#",
 	},

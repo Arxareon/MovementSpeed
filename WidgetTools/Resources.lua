@@ -52,7 +52,7 @@ local changelogDB = {
 		"Several other under the hood fixes & improvements.",
 	},
 	{
-		"#V_Version 1.9_# #H_(5/10/2023)_#",
+		"#V_Version 1.9_# #H_(5/17/2023)_#",
 		"#C_Changes:_#",
 		"Upgraded to the new Dragonflight addon logo handling. (Custom addon logos may not appear in the Interface Options in Classic clients.)",
 		"#F_Fixes:_#",
@@ -65,6 +65,7 @@ local changelogDB = {
 		"#N_Updates:_#",
 		"Added 10.1.5 (Dragonflight) support.",
 		"#F_Fixes:_#",
+		"No tooltip will stay on the screen after its target was hidden.",
 		"Under the hood fixes & improvements.",
 		"#H_If you encounter any issues, do not hesitate to report them! Try including when & how they occur, and which other addons are you using to give me the best chance of being able to reproduce & fix them. Try proving any LUA script error messages and if you know how, taint logs as well (when relevant). Thanks a lot for helping!_#",
 	},
