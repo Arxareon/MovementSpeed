@@ -15,7 +15,7 @@ $clients = @()
 #List of client tags used by Blizzard to target
 $clients += "_retail_" #Dragonflight
 $clients += "_ptr_" #Dragonflight PTR
-$clients += "_ptr2_" #Dragonflight PTR 2
+$clients += "_xptr_" #Dragonflight PTR X
 $clients += "_classic_" #Wrath of the Lich King
 $clients += "_classic_ptr_" #Wrath of the Lick King PTR
 $clients += "_classic_era_" #Classic

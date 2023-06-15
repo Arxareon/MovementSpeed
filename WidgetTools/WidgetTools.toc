@@ -1,9 +1,9 @@
-## Interface: 100100 #Fallback to the Mainline version
+## Interface: 100105 #Fallback to the Mainline version
 ## Title: Widget Tools
 ## IconTexture: Interface/AddOns/WidgetTools/Textures/Logo.tga
-## Version: 1.9
-## X-Day: 17
-## X-Month: 5
+## Version: 1.10
+## X-Day: 15
+## X-Month: 6
 ## X-Year: 2023
 ## Author: Barnabas Nagy (Arxareon)
 ## X-Sponsors: Celierra

@@ -42,7 +42,7 @@ local dbDefault = {
 		font = {
 			family = ns.fonts[1].path,
 			size = 11,
-			valueColoring = false,
+			valueColoring = true,
 			color = { r = 1, g = 1, b = 1, a = 1 },
 			alignment = "CENTER",
 		},
@@ -437,10 +437,12 @@ local function GetSpeedDisplayTooltipLines(type)
 		{ text = ns.strings[type .. "Speed"].text, },
 		{
 			text = "\n" .. ns.strings.speedTooltip.text[1]:gsub("#YARDS", wt.Color(wt.FormatThousands(speed[type].yards, 2, true),  ns.colors.yellow[2])),
+			font = GameTooltipText,
 			color = ns.colors.yellow[1],
 		},
 		{
 			text = "\n" .. ns.strings.speedTooltip.text[2]:gsub("#PERCENT", wt.Color(wt.FormatThousands(speed[type].yards / 7 * 100, 2, true) .. "%%", ns.colors.green[2])),
+			font = GameTooltipText,
 			color = ns.colors.green[1],
 		},
 		{
@@ -451,6 +453,7 @@ local function GetSpeedDisplayTooltipLines(type)
 					"#Y", wt.FormatThousands(speed[type].coords.y, 2, true)
 				), ns.colors.blue[2])
 			),
+			font = GameTooltipText,
 			color = ns.colors.blue[1],
 		},
 		{
@@ -1009,7 +1012,7 @@ local function CreateVisibilityOptions(panel)
 			optionsKey = addonNameSpace .. "SpeedDisplays",
 			workingTable = dbc,
 			storageKey = "hidden",
-			onChange = { DisplayToggle = function() wt.SetVisibility(frames.main, not dbc.hidden) end }
+			onChange = { DisplayToggle = function() wt.SetVisibility(frames.main, not dbc.hidden) end, }
 		}
 	})
 
@@ -1070,7 +1073,14 @@ local function CreatePositionOptions(panel)
 		name = "SAVEPRESET",
 		text = ns.strings.options.speedDisplay.position.savePreset.warning:gsub("#CUSTOM", presets[1].name),
 		accept = ns.strings.misc.override,
-		onAccept = function() UpdateCustomPreset() end,
+		onAccept = function()
+			UpdateCustomPreset()
+
+			--Notification
+			print(wt.Color(addonTitle .. ":", ns.colors.green[1]) .. " " .. wt.Color(ns.strings.chat.save.response:gsub(
+				"#CUSTOM", wt.Color(presets[1].name, ns.colors.green[2])
+			), ns.colors.yellow[2]))
+		end,
 	})
 	wt.CreateButton({
 		parent = panel,
@@ -1089,7 +1099,14 @@ local function CreatePositionOptions(panel)
 		name = "RESETPRESET",
 		text = ns.strings.options.speedDisplay.position.resetPreset.warning:gsub("#CUSTOM", presets[1].name),
 		accept = ns.strings.misc.override,
-		onAccept = function() ResetCustomPreset() end,
+		onAccept = function()
+			ResetCustomPreset()
+
+			--Notification
+			print(wt.Color(addonTitle .. ":", ns.colors.green[1]) .. " " .. wt.Color(ns.strings.chat.reset.response:gsub(
+				"#CUSTOM", wt.Color(presets[1].name, ns.colors.green[2])
+			), ns.colors.yellow[2]))
+		end,
 	})
 	wt.CreateButton({
 		parent = panel,
@@ -1877,8 +1894,8 @@ local function CreateBackupOptions(panel)
 				--Run DB checkup on the loaded table
 				wt.RemoveEmpty(t.account, CheckValidity)
 				wt.RemoveEmpty(t.character, CheckValidity)
-				wt.AddMissing(t.account, dbDefault)
-				wt.AddMissing(t.character, dbcDefault)
+				wt.AddMissing(t.account, db)
+				wt.AddMissing(t.character, dbc)
 				RestoreOldData(t.account, t.character, wt.RemoveMismatch(t.account, db), wt.RemoveMismatch(t.character, dbc))
 
 				--Copy values from the loaded DBs to the addon DBs
@@ -2240,6 +2257,118 @@ local commandManager = wt.RegisterChatCommands(addonNameSpace, { ns.chat.keyword
 
 --[[ INITIALIZATION ]]
 
+--[ Event Handlers ]
+
+--Main frame
+local function AddonLoaded(self, addon)
+	if addon ~= addonNameSpace then return end
+	self:UnregisterEvent("ADDON_LOADED")
+
+	--[ DBs ]
+
+	local firstLoad = not MovementSpeedDB
+
+	--Load storage DBs
+	MovementSpeedDB = MovementSpeedDB or wt.Clone(dbDefault)
+	MovementSpeedDBC = MovementSpeedDBC or wt.Clone(dbcDefault)
+
+	--DB checkup & fix
+	wt.RemoveEmpty(MovementSpeedDB, CheckValidity)
+	wt.RemoveEmpty(MovementSpeedDBC, CheckValidity)
+	wt.AddMissing(MovementSpeedDB, dbDefault)
+	wt.AddMissing(MovementSpeedDBC, dbcDefault)
+	RestoreOldData(MovementSpeedDB, MovementSpeedDBC, wt.RemoveMismatch(MovementSpeedDB, dbDefault), wt.RemoveMismatch(MovementSpeedDBC, dbcDefault))
+
+	--Load working DBs
+	db = wt.Clone(MovementSpeedDB)
+	dbc = wt.Clone(MovementSpeedDBC)
+
+	--Load cross-session DBs
+	MovementSpeedCS = MovementSpeedCS or {}
+	cs = MovementSpeedCS
+
+	--Load the custom preset
+	presets[1].data = wt.Clone(db.customPreset)
+
+	--Welcome message
+	if firstLoad then PrintInfo() end
+
+	--[ Settings Setup ]
+
+	--Load cross-session data
+	if cs.compactBackup == nil then cs.compactBackup = true end
+
+	--Set up the interface options
+	CreateMainOptions()
+	CreateSpeedDisplayOptions()
+	CreateTargetSpeedOptions()
+	CreateAdvancedOptions()
+
+	--[ Frame Setup ]
+
+	--Position
+	wt.SetPosition(self, db.speedDisplay.position)
+
+	--Make movable
+	wt.SetMovability(frames.main, true, "SHIFT", { frames.playerSpeed.display, frames.travelSpeed.display }, {
+		onStop = function()
+			--Save the position (for account-wide use)
+			wt.CopyValues(wt.PackPosition(frames.main:GetPoint()), db.speedDisplay.position)
+
+			--Update in the SavedVariables DB
+			MovementSpeedDB.speedDisplay.position = wt.Clone(db.speedDisplay.position)
+
+			--Update the GUI options in case the window was open
+			frames.options.speedDisplays.position.presets.setSelected(nil, ns.strings.options.speedDisplay.position.presets.select)
+			frames.options.speedDisplays.position.anchor.setSelected(db.speedDisplay.position.anchor)
+			frames.options.speedDisplays.position.xOffset.setValue(db.speedDisplay.position.offset.x)
+			frames.options.speedDisplays.position.yOffset.setValue(db.speedDisplay.position.offset.y)
+
+			--Chat response
+			print(wt.Color(addonTitle .. ":", ns.colors.green[1]) .. " " .. wt.Color(ns.strings.chat.position.save, ns.colors.yellow[2]))
+		end,
+		onCancel = function()
+			--Reset the position
+			wt.SetPosition(frames.main, db.speedDisplay.position)
+
+			--Chat response
+			print(wt.Color(addonTitle .. ":", ns.colors.green[1]) .. " " .. wt.Color(ns.strings.chat.position.cancel, ns.colors.yellow[1]))
+			print(wt.Color(ns.strings.chat.position.error, ns.colors.yellow[2]))
+		end
+	})
+
+	--[ Display Setup ]
+
+	--Player Speed
+	SetDisplayValues("playerSpeed", db, dbc)
+
+	--Travel Speed
+	wt.SetPosition(frames.travelSpeed.display, db.travelSpeed.replacement and { anchor = "CENTER", } or {
+		anchor = "TOP",
+		relativeTo = frames.playerSpeed.display,
+		relativePoint = "BOTTOM",
+		offset = { y = -1 }
+	})
+	SetDisplayValues("travelSpeed", db, dbc)
+	wt.SetVisibility(frames.travelSpeed.display, db.travelSpeed.enabled)
+end
+local function PlayerEnteringWorld(self)
+	self:UnregisterEvent("PLAYER_ENTERING_WORLD")
+
+	--Visibility notice
+	if not self:IsVisible() or not frames.playerSpeed.display:IsVisible() then PrintStatus(true) end
+
+	--Start speed updates
+	UpdateMapInfo()
+	UpdateSpeedText("display", db.speedDisplay.value.units)
+	UpdateSpeedText("target", db.targetSpeed.value.units)
+	StartPlayerSpeedUpdates()
+	if db.travelSpeed.enabled then StartTravelSpeedUpdates() end
+	if db.targetSpeed.enabled then EnableTargetSpeedUpdates() end
+end
+
+--[ Frames ]
+
 --Set up the speed display context menu
 local function CreateContextMenu(parent)
 	local contextMenu = wt.CreateContextMenu({ parent = parent, })
@@ -2287,7 +2416,7 @@ local function CreateContextMenu(parent)
 	}) end
 end
 
---Frames & events
+--Create main addon frame & display
 frames.main = wt.CreateFrame({
 	parent = UIParent,
 	name = addonNameSpace,
@@ -2295,114 +2424,11 @@ frames.main = wt.CreateFrame({
 	size = { width = 33, height = 10 },
 	keepOnTop = true,
 	onEvent = {
-		ADDON_LOADED = function(self, addon)
-			if addon ~= addonNameSpace then return end
-			self:UnregisterEvent("ADDON_LOADED")
-
-			--[ DBs ]
-
-			local firstLoad = not MovementSpeedDB
-
-			--Load storage DBs
-			MovementSpeedDB = MovementSpeedDB or wt.Clone(dbDefault)
-			MovementSpeedDBC = MovementSpeedDBC or wt.Clone(dbcDefault)
-
-			--DB checkup & fix
-			wt.RemoveEmpty(MovementSpeedDB, CheckValidity)
-			wt.RemoveEmpty(MovementSpeedDBC, CheckValidity)
-			wt.AddMissing(MovementSpeedDB, dbDefault)
-			wt.AddMissing(MovementSpeedDBC, dbcDefault)
-			RestoreOldData(MovementSpeedDB, MovementSpeedDBC, wt.RemoveMismatch(MovementSpeedDB, dbDefault), wt.RemoveMismatch(MovementSpeedDBC, dbcDefault))
-
-			--Load working DBs
-			db = wt.Clone(MovementSpeedDB)
-			dbc = wt.Clone(MovementSpeedDBC)
-
-			--Load cross-session DBs
-			MovementSpeedCS = MovementSpeedCS or {}
-			cs = MovementSpeedCS
-
-			--Load the custom preset
-			presets[1].data = wt.Clone(db.customPreset)
-
-			--Welcome message
-			if firstLoad then PrintInfo() end
-
-			--[ Settings Setup ]
-
-			--Load cross-session data
-			if cs.compactBackup == nil then cs.compactBackup = true end
-
-			--Set up the interface options
-			CreateMainOptions()
-			CreateSpeedDisplayOptions()
-			CreateTargetSpeedOptions()
-			CreateAdvancedOptions()
-
-			--[ Frame Setup ]
-
-			--Position
-			wt.SetPosition(self, db.speedDisplay.position)
-
-			--Make movable
-			wt.SetMovability(frames.main, true, "SHIFT", { frames.playerSpeed.display, frames.travelSpeed.display }, {
-				onStop = function()
-					--Save the position (for account-wide use)
-					wt.CopyValues(wt.PackPosition(frames.main:GetPoint()), db.speedDisplay.position)
-
-					--Update in the SavedVariables DB
-					MovementSpeedDB.speedDisplay.position = wt.Clone(db.speedDisplay.position)
-
-					--Update the GUI options in case the window was open
-					frames.options.speedDisplays.position.anchor.setSelected(db.speedDisplay.position.anchor)
-					frames.options.speedDisplays.position.xOffset.setValue(db.speedDisplay.position.offset.x)
-					frames.options.speedDisplays.position.yOffset.setValue(db.speedDisplay.position.offset.y)
-
-					--Chat response
-					print(wt.Color(addonTitle .. ":", ns.colors.green[1]) .. " " .. wt.Color(ns.strings.chat.position.save, ns.colors.yellow[2]))
-				end,
-				onCancel = function()
-					--Reset the position
-					wt.SetPosition(frames.main, db.speedDisplay.position)
-
-					--Chat response
-					print(wt.Color(addonTitle .. ":", ns.colors.green[1]) .. " " .. wt.Color(ns.strings.chat.position.cancel, ns.colors.yellow[1]))
-					print(wt.Color(ns.strings.chat.position.error, ns.colors.yellow[2]))
-				end
-			})
-
-			--[ Display Setup ]
-
-			--Player Speed
-			SetDisplayValues("playerSpeed", db, dbc)
-
-			--Travel Speed
-			wt.SetPosition(frames.travelSpeed.display, db.travelSpeed.replacement and { anchor = "CENTER", } or {
-				anchor = "TOP",
-				relativeTo = frames.playerSpeed.display,
-				relativePoint = "BOTTOM",
-				offset = { y = -1 }
-			})
-			SetDisplayValues("travelSpeed", db, dbc)
-			wt.SetVisibility(frames.travelSpeed.display, db.travelSpeed.enabled)
-		end,
-		PLAYER_ENTERING_WORLD = function(self)
-			self:UnregisterEvent("PLAYER_ENTERING_WORLD")
-
-			--Visibility notice
-			if not self:IsVisible() or not frames.playerSpeed.display:IsVisible() then PrintStatus(true) end
-
-			--Start speed updates
-			UpdateMapInfo()
-			UpdateSpeedText("display", db.speedDisplay.value.units)
-			UpdateSpeedText("target", db.targetSpeed.value.units)
-			StartPlayerSpeedUpdates()
-			if db.travelSpeed.enabled then StartTravelSpeedUpdates() end
-			if db.targetSpeed.enabled then EnableTargetSpeedUpdates() end
-		end,
-		PET_BATTLE_OPENING_START = function(self) self:Hide() end,
-		PET_BATTLE_CLOSE = function(self) self:Show() end,
+		ADDON_LOADED = AddonLoaded,
+		PLAYER_ENTERING_WORLD = PlayerEnteringWorld,
 		ZONE_CHANGED_NEW_AREA = function() UpdateMapInfo() end,
+		PET_BATTLE_OPENING_START = function(self) self:Hide() end,
+		PET_BATTLE_CLOSE = function(self) if not dbc.hidden then self:Show() end end,
 	},
 	initialize = function(frame)
 		--Player Speed

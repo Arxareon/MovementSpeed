@@ -8,7 +8,7 @@ local addonNameSpace, ns = ...
 --[[ WIDGET TOOLBOX ]]
 
 --Register the toolbox
-local toolboxVersion = "1.9"
+local toolboxVersion = "1.10"
 ns.WidgetToolbox = WidgetTools.RegisterToolbox(addonNameSpace, toolboxVersion, nil) or {}
 
 --Create a new toolbox
@@ -1236,7 +1236,8 @@ if not next(ns.WidgetToolbox) then
 
 			for k, v in pairs(optionsData.onChange) do if type(k) == "string" and type(v) == "function" then
 				--Store the function
-				optionsTable.changeHandlers[k] = v
+				optionsTable.changeHandlers[optionsData.optionsKey] = optionsTable.changeHandlers[optionsData.optionsKey] or {}
+				optionsTable.changeHandlers[optionsData.optionsKey][k] = v
 
 				--Remove the function definitions, save their keys
 				optionsData.onChange[k] = nil
@@ -1344,7 +1345,7 @@ if not next(ns.WidgetToolbox) then
 		end
 
 		--Call registered onChange handlers
-		if changes then for k in pairs(changes) do optionsTable.changeHandlers[k]() end end
+		if changes then for k in pairs(changes) do optionsTable.changeHandlers[optionsKey][k]() end end
 	end
 
 	--[ Hyperlink Handlers ]
@@ -1598,13 +1599,16 @@ if not next(ns.WidgetToolbox) then
 	--- 	- **relativePoint**? [AnchorPoint](https://wowpedia.fandom.com/wiki/Anchors) *optional*
 	--- 	- ***Note:*** **t.offset** will be used when calling [Region:SetPoint(...)](https://wowpedia.fandom.com/wiki/API_ScriptRegionResizing_SetPoint) as well.
 	--- - **flipColors**? boolean *optional* ― Flip the default color values of the title and the text lines | ***Default:*** **owner.tooltipData.flipColors** or false
+	---@param clearLines? boolean Replace **owner.tooltipData.lines** with **tooltipData.lines** instead of adjusting existing values | ***Default:*** true if **tooltipData.lines** ~= nil
 	---@param override? boolean Update **owner.tooltipData** values with corresponding values provided in **tooltipData** | ***Default:*** true
-	wt.UpdateTooltip = function(owner, tooltipData, override)
+	wt.UpdateTooltip = function(owner, tooltipData, clearLines, override)
 		if not owner.tooltipData then return end
 
 		--Update the tooltip data
-		tooltipData = wt.AddMissing(tooltipData or {}, owner.tooltipData)
-		if override ~= false then owner.tooltipData = tooltipData end
+		tooltipData = tooltipData or {}
+		if clearLines ~= false and tooltipData.lines then owner.tooltipData.lines = wt.Clone(tooltipData.lines) end
+		tooltipData = wt.AddMissing(tooltipData, owner.tooltipData)
+		if override ~= false then owner.tooltipData = wt.Clone(tooltipData) end
 
 		--Position
 		tooltipData.position = tooltipData.position or {}
@@ -2159,7 +2163,7 @@ if not next(ns.WidgetToolbox) then
 	--- 	-  **gaps**? number *optional* — The amount of space to leave between rows | ***Default:*** 8
 	--- 	-  **flip**? boolean *optional* — Fill the rows from right to left instead of left to right | ***Default:*** false
 	--- 	-  **resize**? boolean *optional* — Set the height of the frame to match the space taken up by the arranged content (including margins) | ***Default:*** true
-	---@return Frame frame A base Frame object
+	---@return Frame frame
 	wt.CreateFrame = function(t)
 		t = t or {}
 
@@ -2288,8 +2292,8 @@ if not next(ns.WidgetToolbox) then
 	--- 	-  **gaps**? number *optional* — The amount of space to leave between rows | ***Default:*** 8
 	--- 	-  **flip**? boolean *optional* — Fill the rows from right to left instead of left to right | ***Default:*** false
 	--- 	-  **resize**? boolean *optional* — Set the height of the scrollable child frame to match the space taken up by the arranged content (including margins) | ***Default:*** true
-	---@return Frame scrollChild A basic Frame object
-	---@return ScrollFrame scrollFrame A basic ScrollFrame object
+	---@return Frame scrollChild
+	---@return ScrollFrame scrollFrame
 	wt.CreateScrollFrame = function(t)
 		local name = t.parent:GetName() .. (t.name and  t.name:gsub("%s+", "") or "ScrollFrame")
 
@@ -2413,7 +2417,7 @@ if not next(ns.WidgetToolbox) then
 	--- 	-  **gaps**? number *optional* — The amount of space to leave between rows | ***Default:*** 8
 	--- 	-  **flip**? boolean *optional* — Fill the rows from right to left instead of left to right | ***Default:*** false
 	--- 	-  **resize**? boolean *optional* — Set the height of the panel to match the space taken up by the arranged content (including margins) | ***Default:*** true
-	---@return Frame panel A base Frame object
+	---@return Frame panel
 	wt.CreatePanel = function(t)
 		local name = (t.append ~= false and t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "Panel")
 
@@ -3747,7 +3751,7 @@ if not next(ns.WidgetToolbox) then
 					end end
 
 					--Call specified onChange handlers
-					if t.optionsData.onChange then for i = 1, #t.optionsData.onChange do optionsTable.changeHandlers[t.optionsData.onChange[i]]() end end
+					if t.optionsData.onChange then for i = 1, #t.optionsData.onChange do optionsTable.changeHandlers[t.optionsData.optionsKey][t.optionsData.onChange[i]]() end end
 				end)
 			end
 		end
@@ -4035,7 +4039,7 @@ if not next(ns.WidgetToolbox) then
 					end end
 
 					--Call specified onChange handlers
-					if t.optionsData.onChange then for i = 1, #t.optionsData.onChange do optionsTable.changeHandlers[t.optionsData.onChange[i]]() end end
+					if t.optionsData.onChange then for i = 1, #t.optionsData.onChange do optionsTable.changeHandlers[t.optionsData.optionsKey][t.optionsData.onChange[i]]() end end
 				end)
 			end
 		end
@@ -4336,7 +4340,7 @@ if not next(ns.WidgetToolbox) then
 					end end
 
 					--Call specified onChange handlers
-					if t.optionsData.onChange then for i = 1, #t.optionsData.onChange do optionsTable.changeHandlers[t.optionsData.onChange[i]]() end end
+					if t.optionsData.onChange then for i = 1, #t.optionsData.onChange do optionsTable.changeHandlers[t.optionsData.optionsKey][t.optionsData.onChange[i]]() end end
 				end)
 			end
 		end
@@ -5511,7 +5515,7 @@ if not next(ns.WidgetToolbox) then
 					end end
 
 					--Call specified onChange handlers
-					if t.optionsData.onChange then for i = 1, #t.optionsData.onChange do optionsTable.changeHandlers[t.optionsData.onChange[i]]() end end
+					if t.optionsData.onChange then for i = 1, #t.optionsData.onChange do optionsTable.changeHandlers[t.optionsData.optionsKey][t.optionsData.onChange[i]]() end end
 				end)
 			end
 		end
@@ -5728,7 +5732,7 @@ if not next(ns.WidgetToolbox) then
 					end end
 
 					--Call specified onChange handlers
-					if t.optionsData.onChange then for i = 1, #t.optionsData.onChange do optionsTable.changeHandlers[t.optionsData.onChange[i]]() end end
+					if t.optionsData.onChange then for i = 1, #t.optionsData.onChange do optionsTable.changeHandlers[t.optionsData.optionsKey][t.optionsData.onChange[i]]() end end
 				end)
 			end
 		end
@@ -5913,7 +5917,7 @@ if not next(ns.WidgetToolbox) then
 					end end
 
 					--Call specified onChange handlers
-					if t.optionsData.onChange then for i = 1, #t.optionsData.onChange do optionsTable.changeHandlers[t.optionsData.onChange[i]]() end end
+					if t.optionsData.onChange then for i = 1, #t.optionsData.onChange do optionsTable.changeHandlers[t.optionsData.optionsKey][t.optionsData.onChange[i]]() end end
 				end)
 			end
 		end
@@ -7066,7 +7070,7 @@ if not next(ns.WidgetToolbox) then
 					end end
 
 					--Call specified onChange handlers
-					if t.optionsData.onChange then for i = 1, #t.optionsData.onChange do optionsTable.changeHandlers[t.optionsData.onChange[i]]() end end
+					if t.optionsData.onChange then for i = 1, #t.optionsData.onChange do optionsTable.changeHandlers[t.optionsData.optionsKey][t.optionsData.onChange[i]]() end end
 				end)
 			end
 		end
@@ -7552,7 +7556,7 @@ if not next(ns.WidgetToolbox) then
 					end end
 
 					--Call specified onChange handlers
-					if t.optionsData.onChange then for i = 1, #t.optionsData.onChange do optionsTable.changeHandlers[t.optionsData.onChange[i]]() end end
+					if t.optionsData.onChange then for i = 1, #t.optionsData.onChange do optionsTable.changeHandlers[t.optionsData.optionsKey][t.optionsData.onChange[i]]() end end
 				end)
 			end
 		end

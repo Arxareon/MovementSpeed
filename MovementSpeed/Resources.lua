@@ -206,11 +206,22 @@ local changelogDB = {
 		"Other minor fixes & improvements.",
 	},
 	{
-		"#V_Version 2.7_# #H_(10/5/2023)_#",
+		"#V_Version 2.7_# #H_(5/10/2023)_#",
 		"#F_Fixes:_#",
 		"Fixed an issue with actions being blocked after closing the Settings panel in certain situation (like changing Keybindings) in Dragonflight.",
 		"The current version will now run in the WotLK Classic 3.4.2 PTR but it's not yet fully polished (as parts of the UI are still being modernized).",
 		"Other minor improvements.",
+	},
+	{
+		"#V_Version 2.8_# #H_(6/15/2023)_#",
+		"#C_Updates:_#",
+		"Added 10.1.5 (Dragonflight) support.",
+		"Chat notifications will be shown when changing the Custom preset via the Settings. Also, the preset selection will now reset when the display is moved manually while the Settings window was open.",
+		"The Individual Value Coloring option will now be on by default.",
+		"#F_Fixes:_#",
+		"The speed displays will not appear after a pet battle when they are set as hidden.",
+		"Importing addon data through the Backup Advanced options will keep the currently set values when filling in missing or invalid values instead of using defaults.",
+		"Under the hood fixes & improvements.",
 		"#H_If you encounter any issues, do not hesitate to report them! Try including when & how they occur, and which other addons are you using to give me the best chance of being able to reproduce & fix them. Try proving any LUA script error messages and if you know how, taint logs as well (when relevant). Thanks a lot for helping!_#",
 	},
 }
@@ -340,7 +351,7 @@ local english = {
 				},
 				statusNotice = {
 					label = "Chat notice if hidden",
-					tooltip = "Get a chat notification about the status of the speed display if they're not visible after the interface loads.",
+					tooltip = "Get a chat notification about the status of the speed display if it's not visible after the interface loads.",
 				},
 			},
 			position = {
