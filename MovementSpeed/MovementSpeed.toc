@@ -1,9 +1,9 @@
 ## Interface: 100105 #Fallback to the Mainline version
 ## Title: Movement Speed
 ## IconTexture: Interface/AddOns/MovementSpeed/Textures/Logo.tga
-## Version: 2.8
-## X-Day: 15
-## X-Month: 6
+## Version: 2.9
+## X-Day: 24
+## X-Month: 7
 ## X-Year: 2023
 ## Author: Barnabas Nagy (Arxareon)
 ## X-Sponsors: Celierra
@@ -15,4 +15,4 @@
 
 Resources.lua
 WidgetToolbox.lua
-MovementSpeed.lua
+Main.lua

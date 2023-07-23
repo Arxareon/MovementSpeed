@@ -8,7 +8,7 @@ local addonNameSpace, ns = ...
 --[[ WIDGET TOOLBOX ]]
 
 --Register the toolbox
-local toolboxVersion = "1.10"
+local toolboxVersion = "1.11"
 ns.WidgetToolbox = WidgetTools.RegisterToolbox(addonNameSpace, toolboxVersion, nil) or {}
 
 --Create a new toolbox
@@ -159,7 +159,9 @@ if not next(ns.WidgetToolbox) then
 	--[[ UTILITIES ]]
 
 	--Classic vs Dragonflight code separation
-	wt.classic = select(4, GetBuildInfo()) < 30402
+	wt.classic = select(4, GetBuildInfo())
+	wt.classic = (wt.classic < 11404) or (wt.classic >= 20000 and wt.classic < 30402)
+	wt.preDF = select(4, GetBuildInfo()) < 100000
 
 	--[ Table Management ]
 
@@ -231,7 +233,11 @@ if not next(ns.WidgetToolbox) then
 	---@param blockrule? function Function to manually filter which keys get printed and explored further
 	--- - @*param* `key` integer|string ― The currently dumped key
 	--- - @*return* boolean ― Skip the key if the returned value is true
-	--- - ***Example - Comparison:*** Skip the key based the result of a comparison between it (if it's an index) and a specified number value
+	--- - ***Example - Match:*** Skip a specific matching key
+	--- 	```
+	--- 	function(key) return key == "skip_key" end
+	--- 	```
+	--- - ***Example - Comparison:*** Skip an index key based the result of a comparison
 	--- 	```
 	--- 	function(key)
 	--- 		if type(key) == "number" then --check if the key is an index to avoid issues with mixed tables
@@ -400,32 +406,32 @@ if not next(ns.WidgetToolbox) then
 		return tableToCheck
 	end
 
-	---Remove unused or outdated data from a table while trying to keep any old data
-	---@param tableToCheck table Reference to the table to remove unneeded key, value pairs from
+	---Remove unused or outdated data from a table while comparing it to another table and assemble the list of removed keys
+	---@param tableToCheck table Reference to the table to remove unused key, value pairs from
 	---@param tableToSample table Reference to the table to sample data from
 	---@param recoveredData? table
 	---@param recoveredKey? string
 	---@return table? recoveredData Table containing the removed key, value pairs (nested keys chained together with period characters in-between)
-	---@return table? tableToCheck Reference to **tableToCheck** (it was already overwritten during the operation, no need for setting it again)
-	wt.RemoveMismatch = function(tableToCheck, tableToSample, recoveredData, recoveredKey)
-		if not recoveredData then recoveredData = {} end
+	local function CleanTable(tableToCheck, tableToSample, recoveredData, recoveredKey)
+		recoveredData = recoveredData or {}
+
 		if type(tableToCheck) ~= "table" or type(tableToSample) ~= "table" then return recoveredData end
-		if next(tableToCheck) == nil then return end
+		if next(tableToCheck) == nil then return recoveredData end
 
 		for key, value in pairs(tableToCheck) do
-			local rk = (recoveredKey or "") .. key .. "."
+			local rk = (recoveredKey or "") .. (type(key) == "number" and ("[" .. key .. "]") or ("." .. key))
 
 			if tableToSample[key] == nil then
 				--Save the old item to the recovered data container
-				if type(value) ~= "table" then recoveredData[rk:sub(1, -2)] = value else
+				if type(value) ~= "table" then recoveredData[rk:sub(2)] = value else
 					--Go deeper to fully map out recoverable keys
 					local function GoDeeper(ttc, rck)
 						if type(ttc) ~= "table" then return end
 
 						for k, v in pairs(ttc) do
-							rck = rck .. k .. "."
+							rck = rck .. (type(k) == "number" and ("[" .. k .. "]") or ("." .. k))
 							GoDeeper(v, rck)
-							if type(v) ~= "table" then recoveredData[rck:sub(1, -2)] = v end
+							if type(v) ~= "table" then recoveredData[rck:sub(2)] = v end
 						end
 					end
 
@@ -434,10 +440,27 @@ if not next(ns.WidgetToolbox) then
 
 				--Remove the unneeded item
 				tableToCheck[key] = nil
-			else recoveredData = wt.RemoveMismatch(tableToCheck[key], tableToSample[key], recoveredData, rk) end
+			else recoveredData = CleanTable(tableToCheck[key], tableToSample[key], recoveredData, rk) end
 		end
 
 		return recoveredData, tableToCheck
+	end
+
+	---Remove unused or outdated data from a table while comparing it to another table while restoring any removed values
+	---@param tableToCheck table Reference to the table to remove unused key, value pairs from
+	---@param tableToSample table Reference to the table to sample data from
+	---@param recoveryMap? table Save removed data from matching key chains to the specified table under the specified key
+	--- - **[*key*]** string Chain of keys pointing to the old data in **tableToCheck** to be recovered (Example: "keyOne[2].keyThree.keyFour[1]")
+	--- - **[*value*]** table Recovery specifications
+	--- 	- **saveTo** table Reference to the table to save the recovered piece of data to
+	--- 	- **saveKey** string|number Save the data under this kay within the specified recovery table
+	---@return table? tableToCheck Reference to **tableToCheck** (it was already overwritten during the operation, no need for setting it again)
+	wt.RemoveMismatch = function(tableToCheck, tableToSample, recoveryMap)
+		local rd = CleanTable(tableToCheck, tableToSample)
+
+		if recoveryMap then for key, value in pairs(rd) do if recoveryMap[key] then recoveryMap[key].saveTo[recoveryMap[key].saveKey] = value end end end
+
+		return tableToCheck
 	end
 
 	---Find a value within a table at the at the first matching key
@@ -728,6 +751,21 @@ if not next(ns.WidgetToolbox) then
 
 		--Set user placed
 		if frame["SetUserPlaced"] and frame:IsMovable() then frame:SetUserPlaced(userPlaced ~= false) end
+	end
+
+	---Convert the position of a frame positioned relative to another to absolute position (being positioned in the UIParent)
+	---@param frame Frame Reference to the frame the position of which to be converted to absolute position
+	wt.ConvertToAbsolutePosition = function(frame)
+		--Store movability
+		local movable = frame:IsMovable()
+
+		--Convert position
+		frame:SetMovable(true)
+		frame:StartMoving()
+		frame:StopMovingOrSizing()
+
+		--Restore movability
+		frame:SetMovable(movable)
 	end
 
 	---Arrange the child frames of a container frame into stacked rows based on the parameters provided
@@ -1352,20 +1390,20 @@ if not next(ns.WidgetToolbox) then
 
 	---Format a clickable hyperlink text via escape sequences
 	---@param type HyperlinkType [Type of the hyperlink](https://wowpedia.fandom.com/wiki/Hyperlinks#Types) determining how it's being handled and what payload it carries
-	---@param content string A colon-separated chain of parameters determined by **type** (Example: "content1:content2:content3")
+	---@param content? string A colon-separated chain of parameters determined by **type** (Example: "content1:content2:content3") | ***Default:*** ""
 	---@param text string Clickable text to be displayed as the hyperlink
 	---@return string
 	wt.Hyperlink = function(type, content, text)
-		return "\124H" .. type .. ":" .. content .. "\124h" .. text .. "\124h"
+		return "\124H" .. type .. ":" .. (content or "") .. "\124h" .. text .. "\124h"
 	end
 
 	---Format a custom clickable addon hyperlink text via escape sequences
 	---@param addon string The name of the addon's folder (the addon namespace, not its displayed title)
 	---@param type? string A unique key signifying the type of the hyperlink specific to the addon (if the addon handles multiple different custom types of hyperlinks) in order to be able to set unique hyperlink click handlers via ***WidgetToolbox*.SetHyperlinkHandler(...)** | ***Default:*** "-"
-	---@param content string A colon-separated chain of data strings carried by the hyperlink to be provided to the handler function (Example: "content1:content2:content3")
+	---@param content? string A colon-separated chain of data strings carried by the hyperlink to be provided to the handler function (Example: "content1:content2:content3") | ***Default:*** ""
 	---@param text string Clickable text to be displayed as the hyperlink
 	wt.CustomHyperlink = function(addon, type, content, text)
-		return wt.Hyperlink(wt.classic and "item" or "addon", addon .. ":" .. (type or "-") .. ":" .. content, text)
+		return wt.Hyperlink(wt.preDF and "item" or "addon", addon .. ":" .. (type or "-") .. ":" .. (content or ""), text)
 	end
 
 	--Collection of hyperlink handler scripts
@@ -1385,7 +1423,7 @@ if not next(ns.WidgetToolbox) then
 
 		--Hook the hyperlink handler caller
 		if not next(hyperlinkHandlers) then
-			if not wt.classic then EventRegistry:RegisterCallback("SetItemRef", function(_, ...)
+			if not wt.preDF then EventRegistry:RegisterCallback("SetItemRef", function(_, ...)
 				local linkType, addonID, handlerID, payload = strsplit(":", ..., 4)
 				if linkType == "addon" then callHandler(addonID, handlerID, payload) end
 			end) else hooksecurefunc(ItemRefTooltip, "SetHyperlink", function(_, ...)
@@ -2328,7 +2366,7 @@ if not next(ns.WidgetToolbox) then
 		local scrollChild = wt.CreateFrame({
 			parent = scrollFrame,
 			name = t.scrollName and t.scrollName:gsub("%s+", "") or "ScrollChild",
-			size = { width = t.scrollSize.width or scrollFrame:GetWidth() - (wt.classic and 22 or 16), height = t.scrollSize.height },
+			size = { width = t.scrollSize.width or scrollFrame:GetWidth() - (wt.classic and 22 or (wt.preDF and 32 or 16)), height = t.scrollSize.height },
 			initialize = t.initialize,
 			arrangement = t.arrangement
 		})
@@ -2580,8 +2618,11 @@ if not next(ns.WidgetToolbox) then
 			if not enabled then return end
 			if button == "RightButton" and isInside then
 				contextMenu:RegisterEvent("GLOBAL_MOUSE_DOWN")
+
+				--Open the menu
 				contextMenu:Show()
 				PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+
 				--Position
 				if t.cursor ~= false then
 					local x, y = GetCursorPosition()
@@ -2600,6 +2641,8 @@ if not next(ns.WidgetToolbox) then
 		function contextMenu:GLOBAL_MOUSE_UP(button)
 			if (button == "LeftButton" or button == "RightButton") and not t.parent:IsMouseOver() and not contextMenu:IsMouseOver() and not checkSubmenus() then
 				contextMenu:UnregisterEvent("GLOBAL_MOUSE_UP")
+
+				--Close the menu
 				contextMenu:Hide()
 				PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_OFF)
 			end
@@ -2620,6 +2663,8 @@ if not next(ns.WidgetToolbox) then
 			if not enabled then
 				contextMenu:UnregisterEvent("GLOBAL_MOUSE_DOWN")
 				contextMenu:UnregisterEvent("GLOBAL_MOUSE_UP")
+
+				--Close the menu
 				contextMenu:Hide()
 				PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_OFF)
 			end
@@ -2827,7 +2872,7 @@ if not next(ns.WidgetToolbox) then
 	--- - **name**? string *optional* — Unique string used to set the name of the new frame | ***Default:*** "ContextMenu"
 	--- 	- ***Note:*** Space characters will be removed.
 	--- - **append**? boolean *optional* — When setting the name, append **t.name** to the name of **t.parent** instead | ***Default:*** true
-	--- - **anchor** string|Region — The current cursor position or a region or frame reference | ***Default:*** 'cursor'
+	--- - **anchor**? string|Region — The current cursor position or a region or frame reference | ***Default:*** 'cursor'
 	--- - **offset**? table *optional*
 	--- 	- **x**? number | ***Default:*** 0
 	--- 	- **y**? number | ***Default:*** 0
@@ -6099,7 +6144,7 @@ if not next(ns.WidgetToolbox) then
 
 		--Label
 		local label = wt.AddTitle({
-			parent = textBox.editBox,
+			parent = textBox,
 			title = t.label ~= false and {
 				offset = { x = -1, },
 				text = title,
@@ -6350,7 +6395,7 @@ if not next(ns.WidgetToolbox) then
 		--[ Size Update Utility ]
 
 		local scrollBar = wt.classic and _G[name .. "ScrollFrameScrollBar"] or _G[name .. "ScrollFrame"].ScrollBar
-		local scrollStripWidth = wt.classic and 22 or 16
+		local scrollStripWidth = wt.classic and 22 or (wt.preDF and 32 or 16)
 
 		local function resizeEditBox()
 			local scrollBarOffset = scrollBar:IsShown() and scrollStripWidth or 0
@@ -6618,11 +6663,12 @@ if not next(ns.WidgetToolbox) then
 	--- - **value** table
 	--- 	- **min** number — Lower numeric value limit
 	--- 	- **max** number — Upper numeric value limit
-	--- 	- **step**? number *optional* — Size of value increments | ***Default:*** *the value can be freely changed (within range, no set increments)*
-	--- 	- **fractional**? integer *optional* — If the value is fractional, display this many decimal digits | ***Default:*** *the most amount of digits present in the fractional part of* **t.value.min**, **t.value.max** *or* **t.value.step**
+	--- 	- **increment**? number *optional* — Size of value increment | ***Default:*** *the value can be freely changed (within range)*
+	--- 	- **fractional**? integer *optional* — If the value is fractional, display this many decimal digits | ***Default:*** *the most amount of digits present in the fractional part of* **t.value.min**, **t.value.max** *or* **t.value.increment**
 	--- - **valueBox**? boolean *optional* — Whether or not should the slider have an [EditBox](https://wowpedia.fandom.com/wiki/UIOBJECT_EditBox) as a child to manually enter a precise value to move the slider to | ***Default:*** true
-	--- - **sideButtons**? boolean *optional* — Whether or not to add increase/decrease buttons next to the slider to change the value by the increment set in **value.step** or by 10% of the difference of **value.min** & **value.max** | ***Default:*** true
-	--- - **altValue**? number *optional* — If set, add/subtract this much when clicking the increase/decrease buttons while holding ALT | ***Default:*** *no alternative step value*
+	--- - **sideButtons**? boolean *optional* — Whether or not to add increase/decrease buttons next to the slider to change the value by the increment set in **t.step** | ***Default:*** true
+	--- - ***step***? number *optional* — Add/subtract this much when clicking the increase/decrease buttons | ***Default:*** **t.value.increment** or (t.value.max - t.value.min) / 10
+	--- - **altStep**? number *optional* — If set, add/subtract this much when clicking the increase/decrease buttons while holding ALT | ***Default:*** *no alternative step value*
 	--- - **events**? table *optional* — Table of key, value pairs that holds script event handlers to be set for the slider
 	--- 	- **[*key*]** scriptType — Event name corresponding to a defined script handler for [Frame](https://wowpedia.fandom.com/wiki/UIOBJECT_Frame#Defined_Script_Handlers) or [Slider](https://wowpedia.fandom.com/wiki/Widget_script_handlers#Slider)
 	--- 		- ***Example:*** "[OnValueChanged](https://wowpedia.fandom.com/wiki/UIHANDLER_OnValueChanged)" whenever the value in the slider widget is modified.
@@ -6755,8 +6801,8 @@ if not next(ns.WidgetToolbox) then
 
 		--Set slider values
 		numeric.slider:SetMinMaxValues(t.value.min, t.value.max)
-		if t.value.step then
-			numeric.slider:SetValueStep(t.value.step)
+		if t.value.increment then
+			numeric.slider:SetValueStep(t.value.increment)
 			numeric.slider:SetObeyStepOnDrag(true)
 		end
 
@@ -6783,7 +6829,7 @@ if not next(ns.WidgetToolbox) then
 			local decimals = t.value.fractional or max(
 				tostring(t.value.min):gsub("-?[%d]+[%.]?([%d]*).*", "%1"):len(),
 				tostring(t.value.max):gsub("-?[%d]+[%.]?([%d]*).*", "%1"):len(),
-				tostring(t.value.step or 0):gsub("-?[%d]+[%.]?([%d]*).*", "%1"):len()
+				tostring(t.value.increment or 0):gsub("-?[%d]+[%.]?([%d]*).*", "%1"):len()
 			)
 			local decimalPattern = ""
 			for _ = 1, decimals do decimalPattern = decimalPattern .. "[%d]?" end
@@ -6817,7 +6863,7 @@ if not next(ns.WidgetToolbox) then
 					OnChar = function(self, _, text) self:SetText(text:gsub(matchPattern, replacePattern)) end,
 					OnEnterPressed = function(self)
 						local v = self:GetNumber()
-						if t.value.step then v = max(t.value.min, min(t.value.max, floor(v * (1 / t.value.step) + 0.5) / (1 / t.value.step))) end
+						if t.value.increment then v = max(t.value.min, min(t.value.max, floor(v * (1 / t.value.increment) + 0.5) / (1 / t.value.increment))) end
 						self.setText(tostring(wt.Round(v, decimals)):gsub(matchPattern, replacePattern))
 						numeric.slider:SetValue(v)
 
@@ -6855,7 +6901,7 @@ if not next(ns.WidgetToolbox) then
 		--[ Side Buttons ]
 
 		if t.sideButtons ~= false then
-			local step = t.value.step or ((t.value.max - t.value.min) / 10)
+			t.step = t.step or t.value.increment or ((t.value.max - t.value.min) / 10)
 
 			--[ Decrease Value ]
 
@@ -6867,8 +6913,8 @@ if not next(ns.WidgetToolbox) then
 				tooltip = {
 					title = strings.slider.decrease.label,
 					lines = {
-						{ text = strings.slider.decrease.tooltip[1]:gsub("#VALUE", step), },
-						t.altValue and { text = strings.slider.decrease.tooltip[2]:gsub("#VALUE", t.altValue), } or nil,
+						{ text = strings.slider.decrease.tooltip[1]:gsub("#VALUE", t.step), },
+						t.altStep and { text = strings.slider.decrease.tooltip[2]:gsub("#VALUE", t.altStep), } or nil,
 					}
 				},
 				position = {
@@ -6885,7 +6931,7 @@ if not next(ns.WidgetToolbox) then
 					disabled = "GameFontDisableMed2",
 				},
 				events = { OnClick = function()
-					numeric.slider:SetValue(numeric.slider:GetValue() - (IsAltKeyDown() and t.altValue or step))
+					numeric.slider:SetValue(numeric.slider:GetValue() - (IsAltKeyDown() and t.altStep or t.step))
 
 					--Call listener & set attribute
 					local value = numeric.slider:GetValue()
@@ -6943,8 +6989,8 @@ if not next(ns.WidgetToolbox) then
 				tooltip = {
 					title = strings.slider.increase.label,
 					lines = {
-						{ text = strings.slider.increase.tooltip[1]:gsub("#VALUE", step), },
-						t.altValue and { text = strings.slider.increase.tooltip[2]:gsub("#VALUE", t.altValue), } or nil,
+						{ text = strings.slider.increase.tooltip[1]:gsub("#VALUE", t.step), },
+						t.altStep and { text = strings.slider.increase.tooltip[2]:gsub("#VALUE", t.altStep), } or nil,
 					}
 				},
 				position = {
@@ -6961,7 +7007,7 @@ if not next(ns.WidgetToolbox) then
 					disabled = "GameFontDisableMed2",
 				},
 				events = { OnClick = function()
-					numeric.slider:SetValue(numeric.slider:GetValue() + (IsAltKeyDown() and t.altValue or step))
+					numeric.slider:SetValue(numeric.slider:GetValue() + (IsAltKeyDown() and t.altStep or t.step))
 
 					--Call listener & set attribute
 					local value = numeric.slider:GetValue()

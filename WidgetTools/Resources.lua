@@ -67,6 +67,14 @@ local changelogDB = {
 		"#F_Fixes:_#",
 		"No tooltip will stay on the screen after its target was hidden.",
 		"Under the hood fixes & improvements.",
+	},
+	{
+		"#V_Version 1.11_# #H_(7/18/2023)_#",
+		"#C_Changes:_#",
+		"Added 1.14.4 (Classic) support with 1.14.3 backwards compatibility (until the Hardcore patch goes live).",
+		"Scrolling has been improved in WotLK Classic.",
+		"Backwards compatibility ensuring editboxes work with Toolbox version 1.5 has been removed.",
+		"Other small improvements.",
 		"#H_If you encounter any issues, do not hesitate to report them! Try including when & how they occur, and which other addons are you using to give me the best chance of being able to reproduce & fix them. Try proving any LUA script error messages and if you know how, taint logs as well (when relevant). Thanks a lot for helping!_#",
 	},
 }

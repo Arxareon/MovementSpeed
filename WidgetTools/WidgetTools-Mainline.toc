@@ -1,16 +1,15 @@
 ## Interface: 100105
 ## Title: Widget Tools
 ## IconTexture: Interface/AddOns/WidgetTools/Textures/Logo.tga
-## Version: 1.10
-## X-Day: 15
-## X-Month: 6
+## Version: 1.11
+## X-Day: 18
+## X-Month: 7
 ## X-Year: 2023
 ## Author: Barnabas Nagy (Arxareon)
 ## X-Sponsors: Celierra
 ## X-License: All Rights Reserved
 ## Notes: Responsible for doing the heavy lifting for dependant addons in the background.
 
-Templates.xml
 Resources.lua
-WidgetTools.lua
+Main.lua
 WidgetToolbox.lua

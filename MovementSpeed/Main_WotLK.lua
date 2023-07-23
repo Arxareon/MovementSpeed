@@ -29,7 +29,7 @@ local dbDefault = {
 		},
 		position = {
 			anchor = "TOP",
-			offset = { x = 0, y = -60 },
+			offset = { x = 0, y = -100 }
 		},
 		layer = {
 			strata = "MEDIUM",
@@ -59,12 +59,6 @@ local dbDefault = {
 		throttle = false,
 		frequency = 0.15,
 	},
-	travelSpeed = {
-		enabled = false,
-		replacement = true,
-		throttle = true,
-		frequency = 0.15,
-	},
 	targetSpeed = {
 		enabled = true,
 		value = {
@@ -90,11 +84,11 @@ local presets = {
 		},
 	},
 	{
-		name = ns.strings.options.speedDisplay.position.presets.list[1], --Under Default Minimap
+		name = ns.strings.options.speedDisplay.position.presets.classicList[1], --Under Minimap Clock
 		data = {
 			position = {
-				anchor = "RIGHT",
-				offset = { x = -100, y = 222 },
+				anchor = "TOPRIGHT",
+				offset = { x = -69, y = -178 }
 			},
 			layer = {
 				strata = "MEDIUM"
@@ -111,7 +105,6 @@ dbDefault.customPreset = wt.Clone(presets[1].data)
 --Local frame references
 local frames = {
 	playerSpeed = {},
-	travelSpeed = {},
 	options = {
 		main = {},
 		speedDisplays = {
@@ -125,7 +118,6 @@ local frames = {
 			},
 		},
 		playerSpeed = {},
-		travelSpeed = {},
 		targetSpeed = {
 			value = {},
 		},
@@ -139,26 +131,11 @@ local frames = {
 local speed = {
 	player = {
 		yards = 0,
-		coords = { x = 0, y = 0 }
-	},
-	travel = {
-		yards = 0,
-		coords = { x = 0, y = 0 }
 	},
 	target = {
 		yards = 0,
-		coords = { x = 0, y = 0 }
 	}
 }
-
---Map info
-local map = { size = {} }
-
---Player position at the last Travel Speed update
-local pastPosition
-
---System time of the last Travel Speed update
-local lastTime = 0
 
 --Speed text templates
 local speedText = {}
@@ -198,42 +175,76 @@ local function CheckValidity(k, v)
 	end return true
 end
 
----Restore old data to an account-wide and character-specific DB by matching removed items to known old keys
----@param data table
----@param characterData table
----@param recoveredData? table
----@param recoveredCharacterData? table
-local function RestoreOldData(data, characterData, recoveredData, recoveredCharacterData)
-	if recoveredData ~= nil then for k, v in pairs(recoveredData) do
-		if k == "preset.point" or k == "customPreset.position.point" then data.customPreset.position.anchor = v
-		elseif k == "position.point" or k == "speedDisplay.position.point" then data.speedDisplay.position.anchor = v
-		elseif k == "preset.offsetX" or k == "position.offset.x" then data.speedDisplay.position.offset.x = v
-		elseif k == "preset.offsetY" or k == "position.offset.y" then data.speedDisplay.position.offset.y = v
-		elseif k == "visibility.frameStrata" or k == "appearance.frameStrata" or k == "speedDisplay.visibility.frameStrata" then data.speedDisplay.layer.strata = v
-		elseif k == "visibility.backdrop" or k == "appearance.backdrop.visible" then data.speedDisplay.background.visible = v
-		elseif k == "appearance.backdrop.color.r" then data.speedDisplay.background.colors.bg.r = v
-		elseif k == "appearance.backdrop.color.g" then data.speedDisplay.background.colors.bg.g = v
-		elseif k == "appearance.backdrop.color.b" then data.speedDisplay.background.colors.bg.b = v
-		elseif k == "appearance.backdrop.color.a" then data.speedDisplay.background.colors.bg.a = v
-		elseif k == "fontSize" or k == "font.size" or k == "speedDisplay.text.font.size" then data.speedDisplay.font.size = v
-		elseif k == "font.family" or k == "speedDisplay.text.font.family" then data.speedDisplay.font.family = v
-		elseif k == "font.color.r" or k == "speedDisplay.text.font.color.r" then data.speedDisplay.font.color.r = v
-		elseif k == "font.color.g" or k == "speedDisplay.text.font.color.g" then data.speedDisplay.font.color.g = v
-		elseif k == "font.color.b" or k == "speedDisplay.text.font.color.b" then data.speedDisplay.font.color.b = v
-		elseif k == "font.color.a" or k == "speedDisplay.text.font.color.a" then data.speedDisplay.font.color.a = v
-		elseif k == "speedDisplay.font.text.valueType" or k == "speedDisplay.value.type" then data.speedDisplay.value.units = { v == 0 or v == 2, v == 1 or v == 2, false }
-		elseif k == "speedDisplay.font.text.decimals" or k == "speedDisplay.value.decimals" then data.speedDisplay.value.fractionals = v
-		elseif k == "speedDisplay.font.text.noTrim" then data.speedDisplay.value.noTrim = v
-		elseif k == "targetSpeed.tooltip.enabled" then data.targetSpeed.enabled = v
-		elseif k == "targetSpeed.tooltip.text.valueType" or k == "targetSpeed.value.type" then data.targetSpeed.value.units = { v == 0 or v == 2, v == 1 or v == 2, false }
-		elseif k == "targetSpeed.tooltip.text.decimals" or k == "targetSpeed.value.decimals" then data.targetSpeed.value.fractionals = v
-		elseif k == "targetSpeed.tooltip.text.noTrim" then data.targetSpeed.value.noTrim = v
-		elseif k == "visibility.hidden" or k == "appearance.hidden" then characterData.hidden = v end
-	end end
-	if recoveredCharacterData ~= nil then for k, v in pairs(recoveredCharacterData) do
-		if k == "hidden" then characterData.hidden = v
-		end
-	end end
+--Check & fix the account-wide & character-specific DBs
+---@param dbCheck table
+---@param dbSample table
+---@param dbcCheck table
+---@param dbcSample table
+local function CheckDBs(dbCheck, dbSample, dbcCheck, dbcSample)
+	wt.RemoveEmpty(dbCheck, CheckValidity)
+	wt.RemoveEmpty(dbcCheck, CheckValidity)
+	wt.AddMissing(dbCheck, dbSample)
+	wt.AddMissing(dbcCheck, dbcSample)
+	wt.RemoveMismatch(dbCheck, dbSample, {
+		["preset.point"] = { saveTo = dbCheck.customPreset.position, saveKey = "anchor" },
+		["customPreset.position.point"] = { saveTo = dbCheck.customPreset.position, saveKey = "anchor" },
+		["preset.offsetX"] = { saveTo = dbCheck.customPreset.position.offset, saveKey = "x" },
+		["preset.offsetY"] = { saveTo = dbCheck.customPreset.position.offset, saveKey = "y" },
+		["position.point"] = { saveTo = dbCheck.speedDisplay.position, saveKey = "anchor" },
+		["speedDisplay.position.point"] = { saveTo = dbCheck.speedDisplay.position, saveKey = "anchor" },
+		["position.offset.x"] = { saveTo = dbCheck.speedDisplay.position.offset, saveKey = "x" },
+		["position.offset.y"] = { saveTo = dbCheck.speedDisplay.position.offset, saveKey = "y" },
+		["visibility.frameStrata"] = { saveTo = dbCheck.speedDisplay.layer, saveKey = "strata" },
+		["appearance.frameStrata"] = { saveTo = dbCheck.speedDisplay.layer, saveKey = "strata" },
+		["speedDisplay.visibility.frameStrata"] = { saveTo = dbCheck.speedDisplay.layer, saveKey = "strata" },
+		["visibility.backdrop"] = { saveTo = dbCheck.speedDisplay.background, saveKey = "visible" },
+		["appearance.backdrop.visible"] = { saveTo = dbCheck.speedDisplay.background, saveKey = "visible" },
+		["appearance.backdrop.color.r"] = { saveTo = dbCheck.speedDisplay.background.colors.bg, saveKey = "r" },
+		["appearance.backdrop.color.g"] = { saveTo = dbCheck.speedDisplay.background.colors.bg, saveKey = "g" },
+		["appearance.backdrop.color.b"] = { saveTo = dbCheck.speedDisplay.background.colors.bg, saveKey = "b" },
+		["appearance.backdrop.color.a"] = { saveTo = dbCheck.speedDisplay.background.colors.bg, saveKey = "a" },
+		["fontSize"] = { saveTo = dbCheck.speedDisplay.font, saveKey = "size" },
+		["font.size"] = { saveTo = dbCheck.speedDisplay.font, saveKey = "size" },
+		["speedDisplay.text.font.size"] = { saveTo = dbCheck.speedDisplay.font, saveKey = "size" },
+		["font.family"] = { saveTo = dbCheck.speedDisplay.font, saveKey = "family" },
+		["speedDisplay.text.font.family"] = { saveTo = dbCheck.speedDisplay.font, saveKey = "family" },
+		["font.color.r"] = { saveTo = dbCheck.speedDisplay.font.color, saveKey = "r" },
+		["speedDisplay.text.font.color.r"] = { saveTo = dbCheck.speedDisplay.font.color, saveKey = "r" },
+		["font.color.g"] = { saveTo = dbCheck.speedDisplay.font.color, saveKey = "g" },
+		["speedDisplay.text.font.color.g"] = { saveTo = dbCheck.speedDisplay.font.color, saveKey = "g" },
+		["font.color.b"] = { saveTo = dbCheck.speedDisplay.font.color, saveKey = "b" },
+		["speedDisplay.text.font.color.b"] = { saveTo = dbCheck.speedDisplay.font.color, saveKey = "b" },
+		["font.color.a"] = { saveTo = dbCheck.speedDisplay.font.color, saveKey = "a" },
+		["speedDisplay.text.font.color.a"] = { saveTo = dbCheck.speedDisplay.font.color, saveKey = "a" },
+		["speedDisplay.font.text.valueType"] = { saveTo = dbCheck.speedDisplay.value, saveKey = "units" },
+		["speedDisplay.value.type"] = { saveTo = dbCheck.speedDisplay.value, saveKey = "units" },
+		["speedDisplay.font.text.decimals"] = { saveTo = dbCheck.speedDisplay.value, saveKey = "fractionals" },
+		["speedDisplay.value.decimals"] = { saveTo = dbCheck.speedDisplay.value, saveKey = "fractionals" },
+		["speedDisplay.font.text.noTrim"] = { saveTo = dbCheck.speedDisplay.value, saveKey = "noTrim" },
+		["targetSpeed.tooltip.enabled"] = { saveTo = dbCheck.targetSpeed, saveKey = "enabled" },
+		["targetSpeed.tooltip.text.valueType"] = { saveTo = dbCheck.targetSpeed.value, saveKey = "units" },
+		["targetSpeed.value.type"] = { saveTo = dbCheck.targetSpeed.value, saveKey = "units" },
+		["targetSpeed.tooltip.text.decimals"] = { saveTo = dbCheck.targetSpeed.value, saveKey = "fractionals" },
+		["targetSpeed.value.decimals"] = { saveTo = dbCheck.targetSpeed.value, saveKey = "fractionals" },
+		["targetSpeed.tooltip.text.noTrim"] = { saveTo = dbCheck.targetSpeed.value, saveKey = "noTrim" },
+		["visibility.hidden"] = { saveTo = dbcCheck, saveKey = "hidden" },
+		["appearance.hidden"] = { saveTo = dbcCheck, saveKey = "hidden" },
+	})
+	wt.RemoveMismatch(dbcCheck, dbcSample, {
+		["hidden"] = { saveTo = dbcCheck, saveKey = "hidden" },
+	})
+
+	--Convert value type units
+	dbCheck.speedDisplay.value.units = {
+		dbCheck.speedDisplay.value.units == 0 or dbCheck.speedDisplay.value.units == 2,
+		dbCheck.speedDisplay.value.units == 1 or dbCheck.speedDisplay.value.units == 2,
+		false
+	}
+	dbCheck.targetSpeed.value.units = {
+		dbCheck.targetSpeed.value.units == 0 or dbCheck.targetSpeed.value.units == 2,
+		dbCheck.targetSpeed.value.units == 1 or dbCheck.targetSpeed.value.units == 2,
+		false
+	}
 end
 
 --[ Speed Update ]
@@ -241,27 +252,6 @@ end
 --Get the current Player Speed values accessible through **speed**
 local function UpdatePlayerSpeed()
 	speed.player.yards = GetUnitSpeed(UnitInVehicle("player") and "vehicle" or "player")
-	speed.player.coords.x, speed.player.coords.y = speed.player.yards / (map.size.w / 100), speed.player.yards / (map.size.h / 100)
-end
-
---Updates the current Travel Speed since the last sample accessible through **speed**
-local function UpdateTravelSpeed()
-	local time = GetTime()
-	local delta = time - lastTime
-	delta = delta < 0.05 and 1 or delta
-	local currentPosition = map.id and C_Map.GetPlayerMapPosition(map.id, "player") or nil
-
-	if (pastPosition and currentPosition and not IsInInstance() and not C_Garrison.IsOnGarrisonMap()) then
-		speed.travel.coords.x, speed.travel.coords.y = (currentPosition.x - pastPosition.x) * map.size.w, (currentPosition.y - pastPosition.y) * map.size.h
-		speed.travel.yards = math.sqrt(speed.travel.coords.x ^ 2 + speed.travel.coords.y ^ 2) / (time - lastTime)
-		speed.travel.coords.x, speed.travel.coords.y = math.abs(speed.travel.coords.x), math.abs(speed.travel.coords.y)
-	else speed.travel.yards = 0 end
-
-	-- print(db.travelSpeed.throttle) --FIXME
-	-- wt.Dump(speed.travel, delta)
-
-	pastPosition = currentPosition
-	lastTime = time
 end
 
 ---Format the specified speed value based on the DB specifications
@@ -276,10 +266,6 @@ local function FormatSpeedValue(type)
 		"#PERCENT", wt.FormatThousands(speed[type].yards / 7 * 100, db[key].value.fractionals, true, not db[key].value.noTrim) .. (target and "%%%%" or "")
 	):gsub(
 		"#YARDS", wt.FormatThousands(speed[type].yards, db[key].value.fractionals, true, not db[key].value.noTrim)
-	):gsub(
-		"#X", wt.FormatThousands(speed[type].coords.x, f, true, not db[key].value.noTrim)
-	):gsub(
-		"#Y", wt.FormatThousands(speed[type].coords.y, f, true, not db[key].value.noTrim)
 	)
 end
 
@@ -293,17 +279,8 @@ local function UpdateSpeedText(template, units)
 	if units[2] then speedText[template] = speedText[template] .. ns.strings.speedValue.separator .. wt.Color(ns.strings.speedValue.yps:gsub(
 		"#YARDS", wt.Color("#YARDS", ns.colors.yellow[2])
 	), ns.colors.yellow[1]) end
-	if units[3] then speedText[template] = speedText[template] .. ns.strings.speedValue.separator .. wt.Color(ns.strings.speedValue.cps:gsub(
-		"#COORDS", wt.Color(ns.strings.speedValue.coordPair, ns.colors.blue[2])
-	), ns.colors.blue[1]) end
 
 	speedText[template] = speedText[template]:sub(#ns.strings.speedValue.separator + 1)
-end
-
-local function UpdateMapInfo()
-	map.id = C_Map.GetBestMapForUnit("player")
-	map.name = C_Map.GetMapInfo(map.id).name
-	map.size.w, map.size.h = C_Map.GetMapWorldSize(map.id)
 end
 
 --[ Speed Displays ]
@@ -446,31 +423,6 @@ local function GetSpeedDisplayTooltipLines(type)
 			color = ns.colors.green[1],
 		},
 		{
-			text = "\n" .. ns.strings.speedTooltip.text[3]:gsub(
-				"#COORDS", wt.Color(ns.strings.speedValue.coordPair:gsub(
-					"#X", wt.FormatThousands(speed[type].coords.x, 2, true)
-				):gsub(
-					"#Y", wt.FormatThousands(speed[type].coords.y, 2, true)
-				), ns.colors.blue[2])
-			),
-			font = GameTooltipText,
-			color = ns.colors.blue[1],
-		},
-		{
-			text = "\n" .. ns.strings.speedTooltip.mapTitle:gsub("#MAP", wt.Color(map.name, { r = 1, g = 1, b = 1 })),
-			color = NORMAL_FONT_COLOR,
-		},
-		{
-			text = ns.strings.speedTooltip.mapSize:gsub(
-				"#SIZE", wt.Color(ns.strings.speedTooltip.mapSizeValues:gsub(
-					"#W", wt.Color(wt.FormatThousands(map.size.w, 2), { r = 1, g = 1, b = 1 })
-				):gsub(
-					"#H", wt.Color(wt.FormatThousands(map.size.h, 2), { r = 1, g = 1, b = 1 })
-				), ns.colors.grey[2])
-			),
-			color = NORMAL_FONT_COLOR,
-		},
-		{
 			text = "\n" .. ns.strings.speedTooltip.hintOptions,
 			font = GameFontNormalTiny,
 			color = ns.colors.grey[1],
@@ -492,24 +444,14 @@ local function StartPlayerSpeedUpdates()
 		frames.playerSpeed.updater.ticker = C_Timer.NewTicker(db.playerSpeed.frequency, function()
 			UpdatePlayerSpeed()
 			frames.playerSpeed.text:SetText(FormatSpeedValue("player"))
-			wt.SetVisibility(
-				frames.playerSpeed.display, not (db.speedDisplay.visibility.autoHide or (db.travelSpeed.replacement and speed.travel.yards ~= 0)) or speed.player.yards ~= 0
-			)
-			if db.travelSpeed.replacement then wt.SetVisibility(
-				frames.travelSpeed.display, (not db.speedDisplay.visibility.autoHide or speed.travel.yards ~= 0) and not (speed.player.yards ~= 0 or speed.travel.yards == 0)
-			) end
+			wt.SetVisibility(frames.playerSpeed.display, not db.speedDisplay.visibility.autoHide or speed.player.yards ~= 0)
 		end)
 	else
 		--Set an update event
 		frames.playerSpeed.updater:SetScript("OnUpdate", function()
 			UpdatePlayerSpeed()
 			frames.playerSpeed.text:SetText(FormatSpeedValue("player"))
-			wt.SetVisibility(
-				frames.playerSpeed.display, not (db.speedDisplay.visibility.autoHide or (db.travelSpeed.replacement and speed.travel.yards ~= 0)) or speed.player.yards ~= 0
-			)
-			if db.travelSpeed.replacement then wt.SetVisibility(
-				frames.travelSpeed.display, (not db.speedDisplay.visibility.autoHide or speed.travel.yards ~= 0) and not (speed.player.yards ~= 0 or speed.travel.yards == 0)
-			) end
+			wt.SetVisibility(frames.playerSpeed.display, not db.speedDisplay.visibility.autoHide or speed.player.yards ~= 0)
 		end)
 	end
 end
@@ -519,33 +461,6 @@ local function StopPlayerSpeedUpdates()
 	--Stop speed updates
 	frames.playerSpeed.updater:SetScript("OnUpdate", nil)
 	if frames.playerSpeed.updater.ticker then frames.playerSpeed.updater.ticker:Cancel() end
-end
-
---[ Travel Speed ]
-
---Start updating the Travel Speed display
-local function StartTravelSpeedUpdates()
-	if db.travelSpeed.throttle then
-		--Start a repeating timer
-		frames.travelSpeed.updater.ticker = C_Timer.NewTicker(db.travelSpeed.frequency, function()
-			UpdateTravelSpeed()
-			frames.travelSpeed.text:SetText(FormatSpeedValue("travel"))
-			if not db.travelSpeed.replacement then wt.SetVisibility(frames.travelSpeed.display, (not db.speedDisplay.visibility.autoHide or speed.travel.yards ~= 0)) end
-		end)
-	else
-		--Set an update event
-		frames.travelSpeed.updater:SetScript("OnUpdate", function()
-			UpdateTravelSpeed()
-			frames.travelSpeed.text:SetText(FormatSpeedValue("travel"))
-			if not db.travelSpeed.replacement then wt.SetVisibility(frames.travelSpeed.display, (not db.speedDisplay.visibility.autoHide or speed.travel.yards ~= 0)) end
-		end)
-	end
-end
-
---Stop updating the Travel Speed display
-local function StopTravelSpeedUpdates()
-	frames.travelSpeed.updater:SetScript("OnUpdate", nil)
-	if frames.travelSpeed.updater.ticker then frames.travelSpeed.updater.ticker:Cancel() end
 end
 
 --[ Target Speed ]
@@ -562,7 +477,7 @@ local function EnableTargetSpeedUpdates()
 	targetSpeedEnabled = true
 
 	--Start mouseover Target Speed updates
-	TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Unit, function(tooltip)
+	GameTooltip:HookScript("OnTooltipSetUnit", function(tooltip)
 		if not db.targetSpeed.enabled then return end
 
 		frames.targetSpeed:SetScript("OnUpdate", function()
@@ -570,7 +485,6 @@ local function EnableTargetSpeedUpdates()
 
 			--Update target speed values
 			speed.target.yards = GetUnitSpeed("mouseover")
-			speed.target.coords.x, speed.target.coords.y = speed.target.yards / (map.size.w / 100), speed.target.yards / (map.size.h / 100)
 
 			--Find the speed line
 			local lineAdded = false
@@ -601,7 +515,7 @@ end
 
 --Resources
 local valueTypes = {}
-for i = 1, #ns.strings.options.speedValue.units.list do
+for i = 1, #ns.strings.options.speedValue.units.list - 1 do
 	valueTypes[i] = {}
 	valueTypes[i].title = ns.strings.options.speedValue.units.list[i].label
 	valueTypes[i].tooltip = { lines = { { text = ns.strings.options.speedValue.units.list[i].tooltip, }, } }
@@ -889,6 +803,7 @@ local function CreateAboutInfo(panel)
 							font = { normal = "GameFontDisable", },
 							color = ns.colors.grey[2],
 							readOnly = true,
+							scrollSpeed = 0.2,
 						})
 
 						--Button: Close
@@ -1145,7 +1060,8 @@ local function CreatePositionOptions(panel)
 		tooltip = { lines = { { text = ns.strings.options.speedDisplay.position.xOffset.tooltip, }, } },
 		arrange = { newRow = false, },
 		value = { min = -500, max = 500, fractional = 2 },
-		altValue = 1,
+		step = 1,
+		altStep = 25,
 		events = { OnValueChanged = function(_, _, user) if user then
 			frames.options.speedDisplays.position.presets.setSelected(nil, ns.strings.options.speedDisplay.position.presets.select)
 		end end, },
@@ -1166,7 +1082,8 @@ local function CreatePositionOptions(panel)
 		tooltip = { lines = { { text = ns.strings.options.speedDisplay.position.yOffset.tooltip, }, } },
 		arrange = { newRow = false, },
 		value = { min = -500, max = 500, fractional = 2 },
-		altValue = 1,
+		step = 1,
+		altStep = 25,
 		events = { OnValueChanged = function(_, _, user) if user then
 			frames.options.speedDisplays.position.presets.setSelected(nil, ns.strings.options.speedDisplay.position.presets.select)
 		end end, },
@@ -1225,7 +1142,7 @@ local function CreatePlayerSpeedOptions(panel)
 		title = ns.strings.options.speedDisplay.update.frequency.label,
 		tooltip = { lines = { { text = ns.strings.options.speedDisplay.update.frequency.tooltip, }, } },
 		arrange = { newRow = false, },
-		value = { min = 0.05, max = 1, step = 0.05 },
+		value = { min = 0.05, max = 1, increment = 0.05 },
 		dependencies = {
 			{ frame = frames.options.speedDisplays.visibility.hidden, evaluate = function(state) return not state end },
 			{ frame = frames.options.playerSpeed.throttle },
@@ -1235,102 +1152,6 @@ local function CreatePlayerSpeedOptions(panel)
 			workingTable = db.playerSpeed,
 			storageKey = "frequency",
 			onChange = { "RefreshPlayerSpeedUpdates", }
-		}
-	})
-end
-local function CreateTravelSpeedOptions(panel)
-	--Checkbox: Enabled
-	frames.options.travelSpeed.enabled = wt.CreateCheckbox({
-		parent = panel,
-		title = ns.strings.options.speedDisplay.travelSpeed.enabled.label,
-		tooltip = { lines = { { text = ns.strings.options.speedDisplay.travelSpeed.enabled.tooltip, }, } },
-		arrange = {},
-		dependencies = { { frame = frames.options.speedDisplays.visibility.hidden, evaluate = function(state) return not state end }, },
-		optionsData = {
-			optionsKey = addonNameSpace .. "SpeedDisplays",
-			workingTable = db.travelSpeed,
-			storageKey = "enabled",
-			onChange = {
-				PositionTravelDisplay = function() wt.SetPosition(frames.travelSpeed.display, db.travelSpeed.replacement and { anchor = "CENTER", } or {
-					anchor = "TOP",
-					relativeTo = frames.playerSpeed.display,
-					relativePoint = "BOTTOM",
-					offset = { y = -1 }
-				}) end,
-				ToggleTravelSpeedUpdates = function()
-					wt.SetVisibility(frames.travelSpeed.display, db.travelSpeed.enabled)
-					if db.travelSpeed.enabled then StartTravelSpeedUpdates() else StopTravelSpeedUpdates() end
-				end,
-			}
-		}
-	})
-
-	--Checkbox: Replacement
-	frames.options.travelSpeed.replacement = wt.CreateCheckbox({
-		parent = panel,
-		name = "Replacement",
-		title = ns.strings.options.speedDisplay.travelSpeed.replacement.label,
-		tooltip = { lines = { { text = ns.strings.options.speedDisplay.travelSpeed.replacement.tooltip, }, } },
-		arrange = { newRow = false, },
-		autoOffset = true,
-		dependencies = {
-			{ frame = frames.options.speedDisplays.visibility.hidden, evaluate = function(state) return not state end },
-			{ frame = frames.options.travelSpeed.enabled, },
-		},
-		optionsData = {
-			optionsKey = addonNameSpace .. "SpeedDisplays",
-			workingTable = db.travelSpeed,
-			storageKey = "replacement",
-			onChange = { "PositionTravelDisplay", }
-		}
-	})
-
-	--Checkbox: Throttle
-	frames.options.travelSpeed.throttle = wt.CreateCheckbox({
-		parent = panel,
-		name = "Throttle",
-		title = ns.strings.options.speedDisplay.update.throttle.label,
-		tooltip = { lines = { { text = ns.strings.options.speedDisplay.update.throttle.tooltip, }, } },
-		arrange = {},
-		dependencies = {
-			{ frame = frames.options.speedDisplays.visibility.hidden, evaluate = function(state) return not state end },
-			{ frame = frames.options.travelSpeed.enabled, },
-		},
-		events = { OnClick = function()
-			--Refresh Travel Speed updates
-			StopTravelSpeedUpdates()
-			if frames.options.travelSpeed.enabled.getState() then StartTravelSpeedUpdates() end
-		end, },
-		optionsData = {
-			optionsKey = addonNameSpace .. "SpeedDisplays",
-			workingTable = db.travelSpeed,
-			storageKey = "throttle",
-		}
-	})
-
-	--Slider: Frequency
-	frames.options.travelSpeed.frequency = wt.CreateSlider({
-		parent = panel,
-		name = "Frequency",
-		title = ns.strings.options.speedDisplay.update.frequency.label,
-		tooltip = { lines = { { text = ns.strings.options.speedDisplay.update.frequency.tooltip, }, } },
-		arrange = { newRow = false, },
-		value = { min = 0.05, max = 1, step = 0.05 },
-		dependencies = {
-			{ frame = frames.options.speedDisplays.visibility.hidden, evaluate = function(state) return not state end },
-			{ frame = frames.options.travelSpeed.enabled, },
-		},
-		events = { OnValueChanged = function(_, _, user)
-			if not user then return end
-
-			--Refresh Travel Speed updates
-			StopTravelSpeedUpdates()
-			if frames.options.travelSpeed.enabled.getState() then StartTravelSpeedUpdates() end
-		end, },
-		optionsData = {
-			optionsKey = addonNameSpace .. "SpeedDisplays",
-			workingTable = db.travelSpeed,
-			storageKey = "frequency",
 		}
 	})
 end
@@ -1353,9 +1174,6 @@ local function CreateSpeedValueOptions(panel)
 				UpdateDisplaySizes = function()
 					--Player Speed
 					SetDisplaySize("playerSpeed")
-
-					--Travel Speed
-					SetDisplaySize("travelSpeed")
 				end,
 				UpdateSpeedTextTemplate = function() UpdateSpeedText("display", db.speedDisplay.value.units) end,
 			}
@@ -1369,7 +1187,7 @@ local function CreateSpeedValueOptions(panel)
 		title = ns.strings.options.speedValue.fractionals.label,
 		tooltip = { lines = { { text = ns.strings.options.speedValue.fractionals.tooltip, }, } },
 		arrange = { newRow = false, },
-		value = { min = 0, max = 4, step = 1 },
+		value = { min = 0, max = 4, increment = 1 },
 		dependencies = { { frame = frames.options.speedDisplays.visibility.hidden, evaluate = function(state) return not state end }, },
 		optionsData = {
 			optionsKey = addonNameSpace .. "SpeedDisplays",
@@ -1429,9 +1247,6 @@ local function CreateFontOptions(panel)
 				UpdateDisplayFonts = function()
 					--Player Speed
 					frames.playerSpeed.text:SetFont(db.speedDisplay.font.family, db.speedDisplay.font.size, "THINOUTLINE")
-
-					--Travel Speed
-					frames.travelSpeed.text:SetFont(db.speedDisplay.font.family, db.speedDisplay.font.size, "THINOUTLINE")
 				end,
 				"UpdateDisplaySizes",
 				RefreshDisplayTexts = function() --Refresh the text so the font will be applied right away (if the font is loaded)
@@ -1439,11 +1254,6 @@ local function CreateFontOptions(panel)
 					local text = frames.playerSpeed.text:GetText()
 					frames.playerSpeed.text:SetText("")
 					frames.playerSpeed.text:SetText(text)
-
-					--Travel Speed
-					text = frames.travelSpeed.text:GetText()
-					frames.travelSpeed.text:SetText("")
-					frames.travelSpeed.text:SetText(text)
 				end,
 				UpdateFontFamilyDropdownText = function()
 					--Update the font of the dropdown toggle button label
@@ -1473,7 +1283,7 @@ local function CreateFontOptions(panel)
 		title = ns.strings.options.speedDisplay.font.size.label,
 		tooltip = { lines = { { text = ns.strings.options.speedDisplay.font.size.tooltip .. "\n\n" .. ns.strings.misc.default .. ": " .. dbDefault.speedDisplay.font.size, }, } },
 		arrange = { newRow = false, },
-		value = { min = 8, max = 64, step = 1 },
+		value = { min = 8, max = 64, increment = 1 },
 		dependencies = { { frame = frames.options.speedDisplays.visibility.hidden, evaluate = function(state) return not state end }, },
 		optionsData = {
 			optionsKey = addonNameSpace .. "SpeedDisplays",
@@ -1504,10 +1314,6 @@ local function CreateFontOptions(panel)
 				--Player Speed
 				frames.playerSpeed.text:SetJustifyH(db.speedDisplay.font.alignment)
 				wt.SetPosition(frames.playerSpeed.text, { anchor = db.speedDisplay.font.alignment, })
-
-				--Travel Speed
-				frames.travelSpeed.text:SetJustifyH(db.speedDisplay.font.alignment)
-				wt.SetPosition(frames.travelSpeed.text, { anchor = db.speedDisplay.font.alignment, })
 			end, }
 		}
 	})
@@ -1527,9 +1333,6 @@ local function CreateFontOptions(panel)
 			onChange = { UpdateDisplayFontColors = function()
 				--Player Speed
 				frames.playerSpeed.text:SetTextColor(wt.UnpackColor(db.speedDisplay.font.valueColoring and ns.colors.grey[2] or db.speedDisplay.font.color))
-
-				--Travel Speed
-				frames.travelSpeed.text:SetTextColor(wt.UnpackColor(db.speedDisplay.font.valueColoring and ns.colors.grey[2] or db.speedDisplay.font.color))
 			end, }
 		}
 	})
@@ -1569,9 +1372,6 @@ local function CreateBackgroundOptions(panel)
 			onChange = { ToggleDisplayBackdrops = function()
 				--Player Speed
 				SetDisplayBackdrop("playerSpeed", db.speedDisplay.background.visible, db.speedDisplay.background.colors.bg, db.speedDisplay.background.colors.border)
-
-				--Travel Speed
-				SetDisplayBackdrop("travelSpeed", db.speedDisplay.background.visible, db.speedDisplay.background.colors.bg, db.speedDisplay.background.colors.border)
 			end, }
 		}
 	})
@@ -1593,9 +1393,6 @@ local function CreateBackgroundOptions(panel)
 			onChange = { UpdateDisplayBackgroundColors = function()
 				--Player Speed
 				if frames.playerSpeed.display:GetBackdrop() ~= nil then frames.playerSpeed.display:SetBackdropColor(wt.UnpackColor(db.speedDisplay.background.colors.bg)) end
-
-				--Travel Speed
-				if frames.travelSpeed.display:GetBackdrop() ~= nil then frames.travelSpeed.display:SetBackdropColor(wt.UnpackColor(db.speedDisplay.background.colors.bg)) end
 			end }
 		}
 	})
@@ -1618,11 +1415,6 @@ local function CreateBackgroundOptions(panel)
 				--Player Speed
 				if frames.playerSpeed.display:GetBackdrop() ~= nil then
 					frames.playerSpeed.display:SetBackdropBorderColor(wt.UnpackColor(db.speedDisplay.background.colors.border))
-				end
-
-				--Travel Speed
-				if frames.travelSpeed.display:GetBackdrop() ~= nil then
-					frames.travelSpeed.display:SetBackdropBorderColor(wt.UnpackColor(db.speedDisplay.background.colors.border))
 				end
 			end }
 		}
@@ -1649,11 +1441,6 @@ local function CreateSpeedDisplayOptions() frames.options.speedDisplays.page = w
 			workingTable =  db.playerSpeed,
 			storageTable = MovementSpeedDB.playerSpeed,
 			defaultsTable = dbDefault.playerSpeed,
-		},
-		{
-			workingTable =  db.travelSpeed,
-			storageTable = MovementSpeedDB.travelSpeed,
-			defaultsTable = dbDefault.travelSpeed,
 		},
 		{
 			workingTable =  db.speedDisplay,
@@ -1705,17 +1492,6 @@ local function CreateSpeedDisplayOptions() frames.options.speedDisplays.page = w
 			description = ns.strings.options.speedDisplay.playerSpeed.description,
 			arrange = {},
 			initialize = CreatePlayerSpeedOptions,
-			arrangement = {}
-		})
-
-		--Panel: Travel Speed
-		wt.CreatePanel({
-			parent = canvas,
-			name = "TravelSpeed",
-			title = ns.strings.options.speedDisplay.travelSpeed.title,
-			description = ns.strings.options.speedDisplay.travelSpeed.description,
-			arrange = {},
-			initialize = CreateTravelSpeedOptions,
 			arrangement = {}
 		})
 
@@ -1800,7 +1576,7 @@ local function CreateTargetSpeedValueOptions(panel)
 		title = ns.strings.options.speedValue.fractionals.label,
 		tooltip = { lines = { { text = ns.strings.options.speedValue.fractionals.tooltip, }, } },
 		arrange = { newRow = false, },
-		value = { min = 0, max = 4, step = 1 },
+		value = { min = 0, max = 4, increment = 1 },
 		dependencies = { { frame = frames.options.targetSpeed.enabled, }, },
 		optionsData = {
 			optionsKey = addonNameSpace .. "TargetSpeed",
@@ -1892,11 +1668,7 @@ local function CreateBackupOptions(panel)
 			local success, t = pcall(loadstring("return " .. wt.Clear(frames.options.advanced.backup.string.getText())))
 			if success and type(t) == "table" then
 				--Run DB checkup on the loaded table
-				wt.RemoveEmpty(t.account, CheckValidity)
-				wt.RemoveEmpty(t.character, CheckValidity)
-				wt.AddMissing(t.account, db)
-				wt.AddMissing(t.character, dbc)
-				RestoreOldData(t.account, t.character, wt.RemoveMismatch(t.account, db), wt.RemoveMismatch(t.character, dbc))
+				CheckDBs(t.account, db, t.character, dbc)
 
 				--Copy values from the loaded DBs to the addon DBs
 				wt.CopyValues(t.account, db)
@@ -2228,10 +2000,6 @@ local commandManager = wt.RegisterChatCommands(addonNameSpace, { ns.chat.keyword
 			frames.playerSpeed.text:SetFont(db.speedDisplay.font.family, db.speedDisplay.font.size, "THINOUTLINE")
 			SetDisplaySize("playerSpeed")
 
-			--Update the Travel Speed font
-			frames.travelSpeed.text:SetFont(db.speedDisplay.font.family, db.speedDisplay.font.size, "THINOUTLINE")
-			SetDisplaySize("travelSpeed")
-
 			return true, size
 		end,
 		onSuccess = function(size) print(wt.Color(addonTitle .. ":", ns.colors.green[1]) .. " " .. wt.Color(ns.strings.chat.size.response:gsub(
@@ -2273,11 +2041,7 @@ local function AddonLoaded(self, addon)
 	MovementSpeedDBC = MovementSpeedDBC or wt.Clone(dbcDefault)
 
 	--DB checkup & fix
-	wt.RemoveEmpty(MovementSpeedDB, CheckValidity)
-	wt.RemoveEmpty(MovementSpeedDBC, CheckValidity)
-	wt.AddMissing(MovementSpeedDB, dbDefault)
-	wt.AddMissing(MovementSpeedDBC, dbcDefault)
-	RestoreOldData(MovementSpeedDB, MovementSpeedDBC, wt.RemoveMismatch(MovementSpeedDB, dbDefault), wt.RemoveMismatch(MovementSpeedDBC, dbcDefault))
+	CheckDBs(MovementSpeedDB, dbDefault, MovementSpeedDBC, dbcDefault)
 
 	--Load working DBs
 	db = wt.Clone(MovementSpeedDB)
@@ -2310,7 +2074,7 @@ local function AddonLoaded(self, addon)
 	wt.SetPosition(self, db.speedDisplay.position)
 
 	--Make movable
-	wt.SetMovability(frames.main, true, "SHIFT", { frames.playerSpeed.display, frames.travelSpeed.display }, {
+	wt.SetMovability(frames.main, true, "SHIFT", { frames.playerSpeed.display, }, {
 		onStop = function()
 			--Save the position (for account-wide use)
 			wt.CopyValues(wt.PackPosition(frames.main:GetPoint()), db.speedDisplay.position)
@@ -2341,16 +2105,6 @@ local function AddonLoaded(self, addon)
 
 	--Player Speed
 	SetDisplayValues("playerSpeed", db, dbc)
-
-	--Travel Speed
-	wt.SetPosition(frames.travelSpeed.display, db.travelSpeed.replacement and { anchor = "CENTER", } or {
-		anchor = "TOP",
-		relativeTo = frames.playerSpeed.display,
-		relativePoint = "BOTTOM",
-		offset = { y = -1 }
-	})
-	SetDisplayValues("travelSpeed", db, dbc)
-	wt.SetVisibility(frames.travelSpeed.display, db.travelSpeed.enabled)
 end
 local function PlayerEnteringWorld(self)
 	self:UnregisterEvent("PLAYER_ENTERING_WORLD")
@@ -2359,18 +2113,16 @@ local function PlayerEnteringWorld(self)
 	if not self:IsVisible() or not frames.playerSpeed.display:IsVisible() then PrintStatus(true) end
 
 	--Start speed updates
-	UpdateMapInfo()
 	UpdateSpeedText("display", db.speedDisplay.value.units)
 	UpdateSpeedText("target", db.targetSpeed.value.units)
 	StartPlayerSpeedUpdates()
-	if db.travelSpeed.enabled then StartTravelSpeedUpdates() end
 	if db.targetSpeed.enabled then EnableTargetSpeedUpdates() end
 end
 
 --[ Frames ]
 
 --Set up the speed display context menu
-local function CreateContextMenu(parent)
+local function _CreateContextMenu(parent)
 	local contextMenu = wt.CreateContextMenu({ parent = parent, })
 
 	--[ Items ]
@@ -2414,6 +2166,38 @@ local function CreateContextMenu(parent)
 		title = presets[i].name,
 		events = { OnClick = function() commandManager.handleCommand(ns.chat.commands.preset, i) end, },
 	}) end
+end --TODO: Reinstate after fix or delete
+local function CreateContextMenu(parent)
+	local menu = {
+		{
+			text = addonTitle,
+			isTitle = true,
+			notCheckable = true,
+		},
+		{
+			text = ns.strings.misc.options,
+			func = function() frames.options.main.page.open() end,
+			notCheckable = true,
+		},
+		{
+			text = ns.strings.options.speedDisplay.position.presets.label,
+			hasArrow = true,
+			menuList = {},
+			notCheckable = true,
+		},
+	}
+
+	--Insert presets
+	for i = 1, #presets do table.insert(menu[3].menuList, {
+		text = presets[i].name,
+		func = function() commandManager.handleCommand(ns.chat.commands.preset, i) end,
+		notCheckable = true,
+	}) end
+
+	wt.CreateClassicContextMenu({
+		parent = parent,
+		menu = menu
+	})
 end
 
 --Create main addon frame & display
@@ -2426,9 +2210,6 @@ frames.main = wt.CreateFrame({
 	onEvent = {
 		ADDON_LOADED = AddonLoaded,
 		PLAYER_ENTERING_WORLD = PlayerEnteringWorld,
-		ZONE_CHANGED_NEW_AREA = function() UpdateMapInfo() end,
-		PET_BATTLE_OPENING_START = function(self) self:Hide() end,
-		PET_BATTLE_CLOSE = function(self) if not dbc.hidden then self:Show() end end,
 	},
 	initialize = function(frame)
 		--Player Speed
@@ -2466,42 +2247,6 @@ frames.main = wt.CreateFrame({
 		frames.playerSpeed.updater = wt.CreateFrame({
 			parent = frame,
 			name = "PlayerSpeedUpdater",
-		})
-
-		--Travel Speed
-		frames.travelSpeed.display = wt.CreateFrame({
-			parent = frame,
-			name = "TravelSpeed",
-			customizable = true,
-			keepInBounds = true,
-			events = { OnUpdate = function(self)
-				--Update the tooltip
-				if self:IsMouseOver() and ns.tooltip:IsVisible() then wt.UpdateTooltip(self, { lines = GetSpeedDisplayTooltipLines("travel"), }) end
-			end, },
-			initialize = function(display)
-				--Tooltip
-				wt.AddTooltip(display, {
-					tooltip = ns.tooltip,
-					title = ns.strings.travelSpeed.title,
-					anchor = "ANCHOR_BOTTOMRIGHT",
-					offset = { y = display:GetHeight() },
-					flipColors = true
-				})
-
-				--Context menu
-				CreateContextMenu(display)
-
-				--Text
-				frames.travelSpeed.text = wt.CreateText({
-					parent = display,
-					layer = "OVERLAY",
-					wrap = false,
-				})
-			end
-		})
-		frames.travelSpeed.updater = wt.CreateFrame({
-			parent = frame,
-			name = "TravelSpeedUpdater",
 		})
 
 		--Target Speed

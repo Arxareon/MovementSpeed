@@ -225,6 +225,15 @@ local changelogDB = {
 		"Under the hood fixes & improvements.",
 		"#H_If you encounter any issues, do not hesitate to report them! Try including when & how they occur, and which other addons are you using to give me the best chance of being able to reproduce & fix them. Try proving any LUA script error messages and if you know how, taint logs as well (when relevant). Thanks a lot for helping!_#",
 	},
+	{
+		"#V_Version 2.9_# #H_(7/24/2023)_#",
+		"#C_Changes:_#",
+		"Added more value step options to the other sliders as well. The default step value is now 1 for the offset values.",
+		"The settings category page shortcuts have been removed in WotLK Classic (because the new Settings window broke the feature - I may readd them when the issue gets resolved). The shortcuts have been replaced by an Options button in the right-click menu of the speed displays.",
+		"The custom context menus have been replaced with the basic menu until their quirks are ironed out.",
+		"Scrolling has been improved in WotLK Classic.",
+		"Other small fixes, changes & improvements.",
+	},
 }
 
 ---Get an assembled & formatted string of the full changelog
