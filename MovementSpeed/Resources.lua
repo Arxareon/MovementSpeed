@@ -226,9 +226,11 @@ local changelogDB = {
 		"#H_If you encounter any issues, do not hesitate to report them! Try including when & how they occur, and which other addons are you using to give me the best chance of being able to reproduce & fix them. Try proving any LUA script error messages and if you know how, taint logs as well (when relevant). Thanks a lot for helping!_#",
 	},
 	{
-		"#V_Version 2.9_# #H_(7/24/2023)_#",
+		"#V_Version 2.9_# #H_(8/5/2023)_#",
 		"#C_Changes:_#",
-		"Added more value step options to the other sliders as well. The default step value is now 1 for the offset values.",
+		"Positioning the speed displays next to other frames via Presets (like Under Minimap) will now dynamically be updated to follow those frames instead of being assigned to a static position. After you move a frame, reapply the desired now updated preset to move the display back in relation to it.",
+		"The Travel Speed feature (offering estimated speed values even during Dragonriding) will now be enabled by default (as a replacement when the Player Speed value is not available).",
+		"Added more value step options to the other sliders as well. The default step value is now 1 for the position offset values.",
 		"The settings category page shortcuts have been removed in WotLK Classic (because the new Settings window broke the feature - I may readd them when the issue gets resolved). The shortcuts have been replaced by an Options button in the right-click menu of the speed displays.",
 		"The custom context menus have been replaced with the basic menu until their quirks are ironed out.",
 		"Scrolling has been improved in WotLK Classic.",
@@ -370,12 +372,7 @@ local english = {
 				presets = {
 					label = "Apply a Preset",
 					tooltip = "Change the position of the speed display by choosing and applying one of these presets.",
-					list = {
-						"Under Default Minimap",
-					},
-					classicList = {
-						"Under Minimap Clock",
-					},
+					list = { "Under Minimap", },
 					select = "Select a preset…",
 				},
 				savePreset = {
@@ -586,16 +583,12 @@ local english = {
 			error = "Hold SHIFT until the mouse button is released to save the position.",
 		},
 	},
-	playerSpeed = {
-		title = "Player Speed details:",
-		text = "Calculated from the Speed stat, modified by various effects, movement activity.",
-	},
-	travelSpeed = {
-		title = "Travel Speed details:",
-		text = "Calculated from tracking your horizontal movement through the world map.",
-	},
 	targetSpeed = "Speed: #SPEED",
 	speedTooltip = {
+		title = "#SPEED details:",
+		description = "An live summary of your movement status.",
+		playerSpeed = "Calculated based the Speed stat, various effects & the type of movement activity.",
+		travelSpeed = "Calculated by tracking your horizontal movement through the current zone map.",
 		text = {
 			"#YARDS yards / second.",
 			"#PERCENT of the base running speed.",

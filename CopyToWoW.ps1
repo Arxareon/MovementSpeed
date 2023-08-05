@@ -19,6 +19,7 @@ $clients += "_xptr_" #Dragonflight PTR X
 $clients += "_classic_" #Wrath of the Lich King
 $clients += "_classic_ptr_" #Wrath of the Lick King PTR
 $clients += "_classic_era_" #Classic
+$clients += "_classic_era_ptr_" #Classic PTR
 
 
 <# INSTALLATION #>
