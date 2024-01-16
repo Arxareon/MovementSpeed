@@ -1,7 +1,7 @@
 --[[ RESOURCES ]]
 
 ---Addon namespace
----@class ns
+---@class MovementSpeedNamespace
 local addonNameSpace, ns = ...
 
 ---WidgetTools toolbox
@@ -37,7 +37,7 @@ local dbDefault = {
 		value = {
 			units = { true, false, false },
 			fractionals = 0,
-			noTrim = false,
+			zeros = false,
 		},
 		font = {
 			family = ns.fonts[1].path,
@@ -64,7 +64,7 @@ local dbDefault = {
 		value = {
 			units = { true, true, false },
 			fractionals = 0,
-			noTrim = false,
+			zeros = false,
 		},
 	},
 }
@@ -220,13 +220,15 @@ local function CheckDBs(dbCheck, dbSample, dbcCheck, dbcSample)
 		["speedDisplay.value.type"] = { saveTo = dbCheck.speedDisplay.value, saveKey = "units" },
 		["speedDisplay.font.text.decimals"] = { saveTo = dbCheck.speedDisplay.value, saveKey = "fractionals" },
 		["speedDisplay.value.decimals"] = { saveTo = dbCheck.speedDisplay.value, saveKey = "fractionals" },
-		["speedDisplay.font.text.noTrim"] = { saveTo = dbCheck.speedDisplay.value, saveKey = "noTrim" },
+		["speedDisplay.font.text.noTrim"] = { saveTo = dbCheck.speedDisplay.value, saveKey = "zeros" },
+		["speedDisplay.value.noTrim"] = { saveTo = dbCheck.speedDisplay.value, saveKey = "zeros" },
 		["targetSpeed.tooltip.enabled"] = { saveTo = dbCheck.targetSpeed, saveKey = "enabled" },
 		["targetSpeed.tooltip.text.valueType"] = { saveTo = dbCheck.targetSpeed.value, saveKey = "units" },
 		["targetSpeed.value.type"] = { saveTo = dbCheck.targetSpeed.value, saveKey = "units" },
 		["targetSpeed.tooltip.text.decimals"] = { saveTo = dbCheck.targetSpeed.value, saveKey = "fractionals" },
 		["targetSpeed.value.decimals"] = { saveTo = dbCheck.targetSpeed.value, saveKey = "fractionals" },
-		["targetSpeed.tooltip.text.noTrim"] = { saveTo = dbCheck.targetSpeed.value, saveKey = "noTrim" },
+		["targetSpeed.tooltip.text.noTrim"] = { saveTo = dbCheck.targetSpeed.value, saveKey = "zeros" },
+		["targetSpeed.value.noTrim"] = { saveTo = dbCheck.targetSpeed.value, saveKey = "zeros" },
 		["visibility.hidden"] = { saveTo = dbcCheck, saveKey = "hidden" },
 		["appearance.hidden"] = { saveTo = dbcCheck, saveKey = "hidden" },
 	})
@@ -262,11 +264,11 @@ local function FormatSpeedValue(type)
 	local key = target and "targetSpeed" or "speedDisplay"
 	local f = max(db[key].value.fractionals, 1)
 
-	return (target and speedText.target or db.speedDisplay.font.valueColoring and speedText.display or wt.Clear(speedText.display)):gsub(
-		"#PERCENT", wt.FormatThousands(speed[type].yards / 7 * 100, db[key].value.fractionals, true, not db[key].value.noTrim) .. (target and "%%%%" or "")
+	return ((target and speedText.target or db.speedDisplay.font.valueColoring and speedText.display or wt.Clear(speedText.display)):gsub(
+		"#PERCENT", wt.FormatThousands(speed[type].yards / BASE_MOVEMENT_SPEED * 100, db[key].value.fractionals, true, not db[key].value.zeros) .. (target and "%%%%" or "")
 	):gsub(
-		"#YARDS", wt.FormatThousands(speed[type].yards, db[key].value.fractionals, true, not db[key].value.noTrim)
-	)
+		"#YARDS", wt.FormatThousands(speed[type].yards, db[key].value.fractionals, true, not db[key].value.zeros)
+	))
 end
 
 ---Refresh the specified speed text template string to be filled with speed values when displaying it
@@ -422,7 +424,9 @@ local function GetSpeedDisplayTooltipLines(type)
 			color = ns.colors.yellow[1],
 		},
 		{
-			text = "\n" .. ns.strings.speedTooltip.text[2]:gsub("#PERCENT", wt.Color(wt.FormatThousands(speed[type].yards / 7 * 100, 2, true) .. "%%", ns.colors.green[2])),
+			text = "\n" .. ns.strings.speedTooltip.text[2]:gsub(
+				"#PERCENT", wt.Color(wt.FormatThousands(speed[type].yards / BASE_MOVEMENT_SPEED * 100, 2, true) .. "%%", ns.colors.green[2])
+			),
 			font = GameTooltipText,
 			color = ns.colors.green[1],
 		},
@@ -527,395 +531,14 @@ end
 
 --[ Main ]
 
---Create the widgets
-local function CreateOptionsShortcuts(panel)
-	--Button: Speed Display page
-	wt.CreateButton({
-		parent = panel,
-		name = "SpeedDisplayPage",
-		title = ns.strings.options.speedDisplay.title,
-		tooltip = { lines = { { text = ns.strings.options.speedDisplay.description:gsub("#ADDON", addonTitle), }, } },
-		arrange = {},
-		size = { width = 120, },
-		events = { OnClick = function() frames.options.speedDisplays.page.open() end, },
-	})
-
-	--Button: Target Speed page
-	wt.CreateButton({
-		parent = panel,
-		name = "TargetSpeedPage",
-		title = ns.strings.options.targetSpeed.title,
-		tooltip = { lines = { { text = ns.strings.options.targetSpeed.description:gsub("#ADDON", addonTitle), }, } },
-		position = { offset = { x = 140, y = -30 } },
-		size = { width = 120, },
-		events = { OnClick = function() frames.options.targetSpeed.page.open() end, },
-	})
-
-	--Button: Advanced page
-	wt.CreateButton({
-		parent = panel,
-		name = "AdvancedPage",
-		title = ns.strings.options.advanced.title,
-		tooltip = { lines = { { text = ns.strings.options.advanced.description:gsub("#ADDON", addonTitle), }, } },
-		position = {
-			anchor = "TOPRIGHT",
-			offset = { x = -12, y = -30 }
-		},
-		size = { width = 120 },
-		events = { OnClick = function() frames.options.advanced.page.open() end, },
-	})
-end
-local function CreateAboutInfo(panel)
-	--Text: Version
-	local version = wt.CreateText({
-		parent = panel,
-		name = "VersionTitle",
-		position = { offset = { x = 16, y = -32 } },
-		width = 45,
-		text = ns.strings.options.main.about.version .. ":",
-		font = "GameFontNormalSmall",
-		justify = { h = "RIGHT", },
-	})
-	wt.CreateText({
-		parent = panel,
-		name = "Version",
-		position = {
-			relativeTo = version,
-			relativePoint = "TOPRIGHT",
-			offset = { x = 5 }
-		},
-		width = 140,
-		text = GetAddOnMetadata(addonNameSpace, "Version"),
-		font = "GameFontHighlightSmall",
-		justify = { h = "LEFT", },
-	})
-
-	--Text: Date
-	local date = wt.CreateText({
-		parent = panel,
-		name = "DateTitle",
-		position = {
-			relativeTo = version,
-			relativePoint = "BOTTOMLEFT",
-			offset = { y = -8 }
-		},
-		width = 45,
-		text = ns.strings.options.main.about.date .. ":",
-		font = "GameFontNormalSmall",
-		justify = { h = "RIGHT", },
-	})
-	wt.CreateText({
-		parent = panel,
-		name = "Date",
-		position = {
-			relativeTo = date,
-			relativePoint = "TOPRIGHT",
-			offset = { x = 5 }
-		},
-		width = 140,
-		text = ns.strings.misc.date:gsub(
-			"#DAY", GetAddOnMetadata(addonNameSpace, "X-Day")
-		):gsub(
-			"#MONTH", GetAddOnMetadata(addonNameSpace, "X-Month")
-		):gsub(
-			"#YEAR", GetAddOnMetadata(addonNameSpace, "X-Year")
-		),
-		font = "GameFontHighlightSmall",
-		justify = { h = "LEFT", },
-	})
-
-	--Text: Author
-	local author = wt.CreateText({
-		parent = panel,
-		name = "AuthorTitle",
-		position = {
-			relativeTo = date,
-			relativePoint = "BOTTOMLEFT",
-			offset = { y = -8 }
-		},
-		width = 45,
-		text = ns.strings.options.main.about.author .. ":",
-		font = "GameFontNormalSmall",
-		justify = { h = "RIGHT", },
-	})
-	wt.CreateText({
-		parent = panel,
-		name = "Author",
-		position = {
-			relativeTo = author,
-			relativePoint = "TOPRIGHT",
-			offset = { x = 5 }
-		},
-		width = 140,
-		text = GetAddOnMetadata(addonNameSpace, "Author"),
-		font = "GameFontHighlightSmall",
-		justify = { h = "LEFT", },
-	})
-
-	--Text: License
-	local license = wt.CreateText({
-		parent = panel,
-		name = "LicenseTitle",
-		position = {
-			relativeTo = author,
-			relativePoint = "BOTTOMLEFT",
-			offset = { y = -8 }
-		},
-		width = 45,
-		text = ns.strings.options.main.about.license .. ":",
-		font = "GameFontNormalSmall",
-		justify = { h = "RIGHT", },
-	})
-	wt.CreateText({
-		parent = panel,
-		name = "License",
-		position = {
-			relativeTo = license,
-			relativePoint = "TOPRIGHT",
-			offset = { x = 5 }
-		},
-		width = 140,
-		text = GetAddOnMetadata(addonNameSpace, "X-License"),
-		font = "GameFontHighlightSmall",
-		justify = { h = "LEFT", },
-	})
-
-	--Copybox: CurseForge
-	local curse = wt.CreateCopyBox({
-		parent = panel,
-		name = "CurseForge",
-		title = ns.strings.options.main.about.curseForge .. ":",
-		position = {
-			relativeTo = license,
-			relativePoint = "BOTTOMLEFT",
-			offset = { y = -11 }
-		},
-		size = { width = 190, },
-		text = "curseforge.com/wow/addons/movement-speed",
-		font = "GameFontNormalSmall",
-		color = { r = 0.6, g = 0.8, b = 1, a = 1 },
-		colorOnMouse = { r = 0.8, g = 0.95, b = 1, a = 1 },
-	})
-
-	--Copybox: Wago
-	local wago = wt.CreateCopyBox({
-		parent = panel,
-		name = "Wago",
-		title = ns.strings.options.main.about.wago .. ":",
-		position = {
-			relativeTo = curse,
-			relativePoint = "BOTTOMLEFT",
-			offset = { y = -8 }
-		},
-		size = { width = 190, },
-		text = "addons.wago.io/addons/movement-speed",
-		font = "GameFontNormalSmall",
-		color = { r = 0.6, g = 0.8, b = 1, a = 1 },
-		colorOnMouse = { r = 0.8, g = 0.95, b = 1, a = 1 },
-	})
-
-	--Copybox: Repository
-	local repo = wt.CreateCopyBox({
-		parent = panel,
-		name = "Repository",
-		title = ns.strings.options.main.about.repository .. ":",
-		position = {
-			relativeTo = wago,
-			relativePoint = "BOTTOMLEFT",
-			offset = { y = -8 }
-		},
-		size = { width = 190, },
-		text = "github.com/Arxareon/MovementSpeed",
-		font = "GameFontNormalSmall",
-		color = { r = 0.6, g = 0.8, b = 1, a = 1 },
-		colorOnMouse = { r = 0.8, g = 0.95, b = 1, a = 1 },
-	})
-
-	--Copybox: Issues
-	wt.CreateCopyBox({
-		parent = panel,
-		name = "Issues",
-		title = ns.strings.options.main.about.issues .. ":",
-		position = {
-			relativeTo = repo,
-			relativePoint = "BOTTOMLEFT",
-			offset = { y = -8 }
-		},
-		size = { width = 190, },
-		text = "github.com/Arxareon/MovementSpeed/issues",
-		font = "GameFontNormalSmall",
-		color = { r = 0.6, g = 0.8, b = 1, a = 1 },
-		colorOnMouse = { r = 0.8, g = 0.95, b = 1, a = 1 },
-	})
-
-	--EditScrollBox: Changelog
-	local changelog = wt.CreateEditScrollBox({
-		parent = panel,
-		name = "Changelog",
-		title = ns.strings.options.main.about.changelog.label,
-		tooltip = { lines = { { text = ns.strings.options.main.about.changelog.tooltip, }, } },
-		arrange = {},
-		size = { width = panel:GetWidth() - 225, height = panel:GetHeight() - 42 },
-		text = ns.GetChangelog(true),
-		font = { normal = "GameFontDisableSmall", },
-		color = ns.colors.grey[2],
-		readOnly = true,
-	})
-
-	--Button: Full changelog
-	local changelogFrame
-	wt.CreateButton({
-		parent = panel,
-		name = "OpenFullChangelog",
-		title = ns.strings.options.main.about.openFullChangelog.label,
-		tooltip = { lines = { { text = ns.strings.options.main.about.openFullChangelog.tooltip, }, } },
-		position = {
-			anchor = "TOPRIGHT",
-			relativeTo = changelog,
-			relativePoint = "TOPRIGHT",
-			offset = { x = -3, y = 2 }
-		},
-		size = { width = 176, height = 14 },
-		font = {
-			normal = "GameFontNormalSmall",
-			highlight = "GameFontHighlightSmall",
-		},
-		events = { OnClick = function()
-			if changelogFrame then changelogFrame:Show()
-			else
-				--Panel: Changelog frame
-				changelogFrame = wt.CreatePanel({
-					parent = UIParent,
-					name = addonNameSpace .. "Changelog",
-					append = false,
-					title = ns.strings.options.main.about.fullChangelog.label:gsub("#ADDON", addonTitle),
-					position = { anchor = "CENTER", },
-					keepInBounds = true,
-					size = { width = 740, height = 560 },
-					background = { color = { a = 0.9 }, },
-					initialize = function(windowPanel)
-						--EditScrollBox: Full changelog
-						wt.CreateEditScrollBox({
-							parent = windowPanel,
-							name = "FullChangelog",
-							title = ns.strings.options.main.about.fullChangelog.label:gsub("#ADDON", addonTitle),
-							label = false,
-							tooltip = { lines = { { text = ns.strings.options.main.about.fullChangelog.tooltip, }, } },
-							arrange = {},
-							size = { width = windowPanel:GetWidth() - 32, height = windowPanel:GetHeight() - 88 },
-							text = ns.GetChangelog(),
-							font = { normal = "GameFontDisable", },
-							color = ns.colors.grey[2],
-							readOnly = true,
-							scrollSpeed = 0.2,
-						})
-
-						--Button: Close
-						wt.CreateButton({
-							parent = windowPanel,
-							name = "CancelButton",
-							title = wt.GetStrings("close"),
-							arrange = {},
-							events = { OnClick = function() windowPanel:Hide() end },
-						})
-					end,
-					arrangement = {
-						margins = { l = 16, r = 16, t = 42, b = 16 },
-						flip = true,
-					}
-				})
-				_G[changelogFrame:GetName() .. "Title"]:SetPoint("TOPLEFT", 18, -18)
-				wt.SetMovability(changelogFrame, true)
-				changelogFrame:SetFrameStrata("DIALOG")
-				changelogFrame:IsToplevel(true)
-			end
-		end, },
-	}):SetFrameLevel(changelog:GetFrameLevel() + 1) --Make sure it's on top to be clickable
-end
-
 --Create the category page
 local function CreateMainOptions()
 	---@type optionsPage
-	frames.options.main.page = wt.CreateOptionsCategory({
+	frames.options.main.page = wt.CreateAboutPage({
 		addon = addonNameSpace,
 		name = "Main",
 		description = ns.strings.options.main.description:gsub("#ADDON", addonTitle),
-		logo = ns.textures.logo,
-		titleLogo = true,
-		initialize = function(canvas)
-			--Panel: Shortcuts
-			-- wt.CreatePanel({ --FIXME: Reinstate once opening settings subcategories programmatically is once again supported in Dragonflight
-			-- 	parent = canvas,
-			-- 	name = "Shortcuts",
-			-- 	title = ns.strings.options.main.shortcuts.title,
-			-- 	description = ns.strings.options.main.shortcuts.description:gsub("#ADDON", addonTitle),
-			-- 	arrange = {},
-			-- 	initialize = CreateOptionsShortcuts,
-			-- 	arrangement = {}
-			-- })
-
-			--Panel: About
-			wt.CreatePanel({
-				parent = canvas,
-				name = "About",
-				title = ns.strings.options.main.about.title,
-				description = ns.strings.options.main.about.description:gsub("#ADDON", addonTitle),
-				arrange = {},
-				size = { height = 258 },
-				initialize = CreateAboutInfo,
-				arrangement = {
-					flip = true,
-					resize = false
-				}
-			})
-
-			--Panel: Sponsors
-			local top = GetAddOnMetadata(addonNameSpace, "X-TopSponsors")
-			local normal = GetAddOnMetadata(addonNameSpace, "X-Sponsors")
-			if top or normal then
-				local sponsorsPanel = wt.CreatePanel({
-					parent = canvas,
-					name = "Sponsors",
-					title = ns.strings.options.main.sponsors.title,
-					description = ns.strings.options.main.sponsors.description,
-					arrange = {},
-					size = { height = 64 + (top and normal and 24 or 0) },
-					initialize = function(panel)
-						if top then
-							wt.CreateText({
-								parent = panel,
-								name = "Top",
-								position = { offset = { x = 16, y = -33 } },
-								width = panel:GetWidth() - 32,
-								text = top:gsub("|", " • "),
-								font = "GameFontNormalLarge",
-								justify = { h = "LEFT", },
-							})
-						end
-						if normal then
-							wt.CreateText({
-								parent = panel,
-								name = "Normal",
-								position = { offset = { x = 16, y = -33 -(top and 24 or 0) } },
-								width = panel:GetWidth() - 32,
-								text = normal:gsub("|", " • "),
-								font = "GameFontHighlightMedium",
-								justify = { h = "LEFT", },
-							})
-						end
-					end,
-				})
-				wt.CreateText({
-					parent = sponsorsPanel,
-					name = "DescriptionHeart",
-					position = { offset = { x = _G[sponsorsPanel:GetName() .. "Description"]:GetStringWidth() + 16, y = -10 } },
-					text = "♥",
-					font = "ChatFontSmall",
-					justify = { h = "LEFT", },
-				})
-			end
-		end,
-		arrangement = {}
+		changelog = ns.changelog
 	})
 end
 
@@ -1169,6 +792,7 @@ local function CreatePlayerSpeedOptions(panel)
 			optionsKey = addonNameSpace .. "SpeedDisplays",
 			workingTable = db.playerSpeed,
 			storageKey = "frequency",
+			convertSave = function(value) return wt.Round(value, 2) end,
 			onChange = { "RefreshPlayerSpeedUpdates", }
 		}
 	})
@@ -1218,18 +842,21 @@ local function CreateSpeedValueOptions(panel)
 
 	--Checkbox: No trim
 	---@type checkbox
-	frames.options.speedDisplays.value.noTrim = wt.CreateCheckbox({
+	frames.options.speedDisplays.value.zeros = wt.CreateCheckbox({
 		parent = panel,
-		name = "NoTrim",
-		title = ns.strings.options.speedValue.noTrim.label,
-		tooltip = { lines = { { text = ns.strings.options.speedValue.noTrim.tooltip, }, } },
+		name = "Zeros",
+		title = ns.strings.options.speedValue.zeros.label,
+		tooltip = { lines = { { text = ns.strings.options.speedValue.zeros.tooltip, }, } },
 		arrange = { newRow = false, },
 		autoOffset = true,
-		dependencies = { { frame = frames.options.speedDisplays.visibility.hidden, evaluate = function(state) return not state end }, },
+		dependencies = {
+			{ frame = frames.options.speedDisplays.visibility.hidden, evaluate = function(state) return not state end },
+			{ frame = frames.options.speedDisplays.value.fractionals, evaluate = function(value) return value > 0 end },
+		},
 		optionsData = {
 			optionsKey = addonNameSpace .. "SpeedDisplays",
 			workingTable = db.speedDisplay.value,
-			storageKey = "noTrim",
+			storageKey = "zeros",
 		}
 	})
 end
@@ -1290,9 +917,9 @@ local function CreateFontOptions(panel)
 			}
 		}
 	})
-	for i = 1, #frames.options.speedDisplays.font.family.selector.items do
+	for i = 1, #frames.options.speedDisplays.font.family.selector.radioButtons do
 		--Update fonts of the dropdown options
-		local label = _G[frames.options.speedDisplays.font.family.selector.items[i]:GetName() .. "RadioButtonText"]
+		local label = _G[frames.options.speedDisplays.font.family.selector.radioButtons[i]:GetName() .. "RadioButtonText"]
 		local _, size, flags = label:GetFont()
 		label:SetFont(ns.fonts[i].path, size, flags)
 	end
@@ -1621,18 +1248,21 @@ local function CreateTargetSpeedValueOptions(panel)
 
 	--Checkbox: No trim
 	---@type checkbox
-	frames.options.targetSpeed.value.noTrim = wt.CreateCheckbox({
+	frames.options.targetSpeed.value.zeros = wt.CreateCheckbox({
 		parent = panel,
-		name = "NoTrim",
-		title = ns.strings.options.speedValue.noTrim.label,
-		tooltip = { lines = { { text = ns.strings.options.speedValue.noTrim.tooltip, }, } },
+		name = "Zeros",
+		title = ns.strings.options.speedValue.zeros.label,
+		tooltip = { lines = { { text = ns.strings.options.speedValue.zeros.tooltip, }, } },
 		arrange = { newRow = false, },
 		autoOffset = true,
-		dependencies = { { frame = frames.options.targetSpeed.enabled, }, },
+		dependencies = {
+			{ frame = frames.options.targetSpeed.enabled, },
+			{ frame = frames.options.targetSpeed.value.fractionals, evaluate = function(value) return value > 0 end },
+		},
 		optionsData = {
 			optionsKey = addonNameSpace .. "TargetSpeed",
 			workingTable = db.targetSpeed.value,
-			storageKey = "noTrim",
+			storageKey = "zeros",
 		}
 	})
 end
@@ -1734,7 +1364,7 @@ local function CreateBackupOptions(panel)
 			{ text = "\n" .. ns.strings.options.advanced.backup.backupBox.tooltip[5], color = { r = 0.92, g = 0.34, b = 0.23 }, },
 		}, },
 		arrange = {},
-		size = { width = panel:GetWidth() - 24, height = panel:GetHeight() - 76 },
+		size = { w = panel:GetWidth() - 24, h = panel:GetHeight() - 76 },
 		font = { normal = "GameFontWhiteSmall", },
 		maxLetters = 4500,
 		scrollSpeed = 0.2,

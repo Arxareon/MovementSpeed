@@ -1,14 +1,19 @@
-## Interface: 30402
+## Interface: 30403
 ## Title: Widget Tools |TInterface/AddOns/WidgetTools/Textures/Logo.tga:0|t
+## Notes: Responsible for doing the heavy lifting for dependant addons in the background.
 ## IconTexture: Interface/AddOns/WidgetTools/Textures/Logo.tga
-## Version: 1.11
-## X-Day: 18
-## X-Month: 7
+## Version: 2.0
+## X-Day: 25
+## X-Month: 10
 ## X-Year: 2023
 ## Author: Barnabas Nagy (Arxareon)
 ## X-Sponsors: Celierra
 ## X-License: All Rights Reserved
-## Notes: Responsible for doing the heavy lifting for dependant addons in the background.
+## X-CurseForge: curseforge.com/wow/addons/widget-tools
+## X-Wago: addons.wago.io/addons/widget-tools
+## X-Repository: github.com/Arxareon/WidgetTools
+## X-Issues: github.com/Arxareon/WidgetTools/issues
+## SavedVariables: WidgetToolsDB
 
 Resources.lua
 Main.lua

@@ -1,16 +1,19 @@
 --[[ RESOURCES ]]
 
----Addon namespace
----@class ns
-local addonNameSpace, ns = ...
+---Addon namespace table
+---@class MovementSpeedNamespace
+---@field name string Addon namespace name
+local ns = select(2, ...)
+
+ns.name = ...
 
 --Addon root folder
-local root = "Interface/AddOns/" .. addonNameSpace .. "/"
+local root = "Interface/AddOns/" .. ns.name .. "/"
 
 
 --[[ CHANGELOG ]]
 
-local changelogDB = {
+ns.changelog = {
 	{
 		"#V_Version 1.0_# #H_(10/26/2020)_#",
 		"#H_It's alive!_#",
@@ -223,7 +226,6 @@ local changelogDB = {
 		"Importing addon data through the Backup Advanced options will keep the currently set values when filling in missing or invalid values instead of using defaults.",
 		"No tooltip will stay on the screen after its target was hidden.",
 		"Under the hood fixes & improvements.",
-		"#H_If you encounter any issues, do not hesitate to report them! Try including when & how they occur, and which other addons are you using to give me the best chance of being able to reproduce & fix them. Try proving any LUA script error messages and if you know how, taint logs as well (when relevant). Thanks a lot for helping!_#",
 	},
 	{
 		"#V_Version 2.9_# #H_(8/5/2023)_#",
@@ -236,42 +238,14 @@ local changelogDB = {
 		"Scrolling has been improved in WotLK Classic.",
 		"Other small fixes, changes & improvements.",
 	},
+	{
+		"#V_Version 3.0_# #H_(10/25/2023)_#",
+		"#C_Changes:_#",
+		"Shortcuts have been removed from the main addon settings page in Classic.",
+		"Significant under the hood improvements.",
+		"#H_If you encounter any issues, do not hesitate to report them! Try including when & how they occur, and which other addons are you using to give me the best chance of being able to reproduce & fix them. Try proving any LUA script error messages and if you know how, taint logs as well (when relevant). Thanks a lot for helping!_#",
+	},
 }
-
----Get an assembled & formatted string of the full changelog
----@param latest? boolean Whether to get the update notes of the latest version or the entire changelog | ***Default:*** false
----@return string
-ns.GetChangelog = function(latest)
-	--Colors
-	local highlight = "FFFFFFFF"
-	local new = "FF66EE66"
-	local fix = "FFEE4444"
-	local change = "FF8888EE"
-	local note = "FFEEEE66"
-
-	--Assemble the changelog
-	local changelog = ""
-		for i = #changelogDB, 1, -1 do
-			local firstLine = latest and 2 or 1
-			for j = firstLine, #changelogDB[i] do
-				changelog = changelog .. (j > firstLine and "\n\n" or "") .. changelogDB[i][j]:gsub(
-					"#V_(.-)_#", (i < #changelogDB and "\n\n\n" or "") .. "|c" .. highlight .. "• %1|r"
-				):gsub(
-					"#N_(.-)_#", "|c".. new .. "%1|r"
-				):gsub(
-					"#F_(.-)_#", "|c".. fix .. "%1|r"
-				):gsub(
-					"#C_(.-)_#", "|c".. change .. "%1|r"
-				):gsub(
-					"#O_(.-)_#", "|c".. note .. "%1|r"
-				):gsub(
-					"#H_(.-)_#", "|c".. highlight .. "%1|r"
-				)
-			end
-			if latest then break end
-		end
-	return changelog
-end
 
 
 --[[ LOCALIZATIONS ]]
@@ -287,34 +261,6 @@ local english = {
 			shortcuts = {
 				title = "Shortcuts",
 				description = "Access specific options by expanding the #ADDON categories on the left or by clicking a button here.",
-			},
-			about = {
-				title = "About",
-				description = "Thanks for using #ADDON! Copy the links to see how to share feedback, get help & support development.",
-				version = "Version",
-				date = "Date",
-				author = "Author",
-				license = "License",
-				curseForge = "CurseForge Page",
-				wago = "Wago Page",
-				repository = "GitHub Repository",
-				issues = "Issues & Feedback",
-				changelog = {
-					label = "Update Notes",
-					tooltip = "Notes of all the changes, updates & fixes introduced with the latest version.\n\nThe changelog is only available in English for now.",
-				},
-				openFullChangelog = {
-					label = "Open the full Changelog",
-					tooltip = "Access the full list of update notes of all addon versions.",
-				},
-				fullChangelog = {
-					label = "#ADDON Changelog",
-					tooltip = "Notes of all the changes included in the addon updates for all versions.\n\nThe changelog is only available in English for now.",
-				},
-			},
-			sponsors = {
-				title = "Sponsors",
-				description = "Your continued support is greatly appreciated! Thank you!",
 			},
 		},
 		speedValue = {
@@ -342,14 +288,18 @@ local english = {
 				label = "Max Fractional Digits",
 				tooltip = "Set the maximal number of decimal places that should be displayed in the fractional part of the speed values.\n\nEach speed value will be rounded to the nearest number based on the decimal accuracy specified here.\n\nCoordinate values are always displayed with at least one fractional digit.",
 			},
-			noTrim = {
-				label = "Don't trim zeros",
+			zeros = {
+				label = "Show trailing zeros",
 				tooltip = "Always show the specified number of decimal digits, don't trim trailing zeros.",
 			},
 		},
 		speedDisplay = {
-			title = "Speed Display",
-			description = "Customize the main #ADDON display where you view your own movement speed.",
+			title = "#TYPE Display",
+			referenceName = "the #TYPE display",
+			copy = {
+				label = "Copy #TYPE values",
+				tooltip = "Set these options to mirror the values of matching options set for the #TITLE.",
+			},
 			visibility = {
 				title = "Visibility",
 				description = "Set the visibility and behavior of the #ADDON display.",
@@ -364,58 +314,6 @@ local english = {
 				statusNotice = {
 					label = "Chat notice if hidden",
 					tooltip = "Get a chat notification about the status of the speed display if it's not visible after the interface loads.",
-				},
-			},
-			position = {
-				title = "Position",
-				description = "Drag & drop the speed display while holding SHIFT to position it anywhere on the screen, fine-tune it here.",
-				presets = {
-					label = "Apply a Preset",
-					tooltip = "Change the position of the speed display by choosing and applying one of these presets.",
-					list = { "Under Minimap", },
-					select = "Select a preset…",
-				},
-				savePreset = {
-					label = "Update #CUSTOM Preset",
-					tooltip = "Save the current position and visibility of the speed display to the #CUSTOM preset.",
-					warning = "Are you sure you want to override the #CUSTOM Preset with the current customizations?\n\nThe #CUSTOM preset is account-wide.",
-				},
-				resetPreset = {
-					label = "Reset #CUSTOM Preset",
-					tooltip = "Override currently saved #CUSTOM preset data with the default values, then apply it.",
-					warning = "Are you sure you want to override the #CUSTOM Preset with the default values?\n\nThe #CUSTOM preset is account-wide.",
-				},
-				anchor = {
-					label = "Screen Anchor Point",
-					tooltip = "Select which point of the screen should the speed display be anchored to.",
-				},
-				xOffset = {
-					label = "Horizontal Offset",
-					tooltip = "Set the amount of horizontal offset (X axis) of the speed display from the selected #ANCHOR.",
-				},
-				yOffset = {
-					label = "Vertical Offset",
-					tooltip = "Set the amount of vertical offset (Y axis) of the speed display from the selected #ANCHOR.",
-				},
-				strata = {
-					label = "Screen Layer",
-					tooltip = "Raise or lower the speed display to be in front of or behind other UI elements.",
-				},
-			},
-			playerSpeed = {
-				title = "Player Speed",
-				description = "Calculate your speed, modified by your Speed stat, mounts, buffs, debuffs or the type movement activity.",
-			},
-			travelSpeed = {
-				title = "Travel Speed",
-				description = "Calculate the estimated speed at which you are actually traveling through the current zone horizontally.",
-				enabled = {
-					label = "Enable Functionality",
-					tooltip = "Enable the Travel Speed functionality, allowing you to view an estimation of the effective speed you are traveling through the world horizontally (moving up & down in elevation can't be calculated).",
-				},
-				replacement = {
-					label = "As a Replacement",
-					tooltip = "Replace the Player Speed value with the estimated horizontal Travel Speed value in the speed display when movement is detected but no information about your speed is available (e.g. during Dragonriding) instead of having Travel Speed always visible in the secondary display.",
 				},
 			},
 			update = {
@@ -475,6 +373,26 @@ local english = {
 				},
 			},
 		},
+		playerSpeed = {
+			title = "Player Speed",
+			description = "Calculate your speed, modified by your Speed stat, mounts, buffs, debuffs or the type movement activity.",
+			dragonridingOnly = {
+				label = "Only while Dragonriding",
+				tooltip = "Only slow the update rate of the speed value to match the specified #FREQUENCY during Dragonriding, making the fast-changing speed more readable.",
+			},
+		},
+		travelSpeed = {
+			title = "Travel Speed",
+			description = "Calculate the estimated speed at which you are actually traveling through the current zone horizontally.",
+			enabled = {
+				label = "Enable Functionality",
+				tooltip = "Enable the Travel Speed functionality, allowing you to view an estimation of the effective speed you are traveling through the world horizontally (moving up & down in elevation can't be calculated).",
+			},
+			replacement = {
+				label = "As a Replacement",
+				tooltip = "Replace the Player Speed value with the estimated horizontal Travel Speed value in the speed display when movement is detected but no information about your speed is available instead of having Travel Speed always visible in the secondary display.",
+			},
+		},
 		targetSpeed = {
 			title = "Target Speed",
 			description = "View the current movement speed of any player or NPC you are inspecting via mouseover.",
@@ -492,7 +410,7 @@ local english = {
 			description = "Configure #ADDON settings further, change options manually or backup your data by importing, exporting settings.",
 			profiles = {
 				title = "Profiles",
-				description = "Create, edit and apply unique options profiles to customize #ADDON separately between your characters. (Soon™)", --# flags will be replaced with
+				description = "Create, edit and apply unique options profiles to customize #ADDON separately between your characters. (Soon™)",
 			},
 			backup = {
 				title = "Backup",
@@ -524,6 +442,13 @@ local english = {
 				error = "The provided backup string could not be validated and no data was loaded. It might be missing some characters or errors may have been introduced if it was edited.",
 			},
 		},
+	},
+	presets = {
+		"Under Minimap",
+		"Under #TYPE display",
+		"Above #TYPE display",
+		"Right of #TYPE display",
+		"Left of #TYPE display",
 	},
 	chat = {
 		status = {
@@ -613,7 +538,6 @@ local english = {
 		options = "Options",
 		default = "Default",
 		custom = "Custom",
-		override = "Override",
 		enabled = "enabled",
 		disabled = "disabled",
 		days = "days",
@@ -623,28 +547,34 @@ local english = {
 	},
 }
 
----Load the proper localization table based on the client language
----@return string
+--Load the proper localization table based on the client language
 local LoadLocale = function()
-	local strings
 	local locale = GetLocale()
 
 	if (locale == "") then
 		--TODO: Add localization for other languages (locales: https://wowwiki-archive.fandom.com/wiki/API_GetLocale#Locales)
 		--Different font locales: https://github.com/tomrus88/BlizzardInterfaceCode/blob/master/Interface/FrameXML/Fonts.xml
 	else --Default: English (UK & US)
-		strings = english
-		strings.defaultFont = UNIT_NAME_FONT_ROMAN:gsub("\\", "/")
+		ns.strings = english
+		ns.strings.defaultFont = UNIT_NAME_FONT_ROMAN:gsub("\\", "/")
 	end
 
 	--Fill static & internal references
-	strings.options.main.description = strings.options.main.description:gsub("#KEYWORD", "/" .. ns.chat.keyword)
-	strings.options.speedDisplay.position.xOffset.tooltip = strings.options.speedDisplay.position.xOffset.tooltip:gsub("#ANCHOR", strings.options.speedDisplay.position.anchor.label)
-	strings.options.speedDisplay.position.yOffset.tooltip = strings.options.speedDisplay.position.yOffset.tooltip:gsub("#ANCHOR", strings.options.speedDisplay.position.anchor.label)
-	strings.options.speedDisplay.update.throttle.tooltip = strings.options.speedDisplay.update.throttle.tooltip:gsub("#FREQUENCY", strings.options.speedDisplay.update.frequency.label)
-	strings.options.speedDisplay.font.color.tooltip = strings.options.speedDisplay.font.color.tooltip:gsub("#VALUE_COLORING", strings.options.speedDisplay.font.valueColoring.label)
-
-	return strings
+	ns.strings.options.main.description = ns.strings.options.main.description:gsub(
+		"#KEYWORD", "/" .. ns.chat.keyword
+	)
+	ns.strings.options.speedDisplay.copy.tooltip = ns.strings.options.speedDisplay.copy.tooltip:gsub(
+		"#TITLE", ns.strings.options.speedDisplay.title
+	)
+	ns.strings.options.speedDisplay.update.throttle.tooltip = ns.strings.options.speedDisplay.update.throttle.tooltip:gsub(
+		"#FREQUENCY", ns.strings.options.speedDisplay.update.frequency.label
+	)
+	ns.strings.options.playerSpeed.dragonridingOnly.tooltip = ns.strings.options.playerSpeed.dragonridingOnly.tooltip:gsub(
+		"#FREQUENCY", ns.strings.options.speedDisplay.update.frequency.label
+	)
+	ns.strings.options.speedDisplay.font.color.tooltip = ns.strings.options.speedDisplay.font.color.tooltip:gsub(
+		"#VALUE_COLORING", ns.strings.options.speedDisplay.font.valueColoring.label
+	)
 end
 
 
@@ -667,7 +597,7 @@ ns.chat = {
 }
 
 --Strings
-ns.strings = LoadLocale()
+LoadLocale()
 
 --Colors
 ns.colors = {
@@ -706,4 +636,113 @@ ns.fonts = {
 --Textures
 ns.textures = {
 	logo = root .. "Textures/Logo.tga",
+}
+
+
+--[[ DATA ]]
+
+--Default values
+ns.profileDefault = {
+	mainDisplay = "playerSpeed",
+	customPreset = {
+		position = {
+			anchor = "TOP",
+			relativePoint = "TOP",
+			offset = { x = 0, y = -60 },
+		},
+		keepInBounds = true,
+		layer = {
+			strata = "MEDIUM",
+			keepOnTop = false,
+		},
+	},
+	playerSpeed = {
+		visibility = {
+			hidden = false,
+			autoHide = false,
+			statusNotice = true,
+		},
+		position = {
+			anchor = "TOP",
+			relativePoint = "TOP",
+			offset = { x = 0, y = -60 },
+		},
+		keepInBounds = true,
+		layer = {
+			strata = "MEDIUM",
+			keepOnTop = false,
+		},
+		update = {
+			throttle = false,
+			frequency = 0.15,
+			-- dragonridingOnly = true, --TODO: Check if needed
+		},
+		value = {
+			units = { true, false, false },
+			fractionals = 0,
+			zeros = false,
+		},
+		font = {
+			family = ns.fonts[1].path,
+			size = 11,
+			valueColoring = true,
+			color = { r = 1, g = 1, b = 1, a = 1 },
+			alignment = "CENTER",
+		},
+		background = {
+			visible = false,
+			colors = {
+				bg = { r = 0, g = 0, b = 0, a = 0.5 },
+				border = { r = 1, g = 1, b = 1, a = 0.4 },
+			},
+		},
+	},
+	travelSpeed = {
+		visibility = {
+			hidden = true,
+			autoHide = false,
+			statusNotice = true,
+		},
+		position = {
+			anchor = "TOP",
+			relativePoint = "TOP",
+			offset = { x = 0, y = -60 },
+		},
+		keepInBounds = true,
+		layer = {
+			strata = "MEDIUM",
+			keepOnTop = false,
+		},
+		update = {
+			throttle = true,
+			frequency = 0.15,
+		},
+		value = {
+			units = { true, false, false },
+			fractionals = 0,
+			zeros = false,
+		},
+		font = {
+			family = ns.fonts[1].path,
+			size = 11,
+			valueColoring = true,
+			color = { r = 1, g = 1, b = 1, a = 1 },
+			alignment = "CENTER",
+		},
+		background = {
+			visible = false,
+			colors = {
+				bg = { r = 0, g = 0, b = 0, a = 0.5 },
+				border = { r = 1, g = 1, b = 1, a = 0.4 },
+			},
+		},
+	},
+	targetSpeed = {
+		enabled = true,
+		value = {
+			units = { true, true, false },
+			fractionals = 0,
+			zeros = false,
+		},
+	},
 }

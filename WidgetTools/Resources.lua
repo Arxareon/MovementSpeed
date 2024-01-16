@@ -1,16 +1,20 @@
 --[[ ADDON INFO ]]
 
----Addon namespace
----@class ns
-local addonNameSpace, ns = ...
+---Addon namespace table
+---@class WidgetToolsNamespace
+---@field name string Addon namespace name
+local ns = select(2, ...)
+
+ns.name = ...
+
 
 --Addon root folder
-local root = "Interface/AddOns/" .. addonNameSpace .. "/"
+local root = "Interface/AddOns/" .. ns.name .. "/"
 
 
 --[[ CHANGELOG ]]
 
-local changelogDB = {
+ns.changelog = {
 	{
 		"#V_Version 1.5_# #H_(11/28/2020)_#",
 		"#H_Widget Tools has been supporting other addons in the background for over a year. Now, it has been separated into its own addon for more visibility, transparency and to offer wider development options._#",
@@ -75,43 +79,20 @@ local changelogDB = {
 		"Scrolling has been improved in WotLK Classic.",
 		"Backwards compatibility ensuring editboxes work with Toolbox version 1.5 has been removed.",
 		"Other small improvements.",
+	},
+	{
+		"#V_Version 1.12_# #H_(8/9/2023)_#",
+		"#C_Changes:_#",
+		"Shortcuts have been removed from the main addon settings page in Classic.",
+		"Under the hood improvements.",
+	},
+	{
+		"#V_Version 2.0_# #H_(10/25/2023)_#",
+		"#C_Changes:_#",
+		"Significant under the hood improvements.",
 		"#H_If you encounter any issues, do not hesitate to report them! Try including when & how they occur, and which other addons are you using to give me the best chance of being able to reproduce & fix them. Try proving any LUA script error messages and if you know how, taint logs as well (when relevant). Thanks a lot for helping!_#",
 	},
 }
-
----Get an assembled & formatted string of the full changelog
----@param latest? boolean Whether to get the update notes of the latest version or the entire changelog | ***Default:*** false
----@return string
-ns.GetChangelog = function(latest)
-	--Colors
-	local highlight = "FFFFFFFF"
-	local new = "FF66EE66"
-	local fix = "FFEE4444"
-	local change = "FF8888EE"
-	local note = "FFEEEE66"
-	--Assemble the changelog
-	local changelog = ""
-		for i = #changelogDB, 1, -1 do
-			local firstLine = latest and 2 or 1
-			for j = firstLine, #changelogDB[i] do
-				changelog = changelog .. (j > firstLine and "\n\n" or "") .. changelogDB[i][j]:gsub(
-					"#V_(.-)_#", (i < #changelogDB and "\n\n\n" or "") .. "|c" .. highlight .. "• %1|r"
-				):gsub(
-					"#N_(.-)_#", "|c".. new .. "%1|r"
-				):gsub(
-					"#F_(.-)_#", "|c".. fix .. "%1|r"
-				):gsub(
-					"#C_(.-)_#", "|c".. change .. "%1|r"
-				):gsub(
-					"#O_(.-)_#", "|c".. note .. "%1|r"
-				):gsub(
-					"#H_(.-)_#", "|c".. highlight .. "%1|r"
-				)
-			end
-			if latest then break end
-		end
-	return changelog
-end
 
 
 --[[ LOCALIZATIONS ]]
@@ -120,46 +101,47 @@ end
 --\n represents the newline character
 
 local english = {
-	shortcuts = {
-		title = "Shortcuts",
-		description = "Access specific information by expanding the #ADDON categories on the left or by clicking a button here.",
-	},
 	about = {
-		title = "About",
-		description = "Thanks for using #ADDON! Copy the links to see how to share feedback, get help & support development.",
-		version = "Version",
-		date = "Date",
-		author = "Author",
-		license = "License",
-		curseForge = "CurseForge Page",
-		wago = "Wago Page",
-		repository = "GitHub Repository",
-		issues = "Issues & Feedback",
-		compactVersion = "Version: #VERSION",
-		compactDate = "Date: #DATE",
-		compactAuthor = "Author: #AUTHOR",
-		compactLicense = "License: #LICENSE",
-		dateFormat = "#MONTH/#DAY/#YEAR",
-		changelog = {
-			label = "Update Notes",
-			tooltip = "Notes of all the changes, updates & fixes introduced with the latest version.\n\nThe changelog is only available in English for now.",
-		},
-		openFullChangelog = {
-			label = "Open the full Changelog",
-			tooltip = "Access the full list of update notes of all addon versions.",
-		},
-		fullChangelog = {
-			label = "#ADDON Changelog",
-			tooltip = "Notes of all the changes included in the addon updates for all versions.\n\nThe changelog is only available in English for now.",
-		},
+		version = "Version: #VERSION",
+		date = "Date: #DATE",
+		author = "Author: #AUTHOR",
+		license = "License: #LICENSE",
 		toggle = {
 			label = "Enabled",
 			tooltip = "Shortcut to disable this addon.\n\nThis change will only take effect after the interface is reloaded. Once it has been disabled, this addon will not show up in this list until it's reenabled within the main AddOns menu.",
 		},
 	},
-	sponsors = {
-		title = "Sponsors",
-		description = "Your continued support is greatly appreciated! Thank you!",
+	specifications = {
+		title = "Specifications",
+		description = "Specifications",
+		general = {
+			title = "General",
+			description = "General Options",
+			lite = {
+				label = "Lite Mode",
+				tooltip = "Disable the settings UI of Widget Tools and ALL other addons the settings of which it empowers to conserve some resources.\nAddon settings data will still be saved and loaded and chat control is still available for addons that use it.\n\nTo turn lite mode off and settings back on, click on Widget Tools within the AddOns list under the calendar button in the header of the Minimap.",
+				warning = "When #ADDON is in lite mode, the settings UI for dependant addons will not be loaded.\n\nAre you sure you want to turn on lite mode and disable full settings functionality?",
+				accept = "Enable Lite Mode",
+			},
+			positioningAids = {
+				label = "Positioning Visual Aids",
+				tooltip = "Display visual aids when positioning frames wia settings widgets of addons which use Widget Tools under the hood.",
+			},
+		},
+		dev = {
+			title = "Development Tools",
+			description = "Useful tools and options for developers.",
+			frameAttributes = {
+				enabled = {
+					label = "Resize Frame Attributes",
+					tooltip = "Customize the width of the Frame Attributes window (TableAttributeDisplay Frame).",
+				},
+				width = {
+					label = "Frame Attributes Width",
+					tooltip = "Specify the width of the scrollable content table in the Frame Attributes window.",
+				},
+			},
+		},
 	},
 	addons = {
 		title = "Addons & Toolboxes",
@@ -172,27 +154,30 @@ local english = {
 		},
 		toolbox = "Toolbox (#VERSION)",
 	},
+	lite = {
+		warning = "#ADDON is in lite mode, the settings UI for dependant addons have not been loaded.\n\nDo you wish to turn off lite mode to reenable settings with full functionality?",
+		accept = "Disable Lite Mode",
+	},
 }
 
 --Load the proper localization table based on the client language
 local function LoadLocale()
-	local strings
 	local locale = GetLocale()
 
 	if (locale == "") then
 		--TODO: Add localization for other languages (locales: https://wowpedia.fandom.com/wiki/API_GetLocale#Values)
 		--Different font locales: https://github.com/tomrus88/BlizzardInterfaceCode/blob/master/Interface/FrameXML/Fonts.xml#L8
 	else --Default: English (UK & US)
-		strings = english
+		ns.strings = english
 	end
-	return strings
+	return ns.strings
 end
 
 
 --[[ ASSETS ]]
 
 --Strings
-ns.strings = LoadLocale()
+LoadLocale()
 
 --Colors
 ns.colors = {
@@ -204,6 +189,11 @@ ns.colors = {
 		{ r = 1, g = 0.76, b = 0.07 },
 		{ r = 0.8, g = 0.62, b = 0.1 },
 	},
+	halfTransparent = {
+		grey = { r = 0.7, g = 0.7, b = 0.7, a = 0.5 },
+		blue = { r = 0.7, g = 0.9, b = 1, a = 0.5 },
+		yellow = { r = 1, g = 0.9, b = 0.7, a = 0.5 },
+	}
 }
 
 --Textures
@@ -215,24 +205,14 @@ ns.textures = {
 }
 
 
---[[ ALIASES ]]
+--[[ DATA ]]
 
----@alias UniqueFrameType
----|"Toggle"
----|"Selector"
----|"Dropdown"
----|"TextBox"
----|"ValueSlider"
----|"ColorPicker"
-
----@alias ModifierKey
----|"CTRL"
----|"SHIFT"
----|"ALT"
----|"LCTRL"
----|"RCTRL"
----|"LSHIFT"
----|"RSHIFT"
----|"LALT"
----|"RALT"
----|"any"
+--Default values
+ns.defaults = {
+	lite = false,
+	positioningAids = true,
+	frameAttributes = {
+		enabled = false,
+		width = 620,
+	},
+}
