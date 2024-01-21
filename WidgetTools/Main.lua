@@ -325,7 +325,7 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 											offset = { x = 10, }
 										},
 										text = ns.strings.about.date:gsub(
-											"#DATE", WrapTextInColorCode(wt.GetStrings("date"):gsub(
+											"#DATE", WrapTextInColorCode(ns.toolboxStrings.about.date:gsub(
 												"#DAY", GetAddOnMetadata(v[i], "X-Day") or "?"
 											):gsub(
 												"#MONTH", GetAddOnMetadata(v[i], "X-Month") or "?"
@@ -434,7 +434,7 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 	}, { lines = {
 		{ text = ns.strings.about.version:gsub("#VERSION", WrapTextInColorCode(GetAddOnMetadata(ns.name, "Version") or "?", "FFFFFFFF")), },
 		{ text = ns.strings.about.date:gsub(
-			"#DATE", WrapTextInColorCode(wt.GetStrings("date"):gsub(
+			"#DATE", WrapTextInColorCode(ns.toolboxStrings.about.date:gsub(
 				"#DAY", GetAddOnMetadata(ns.name, "X-Day") or "?"
 			):gsub(
 				"#MONTH", GetAddOnMetadata(ns.name, "X-Month") or "?"

@@ -321,30 +321,26 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		decimal = ".", --Decimal character
 	}
 
-	---Load the current localization
-	---@return table strings
+	--Load the current localization
 	local function LoadLocale()
-		local strings
 		local locale = GetLocale()
 
 		if (locale == "") then
 			--ADD localization for other languages (locales: https://wowpedia.fandom.com/wiki/API_GetLocale#Values)
 			--Different font locales: https://github.com/tomrus88/BlizzardInterfaceCode/blob/master/Interface/FrameXML/Fonts.xml#L8
 		else --Default: English (UK & US)
-			strings = english
+			ns.toolboxStrings = english
 		end
 
 		--Fill static & internal references
-		strings.position.offsetX.tooltip = strings.position.offsetX.tooltip:gsub("#ANCHOR", strings.position.anchor.label)
-		strings.position.offsetY.tooltip = strings.position.offsetY.tooltip:gsub("#ANCHOR", strings.position.anchor.label)
-		strings.position.relativePoint.tooltip = strings.position.relativePoint.tooltip:gsub("#ANCHOR", strings.position.anchor.label)
-		strings.layer.keepOnTop.tooltip = strings.layer.keepOnTop.tooltip:gsub("#STRATA", strings.layer.strata.label)
-		strings.layer.level.tooltip = strings.layer.level.tooltip:gsub("#STRATA", strings.layer.strata.label)
-
-		return strings
+		ns.toolboxStrings.position.offsetX.tooltip = ns.toolboxStrings.position.offsetX.tooltip:gsub("#ANCHOR", ns.toolboxStrings.position.anchor.label)
+		ns.toolboxStrings.position.offsetY.tooltip = ns.toolboxStrings.position.offsetY.tooltip:gsub("#ANCHOR", ns.toolboxStrings.position.anchor.label)
+		ns.toolboxStrings.position.relativePoint.tooltip = ns.toolboxStrings.position.relativePoint.tooltip:gsub("#ANCHOR", ns.toolboxStrings.position.anchor.label)
+		ns.toolboxStrings.layer.keepOnTop.tooltip = ns.toolboxStrings.layer.keepOnTop.tooltip:gsub("#STRATA", ns.toolboxStrings.layer.strata.label)
+		ns.toolboxStrings.layer.level.tooltip = ns.toolboxStrings.layer.level.tooltip:gsub("#STRATA", ns.toolboxStrings.layer.strata.label)
 	end
 
-	local strings = LoadLocale()
+	LoadLocale()
 
 
 	--[[ UTILITIES ]]
@@ -388,11 +384,12 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	---@param outputTable? table Table to put the formatted output lines in
 	---@param name? any Value to print out as name string | ***Default:*** **object** as string
 	---@param blockrule? fun(key: integer|string): boolean Manually filter further exploring subtables under specific keys, skipping it if the value returned is true
-	---@param digFrames boolean Whether to traverse and dump the insides of objects recognized as frames
+	---@param digTables? boolean ***Default:*** true
+	---@param digFrames? boolean ***Default:*** false
 	---@param depth? integer How many levels of subtables to print out (root level: 0) | ***Default:*** *full depth*
 	---@param currentKey? string
 	---@param currentLevel? integer
-	local function GetDumpOutput(object, outputTable, name, blockrule, depth, digFrames, currentKey, currentLevel)
+	local function GetDumpOutput(object, outputTable, name, blockrule, depth, digTables, digFrames, currentKey, currentLevel)
 		--Check whether the current key is to be skipped
 		local skip = false
 		if currentKey and blockrule then skip = blockrule(currentKey) end
@@ -407,8 +404,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		name = name and "|cFF69A6F8" .. tostring(name) .. "|r" or wt.ToString(object)
 
 		--Add the line to the output
-		if type(object) == "table" and not digFrames and not wt.IsFrame(object) then
-			local s = (currentKey and currentKey or "Dump " .. name .. " table") .. ":"
+		if type(object) == "table" and (digFrames or not wt.IsFrame(object)) then
+			local s = (currentKey and (currentKey .. " (") or "Dump (") .. name .. "):"
 
 			--Stop at the max depth or if the key is skipped
 			if skip or currentLevel >= (depth or currentLevel + 1) then
@@ -417,11 +414,11 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				return
 			end
 
-			table.insert(outputTable, s)
+			table.insert(outputTable, s .. (digTables == false and " {…}" or ""))
 
 			--Convert & format the subtable
-			for k, v in wt.SortedPairs(object) do GetDumpOutput(v, outputTable, nil, blockrule, depth, digFrames, k, currentLevel + 1) end
-		else
+			for k, v in wt.SortedPairs(object) do GetDumpOutput(v, outputTable, nil, blockrule, depth, digTables, digFrames, k, currentLevel + 1) end
+		elseif digTables == false then return else
 			local line = (currentKey and currentKey .. " = " or "Dump " .. name .. " value: ") .. (skip and "…" or wt.ToString(object))
 
 			table.insert(outputTable, line)
@@ -434,7 +431,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	---***
 	---@param object any Object to dump out
 	---@param name? string A name to print out | ***Default:*** *the dumped object will not be named* | ***Default:*** true
-	---@param digFrames? boolean Whether to traverse and dump the insides of objects recognized as frames | ***Default:*** true
+	---@param digTables? boolean If true, explore and dump the non-subtable values of table objects | ***Default:*** true
+	---@param digFrames? boolean If true, explore and dump the insides of objects recognized as frames | ***Default:*** false
 	---@param blockrule? fun(key: integer|string): boolean Manually filter further exploring subtables under specific keys, skipping it if the value returned is true
 	--- - ***Example:*** **Match:** Skip a specific matching key
 	--- 	```
@@ -467,12 +465,12 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	---@param depth? integer How many levels of subtables to print out (root level: 0) | ***Default:*** *full depth*
 	---@param linesPerMessage? integer Print the specified number of output lines in a single chat message to be able to display more message history and allow faster scrolling | ***Default:*** 2
 	--- - ***Note:*** Set to 0 to print all lines in a single message.
-	function wt.Dump(object, name, blockrule, depth, digFrames, linesPerMessage)
+	function wt.Dump(object, name, blockrule, depth, digTables, digFrames, linesPerMessage)
 		--| Get the output lines
 
 		local output = {}
 
-		GetDumpOutput(object, output, name, blockrule, depth, digFrames)
+		GetDumpOutput(object, output, name, blockrule, depth, digTables, digFrames)
 
 		--| Print the output
 
@@ -724,13 +722,13 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		--Formatting
 		local leftover
 		while true do
-			integer, leftover = string.gsub(integer, "^(-?%d+)(%d%d%d)", '%1' .. strings.separator .. '%2')
+			integer, leftover = string.gsub(integer, "^(-?%d+)(%d%d%d)", '%1' .. ns.toolboxStrings.separator .. '%2')
 			if leftover == 0 then break end
 		end
 		local decimalText = tostring(fraction):sub(3, (decimals or 0) + 2)
 		if trim == false then for i = 1, (decimals or 0) - #decimalText do decimalText = decimalText .. "0" end end
 
-		return integer .. (((decimals or 0) > 0 and (fraction ~= 0 or trim == false)) and strings.decimal .. decimalText or "")
+		return integer .. (((decimals or 0) > 0 and (fraction ~= 0 or trim == false)) and ns.toolboxStrings.decimal .. decimalText or "")
 	end
 
 	---Remove all recognized formatting, other escape sequences (like coloring) from a string
@@ -925,6 +923,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			if v == valueToFind then return k end
 
 			local match = wt.FindValue(v, valueToFind)
+
 			if match then return match end
 		end
 
@@ -937,7 +936,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	---***
 	---@return table|string|nil # nil if **key** is specified but no match was found
 	function wt.GetStrings(key)
-		return wt.Clone(wt.FindKey(strings, key))
+		return wt.Clone(wt.FindKey(ns.toolboxStrings, key))
 	end
 
 	---Merge a table to another table, deep copying all its values over under new integer keys
@@ -987,6 +986,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				if next(v) == nil then tableToCheck[k] = nil else wt.RemoveEmpty(v, valueChecker) end --Remove the subtable if it's empty
 			else
 				local remove = v == nil or v == "" --The value is empty or doesn't exist
+
 				if valueChecker and not remove then remove = not valueChecker(k, v) end --Check if the value is invalid
 				if remove then tableToCheck[k] = nil end --Remove the value
 			end
@@ -995,21 +995,23 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		return tableToCheck
 	end
 
-	---Compare two tables to check for and fill in missing data from one to the other
+	---Compare two tables to check for and fill in missing data from one to the other (missing data will be cloned, breaking table references)
 	---***
 	---@param tableToCheck table|any Reference to the table to fill in missing data to (it will be turned into an empty table first if its type is not already "table")
 	---@param tableToSample table Reference to the table to sample data from
 	---***
-	---@return table|nil tableToCheck Reference to **tableToCheck** (it was already overwritten during the operation, no need for setting it again)
+	---@return table|nil tableToCheck Reference to **tableToCheck** (it was already updated during the operation, no need for setting it again)
 	function wt.AddMissing(tableToCheck, tableToSample)
-		if type(tableToSample) ~= "table" then return end
-		if next(tableToSample) == nil then return end
+		if not (type(tableToSample) == "table" and next(tableToSample) ~= nil) then return end
 
-		if wt.IsFrame(tableToSample) then tableToCheck = tableToSample else for k, v in pairs(tableToSample) do
-			tableToCheck = type(tableToCheck) ~= "table" and {} or tableToCheck --The table to check isn't actually a table - turn it into a new one
-			if tableToCheck[k] == nil then if v ~= nil and v ~= "" then tableToCheck[k] = v end --Add the missing item if the value is not empty or nil
-			else wt.AddMissing(tableToCheck[k], tableToSample[k]) end
-		end end
+		if wt.IsFrame(tableToSample) then tableToCheck = tableToSample else
+			for k, v in pairs(tableToSample) do
+				tableToCheck = type(tableToCheck) == "table" and tableToCheck or {}
+
+				--Add the missing item if the value is not empty or nil
+				if tableToCheck[k] == nil and v ~= nil and v ~= "" then tableToCheck[k] = wt.Clone(v) else wt.AddMissing(tableToCheck[k], tableToSample[k]) end
+			end
+		end
 
 		return tableToCheck
 	end
@@ -1957,8 +1959,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		--Create the popup dialogue
 		StaticPopupDialogs[key] = {
 			text = t.text,
-			button1 = t.accept or strings.misc.accept,
-			button2 = t.cancel or strings.misc.cancel,
+			button1 = t.accept or ns.toolboxStrings.misc.accept,
+			button2 = t.cancel or ns.toolboxStrings.misc.cancel,
 			button3 = t.alt,
 			OnAccept = t.onAccept,
 			OnCancel = t.onCancel,
@@ -1995,8 +1997,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		reloadFrame = wt.CreatePanel({
 			parent = UIParent,
 			name = "WidgetToolsReloadNotice",
-			title = t.title or strings.reload.title,
-			description = t.message or strings.reload.description,
+			title = t.title or ns.toolboxStrings.reload.title,
+			description = t.message or ns.toolboxStrings.reload.description,
 			position = t.position or {
 				anchor = "TOPRIGHT",
 				offset = { x = -300, y = -100 }
@@ -2025,8 +2027,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		wt.CreateButton({
 			parent = reloadFrame,
 			name = "ReloadButton",
-			title = strings.reload.accept.label,
-			tooltip = { lines = { { text = strings.reload.accept.tooltip, }, } },
+			title = ns.toolboxStrings.reload.accept.label,
+			tooltip = { lines = { { text = ns.toolboxStrings.reload.accept.tooltip, }, } },
 			position = {
 				anchor = "BOTTOMLEFT",
 				offset = { x = 12, y = 12 }
@@ -2038,8 +2040,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		wt.CreateButton({
 			parent = reloadFrame,
 			name = "CancelButton",
-			title = strings.reload.cancel.label,
-			tooltip = { lines = { { text = strings.reload.cancel.tooltip, }, } },
+			title = ns.toolboxStrings.reload.cancel.label,
+			tooltip = { lines = { { text = ns.toolboxStrings.reload.cancel.tooltip, }, } },
 			position = {
 				anchor = "BOTTOMRIGHT",
 				offset = { x = -12, y = 12 }
@@ -2993,13 +2995,13 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					anchor = "BOTTOMRIGHT",
 					offset = { x = -106, y = -26.75 }
 				},
-				text = strings.options.save,
+				text = ns.toolboxStrings.options.save,
 			})
 
 			wt.CreateButton({
 				parent = optionsPage.canvas,
 				name = "Cancel",
-				title = strings.options.cancel,
+				title = ns.toolboxStrings.options.cancel,
 				position = {
 					anchor = "BOTTOMLEFT",
 					offset = { x = 138, y = -31 }
@@ -3010,9 +3012,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 			local defaultWarning = wt.CreatePopup(addon, {
 				name = name .. "DefaultOptions",
-				text = strings.options.warning:gsub("#TITLE", wt.Clear(GetAddOnMetadata(addon, "title")) .. (t.parent and (": " .. title) or "")),
-				accept = strings.options.defaultThese,
-				alt = strings.options.defaultAll,
+				text = ns.toolboxStrings.options.warning:gsub("#TITLE", wt.Clear(GetAddOnMetadata(addon, "title")) .. (t.parent and (": " .. title) or "")),
+				accept = ns.toolboxStrings.options.defaultThese,
+				alt = ns.toolboxStrings.options.defaultAll,
 				onAccept = function() optionsPage.default(true) end,
 				onAlt = function() for i = 1, #optionsPages[addon] do optionsPages[addon][i].default() end end
 			})
@@ -3020,7 +3022,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			wt.CreateButton({
 				parent = optionsPage.canvas,
 				name = "Default",
-				title = strings.options.default,
+				title = ns.toolboxStrings.options.default,
 				position = {
 					anchor = "BOTTOMLEFT",
 					offset = { x = -18, y = -31 }
@@ -4641,41 +4643,41 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 	--Anchor point index table
 	local anchorPoints = {
-		{ name = strings.points.top.left, value = "TOPLEFT" },
-		{ name = strings.points.top.center, value = "TOP" },
-		{ name = strings.points.top.right, value = "TOPRIGHT" },
-		{ name = strings.points.left, value = "LEFT" },
-		{ name = strings.points.center, value = "CENTER" },
-		{ name = strings.points.right, value = "RIGHT" },
-		{ name = strings.points.bottom.left, value = "BOTTOMLEFT" },
-		{ name = strings.points.bottom.center, value = "BOTTOM" },
-		{ name = strings.points.bottom.right, value = "BOTTOMRIGHT" },
+		{ name = ns.toolboxStrings.points.top.left, value = "TOPLEFT" },
+		{ name = ns.toolboxStrings.points.top.center, value = "TOP" },
+		{ name = ns.toolboxStrings.points.top.right, value = "TOPRIGHT" },
+		{ name = ns.toolboxStrings.points.left, value = "LEFT" },
+		{ name = ns.toolboxStrings.points.center, value = "CENTER" },
+		{ name = ns.toolboxStrings.points.right, value = "RIGHT" },
+		{ name = ns.toolboxStrings.points.bottom.left, value = "BOTTOMLEFT" },
+		{ name = ns.toolboxStrings.points.bottom.center, value = "BOTTOM" },
+		{ name = ns.toolboxStrings.points.bottom.right, value = "BOTTOMRIGHT" },
 	}
 
 	--Horizontal alignment index table
 	local horizontalAlignments = {
-		{ name = strings.points.left, value = "LEFT" },
-		{ name = strings.points.center, value = "CENTER" },
-		{ name = strings.points.right, value = "RIGHT" },
+		{ name = ns.toolboxStrings.points.left, value = "LEFT" },
+		{ name = ns.toolboxStrings.points.center, value = "CENTER" },
+		{ name = ns.toolboxStrings.points.right, value = "RIGHT" },
 	}
 
 	--Vertical alignment index table
 	local verticalAlignments = {
-		{ name = strings.points.top.center, value = "TOP" },
-		{ name = strings.points.center, value = "MIDDLE" },
-		{ name = strings.points.bottom.center, value = "BOTTOM" },
+		{ name = ns.toolboxStrings.points.top.center, value = "TOP" },
+		{ name = ns.toolboxStrings.points.center, value = "MIDDLE" },
+		{ name = ns.toolboxStrings.points.bottom.center, value = "BOTTOM" },
 	}
 
 	--Vertical alignment index table
 	local frameStratas = {
-		{ name = strings.strata.lowest, value = "BACKGROUND" },
-		{ name = strings.strata.lower, value = "LOW" },
-		{ name = strings.strata.low, value = "MEDIUM" },
-		{ name = strings.strata.lowMid, value = "HIGH" },
-		{ name = strings.strata.highMid, value = "DIALOG" },
-		{ name = strings.strata.high, value = "FULLSCREEN" },
-		{ name = strings.strata.higher, value = "FULLSCREEN_DIALOG" },
-		{ name = strings.strata.highest, value = "TOOLTIP" },
+		{ name = ns.toolboxStrings.strata.lowest, value = "BACKGROUND" },
+		{ name = ns.toolboxStrings.strata.lower, value = "LOW" },
+		{ name = ns.toolboxStrings.strata.low, value = "MEDIUM" },
+		{ name = ns.toolboxStrings.strata.lowMid, value = "HIGH" },
+		{ name = ns.toolboxStrings.strata.highMid, value = "DIALOG" },
+		{ name = ns.toolboxStrings.strata.high, value = "FULLSCREEN" },
+		{ name = ns.toolboxStrings.strata.higher, value = "FULLSCREEN_DIALOG" },
+		{ name = ns.toolboxStrings.strata.highest, value = "TOOLTIP" },
 	}
 
 	---Create a special selector frame, a collection of radio buttons to pick an Anchor Point, a horizontal or vertical text alignment or Frame Strata value
@@ -4955,8 +4957,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 			table.insert(wt.AddMissing(tooltip, {
 				title = itemTitle,
-				lines = { { text = index and strings.dropdown.selected or strings.dropdown.none, }, }
-			}).lines, { text = strings.dropdown.open, })
+				lines = { { text = index and ns.toolboxStrings.dropdown.selected or ns.toolboxStrings.dropdown.none, }, }
+			}).lines, { text = ns.toolboxStrings.dropdown.open, })
 
 			dropdown.toggle.label:SetText(itemTitle)
 			dropdown.toggle.setTooltip(tooltip)
@@ -5045,8 +5047,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				append = t.append,
 				title = "…",
 				tooltip = { lines = {
-					{ text = strings.dropdown.selected, },
-					{ text = strings.dropdown.open, },
+					{ text = ns.toolboxStrings.dropdown.selected, },
+					{ text = ns.toolboxStrings.dropdown.open, },
 				} },
 				position = { anchor = "BOTTOM", },
 				size = { w = t.width - (t.cycleButtons ~= false and 44 or 0), },
@@ -5148,8 +5150,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					title = "◄",
 					titleOffset = { y = 0.5 },
 					tooltip = {
-						title = strings.dropdown.previous.label,
-						lines = { { text = strings.dropdown.previous.tooltip, }, }
+						title = ns.toolboxStrings.dropdown.previous.label,
+						lines = { { text = ns.toolboxStrings.dropdown.previous.tooltip, }, }
 					},
 					position = { anchor = "BOTTOMLEFT", },
 					size = { w = 22, },
@@ -5218,8 +5220,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					title = "►",
 					titleOffset = { x = 2, y = 0.5 },
 					tooltip = {
-						title = strings.dropdown.next.label,
-						lines = { { text = strings.dropdown.next.tooltip, }, }
+						title = ns.toolboxStrings.dropdown.next.label,
+						lines = { { text = ns.toolboxStrings.dropdown.next.tooltip, }, }
 					},
 					position = { anchor = "BOTTOMRIGHT", },
 					size = { w = 22, },
@@ -6022,8 +6024,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 			--Tooltip
 			wt.AddTooltip(copybox.flipper, {
-				title = strings.copy.textline.label,
-				lines = { { text = strings.copy.textline.tooltip, }, },
+				title = ns.toolboxStrings.copy.textline.label,
+				lines = { { text = ns.toolboxStrings.copy.textline.tooltip, }, },
 				anchor = "ANCHOR_RIGHT",
 			})
 
@@ -6032,9 +6034,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			copybox.textbox = wt.CreateTextbox({
 				parent = copybox.frame,
 				name = "CopyText",
-				title = strings.copy.editbox.label,
+				title = ns.toolboxStrings.copy.editbox.label,
 				label = false,
-				tooltip = { lines = { { text = strings.copy.editbox.tooltip, }, } },
+				tooltip = { lines = { { text = ns.toolboxStrings.copy.editbox.tooltip, }, } },
 				position = {
 					anchor = "LEFT",
 					relativeTo = copybox.flipper,
@@ -6367,8 +6369,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					name = "ValueBox",
 					label = false,
 					tooltip = {
-						title = strings.slider.value.label,
-						lines = { { text = strings.slider.value.tooltip, }, }
+						title = ns.toolboxStrings.slider.value.label,
+						lines = { { text = ns.toolboxStrings.slider.value.tooltip, }, }
 					},
 					position = {
 						anchor = "TOP",
@@ -6432,10 +6434,10 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					name = "SelectPrevious",
 					title = "-",
 					tooltip = {
-						title = strings.slider.decrease.label,
+						title = ns.toolboxStrings.slider.decrease.label,
 						lines = {
-							{ text = strings.slider.decrease.tooltip[1]:gsub("#VALUE", t.step), },
-							t.altStep and { text = strings.slider.decrease.tooltip[2]:gsub("#VALUE", t.altStep), } or nil,
+							{ text = ns.toolboxStrings.slider.decrease.tooltip[1]:gsub("#VALUE", t.step), },
+							t.altStep and { text = ns.toolboxStrings.slider.decrease.tooltip[2]:gsub("#VALUE", t.altStep), } or nil,
 						}
 					},
 					position = {
@@ -6499,10 +6501,10 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					name = "SelectNext",
 					title = "+",
 					tooltip = {
-						title = strings.slider.increase.label,
+						title = ns.toolboxStrings.slider.increase.label,
 						lines = {
-							{ text = strings.slider.increase.tooltip[1]:gsub("#VALUE", t.step), },
-							t.altStep and { text = strings.slider.increase.tooltip[2]:gsub("#VALUE", t.altStep), } or nil,
+							{ text = ns.toolboxStrings.slider.increase.tooltip[1]:gsub("#VALUE", t.step), },
+							t.altStep and { text = ns.toolboxStrings.slider.increase.tooltip[2]:gsub("#VALUE", t.altStep), } or nil,
 						}
 					},
 					position = {
@@ -6866,15 +6868,23 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				t.startColor = wt.Clone(t.optionsData.workingTable[t.optionsData.storageKey])
 			else t.startColor = {} end
 
+			--Color picker button background update utility
+			local function colorUpdate()
+				if not colorPicker.frame:GetAttribute("enabled") then return end
+
+				local r, g, b, a = ColorPickerFrame:GetColorRGB()
+				local a = ColorPickerFrame:GetColorAlpha() or 1
+
+				colorPicker.setColor(r, g, b, a, true)
+			end
+
 			colorPicker.pickerButton = wt.CreateButton({
 				parent = colorPicker.frame,
 				name = "PickerButton",
 				label = false,
 				tooltip = {
-					title = strings.color.picker.label,
-					lines = { {
-						text = t.startColor.a and strings.color.picker.tooltip:gsub("#ALPHA", strings.color.picker.alpha) or strings.color.picker.tooltip:gsub("#ALPHA", ""),
-					}, }
+					title = ns.toolboxStrings.color.picker.label,
+					lines = { { text = ns.toolboxStrings.color.picker.tooltip:gsub("#ALPHA", t.startColor.a and ns.toolboxStrings.color.picker.alpha or ""), }, }
 				},
 				position = { offset = { y = -14 } },
 				size = { w = 34, h = 22 },
@@ -6882,38 +6892,27 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				action = function(self)
 					local startR, startG, startB, startA = self.widget:GetBackdropColor()
 
-					--Color picker button background update utility
-					local function colorUpdate()
-						if not colorPicker.frame:GetAttribute("enabled") then return end
+					ColorPickerFrame:SetupColorPickerAndShow({
+						r = startR,
+						g = startG,
+						b = startB,
+						opacity = startA,
+						previousValues = {
+							r = startR,
+							g = startG,
+							b = startB,
+							opacity = startA,
+						},
+						hasOpacity = true,
+						swatchFunc = colorUpdate,
+						opacityFunc = colorUpdate,
+						cancelFunc = function()
+							colorPicker.setColor(startR, startG, startB, startA, true)
+							if t.onCancel then t.onCancel() end
+						end
+					})
 
-						local r, g, b = ColorPickerFrame:GetColorRGB()
-						local a = OpacitySliderFrame:GetValue() or 1
-
-						colorPicker.setColor(r, g, b, a, true)
-					end
-
-					--Clear the color update functions
-					ColorPickerFrame.func = nil
-					ColorPickerFrame.opacityFunc = nil
-
-					--Load the color
-					ColorPickerFrame:SetColorRGB(startR, startG, startB)
-					ColorPickerFrame.hasOpacity = true
-					ColorPickerFrame.opacity = startA
-
-					--Open the Blizzard color picker
-					ColorPickerFrame:Show()
 					colorPicker.setFaded(true)
-
-					--Set the color update functions
-					ColorPickerFrame.func = colorUpdate
-					ColorPickerFrame.opacityFunc = colorUpdate
-
-					--Reset on cancel
-					ColorPickerFrame.cancelFunc = function()
-						colorPicker.setColor(startR, startG, startB, startA, true)
-						if t.onCancel then t.onCancel() end
-					end
 
 					--Invoke an event
 					colorPicker.frame:SetAttribute("active", true)
@@ -6986,9 +6985,11 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			colorPicker.hexBox = wt.CreateTextbox({
 				parent = colorPicker.frame,
 				name = "HEXBox",
-				title = strings.color.hex.label,
+				title = ns.toolboxStrings.color.hex.label,
 				label = false,
-				tooltip = { lines = { { text = strings.color.hex.tooltip .. "\n\n" .. strings.misc.example .. ": #2266BB" .. (t.startColor.a and "AA" or ""), }, } },
+				tooltip = { lines = { {
+					text = ns.toolboxStrings.color.hex.tooltip .. "\n\n" .. ns.toolboxStrings.misc.example .. ": #2266BB" .. (t.startColor.a and "AA" or ""),
+				}, } },
 				position = {
 					relativeTo = colorPicker.pickerButton.widget,
 					relativePoint = "TOPRIGHT",
@@ -7137,8 +7138,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				wt.CreatePanel({
 					parent = canvas,
 					name = "About",
-					title = strings.about.title,
-					description = strings.about.description:gsub("#ADDON", GetAddOnMetadata(addon, "Title")),
+					title = ns.toolboxStrings.about.title,
+					description = ns.toolboxStrings.about.description:gsub("#ADDON", GetAddOnMetadata(addon, "Title")),
 					arrange = {},
 					size = { h = 258 },
 					initialize = function(panel)
@@ -7154,7 +7155,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 								name = "VersionTitle",
 								position = position,
 								width = 45,
-								text = strings.about.version .. ":",
+								text = ns.toolboxStrings.about.version .. ":",
 								font = "GameFontNormalSmall",
 								justify = { h = "RIGHT", },
 							})
@@ -7185,7 +7186,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 								name = "DateTitle",
 								position = position,
 								width = 45,
-								text = strings.about.date .. ":",
+								text = ns.toolboxStrings.about.date .. ":",
 								font = "GameFontNormalSmall",
 								justify = { h = "RIGHT", },
 							})
@@ -7198,7 +7199,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 									offset = { x = 5 }
 								},
 								width = 140,
-								text = strings.misc.date:gsub(
+								text = ns.toolboxStrings.misc.date:gsub(
 									"#DAY", data.day
 								):gsub(
 									"#MONTH", data.month
@@ -7222,7 +7223,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 								name = "AuthorTitle",
 								position = position,
 								width = 45,
-								text = strings.about.author .. ":",
+								text = ns.toolboxStrings.about.author .. ":",
 								font = "GameFontNormalSmall",
 								justify = { h = "RIGHT", },
 							})
@@ -7253,7 +7254,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 								name = "LicenseTitle",
 								position = position,
 								width = 45,
-								text = strings.about.license .. ":",
+								text = ns.toolboxStrings.about.license .. ":",
 								font = "GameFontNormalSmall",
 								justify = { h = "RIGHT", },
 							})
@@ -7286,7 +7287,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 							local curse = wt.CreateCopybox({
 								parent = panel,
 								name = "CurseForge",
-								title = strings.about.curseForge .. ":",
+								title = ns.toolboxStrings.about.curseForge .. ":",
 								position = position,
 								size = { w = 190, },
 								text = data.curse,
@@ -7306,7 +7307,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 							local wago = wt.CreateCopybox({
 								parent = panel,
 								name = "Wago",
-								title = strings.about.wago .. ":",
+								title = ns.toolboxStrings.about.wago .. ":",
 								position = position,
 								size = { w = 190, },
 								text = data.wago,
@@ -7326,7 +7327,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 							local repo = wt.CreateCopybox({
 								parent = panel,
 								name = "Repository",
-								title = strings.about.repository .. ":",
+								title = ns.toolboxStrings.about.repository .. ":",
 								position = position,
 								size = { w = 190, },
 								text = data.repo,
@@ -7345,7 +7346,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 						if data.issues then wt.CreateCopybox({
 							parent = panel,
 							name = "Issues",
-							title = strings.about.issues .. ":",
+							title = ns.toolboxStrings.about.issues .. ":",
 							position = position,
 							size = { w = 190, },
 							text = data.issues,
@@ -7361,8 +7362,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 						local changelog = wt.CreateMultilineTextbox({
 							parent = panel,
 							name = "Changelog",
-							title = strings.about.changelog.label,
-							tooltip = { lines = { { text = strings.about.changelog.tooltip, }, } },
+							title = ns.toolboxStrings.about.changelog.label,
+							tooltip = { lines = { { text = ns.toolboxStrings.about.changelog.tooltip, }, } },
 							arrange = {},
 							size = { w = panel:GetWidth() - 225, h = panel:GetHeight() - 42 },
 							text = wt.FormatChangelog(t.changelog, true),
@@ -7375,8 +7376,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 						wt.CreateButton({
 							parent = panel,
 							name = "OpenFullChangelog",
-							title = strings.about.fullChangelog.open.label,
-							tooltip = { lines = { { text = strings.about.fullChangelog.open.tooltip, }, } },
+							title = ns.toolboxStrings.about.fullChangelog.open.label,
+							tooltip = { lines = { { text = ns.toolboxStrings.about.fullChangelog.open.tooltip, }, } },
 							position = {
 								anchor = "TOPRIGHT",
 								relativeTo = changelog.frame,
@@ -7396,7 +7397,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 										parent = canvas,
 										name = addon .. "Changelog",
 										append = false,
-										title = strings.about.fullChangelog.label:gsub("#ADDON", GetAddOnMetadata(addon, "Title")),
+										title = ns.toolboxStrings.about.fullChangelog.label:gsub("#ADDON", GetAddOnMetadata(addon, "Title")),
 										position = { anchor = "BOTTOMRIGHT", },
 										keepInBounds = true,
 										size = { w = 678, h = 610 },
@@ -7407,9 +7408,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 											wt.CreateMultilineTextbox({
 												parent = windowPanel,
 												name = "FullChangelog",
-												title = strings.about.fullChangelog.label:gsub("#ADDON", GetAddOnMetadata(addon, "Title")),
+												title = ns.toolboxStrings.about.fullChangelog.label:gsub("#ADDON", GetAddOnMetadata(addon, "Title")),
 												label = false,
-												tooltip = { lines = { { text = strings.about.fullChangelog.tooltip, }, } },
+												tooltip = { lines = { { text = ns.toolboxStrings.about.fullChangelog.tooltip, }, } },
 												arrange = {},
 												size = { w = windowPanel:GetWidth() - 32, h = windowPanel:GetHeight() - 88 },
 												text = wt.FormatChangelog(t.changelog),
@@ -7422,7 +7423,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 											wt.CreateButton({
 												parent = windowPanel,
 												name = "CloseButton",
-												title = strings.misc.close,
+												title = ns.toolboxStrings.misc.close,
 												arrange = {},
 												size = { w = 96, },
 												action = function() windowPanel:Hide() end,
@@ -7453,8 +7454,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					local sponsorsPanel = wt.CreatePanel({
 						parent = canvas,
 						name = "Sponsors",
-						title = strings.sponsors.title,
-						description = strings.sponsors.description,
+						title = ns.toolboxStrings.sponsors.title,
+						description = ns.toolboxStrings.sponsors.description,
 						arrange = {},
 						size = { h = 64 + (data.topSponsors and data.sponsors and 24 or 0) },
 						initialize = function(panel)
@@ -7529,8 +7530,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		dataManagement.page = wt.CreateOptionsCategory(addon, {
 			parent = t.parent,
 			name = t.name or "DataManagement",
-			title = t.title or strings.dataManagement.title,
-			description = t.description or strings.dataManagement.description:gsub("#ADDON", addonTitle),
+			title = t.title or ns.toolboxStrings.dataManagement.title,
+			description = t.description or ns.toolboxStrings.dataManagement.description:gsub("#ADDON", addonTitle),
 			logo = GetAddOnMetadata(addon, "IconTexture"),
 			register = t.register,
 			optionsKeys = { addon .. "Backup" },
@@ -7546,26 +7547,28 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 				---Find a profile by its display title and return its index
 				---@param title string
+				---@param first? boolean ***Default:*** true
 				---@return integer|nil
-				local function findProfileByName(title)
-					for i = 1, #t.accountData.profiles do if t.accountData.profiles[i].title == title then return i end end
+				local function findProfile(title, first)
+					for i = 1, #t.accountData.profiles do if t.accountData.profiles[i].title == title then if first ~= false then return i else first = false end end end
 				end
 
 				---Find an unused profile name to be able to use it as an identifying display title
 				---***
 				---@param name? string Name tag to use as a base | ***Default:*** "Profile"
 				---@param number? integer Starting value for the incremented number appended to **name** if it's used | ***Default:*** **name** *is unused* and *no number* or 2
+				---@param first? boolean Stop checking for duplicate names at the first result | ***Default:*** true
 				---@return string title
-				local function findNewName(name, number)
-					name = name or strings.profiles.select.profile
+				local function checkName(name, number, first)
+					name = name or ns.toolboxStrings.profiles.select.profile
 					local title = name .. (number and (" " .. number) or "")
 
 					--Find an unused name for the new profile
-					if findProfileByName(title) then
+					if findProfile(title, first) then
 						number = (number and number or 2)
 						title = name .. " " .. number
 
-						while findProfileByName(title) do
+						while findProfile(title) do
 							number = number + 1
 							title = name .. " " .. number
 						end
@@ -7574,36 +7577,43 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					return title
 				end
 
-				---Clean up a profile list table
-				---***
-				---@param list table Reference to the profile list table
-				local function validateProfileList(list)
-					local i = 1
-
-					for key, value in wt.SortedPairs(list) do
-						if key ~= i then list[key] = nil --Remove
-						else if type(value) == "table" then
-							if type(value.title) ~= "string" then list[key].title = findNewName() end --FIXME: Not guaranteed that other not yet checked profiles won't have the same name
-							if type(list[1].data) ~= "table" then list[key].data = wt.Clone(t.defaultsTable) end
-						else list[key] = { title = strings.profiles.select.main, data = wt.Clone(t.defaultsTable) } end end
-
-						i = i + 1
-					end
-
-					if not list[1] then list[1] = { title = strings.profiles.select.main, data = wt.Clone(t.defaultsTable) } end
-				end
-
 				---Check & fix a profile data table based on the specified sample profile
 				---***
 				---@param profileData table Profile data table to check
 				---@param compareWith? table  Profile data table to sample | ***Default:*** **t.defaultsTable**
-				local function checkProfile(profileData, compareWith)
+				local function checkData(profileData, compareWith)
 					compareWith = compareWith or t.defaultsTable
 
 					wt.RemoveEmpty(profileData, t.valueChecker)
 					wt.AddMissing(profileData, compareWith)
 					if t.onRecovery then wt.RemoveMismatch(profileData, compareWith, nil, function(recoveredData) t.onRecovery(profileData, recoveredData) end)
 					else wt.RemoveMismatch(profileData, compareWith) end
+				end
+
+				---Clean up a profile list table
+				---***
+				---@param list profile[] Reference to the profile list table
+				local function validateProfiles(list)
+					local i = 1
+
+					--Check profile list
+					for key, value in wt.SortedPairs(list) do
+						if key == i and type(value) == "table" then
+							--Check profile data
+							if type(list[1].data) == "table" then checkData(list[1].data) else list[key].data = wt.Clone(t.defaultsTable) end
+						else
+							--Remove invalid entry
+							list[key] = nil
+						end
+
+						i = i + 1
+					end
+
+					--Fill with default profile
+					if not list[1] then list[1] = { title = ns.toolboxStrings.profiles.select.main, data = wt.Clone(t.defaultsTable) } end
+
+					--Check profile names
+					for i = 1, #list do list[i].title = checkName(list[i].title, nil, false) end
 				end
 
 				---Activate the specified profile
@@ -7647,7 +7657,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 					--Create profile data
 					table.insert(t.accountData.profiles, index, {
-						title = findNewName(duplicate and t.accountData.profiles[duplicate].title or name, number),
+						title = checkName(duplicate and t.accountData.profiles[duplicate].title or name, number),
 						data = wt.Clone(duplicate and t.accountData.profiles[duplicate] or t.defaultsTable)
 					})
 
@@ -7678,47 +7688,51 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 				---Load profiles data
 				---***
-				---@param profiles? table List of profiles | ***Default:*** *set up the default profiles list*
-				--- - ***Note:*** Profile subtables under invalid or nonconsecutive indexes or with invalid **title** strings will be pruned. 
-				---@param activeProfile? integer Index of the profile to set as the active profile | ***Default:*** 1
-				--- - ***Note:*** The profile under index 1 will be set as the active profile when an invalid index value is provided.
-				local function loadProfiles(profiles, activeProfile)
-					t.accountData.profiles = type(t.accountData.profiles) == "table" and t.accountData.profiles or {}
+				---@param p? profileStorage Table holding the list of profiles to store | ***Default:*** *validate* **t.accountData** *(if the data is missing or invalid, set up a default profile)*
+				---@param activeProfile? integer Index of the active profile to set | ***Default:*** **t.characterData.activeProfile** *clamped to fit* #**p.profiles** or 1
+				local function loadProfiles(p, activeProfile)
 
-					--| Profiles list
+					--| Profile list
 
-					--Validate the profile list provided
-					if type(profiles) == "table" then validateProfileList(profiles) else profiles = { {
-						title = strings.profiles.select.main,
-						data = wt.Clone(t.defaultsTable)
-					} } end
+					if type(p) == "table" then
+						p.profiles = type(p.profiles) == "table" and p.profiles or {}
 
-					--Clean the profile list in storage
-					validateProfileList(t.accountData.profiles)
+						validateProfiles(p.profiles)
 
-					--Update the profile list in storage (without breaking table references)
-					for i = 1, #profiles do
-						t.accountData.profiles[i].title = profiles[i].title
-						checkProfile(t.accountData.profiles[i].data, profiles[i].data)
+						--Update the profile list in storage (without breaking table references)
+						for i = 1, #p.profiles do
+							t.accountData.profiles[i].title = p.profiles[i].title
+							wt.CopyValues(t.accountData.profiles[i].data, p.profiles[i].data)
+						end
+					else
+						t.accountData.profiles = type(t.accountData.profiles) == "table" and t.accountData.profiles or {}
+
+						validateProfiles(t.accountData.profiles)
 					end
-
-					--Validate stored profile data
-					for i = 1, #t.accountData.profiles do checkProfile(t.accountData.profiles[i].data) end
 
 					--| Activate profile
 
-					t.characterData.activeProfile = Clamp(t.accountData.profiles[activeProfile] and activeProfile or 1, 1, #t.accountData.profiles)
+					t.characterData.activeProfile = Clamp(t.accountData.profiles[activeProfile] and activeProfile or t.characterData.activeProfile or 1, 1, #t.accountData.profiles)
 
-					--Pack misplaced possibly valuable data into the active profile data table (to be removed later if found irrelevant or invalid during validation)
+					--Populate the working table
+					if t.workingTable then checkData(t.workingTable, t.accountData.profiles[t.characterData.activeProfile].data) end
+
+					--| Recover misplaced data
+
+					local recovered = {}
+
+					--Remove & save misplaced possibly valuable data
 					for key, value in pairs(t.accountData) do if key ~= "profiles" then
-						t.accountData.profiles[t.characterData.activeProfile].data[key] = value
+						recovered[key] = value
 						t.accountData[key] = nil
 					end end
 
-					--Validate the active profile data and populate the working table
-					if t.workingTable then
-						checkProfile(t.workingTable, t.accountData.profiles[t.characterData.activeProfile].data)
-						wt.CopyValues(t.workingTable, t.accountData.profiles[t.characterData.activeProfile].data)
+					if next(recovered) then
+						--Pack recovered data into the active profile data table (to be removed later if found irrelevant or invalid during validation)
+						for key, value in pairs(recovered) do t.accountData.profiles[t.characterData.activeProfile].data[key] = value end
+
+						--Validate active profile data
+						checkData(t.accountData.profiles[t.characterData.activeProfile].data)
 					end
 
 					--| Call listener
@@ -7728,7 +7742,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 				--| Initialization
 
-				loadProfiles(t.accountData.profiles, t.characterData.activeProfile)
+				loadProfiles()
 
 				--[ GUI Widgets ]
 
@@ -7741,15 +7755,15 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					dataManagement.profiles.frame = wt.CreatePanel({
 						parent = canvas,
 						name = "Profiles",
-						title = strings.profiles.title,
-						description = strings.profiles.description:gsub("#ADDON", addonTitle),
+						title = ns.toolboxStrings.profiles.title,
+						description = ns.toolboxStrings.profiles.description:gsub("#ADDON", addonTitle),
 						arrange = {},
 						size = { h = 64 },
 						initialize = function(panel)
 							dataManagement.profiles.apply = wt.CreateDropdownSelector({
 								parent = panel,
-								title = strings.profiles.select.label,
-								tooltip = strings.profiles.select.tooltip,
+								title = ns.toolboxStrings.profiles.select.label,
+								tooltip = ns.toolboxStrings.profiles.select.tooltip,
 								arrange = {},
 								width = 180,
 								items = t.accountData.profiles,
@@ -7760,8 +7774,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 							dataManagement.profiles.new = wt.CreateButton({
 								parent = panel,
 								name = "New",
-								title = strings.profiles.new.label,
-								tooltip = { lines = { { text = strings.profiles.new.tooltip, }, } },
+								title = ns.toolboxStrings.profiles.new.label,
+								tooltip = { lines = { { text = ns.toolboxStrings.profiles.new.tooltip, }, } },
 								position = {
 									anchor = "TOPRIGHT",
 									offset = { x = -312, y = -30 }
@@ -7773,8 +7787,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 							dataManagement.profiles.duplicate = wt.CreateButton({
 								parent = panel,
 								name = "Duplicate",
-								title = strings.profiles.duplicate.label,
-								tooltip = { lines = { { text = strings.profiles.duplicate.tooltip, }, } },
+								title = ns.toolboxStrings.profiles.duplicate.label,
+								tooltip = { lines = { { text = ns.toolboxStrings.profiles.duplicate.tooltip, }, } },
 								position = {
 									anchor = "TOPRIGHT",
 									offset = { x = -192, y = -30 }
@@ -7786,8 +7800,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 							dataManagement.profiles.rename = wt.CreateButton({
 								parent = panel,
 								name = "Rename",
-								title = strings.profiles.rename.label,
-								tooltip = { lines = { { text = strings.profiles.rename.tooltip, }, } },
+								title = ns.toolboxStrings.profiles.rename.label,
+								tooltip = { lines = { { text = ns.toolboxStrings.profiles.rename.tooltip, }, } },
 								position = {
 									anchor = "TOPRIGHT",
 									offset = { x = -92, y = -30 }
@@ -7798,16 +7812,16 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 							local deleteProfilePopup = wt.CreatePopup(addon, {
 								name = "DELETE_PROFILE",
-								text = strings.profiles.delete.warning,
-								accept = strings.profiles.delete.label,
+								text = ns.toolboxStrings.profiles.delete.warning,
+								accept = ns.toolboxStrings.profiles.delete.label,
 								onAccept = function() dataManagement.deleteProfile() end,
 							})
 
 							dataManagement.profiles.delete = wt.CreateButton({
 								parent = panel,
 								name = "Delete",
-								title = strings.profiles.delete.label,
-								tooltip = { lines = { { text = strings.profiles.delete.tooltip, }, } },
+								title = ns.toolboxStrings.profiles.delete.label,
+								tooltip = { lines = { { text = ns.toolboxStrings.profiles.delete.tooltip, }, } },
 								position = {
 									anchor = "TOPRIGHT",
 									offset = { x = -12, y = -30 }
@@ -7828,8 +7842,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					dataManagement.backup.frame = wt.CreatePanel({
 						parent = canvas,
 						name = "Backup",
-						title = strings.backup.title,
-						description = strings.backup.description:gsub("#ADDON", addonTitle),
+						title = ns.toolboxStrings.backup.title,
+						description = ns.toolboxStrings.backup.description:gsub("#ADDON", addonTitle),
 						arrange = {},
 						size = { h = canvas:GetHeight() - 214 },
 						initialize = function(panel)
@@ -7863,8 +7877,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 							local importPopup = wt.CreatePopup(addon, {
 								name = "IMPORT",
-								text = strings.backup.warning,
-								accept = strings.backup.import,
+								text = ns.toolboxStrings.backup.warning,
+								accept = ns.toolboxStrings.backup.import,
 								onAccept = function()
 									local success, load = pcall(loadstring("return " .. wt.Clear(dataManagement.backup.box.getText())))
 									success = success and type(load) == "table"
@@ -7872,7 +7886,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 									if success then
 										local target = t.workingTable or t.accountData.profiles[t.characterData.activeProfile].data
 
-										checkProfile(load, target)
+										checkData(load, target)
 										wt.CopyValues(target, load)
 									end
 
@@ -7883,13 +7897,13 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 							dataManagement.backup.box = wt.CreateMultilineTextbox({
 								parent = panel,
 								name = "ImportExport",
-								title = strings.backup.box.label,
+								title = ns.toolboxStrings.backup.box.label,
 								tooltip = { lines = {
-									{ text = strings.backup.box.tooltip[1], },
-									{ text = "\n" .. strings.backup.box.tooltip[2], },
-									{ text = "\n" .. strings.backup.box.tooltip[3], },
-									{ text = strings.backup.box.tooltip[4], color = { r = 0.89, g = 0.65, b = 0.40 }, },
-									{ text = "\n" .. strings.backup.box.tooltip[5], color = { r = 0.92, g = 0.34, b = 0.23 }, },
+									{ text = ns.toolboxStrings.backup.box.tooltip[1], },
+									{ text = "\n" .. ns.toolboxStrings.backup.box.tooltip[2], },
+									{ text = "\n" .. ns.toolboxStrings.backup.box.tooltip[3], },
+									{ text = ns.toolboxStrings.backup.box.tooltip[4], color = { r = 0.89, g = 0.65, b = 0.40 }, },
+									{ text = "\n" .. ns.toolboxStrings.backup.box.tooltip[5], color = { r = 0.92, g = 0.34, b = 0.23 }, },
 								}, },
 								arrange = {},
 								size = { w = panel:GetWidth() - 24, h = panel:GetHeight() - 76 },
@@ -7906,8 +7920,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 							dataManagement.backup.compact = wt.CreateCheckbox({
 								parent = panel,
 								name = "Compact",
-								title = strings.backup.compact.label,
-								tooltip = { lines = { { text = strings.backup.compact.tooltip, }, } },
+								title = ns.toolboxStrings.backup.compact.label,
+								tooltip = { lines = { { text = ns.toolboxStrings.backup.compact.tooltip, }, } },
 								position = {
 									anchor = "BOTTOMLEFT",
 									offset = { x = 12, y = 12 }
@@ -7923,8 +7937,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 							dataManagement.backup.load = wt.CreateButton({
 								parent = panel,
 								name = "Load",
-								title = strings.backup.load.label,
-								tooltip = { lines = { { text = strings.backup.load.tooltip, }, } },
+								title = ns.toolboxStrings.backup.load.label,
+								tooltip = { lines = { { text = ns.toolboxStrings.backup.load.tooltip, }, } },
 								arrange = {},
 								size = { h = 26 },
 								action = function() StaticPopup_Show(importPopup) end,
@@ -7933,8 +7947,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 							dataManagement.backup.reset = wt.CreateButton({
 								parent = panel,
 								name = "Reset",
-								title = strings.backup.reset.label,
-								tooltip = { lines = { { text = strings.backup.reset.tooltip, }, } },
+								title = ns.toolboxStrings.backup.reset.label,
+								tooltip = { lines = { { text = ns.toolboxStrings.backup.reset.tooltip, }, } },
 								position = {
 									anchor = "BOTTOMRIGHT",
 									offset = { x = -100, y = 12 }
@@ -7947,18 +7961,18 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 							local allProfilesImportPopup = wt.CreatePopup(addon, {
 								name = "IMPORT_AllProfiles",
-								text = strings.backup.warning,
-								accept = strings.backup.import,
+								text = ns.toolboxStrings.backup.warning,
+								accept = ns.toolboxStrings.backup.import,
 								onAccept = function()
-									local success, load = pcall(loadstring("return " .. wt.Clear(dataManagement.backupAllProfiles.box.getText())))
-									load = type(load) == "table" and load or {}
+									local success, data = pcall(loadstring("return " .. wt.Clear(dataManagement.backupAllProfiles.box.getText())))
+									data = type(data) == "table" and data or {}
 
-									if success then loadProfiles(type(load.profiles) == "table" and load.profiles, load.activeProfile) end
+									if success then loadProfiles(data.profiles, data.activeProfile) end
 
 									--Set dropdown items 
 									dataManagement.profiles.apply.updateItems(t.accountData.profiles)
 
-									t.onImportAllProfiles(success and type(load) == "table", load)
+									t.onImportAllProfiles(success and type(data) == "table", data)
 								end,
 							})
 
@@ -7967,7 +7981,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 								parent = canvas,
 								name = addon .. "AllProfilesBackup",
 								append = false,
-								title = strings.backup.allProfiles.title,
+								title = ns.toolboxStrings.backup.allProfiles.title,
 								position = { anchor = "BOTTOMRIGHT", },
 								keepInBounds = true,
 								size = { w = 678, h = 610 },
@@ -7978,14 +7992,14 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 									dataManagement.backupAllProfiles.box = wt.CreateMultilineTextbox({
 										parent = windowPanel,
 										name = "ImportExportAllProfiles",
-										title = strings.backup.allProfiles.label,
+										title = ns.toolboxStrings.backup.allProfiles.label,
 										label = false,
 										tooltip = { lines = {
-											{ text = strings.backup.allProfiles.tooltipLine, },
-											{ text = "\n" .. strings.backup.box.tooltip[2], },
-											{ text = "\n" .. strings.backup.box.tooltip[3], },
-											{ text = strings.backup.box.tooltip[4], color = { r = 0.89, g = 0.65, b = 0.40 }, },
-											{ text = "\n" .. strings.backup.box.tooltip[5], color = { r = 0.92, g = 0.34, b = 0.23 }, },
+											{ text = ns.toolboxStrings.backup.allProfiles.tooltipLine, },
+											{ text = "\n" .. ns.toolboxStrings.backup.box.tooltip[2], },
+											{ text = "\n" .. ns.toolboxStrings.backup.box.tooltip[3], },
+											{ text = ns.toolboxStrings.backup.box.tooltip[4], color = { r = 0.89, g = 0.65, b = 0.40 }, },
+											{ text = "\n" .. ns.toolboxStrings.backup.box.tooltip[5], color = { r = 0.92, g = 0.34, b = 0.23 }, },
 										}, },
 										arrange = {},
 										size = { w = windowPanel:GetWidth() - 32, h = windowPanel:GetHeight() - 88 },
@@ -8002,7 +8016,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 									wt.CreateButton({
 										parent = windowPanel,
 										name = "CloseButton",
-										title = strings.misc.close,
+										title = ns.toolboxStrings.misc.close,
 										arrange = {},
 										size = { w = 96, },
 										action = function() windowPanel:Hide() end,
@@ -8022,8 +8036,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 							wt.CreateButton({
 								parent = panel,
 								name = "OpenAllProfilesBackup",
-								title = strings.backup.allProfiles.open.label,
-								tooltip = strings.backup.allProfiles.open.tooltip,
+								title = ns.toolboxStrings.backup.allProfiles.open.label,
+								tooltip = ns.toolboxStrings.backup.allProfiles.open.tooltip,
 								position = {
 									anchor = "TOPRIGHT",
 									relativeTo = dataManagement.backup.box.frame,
@@ -8048,8 +8062,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 							dataManagement.backupAllProfiles.compact = wt.CreateCheckbox({
 								parent = allProfilesBackupFrame,
 								name = "Compact",
-								title = strings.backup.compact.label,
-								tooltip = { lines = { { text = strings.backup.compact.tooltip, }, } },
+								title = ns.toolboxStrings.backup.compact.label,
+								tooltip = { lines = { { text = ns.toolboxStrings.backup.compact.tooltip, }, } },
 								position = {
 									anchor = "BOTTOMLEFT",
 									offset = { x = 12, y = 12 }
@@ -8064,8 +8078,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 							dataManagement.backupAllProfiles.load = wt.CreateButton({
 								parent = allProfilesBackupFrame,
 								name = "Load",
-								title = strings.backup.load.label,
-								tooltip = { lines = { { text = strings.backup.load.tooltip, }, } },
+								title = ns.toolboxStrings.backup.load.label,
+								tooltip = { lines = { { text = ns.toolboxStrings.backup.load.tooltip, }, } },
 								position = {
 									anchor = "BOTTOM",
 									offset = { x = 45, y = 12 }
@@ -8077,8 +8091,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 							dataManagement.backupAllProfiles.reset = wt.CreateButton({
 								parent = allProfilesBackupFrame,
 								name = "Reset",
-								title = strings.backup.reset.label,
-								tooltip = { lines = { { text = strings.backup.reset.tooltip, }, } },
+								title = ns.toolboxStrings.backup.reset.label,
+								tooltip = { lines = { { text = ns.toolboxStrings.backup.reset.tooltip, }, } },
 								position = {
 									anchor = "BOTTOM",
 									offset = { x = -45, y = 12 }
@@ -8197,8 +8211,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		panel.frame = wt.CreatePanel({
 			parent = t.canvas,
 			name = "Position",
-			title = strings.position.title,
-			description = strings.position.description[t.setMovable and "movable" or "static"]:gsub("#FRAME", t.frameName),
+			title = ns.toolboxStrings.position.title,
+			description = ns.toolboxStrings.position.description[t.setMovable and "movable" or "static"]:gsub("#FRAME", t.frameName),
 			arrange = {},
 			events = WidgetToolsDB.positioningAids and {
 				OnShow = function()
@@ -8321,15 +8335,15 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					panel.presets.apply = wt.CreateDropdownSelector({
 						parent = panelFrame,
 						name = "ApplyPreset",
-						title = strings.presets.apply.label,
-						tooltip = { lines = { { text = strings.presets.apply.tooltip:gsub("#FRAME", t.frameName), }, } },
+						title = ns.toolboxStrings.presets.apply.label,
+						tooltip = { lines = { { text = ns.toolboxStrings.presets.apply.tooltip:gsub("#FRAME", t.frameName), }, } },
 						arrange = {},
 						width = 180,
 						items = panel.presetList,
 						onSelection = applyPreset,
 						optionsData = {
 							optionsKey = t.optionsKey,
-							onLoad = function(self) self.setSelected(nil, nil, strings.presets.apply.select) end,
+							onLoad = function(self) self.setSelected(nil, nil, ns.toolboxStrings.presets.apply.select) end,
 						}
 					})
 
@@ -8390,17 +8404,17 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 						local savePopup = wt.CreatePopup(addon, {
 							name = "SAVEPRESET",
-							text = strings.presets.save.warning:gsub("#CUSTOM", panel.presetList[t.presets.custom.index].title),
-							accept = strings.misc.override,
+							text = ns.toolboxStrings.presets.save.warning:gsub("#CUSTOM", panel.presetList[t.presets.custom.index].title),
+							accept = ns.toolboxStrings.misc.override,
 							onAccept = panel.saveCustomPreset,
 						})
 
 						panel.presets.save = wt.CreateButton({
 							parent = panelFrame,
 							name = "SavePreset",
-							title = strings.presets.save.label:gsub("#CUSTOM", panel.presetList[t.presets.custom.index].title),
+							title = ns.toolboxStrings.presets.save.label:gsub("#CUSTOM", panel.presetList[t.presets.custom.index].title),
 							tooltip = { lines = {
-								{ text = strings.presets.save.tooltip:gsub("#FRAME", t.frameName):gsub("#CUSTOM", panel.presetList[t.presets.custom.index].title), },
+								{ text = ns.toolboxStrings.presets.save.tooltip:gsub("#FRAME", t.frameName):gsub("#CUSTOM", panel.presetList[t.presets.custom.index].title), },
 							} },
 							arrange = { newRow = false, },
 							size = { w = 170, h = 26 },
@@ -8410,16 +8424,16 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 						local resetPopup = wt.CreatePopup(addon, {
 							name = "RESETPRESET",
-							text = strings.presets.reset.warning:gsub("#CUSTOM", panel.presetList[t.presets.custom.index].title),
-							accept = strings.misc.override,
+							text = ns.toolboxStrings.presets.reset.warning:gsub("#CUSTOM", panel.presetList[t.presets.custom.index].title),
+							accept = ns.toolboxStrings.misc.override,
 							onAccept = panel.resetCustomPreset,
 						})
 
 						panel.presets.reset = wt.CreateButton({
 							parent = panelFrame,
 							name = "ResetPreset",
-							title = strings.presets.reset.label:gsub("#CUSTOM", panel.presetList[t.presets.custom.index].title),
-							tooltip = { lines = { { text = strings.presets.reset.tooltip:gsub("#CUSTOM", panel.presetList[t.presets.custom.index].title), }, } },
+							title = ns.toolboxStrings.presets.reset.label:gsub("#CUSTOM", panel.presetList[t.presets.custom.index].title),
+							tooltip = { lines = { { text = ns.toolboxStrings.presets.reset.tooltip:gsub("#CUSTOM", panel.presetList[t.presets.custom.index].title), }, } },
 							arrange = { newRow = false, },
 							size = { w = 170, h = 26 },
 							action = function() StaticPopup_Show(resetPopup) end,
@@ -8434,12 +8448,12 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				panel.position.anchor = wt.CreateSpecialSelector({
 					parent = panelFrame,
 					name = "AnchorPoint",
-					title = strings.position.anchor.label,
-					tooltip = { lines = { { text = strings.position.anchor.tooltip:gsub("#FRAME", t.frameName), }, } },
+					title = ns.toolboxStrings.position.anchor.label,
+					tooltip = { lines = { { text = ns.toolboxStrings.position.anchor.tooltip:gsub("#FRAME", t.frameName), }, } },
 					arrange = {},
 					width = 140,
 					itemset = "anchor",
-					onSelection = t.presets and function() panel.presets.apply.setSelected(nil, nil, strings.presets.apply.select) end or nil,
+					onSelection = t.presets and function() panel.presets.apply.setSelected(nil, nil, ns.toolboxStrings.presets.apply.select) end or nil,
 					dependencies = t.dependencies,
 					optionsData = {
 						optionsKey = t.optionsKey,
@@ -8456,13 +8470,13 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				if t.workingTable.position.relativePoint then panel.position.relativePoint = wt.CreateSpecialSelector({
 					parent = panelFrame,
 					name = "RelativePoint",
-					title = strings.position.relativePoint.label,
-					tooltip = { lines = { { text = strings.position.relativePoint.tooltip:gsub("#FRAME", t.frameName), }, } },
+					title = ns.toolboxStrings.position.relativePoint.label,
+					tooltip = { lines = { { text = ns.toolboxStrings.position.relativePoint.tooltip:gsub("#FRAME", t.frameName), }, } },
 					arrange = { newRow = false, },
 					width = 140,
 					itemset = "anchor",
 					clearable = true,
-					onSelection = t.presets and function() panel.presets.apply.setSelected(nil, nil, strings.presets.apply.select) end or nil,
+					onSelection = t.presets and function() panel.presets.apply.setSelected(nil, nil, ns.toolboxStrings.presets.apply.select) end or nil,
 					dependencies = t.dependencies,
 					optionsData = {
 						optionsKey = t.optionsKey,
@@ -8482,14 +8496,14 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				panel.position.offset.x = wt.CreateNumericSlider({
 					parent = panelFrame,
 					name = "OffsetX",
-					title = strings.position.offsetX.label,
-					tooltip = { lines = { { text = strings.position.offsetX.tooltip:gsub("#FRAME", t.frameName), }, } },
+					title = ns.toolboxStrings.position.offsetX.label,
+					tooltip = { lines = { { text = ns.toolboxStrings.position.offsetX.tooltip:gsub("#FRAME", t.frameName), }, } },
 					arrange = {},
 					value = { min = -500, max = 500, fractional = 2 },
 					step = 1,
 					altStep = 25,
 					events = t.presets and {
-						OnValueChanged = function(_, _, user) if user then panel.presets.apply.setSelected(nil, nil, strings.presets.apply.select) end end,
+						OnValueChanged = function(_, _, user) if user then panel.presets.apply.setSelected(nil, nil, ns.toolboxStrings.presets.apply.select) end end,
 					} or nil,
 					dependencies = t.dependencies,
 					optionsData = {
@@ -8506,14 +8520,14 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				panel.position.offset.y = wt.CreateNumericSlider({
 					parent = panelFrame,
 					name = "OffsetY",
-					title = strings.position.offsetY.label,
-					tooltip = { lines = { { text = strings.position.offsetY.tooltip:gsub("#FRAME", t.frameName), }, } },
+					title = ns.toolboxStrings.position.offsetY.label,
+					tooltip = { lines = { { text = ns.toolboxStrings.position.offsetY.tooltip:gsub("#FRAME", t.frameName), }, } },
 					arrange = { newRow = false, },
 					value = { min = -500, max = 500, fractional = 2 },
 					step = 1,
 					altStep = 25,
 					events = t.presets and {
-						OnValueChanged = function(_, _, user) if user then panel.presets.apply.setSelected(nil, nil, strings.presets.apply.select) end end,
+						OnValueChanged = function(_, _, user) if user then panel.presets.apply.setSelected(nil, nil, ns.toolboxStrings.presets.apply.select) end end,
 					} or nil,
 					dependencies = t.dependencies,
 					optionsData = {
@@ -8530,8 +8544,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				if t.workingTable.keepInBounds ~= nil then panel.position.keepInBounds = wt.CreateCheckbox({
 					parent = panelFrame,
 					name = "KeepInBounds",
-					title = strings.position.keepInBounds.label,
-					tooltip = { lines = { { text = strings.position.keepInBounds.tooltip:gsub("#FRAME", t.frameName), }, } },
+					title = ns.toolboxStrings.position.keepInBounds.label,
+					tooltip = { lines = { { text = ns.toolboxStrings.position.keepInBounds.tooltip:gsub("#FRAME", t.frameName), }, } },
 					arrange = { newRow = false, },
 					dependencies = t.dependencies,
 					optionsData = {
@@ -8612,12 +8626,12 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					if t.workingTable.layer.strata then panel.layer.strata = wt.CreateSpecialSelector({
 						parent = panelFrame,
 						name = "FrameStrata",
-						title = strings.layer.strata.label,
-						tooltip = { lines = { { text = strings.layer.strata.tooltip:gsub("#FRAME", t.frameName), }, } },
+						title = ns.toolboxStrings.layer.strata.label,
+						tooltip = { lines = { { text = ns.toolboxStrings.layer.strata.tooltip:gsub("#FRAME", t.frameName), }, } },
 						arrange = {},
 						width = 140,
 						itemset = "frameStrata",
-						onSelection = t.presets and function() panel.presets.apply.setSelected(nil, nil, strings.presets.apply.select) end or nil,
+						onSelection = t.presets and function() panel.presets.apply.setSelected(nil, nil, ns.toolboxStrings.presets.apply.select) end or nil,
 						dependencies = t.dependencies,
 						optionsData = {
 							optionsKey = t.optionsKey,
@@ -8634,8 +8648,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 						panel.layer.keepOnTop = wt.CreateCheckbox({
 							parent = panelFrame,
 							name = "KeepOnTop",
-							title = strings.layer.keepOnTop.label,
-							tooltip = { lines = { { text = strings.layer.keepOnTop.tooltip:gsub("#FRAME", t.frameName), }, } },
+							title = ns.toolboxStrings.layer.keepOnTop.label,
+							tooltip = { lines = { { text = ns.toolboxStrings.layer.keepOnTop.tooltip:gsub("#FRAME", t.frameName), }, } },
 							arrange = { newRow = false, },
 							dependencies = t.dependencies,
 							optionsData = {
@@ -8654,14 +8668,14 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 						panel.layer.level = wt.CreateNumericSlider({
 							parent = panelFrame,
 							name = "FrameLevel",
-							title = strings.layer.level.label,
-							tooltip = { lines = { { text = strings.layer.level.tooltip:gsub("#FRAME", t.frameName), }, } },
+							title = ns.toolboxStrings.layer.level.label,
+							tooltip = { lines = { { text = ns.toolboxStrings.layer.level.tooltip:gsub("#FRAME", t.frameName), }, } },
 							arrange = { newRow = false, },
 							value = { min = 0, max = 10000, },
 							step = 1,
 							altStep = 100,
 							events = t.presets and {
-								OnValueChanged = function(_, _, user) if user then panel.presets.apply.setSelected(nil, nil, strings.presets.apply.select) end end,
+								OnValueChanged = function(_, _, user) if user then panel.presets.apply.setSelected(nil, nil, ns.toolboxStrings.presets.apply.select) end end,
 							} or nil,
 							dependencies = t.dependencies,
 							optionsData = {

@@ -170,7 +170,6 @@ local function LoadLocale()
 	else --Default: English (UK & US)
 		ns.strings = english
 	end
-	return ns.strings
 end
 
 

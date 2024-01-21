@@ -594,7 +594,7 @@ local function CreateUpdateOptions(panel, display, optionsKey)
 	})
 
 	-- if display ~= "playerSpeed" then return end
-	--TODO: figure out how to implement it - or delete if it's unnecessary
+	--TODO: figure out how to implement it - or delete if unnecessary
 	-- options.playerSpeed.update.dragonridingOnly = wt.CreateCheckbox({
 	-- 	parent = panel,
 	-- 	name = "DragonridingOnly",
