@@ -1,4 +1,4 @@
-## Interface: 100200
+## Interface: 100205
 ## Title: Widget Tools
 ## Notes: Responsible for doing the heavy lifting for dependant addons in the background.
 ## IconTexture: Interface/AddOns/WidgetTools/Textures/Logo.tga
