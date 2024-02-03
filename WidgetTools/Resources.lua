@@ -87,7 +87,7 @@ ns.changelog = {
 		"Under the hood improvements.",
 	},
 	{
-		"#V_Version 2.0_# #H_(10/25/2023)_#",
+		"#V_Version 2.0_# #H_(2/3/2024)_#",
 		"#C_Changes:_#",
 		"Significant under the hood improvements.",
 		"#H_If you encounter any issues, do not hesitate to report them! Try including when & how they occur, and which other addons are you using to give me the best chance of being able to reproduce & fix them. Try proving any LUA script error messages and if you know how, taint logs as well (when relevant). Thanks a lot for helping!_#",
@@ -133,11 +133,11 @@ local english = {
 			description = "Useful tools and options for developers.",
 			frameAttributes = {
 				enabled = {
-					label = "Resize Frame Attributes",
-					tooltip = "Customize the width of the Frame Attributes window (TableAttributeDisplay Frame).",
+					label = "Resize Frame Attributes Table",
+					tooltip = "Customize the width of the table inside the Frame Attributes window (TableAttributeDisplay Frame).",
 				},
 				width = {
-					label = "Frame Attributes Width",
+					label = "Frame Attributes Table Width",
 					tooltip = "Specify the width of the scrollable content table in the Frame Attributes window.",
 				},
 			},
@@ -154,10 +154,15 @@ local english = {
 		},
 		toolbox = "Toolbox (#VERSION)",
 	},
+	compartment = {
+		open = "Click to open the settings page.",
+		lite = "Lite mode is enabled. Click to disable.",
+	},
 	lite = {
 		warning = "#ADDON is in lite mode, the settings UI for dependant addons have not been loaded.\n\nDo you wish to turn off lite mode to reenable settings with full functionality?",
 		accept = "Disable Lite Mode",
 	},
+	date = "#MONTH/#DAY/#YEAR",
 }
 
 --Load the proper localization table based on the client language

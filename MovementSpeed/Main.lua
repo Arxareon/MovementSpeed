@@ -367,7 +367,7 @@ end
 local function GetSpeedDisplayTooltipLines(type)
 	return {
 		{ text = ns.strings.speedTooltip.description },
-		{ text = ns.strings.speedTooltip[type .. "Speed"], },
+		{ text = "\n" .. ns.strings.speedTooltip[type .. "Speed"], },
 		{
 			text = "\n" .. ns.strings.speedTooltip.text[1]:gsub("#YARDS", wt.Color(wt.FormatThousands(speed[type].yards, 2, true),  ns.colors.yellow[2])),
 			font = GameTooltipText,
@@ -448,7 +448,7 @@ end
 ---Assemble the text for the mouseover target's speed
 ---@return string
 local function GetTargetSpeedText()
-	return "|T" .. ns.textures.logo .. ":0|t" .. " " .. ns.strings.targetSpeed:gsub("#SPEED", wt.Color(FormatSpeedValue("targetSpeed"), ns.colors.grey[2]))
+	return CreateSimpleTextureMarkup(ns.textures.logo) .. " " .. ns.strings.targetSpeed:gsub("#SPEED", wt.Color(FormatSpeedValue("targetSpeed"), ns.colors.grey[2]))
 end
 
 --Set up the Target Speed unit tooltip integration
@@ -471,7 +471,7 @@ local function EnableTargetSpeedUpdates()
 			local lineAdded = false
 			for i = 2, tooltip:NumLines() do
 				local line = _G["GameTooltipTextLeft" .. i]
-				if line then if string.match(line:GetText() or "", "|T" .. ns.textures.logo .. ":0|t") then
+				if line then if string.match(line:GetText() or "", CreateSimpleTextureMarkup(ns.textures.logo)) then
 					--Update the speed line
 					line:SetText(GetTargetSpeedText())
 					lineAdded = true
@@ -745,14 +745,13 @@ local function CreateFontOptions(panel, display, optionsKey, type)
 		}
 	})
 
-	options[display].font.alignment = wt.CreateSpecialSelector({
+	options[display].font.alignment = wt.CreateSpecialSelector("justifyH", {
 		parent = panel,
 		name = "Alignment",
 		title = ns.strings.options.speedDisplay.font.alignment.label,
 		tooltip = { lines = { { text = ns.strings.options.speedDisplay.font.alignment.tooltip, }, } },
 		arrange = { newRow = false, },
 		width = 140,
-		itemset = "justifyH",
 		dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
 		optionsData = {
 			optionsKey = optionsKey,
@@ -864,7 +863,8 @@ end
 
 ---Create the category page
 ---@param display "playerSpeed"|"travelSpeed"
-local function CreateSpeedDisplayOptions(display)
+---@return settingsPage
+local function CreateSpeedDisplayOptionsPage(display)
 	local displayName = ns.strings.options[display].title:gsub("%s+", "")
 	local displayType = display:sub(1, -6)
 	local otherDisplay = display == "playerSpeed" and "travelSpeed" or "playerSpeed"
@@ -877,9 +877,8 @@ local function CreateSpeedDisplayOptions(display)
 		ns.name .. displayName .. "Background",
 	}
 
-	options[display].page = wt.CreateOptionsCategory(ns.name, {
-		parent = options.main.page,
-		name = ns.strings.options[display].title,
+	options[display].page = wt.CreateSettingsPage(ns.name, {
+		name = displayName,
 		title = ns.strings.options.speedDisplay.title:gsub("#TYPE", ns.strings.options[display].title),
 		description = ns.strings.options[display].description:gsub("#ADDON", addonTitle),
 		logo = ns.textures.logo,
@@ -890,13 +889,13 @@ local function CreateSpeedDisplayOptions(display)
 			storageTable = s[display],
 			defaultsTable = ns.profileDefault[display],
 		}, },
-		onDefault = function(user)
+		onDefault = function()
 			options[display].position.resetCustomPreset()
 
 			--Notification
-			if user then print(addonChat .. wt.Color(ns.strings.chat.defaults.response:gsub(
+			print(addonChat .. wt.Color(ns.strings.chat.defaults.response:gsub(
 				"#CATEGORY", wt.Color(ns.strings.options.speedDisplay.title:gsub("#TYPE", ns.strings.options[display].title), ns.colors.green[2])
-			), ns.colors.yellow[2])) end
+			), ns.colors.yellow[2]))
 		end,
 		initialize = function(canvas)
 
@@ -1066,7 +1065,6 @@ local function CreateSpeedDisplayOptions(display)
 				workingTable = d[display],
 				storageTable = s[display],
 				settingsData = MovementSpeedCS,
-				onChangePosition = function() d[display].position.relativePoint = d[display].position.anchor end,
 			})
 
 			wt.CreateButton({
@@ -1248,6 +1246,8 @@ local function CreateSpeedDisplayOptions(display)
 		end,
 		arrangement = {}
 	})
+
+	return options[display].page
 end
 
 --[ Target Speed ]
@@ -1320,10 +1320,10 @@ local function CreateTargetSpeedValueOptions(panel)
 	})
 end
 
---Create the category page
-local function CreateTargetSpeedOptions()
-	options.targetSpeed.page = wt.CreateOptionsCategory(ns.name, {
-		parent = options.main.page,
+---Create the category page
+---@return settingsPage
+local function CreateTargetSpeedOptionsPage()
+	options.targetSpeed.page = wt.CreateSettingsPage(ns.name, {
 		name = "TargetSpeed",
 		title = ns.strings.options.targetSpeed.title,
 		description = ns.strings.options.targetSpeed.description:gsub("#ADDON", addonTitle),
@@ -1334,9 +1334,7 @@ local function CreateTargetSpeedOptions()
 			storageTable = s.targetSpeed,
 			defaultsTable = ns.profileDefault.targetSpeed,
 		}, },
-		onDefault = function(user)
-			if not user then return end
-
+		onDefault = function()
 			--Notification
 			print(addonChat .. wt.Color(ns.strings.chat.defaults.response:gsub(
 				"#CATEGORY", wt.Color(ns.strings.options.targetSpeed.title, ns.colors.green[2])
@@ -1367,6 +1365,8 @@ local function CreateTargetSpeedOptions()
 		end,
 		arrangement = {}
 	})
+
+	return options.targetSpeed.page
 end
 
 
@@ -1404,16 +1404,9 @@ local function PrintCommand(command, description)
 end
 
 --Reset to defaults confirmation
-local resetDefaultsPopup = wt.CreatePopup(ns.name, {
-	name = "DefaultOptions",
+local resetDefaultsPopup = wt.CreatePopupDialogueData(ns.name, "DEFAULT_OPTIONS", {
 	text = (wt.GetStrings("warning") or ""):gsub("#TITLE", wt.Clear(addonTitle)),
-	onAccept = function()
-		--Reset the options data & update the interface options
-		options.playerSpeed.page.default()
-		options.travelSpeed.page.default()
-		options.targetSpeed.page.default()
-		options.dataManagement.page.default(true)
-	end,
+	onAccept = function() options.dataManagement.resetProfile() end,
 })
 
 --[ Commands ]
@@ -1615,14 +1608,6 @@ frames.main = wt.CreateBaseFrame({
 			if addon ~= ns.name then return end
 			self:UnregisterEvent("ADDON_LOADED")
 
-			--[ Settings Addon Page]
-
-			options.main.page = wt.CreateAboutPage(ns.name, {
-				name = "Main",
-				description = ns.strings.options.main.description:gsub("#ADDON", addonTitle),
-				changelog = ns.changelog
-			})
-
 			--[ Data ]
 
 			local firstLoad = not MovementSpeedDB
@@ -1632,14 +1617,17 @@ frames.main = wt.CreateBaseFrame({
 			MovementSpeedDBC = MovementSpeedDBC or {}
 
 			--Load cross-session data
-			MovementSpeedCS = wt.AddMissing(MovementSpeedCS or {}, { compactBackup = true, })
+			MovementSpeedCS = wt.AddMissing(MovementSpeedCS or {}, {
+				compactBackup = true,
+				keepInPlace = true,
+			})
 
 			--Initialize data management
 			options.dataManagement = wt.CreateDataManagementPage(ns.name, {
-				parent = options.main.page,
-				register = false,
-				onDefault = function()
-					options[d.mainDisplay].position.resetCustomPreset()
+				onDefault = function(_, all)
+					if all then return end
+
+					options.dataManagement.resetProfile()
 
 					--Notifications
 					print(addonChat .. wt.Color(ns.strings.chat.defaults.response:gsub(
@@ -1658,14 +1646,25 @@ frames.main = wt.CreateBaseFrame({
 				workingTable = d,
 				defaultsTable = ns.profileDefault,
 				onProfilesLoaded = function() s = MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data end,
-				onProfileActivated = function()
-					s = MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data
+				onProfileActivated = function(index)
+					s = MovementSpeedDB.profiles[index].data
 
 					--Update the interface options
 					options.playerSpeed.page.load(true)
 					options.travelSpeed.page.load(true)
 					options.targetSpeed.page.load(true)
 					options.dataManagement.page.load(true)
+
+					--Notification
+					print(addonChat .. wt.Color(ns.strings.chat.profile.response:gsub(
+						"#PROFILE", wt.Color(MovementSpeedDB.profiles[index].title, ns.colors.green[2])
+					), ns.colors.yellow[2]))
+				end,
+				onProfileReset = function(index)
+					--Notification
+					print(addonChat .. wt.Color(ns.strings.chat.defaults.response:gsub(
+						"#PROFILE", wt.Color(MovementSpeedDB.profiles[index].title, ns.colors.green[2])
+					), ns.colors.yellow[2]))
 				end,
 				onImport = function(success) if success then
 					--Update the interface options
@@ -1684,10 +1683,18 @@ frames.main = wt.CreateBaseFrame({
 
 			--[ Settings Setup ]
 
-			CreateSpeedDisplayOptions("playerSpeed")
-			CreateSpeedDisplayOptions("travelSpeed")
-			CreateTargetSpeedOptions()
-			options.dataManagement.page.register()
+			options.main.page = wt.CreateAboutPage(ns.name, {
+				name = "Main",
+				description = ns.strings.options.main.description:gsub("#ADDON", addonTitle),
+				changelog = ns.changelog
+			})
+
+			options.pageManager = wt.CreateSettingsCategory(ns.name, options.main.page, {
+				CreateSpeedDisplayOptionsPage("playerSpeed"),
+				CreateSpeedDisplayOptionsPage("travelSpeed"),
+				CreateTargetSpeedOptionsPage(),
+				options.dataManagement.page
+			})
 
 			--[ Display Setup ]
 

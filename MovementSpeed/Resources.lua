@@ -239,7 +239,7 @@ ns.changelog = {
 		"Other small fixes, changes & improvements.",
 	},
 	{
-		"#V_Version 3.0_# #H_(10/25/2023)_#",
+		"#V_Version 3.0_# #H_(2/3/2024)_#",
 		"#C_Changes:_#",
 		"Shortcuts have been removed from the main addon settings page in Classic.",
 		"Significant under the hood improvements.",
@@ -498,9 +498,16 @@ local english = {
 			unchanged = "The font size was not changed.",
 			error = "Please enter a valid number value (e.g. #SIZE).",
 		},
+		profile = {
+			description = "activate a settings profile",
+			response = "The #PROFILE settings profile was activated.",
+			unchanged = "The profile could not be activated, no changes were made.",
+			error = "Please enter a valid profile name or index (e.g. #INDEX).",
+			list = "The following profiles are available:",
+		},
 		defaults = {
-			description = "restore everything to defaults",
-			response = "The #CATEGORY options have been reset to defaults.",
+			description = "restore the active profile to defaults",
+			response = "The active #PROFILE settings profiles has been reset to defaults.",
 		},
 		position = {
 			save = "The speed display position was saved.",
@@ -511,9 +518,9 @@ local english = {
 	targetSpeed = "Speed: #SPEED",
 	speedTooltip = {
 		title = "#SPEED details:",
-		description = "An live summary of your movement status.",
-		playerSpeed = "Calculated based the Speed stat, various effects & the type of movement activity.",
-		travelSpeed = "Calculated by tracking your horizontal movement through the current zone map.",
+		description = "Live movement status summary.",
+		playerSpeed = "Calculated based on the type of your current movement activity, modified by the Speed stat and various buffs, debuffs, mounts & other effects.",
+		travelSpeed = "Estimated by tracking your horizontal movement through the current zone, negatively affected by obstacles and the angle of movement during flight.",
 		text = {
 			"#YARDS yards / second.",
 			"#PERCENT of the base running speed.",

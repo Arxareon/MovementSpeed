@@ -163,9 +163,6 @@
 
 --[ UI Object ]
 
----@class childObject
----@field parent Frame Reference to the frame to set as the parent
-
 ---@class optionalChildObject
 ---@field parent? Frame Reference to the frame to set as the parent
 
@@ -173,7 +170,7 @@
 ---@field name? string Unique string used to set the frame name | ***Default:*** "Frame"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
 
 ---@class namedChildObject : optionalChildObject, namedObject_base
----@field append? boolean Instead of setting the specified name by itself, append it to the name of the specified parent frame | ***Default:*** true
+---@field append? boolean Instead of setting the specified name by itself, append it to the name of the specified parent frame | ***Default:*** true if t.parent ~= UIParent
 
 --[ Position & Dimensions ]
 
@@ -262,15 +259,17 @@
 ---@field onCancel? function Function to call when the movement of **frame** is cancelled (because the modifier key was released early as an example)
 
 ---@class movabilityData
----@field modifier? ModifierKey The specific (or any) modifier key required to be pressed down to move **frame** (if **frame** has the "OnUpdate" script defined) | ***Default:*** nil *(no modifier)*<ul><li>***Note:*** Used to determine the specific modifier check to use. Example: when set to "any" [IsModifierKeyDown](https://wowpedia.fandom.com/wiki/API_IsModifierKeyDown) is used.</li></ul>
----@field triggers? Frame[] List of frames that should handle inputs to initiate or stop the movement when interacted with | ***Default:*** **t.frame**<ul><li>***Note:*** The [IsMouseEnabled](https://warcraft.wiki.gg/wiki/API_ScriptRegion_IsMouseEnabled) property and [OnUpdate](https://warcraft.wiki.gg/wiki/UIHANDLER_OnUpdate) script handlers of the trigger frames will be overwritten.</li></ul>
+---@field modifier? ModifierKey The specific (or any) modifier key required to be pressed down to move **t.frame** (if **t.frame** has the "OnUpdate" script defined) | ***Default:*** nil *(no modifier)*<ul><li>***Note:*** Used to determine the specific modifier check to use. Example: when set to "any" [IsModifierKeyDown](https://wowpedia.fandom.com/wiki/API_IsModifierKeyDown) is used.</li></ul>
+---@field triggers? Frame[] List of frames that should handle inputs to initiate or stop the movement when interacted with | ***Default:*** **t.frame**
 ---@field events? movementEvents Table containing functions to call when certain movement events occur
+---@field cursor? boolean If true, change the cursor to a movement cross when mousing over **t.frame** and **t.modifier** is pressed down if set | ***Default:*** **t.modifier** ~= nil
 
 --[ Visibility ]
 
 --| Strata & Level
 
 ---@class visibleObject_base
+---@field visible? boolean Whether the frame is visible on load or not | ***Default:*** true
 ---@field frameStrata? FrameStrata Pin the frame to the specified strata
 ---@field frameLevel? integer The ordering level of the frame within its strata to set
 ---@field keepOnTop? boolean Whether to raise the frame level on mouse interaction | ***Default:*** false
@@ -429,10 +428,6 @@
 ---@class labeledObject_base
 ---@field label? boolean Whether to show the title textline or not | ***Default:*** true
 
----@class titledObject : namedObject_base, titledObject_base
-
----@class labeledObject : titledObject, labeledObject_base
-
 ---@class titledChildObject : namedChildObject, titledObject_base
 
 ---@class labeledChildObject : titledChildObject, labeledObject_base
@@ -492,7 +487,7 @@
 ---@field color? colorData Apply the specified color to the texture
 ---@field edges? edgeCoordinates Edge coordinate offsets
 ---@field vertices? vertexCoordinates Vertex coordinate offsets<ul><li>***Note:*** Setting texture coordinate offsets is exclusive between edges and vertices. If set, **t.edges** will be used first ignoring **t.vertices**.</li></ul>
----@field events? table<ScriptRegion, fun(...: any)> Table of key, value pairs of the names of script event handlers to be set for the texture object and the functions to assign as event handlers called when they trigger<ul><li>***Example:*** "[OnValueChanged](https://wowpedia.fandom.com/wiki/UIHANDLER_OnValueChanged)" whenever the value in the slider widget is modified.</li></ul>
+---@field events? table<ScriptRegion, fun(...: any)> Table of key, value pairs of the names of script event handlers to be set for the texture object and the functions to assign as event handlers called when they trigger
 
 ---@class textureUpdateData
 ---@field position? positionData Parameters to call [Region:SetPoint(...)](https://wowpedia.fandom.com/wiki/API_ScriptRegionResizing_SetPoint) with | ***Default:*** **t.position**
@@ -586,46 +581,28 @@
 ---@field autoCommit? boolean Immediately commit the data to the storage table whenever it's changed via the widget | ***Default:*** false<ul><li>***Note:*** Any unsaved data will be saved when ***WidgetToolbox*.SaveOptionsData(optionsKey)** is executed.</li></ul>
 ---@field onChange? table<string|integer, function|string> List of new or already defined functions to call after the value of the widget was changed by the user or via options data management<ul><li>**[*key*]**? string|integer ― A unique key to point to a newly defined function to be added to options data management or just the index of the next function name to be linked to **t.optionsData.optionsKey** | ***Default:*** *next assigned index*</li><li>**[*value*]** function|string ― The new function to register under its unique key, or the key of an already existing function linked to **t.optionsData.optionsKey**</li><ul><li>***Note:*** Function definitions will be replaced by key references when they are registered to options data management. Duplicate functions are overwritten.</li></ul></ul>
 
----| Toggle
+--| Toggle
 
 ---@class booleanOptionsData: optionsData_base
----@field convertSave? fun(value: boolean): data: any|nil Function to convert or modify the data before it is saved<hr><p>@*param* `value` boolean ― The current value of the widget</p><hr><p>@*return* `data` any|nil ― The converted value</p>
----@field convertLoad? fun(data?: any): value: boolean|nil Function to convert or modify the data before it is loaded<hr><p>@*param* `data`? any ― The data in the working table to be converted</p><hr><p>@*return* `value` boolean ― The converted value | ***Default:*** false</p>
----@field onLoad? fun(self: checkbox|radioButton, value: boolean) Function to be be called after the data of this widget has been loaded (when settings are opened or changes/defaults are reset)<hr><p>@*param* `self` checkbox|radioButton ― Reference to the widget</p><hr><p>@*param* `value` boolean ― The loaded value</p>
+---@field convertSave? fun(state: boolean): data: any|nil Function to convert or modify the data before it is saved<hr><p>@*param* `state` boolean ― The current value of the widget</p><hr><p>@*return* `data` any|nil ― The converted value</p>
+---@field convertLoad? fun(data?: any): state: boolean|nil Function to convert or modify the data before it is loaded<hr><p>@*param* `data`? any ― The data in the working table to be converted</p><hr><p>@*return* `state` boolean ― The converted value | ***Default:*** false</p>
+---@field onLoad? fun(self: checkbox|radioButton, state?: boolean) Function to be be called after the data of this widget has been loaded (when settings are opened or changes/defaults are reset)<hr><p>@*param* `self` checkbox|radioButton ― Reference to the widget</p><hr><p>@*param* `state`? boolean ― The loaded value</p>
 ---@field onSave? fun(self: checkbox|radioButton, data?: any) Function to be be called on options data update (after the data of this widget has been saved to the working table)<hr><p>@*param* `self` checkbox|radioButton ― Reference to the widget</p><hr><p>@*param* `data`? any ― The saved value | ***Default:*** *the current value of the widget*</p>
 ---@field onCommit? fun(self: checkbox|radioButton, data?: any) Function to be be called on options data commit (after the data of this widget has been committed to the storage table)<hr><p>@*param* `self` checkbox|radioButton ― Reference to the widget</p><hr><p>@*param* `data`? any ― The saved value | ***Default:*** *the current value of the widget*</p>
 
----| Textbox
-
----@class stringOptionsData: optionsData_base
----@field convertSave? fun(value: string): data: any|nil Function to convert or modify the data before it is saved<hr><p>@*param* `value` string ― The current value of the widget</p><hr><p>@*return* `data` any|nil ― The converted value</p>
----@field convertLoad? fun(data?: any): value: string Function to convert or modify the data before it is loaded<hr><p>@*param* `data`? any ― The data in the working table to be converted</p><hr><p>@*return* `value` string ― The converted value</p>
----@field onLoad? fun(self: textbox|multilineTextbox, value: string) Function to be be called after the data of this widget has been loaded (when settings are opened or changes/defaults are reset)<hr><p>@*param* `self` textbox|multilineTextbox ― Reference to the widget</p><hr><p>@*param* `value` string ― The loaded value</p>
----@field onSave? fun(self: textbox|multilineTextbox, data?: any) Function to be be called on options data update (after the data of this widget has been saved to the working table)<hr><p>@*param* `self` textbox|multilineTextbox ― Reference to the widget</p><hr><p>@*param* `data`? any ― The saved value | ***Default:*** *the current value of the widget*</p>
----@field onCommit? fun(self: textbox|multilineTextbox, data?: any) Function to be be called on options data commit (after the data of this widget has been committed to the storage table)<hr><p>@*param* `self` textbox|multilineTextbox ― Reference to the widget</p><hr><p>@*param* `data`? any ― The saved value | ***Default:*** *the current value of the widget*</p>
-
----| Numeric
-
----@class numberOptionsData: optionsData_base
----@field convertSave? fun(value: number): data: any|nil Function to convert or modify the data before it is saved<hr><p>@*param* `value` number ― The current value of the widget</p><hr><p>@*return* `data` any|nil ― The converted value</p>
----@field convertLoad? fun(data?: any): value: number Function to convert or modify the data before it is loaded<hr><p>@*param* `data`? any ― The data in the working table to be converted</p><hr><p>@*return* `value` number ― The converted value</p>
----@field onLoad? fun(self: numericSlider, value: number) Function to be be called after the data of this widget has been loaded (when settings are opened or changes/defaults are reset)<hr><p>@*param* `self` numericSlider ― Reference to the widget</p><hr><p>@*param* `value` number ― The loaded value</p>
----@field onSave? fun(self: numericSlider, data?: any) Function to be be called on options data update (after the data of this widget has been saved to the working table)<hr><p>@*param* `self` numericSlider ― Reference to the widget</p><hr><p>@*param* `data`? any ― The saved value | ***Default:*** *the current value of the widget*</p>
----@field onCommit? fun(self: numericSlider, data?: any) Function to be be called on options data commit (after the data of this widget has been committed to the storage table)<hr><p>@*param* `self` numericSlider ― Reference to the widget</p><hr><p>@*param* `data`? any ― The saved value | ***Default:*** *the current value of the widget*</p>
-
----| Selector
+--| Selector
 
 ---@class integerOptionsData: optionsData_base
----@field convertSave? fun(value?: integer): data: any|nil Function to convert or modify the data before it is saved<hr><p>@*param* `value`? integer ― The current value of the widget</p><hr><p>@*return* `data` any|nil ― The converted value</p>
----@field convertLoad? fun(data?: any): value: integer|nil Function to convert or modify the data before it is loaded<hr><p>@*param* `data`? any ― The data in the working table to be converted</p><hr><p>@*return* `value` integer|nil ― The converted value</p>
----@field onLoad? fun(self: selector|dropdownSelector, value?: integer) Function to be be called after the data of this widget has been loaded (when settings are opened or changes/defaults are reset)<hr><p>@*param* `self` selector|dropdown ― Reference to the widget</p><hr><p>@*param* `value`? integer ― The loaded value</p>
+---@field convertSave? fun(selected?: integer): data: any|nil Function to convert or modify the data before it is saved<hr><p>@*param* `selected`? integer ― The current value of the widget</p><hr><p>@*return* `data` any|nil ― The converted value</p>
+---@field convertLoad? fun(data?: any): selected: integer|nil Function to convert or modify the data before it is loaded<hr><p>@*param* `data`? any ― The data in the working table to be converted</p><hr><p>@*return* `selected` integer|nil ― The converted value</p>
+---@field onLoad? fun(self: selector|dropdownSelector, selected?: integer) Function to be be called after the data of this widget has been loaded (when settings are opened or changes/defaults are reset)<hr><p>@*param* `self` selector|dropdown ― Reference to the widget</p><hr><p>@*param* `value`? integer ― The loaded value</p>
 ---@field onSave? fun(self: selector|dropdownSelector, data?: any) Function to be be called on options data update (after the data of this widget has been saved to the working table)<hr><p>@*param* `self` selector|dropdown ― Reference to the widget</p><hr><p>@*param* `data`? any ― The saved value | ***Default:*** *the current value of the widget*</p>
 ---@field onCommit? fun(self: selector|dropdownSelector, data?: any) Function to be be called on options data commit (after the data of this widget has been committed to the storage table)<hr><p>@*param* `self` selector|dropdown ― Reference to the widget</p><hr><p>@*param* `data`? any ― The saved value | ***Default:*** *the current value of the widget*</p>
 
 ---@class booleanArrayOptionsData: optionsData_base
----@field convertSave? fun(value?: boolean[]): data: any|nil Function to convert or modify the data before it is saved<hr><p>@*param* `value`? boolean[] ― The current value of the widget</p><hr><p>@*return* `data` any|nil ― The converted value</p>
----@field convertLoad? fun(data?: any): value: boolean[]|nil Function to convert or modify the data before it is loaded<hr><p>@*param* `data`? any ― The data in the working table to be converted</p><hr><p>@*return* `value` boolean[]|nil ― The converted value</p>
----@field onLoad? fun(self: multiSelector, value?: boolean[]) Function to be be called after the data of this widget has been loaded (when settings are opened or changes/defaults are reset)<hr><p>@*param* `self` multiSelector ― Reference to the widget</p><hr><p>@*param* `value`? boolean[] ― The loaded value</p>
+---@field convertSave? fun(selections?: boolean[]): data: any|nil Function to convert or modify the data before it is saved<hr><p>@*param* `selections`? boolean[] ― The current value of the widget</p><hr><p>@*return* `data` any|nil ― The converted value</p>
+---@field convertLoad? fun(data?: any): selections: boolean[]|nil Function to convert or modify the data before it is loaded<hr><p>@*param* `data`? any ― The data in the working table to be converted</p><hr><p>@*return* `selections` boolean[]|nil ― The converted value</p>
+---@field onLoad? fun(self: multiSelector, selections?: boolean[]) Function to be be called after the data of this widget has been loaded (when settings are opened or changes/defaults are reset)<hr><p>@*param* `self` multiSelector ― Reference to the widget</p><hr><p>@*param* `selections`? boolean[] ― The loaded value</p>
 ---@field onSave? fun(self: multiSelector, data?: any) Function to be be called on options data update (after the data of this widget has been saved to the working table)<hr><p>@*param* `self` multiSelector ― Reference to the widget</p><hr><p>@*param* `data`? any ― The saved value | ***Default:*** *the current value of the widget*</p>
 ---@field onCommit? fun(self: multiSelector, data?: any) Function to be be called on options data commit (after the data of this widget has been committed to the storage table)<hr><p>@*param* `self` multiSelector ― Reference to the widget</p><hr><p>@*param* `data`? any ― The saved value | ***Default:*** *the current value of the widget*</p>
 
@@ -645,20 +622,39 @@
 ---@class wrappedSpecialData
 ---@field value? integer|AnchorPoint|JustifyH|JustifyV|FrameStrata ***Default:*** nil *(no selection)*
 
----| Color Picker
+--| Textbox
+
+---@class stringOptionsData: optionsData_base
+---@field convertSave? fun(text: string): data: any|nil Function to convert or modify the data before it is saved<hr><p>@*param* `text` string ― The current value of the widget</p><hr><p>@*return* `data` any|nil ― The converted value</p>
+---@field convertLoad? fun(data?: any): text: string Function to convert or modify the data before it is loaded<hr><p>@*param* `data`? any ― The data in the working table to be converted</p><hr><p>@*return* `text` string ― The converted value</p>
+---@field onLoad? fun(self: textbox|multilineTextbox, text?: string) Function to be be called after the data of this widget has been loaded (when settings are opened or changes/defaults are reset)<hr><p>@*param* `self` textbox|multilineTextbox ― Reference to the widget</p><hr><p>@*param* `text`? string ― The loaded value</p>
+---@field onSave? fun(self: textbox|multilineTextbox, data?: any) Function to be be called on options data update (after the data of this widget has been saved to the working table)<hr><p>@*param* `self` textbox|multilineTextbox ― Reference to the widget</p><hr><p>@*param* `data`? any ― The saved value | ***Default:*** *the current value of the widget*</p>
+---@field onCommit? fun(self: textbox|multilineTextbox, data?: any) Function to be be called on options data commit (after the data of this widget has been committed to the storage table)<hr><p>@*param* `self` textbox|multilineTextbox ― Reference to the widget</p><hr><p>@*param* `data`? any ― The saved value | ***Default:*** *the current value of the widget*</p>
+
+--| Numeric
+
+---@class numberOptionsData: optionsData_base
+---@field convertSave? fun(value: number): data: any|nil Function to convert or modify the data before it is saved<hr><p>@*param* `value` number ― The current value of the widget</p><hr><p>@*return* `data` any|nil ― The converted value</p>
+---@field convertLoad? fun(data?: any): value: number Function to convert or modify the data before it is loaded<hr><p>@*param* `data`? any ― The data in the working table to be converted</p><hr><p>@*return* `value` number ― The converted value</p>
+---@field onLoad? fun(self: numericSlider, value?: number) Function to be be called after the data of this widget has been loaded (when settings are opened or changes/defaults are reset)<hr><p>@*param* `self` numericSlider ― Reference to the widget</p><hr><p>@*param* `value`? number ― The loaded value</p>
+---@field onSave? fun(self: numericSlider, data?: any) Function to be be called on options data update (after the data of this widget has been saved to the working table)<hr><p>@*param* `self` numericSlider ― Reference to the widget</p><hr><p>@*param* `data`? any ― The saved value | ***Default:*** *the current value of the widget*</p>
+---@field onCommit? fun(self: numericSlider, data?: any) Function to be be called on options data commit (after the data of this widget has been committed to the storage table)<hr><p>@*param* `self` numericSlider ― Reference to the widget</p><hr><p>@*param* `data`? any ― The saved value | ***Default:*** *the current value of the widget*</p>
+
+--| Color Picker
 
 ---@class colorOptionsData: optionsData_base
----@field convertSave? fun(value: colorData): data: any|nil Function to convert or modify the data before it is saved<hr><p>@*param* `value` colorData ― The current value of the widget</p><hr><p>@*return* `data` any|nil ― The converted value</p>
----@field convertLoad? fun(data?: any): value: colorData Function to convert or modify the data before it is loaded<hr><p>@*param* `data`? any ― The data in the working table to be converted</p><hr><p>@*return* `value` colorData ― The converted value</p>
----@field onLoad? fun(self: colorPicker, value: colorData) Function to be be called after the data of this widget has been loaded (when settings are opened or changes/defaults are reset)<hr><p>@*param* `self` colorPicker ― Reference to the widget</p><hr><p>@*param* `value` colorData ― The loaded value</p>
+---@field convertSave? fun(color: colorData): data: any|nil Function to convert or modify the data before it is saved<hr><p>@*param* `color` colorData ― The current value of the widget</p><hr><p>@*return* `data` any|nil ― The converted value</p>
+---@field convertLoad? fun(data?: any): color: colorData Function to convert or modify the data before it is loaded<hr><p>@*param* `data`? any ― The data in the working table to be converted</p><hr><p>@*return* `color` colorData ― The converted value</p>
+---@field onLoad? fun(self: colorPicker, color?: colorData) Function to be be called after the data of this widget has been loaded (when settings are opened or changes/defaults are reset)<hr><p>@*param* `self` colorPicker ― Reference to the widget</p><hr><p>@*param* `color`? colorData ― The loaded value</p>
 ---@field onSave? fun(self: colorPicker, data?: any) Function to be be called on options data update (after the data of this widget has been saved to the working table)<hr><p>@*param* `self` colorPicker ― Reference to the widget</p><hr><p>@*param* `data`? any ― The saved value | ***Default:*** *the current value of the widget*</p>
 ---@field onCommit? fun(self: colorPicker, data?: any) Function to be be called on options data commit (after the data of this widget has been committed to the storage table)<hr><p>@*param* `self` colorPicker ― Reference to the widget</p><hr><p>@*param* `data`? any ― The saved value | ***Default:*** *the current value of the widget*</p>
 
 --[ Popup ]
 
----@class popupData
----@field name string Appended to **addon** as a unique identifier key in the global **StaticPopupDialogs** table
----@field text string The text to display as the message in the popup window
+--| Dialogue
+
+---@class popupDialogueData
+---@field text? string The text to display as the message in the popup window
 ---@field accept? string The text to display on the label of the accept button | ***Default:*** ***WidgetToolbox*.strings.misc.accept**
 ---@field cancel? string The text to display on the label of the cancel button | ***Default:*** ***WidgetToolbox*.strings.misc.cancel**
 ---@field alt? string The text to display on the label of the third alternative button
@@ -666,7 +662,15 @@
 ---@field onCancel? function Called when the cancel button is pressed, the popup is overwritten (by another popup for instance) or the popup expires and an OnCancel event happens
 ---@field onAlt? function Called when the alternative button is pressed and an OnAlt event happens
 
---[ Reload Notice ]
+--| Input Box
+
+---@class popupInputBoxData : positionableObject, tooltipDescribableObject
+---@field title? string Text to be displayed as the title | ***Default:*** *(no title)*
+---@field text? string Text to set as the starting text inside the input editbox | ***Default:*** ""
+---@field accept? fun(text: string) Function to call when the inputted text is accepted
+---@field cancel? function Function to call when the inputted text is dismissed
+
+--| Reload Notice
 
 ---@class reloadFrameOffsetData
 ---@field x? number Horizontal offset value | ***Default:*** -300
@@ -681,6 +685,11 @@
 ---@field message? string Text to be shown as the message of the reload notice | ***Default:*** "Reload the interface to apply the pending changes." *(when the language is set to English)*
 ---@field position? reloadFramePositionData Parameters to call [Region:SetPoint(...)](https://wowpedia.fandom.com/wiki/API_ScriptRegionResizing_SetPoint) with | ***Default:*** "TOPRIGHT", -300, -80
 
+--[ Lite Mode ]
+
+---@class liteObject
+---@field lite? boolean If false, overrule **WidgetToolsDB.lite** and use full GUI functionality | ***Default:*** true
+
 --[ Containers ]
 
 --| Frame
@@ -689,7 +698,6 @@
 ---@field parent? Frame Reference to the frame to set as the parent of the new frame | ***Default:*** nil *(parentless frame)*<ul><li>***Note:*** You may use [Region:SetParent(...)](https://wowpedia.fandom.com/wiki/API_ScriptRegion_SetParent) to set the parent frame later.</li></ul>
 ---@field name? string Unique string used to set the name of the new frame | ***Default:*** nil *(anonymous frame)*<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
 ---@field append? boolean When setting the name, append **t.name** to the name of **t.parent** instead | ***Default:*** true if **t.name** ~= nil and **t.parent** ~= nil and **t.parent** ~= UIParent
----@field container? boolean Whether or not to add child frame arrangement support to the frame turning it to a container | ***Default:*** false
 ---@field size? sizeData_zeroDefault ***Default:*** *no size*<ul><li>***Note:*** Omitting or setting either value to 0 will result in the frame being invisible and not getting placed on the screen.</li></ul>
 ---@field events? table<ScriptFrame, fun(...: any)> Table of key, value pairs of the names of script event handlers to be set for the frame and the functions to assign as event handlers called when they trigger<ul><li>***Note:*** "[OnEvent](https://wowpedia.fandom.com/wiki/UIHANDLER_OnEvent)" handlers specified here will not be set. Handler functions for specific global events should be specified in the **t.onEvent** table.</li></ul>
 ---@field onEvent? table<WowEvent, fun(self: Frame, ...: any)> Table of key, value pairs that holds global event tags & their corresponding event handlers to be registered for the frame<ul><li>***Note:*** You may want to include [Frame:UnregisterEvent(...)](https://wowpedia.fandom.com/wiki/API_Frame_UnregisterEvent) to prevent the handler function to be executed again.</li><li>***Example:*** "[ADDON_LOADED](https://wowpedia.fandom.com/wiki/ADDON_LOADED)" is fired repeatedly after each addon. To call the handler only after one specified addon is loaded, you may check the parameter the handler is called with. It's a good idea to unregister the event to prevent repeated calling for every other addon after the specified one has been loaded already.<pre>```function(self, addon)```<br>&#9;```if addon ~= "AddonNameSpace" then return end --Replace "AddonNameSpace" with the namespace of the specific addon to watch```<br>&#9;```self:UnregisterEvent("ADDON_LOADED")```<br>&#9;```--Do something```<br>```end```</pre></li></ul>
@@ -703,9 +711,8 @@
 ---@class scrollSpeedData
 ---@field scrollSpeed? number Percentage of one page of content to scroll at a time | ***Range:*** (0, 1) | ***Default:*** 0.25
 
----@class scrollFrameCreationData : childObject, positionableObject, initializableContainer, scrollSpeedData
----@field name? string Unique string to append to the name of **t.parent** when setting the name of the new scroll frame | ***Default:*** "ScrollFrame"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
----@field scrollName? string Unique string used to set the name of the scrolling child frame | ***Default:*** "ScrollChild"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
+---@class scrollFrameCreationData : optionalChildObject, positionableObject, initializableContainer, scrollSpeedData
+---@field name? string Unique string used to append to the name of **t.parent** when setting the names of the name of the scroll parent and its scrollable child frame | ***Default:*** "Scroller" *(for the scrollable child frame)*<ul><li>***Note:*** Space characters will be removed when used for setting the frame names.</li></ul>
 ---@field size? sizeData_parentDefault ***Default:*** **t.parent** and *size of the parent frame* or *no size*
 ---@field scrollSize? sizeData_scroll ***Default:*** *size of the parent frame*
 
@@ -757,7 +764,7 @@
 ---@class arrangementData_panel
 ---@field parameters? arrangementParameters_panel Set of parameters to arrange the frames by: spacing, direction & resizing
 
----@class panelCreationData : labeledChildObject, describableObject, positionableScreenObject, arrangeableObject, visibleObject_base, backdropData, initializableContainer
+---@class panelCreationData : labeledChildObject, describableObject, positionableScreenObject, arrangeableObject, visibleObject_base, backdropData, initializableContainer, liteObject
 ---@field name? string Unique string used to set the frame name | ***Default:*** "Panel"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
 ---@field size? sizeData_panel
 ---@field background? backdropBackgroundData_panel Table containing the parameters used for the background
@@ -777,7 +784,7 @@
 ---@field cursor? boolean Open the context menu at the current cursor position instead of the specified frame position | ***Default:*** true
 ---@field width? number ***Default:*** 140
 
----@class contextMenuItem
+---@class contextMenuItem : namedChildObject
 ---@field name? string Unique string to append this to the name of **contextMenu** when setting the name | ***Default:*** "Item" *followed by the the increment of the last index of* **contextMenu.items**<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
 
 ---@class contextItemLabelJustify
@@ -798,9 +805,9 @@
 ---@field width? number ***Default:*** 115
 ---@field menu table[] Table of nested subtables for the context menu items containing their attributes<ul><li>***Note:*** See the [full list of attributes](https://www.townlong-yak.com/framexml/5.4.7/UIDropDownMenu.lua#139) that can be set for menu items.<ul><li>***Examples:***<ul><li>**text** string — Text to be displayed on the button within the context menu</li><li>**isTitle**? boolean — Set the item as a title instead of a clickable button | ***Default:*** false (*not title*)</li><li>**disabled**? number — Disable the button if set to 1 | ***Range:*** (nil, 1) | ***Default:*** nil or 1 if **t.isTitle** == true</li><li>**checked**? boolean — Whether the button is currently checked or not | ***Default:*** false (*not checked*)</li><li>**notCheckable**? number — Make the item a simple button instead of a checkbox if set to 1 | ***Range:*** (nil, 1) | ***Default:*** nil</li><li>**func** function — The function to be called the button is clicked</li><li>**hasArrow** boolean — Show the arrow to open the submenu specified in t.menuList</li><li>**menuList** table — A table of subtables containing submenu items</li></ul></li></ul></li></ul>
 
---[ Options Page ]
+--[ Settings Page ]
 
----@class optionsPageScrollData : scrollSpeedData
+---@class settingsPageScrollData : scrollSpeedData
 ---@field height? number Set the height of the scrollable child frame to the specified value | ***Default:*** 0 *(no height)*
 ---@field speed? number Percentage of one page of content to scroll at a time | ***Range:*** (0, 1) | ***Default:*** 0.25
 
@@ -809,62 +816,72 @@
 ---@field storageTable table Reference to a storage database table where data is committed to only when settings are saved, allowing for changes to be reverted from as widget value changes are not saved here directly<ul><li>***Note:*** A direct reference to an account-bound SavedVariables or character-specific SavedVariablesPerCharacter addon database can be used here.</li></ul>
 ---@field defaultsTable table A static table containing all default settings values at matching keys to the storage and working tables to be restored on demand
 
----@class spacingData_optionsPage
+---@class spacingData_settingsPage
 ---@field l? number Space to leave on the left side | 10
 ---@field r? number Space to leave on the right side (doesn't need to be negated) | ***Default:*** 10
 ---@field t? number Space to leave at the top (doesn't need to be negated) | ***Default:*** **t.scroll** and 78 or 82
 ---@field b? number Space to leave at the bottom | ***Default:*** **t.scroll** and 10 or 22
 
----@class arrangementParameters_optionsPage : arrangementParameters
----@field margins? spacingData_optionsPage Inset the content inside the options panel by the specified amount on each side
+---@class arrangementParameters_settingsPage : arrangementParameters
+---@field margins? spacingData_settingsPage Inset the content inside the canvas frame by the specified amount on each side
 ---@field gaps? number The amount of space to leave between rows | ***Default:*** 32
----@field resize? boolean Set the height of the options panel to match the space taken up by the arranged content (including margins) | ***Default:*** **t.scroll** ~= nil
+---@field resize? boolean Set the height of the canvas frame to match the space taken up by the arranged content (including margins) | ***Default:*** **t.scroll** ~= nil
 
----@class arrangementData_optionsPage
----@field parameters? arrangementParameters_optionsPage Set of parameters to arrange the frames by: spacing, direction & resizing
+---@class arrangementData_settingsPage
+---@field parameters? arrangementParameters_settingsPage Set of parameters to arrange the frames by: spacing, direction & resizing
 
----@class optionsPageCreationData_base
----@field parent? optionsPage The options category page to be set as the parent category page, making this its subcategory | ***Default:*** nil *(set as a main category)*
----@field name? string Unique string used to set the name of the options frame | ***Default:*** **addon**<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
----@field title? string Text to be shown as the title of the options page | ***Default:*** [GetAddOnMetadata(**addon**, "title")](https://wowpedia.fandom.com/wiki/API_GetAddOnMetadata)
----@field register? boolean Whether to register the options category page to the settings panel upon creation | ***Default:*** true<ul><li>***Note:*** The page can be registered later via **optionsPage.register()**.</li></ul>
+---@class settingsPageCreationData_base
+---@field register? boolean|settingsPage If true, register the new page to the Settings panel as a parent category or a subcategory of an already registered parent category if a reference to an existing settings category parent page provided | ***Default:*** false<ul><li>***Note:*** The page can be registered later via ***WidgetToolbox*.RegisterSettingsPage(...)**.</li></ul>
+---@field name? string Unique string used to set the name of the canvas frame | ***Default:*** **addon**<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
+---@field title? string Text to be shown as the title of the settings page | ***Default:*** [GetAddOnMetadata(**addon**, "title")](https://wowpedia.fandom.com/wiki/API_GetAddOnMetadata)
+---@field static? boolean If true, disable the "Restore Defaults" & "Revert Changes" buttons | ***Default:*** false
 
----@class optionsPageEvents
----@field onLoad? fun(user: boolean) Function called after the settings linked to this page have been loaded<hr><p>@*param* `user` boolean — Marking whether the call is due to a user interaction or not | ***Default:*** false</p>
----@field onSave? fun(user: boolean) Function called after the settings linked to this page have been committed to the storage tables after being updated in the working tables<hr><p>@*param* `user` boolean — Marking whether the call is due to a user interaction or not | ***Default:*** false</p>
----@field onCancel? fun(user: boolean) Function called after the changes are scrapped (for instance when the custom "Revert Changes" button is clicked)<hr><p>@*param* `user` boolean — Marking whether the call is due to a user interaction or not | ***Default:*** false</p>
----@field onDefault? fun(user: boolean) Function called after settings are restored to their default values (for example when the "These Settings" - affecting this options category page only, or the "All Settings" - affecting all options category pages within the **addon** namespace option is clicked in the dialogue opened by clicking on the "Restore Defaults" button)<hr><p>@*param* `user` boolean — Marking whether the call is due to a user interaction or not | ***Default:*** false</p>
+---@class settingsPageEvents
+---@field onLoad? fun(user: boolean) Called after the data of the options widgets linked to this page has been loaded from the working tables<hr><p>@*param* `user` boolean — Marking whether the call is due to a user interaction or not</p>
+---@field onSave? fun(user: boolean) Called after the data of the options widgets linked to this page has been committed to the storage tables after being updated in the working tables<hr><p>@*param* `user` boolean — Marking whether the call is due to a user interaction or not</p>
+---@field onCancel? fun(user: boolean) Called after the changes are scrapped (for instance when the custom "Revert Changes" button is clicked)<hr><p>@*param* `user` boolean — Marking whether the call is due to a user interaction or not</p>
+---@field onDefaults? fun(user: boolean) Called after options data handled by this settings page has been restored to default values (for example when the "Accept" or "These Settings" - affecting this settings category page only - is clicked in the dialogue opened by clicking on the "Restore Defaults" button)<hr><p>@*param* `user` boolean — Marking whether the call is due to a user interaction or not</p>
 
----@class optionsPageCreationData : optionsPageCreationData_base, describableObject, optionsPageEvents, initializableContainer
----@field append? boolean When setting the name of the options category page, append **t.name** after **addon** | ***Default:*** true if **t.name** ~= nil
+---@class settingsPageCreationData : settingsPageCreationData_base, describableObject, settingsPageEvents, initializableContainer
+---@field append? boolean When setting the name of the settings category page, append **t.name** after **addon** | ***Default:*** true if **t.name** ~= nil
 ---@field appendOptions? boolean When setting the name of the canvas frame, append "Options" at the end as well | ***Default:*** true
----@field logo? string Path to the texture file, the logo of the addon to be added as to the top right corner of the panel
----@field titleLogo? boolean Append the texture specified as **t.logo** to the title of the Settings button as well | ***Default:*** false
----@field scroll? optionsPageScrollData If set, make the options canvas scrollable by creating a [ScrollFrame](https://wowpedia.fandom.com/wiki/UIOBJECT_ScrollFrame) as its child
----@field optionsKeys? string[] A list of unique keys linking collections of widget options data to be saved & loaded with this options category page
+---@field icon? string Path to the texture file to use as the icon of this settings page | ***Default:*** *the addon's logo specified in its TOC file with the "IconTexture" tag*
+---@field titleIcon? boolean Append **t.icon** to the title of the button of the setting page in the AddOns list of the Settings window as well | ***Default:*** true if **t.register == true**
+---@field scroll? settingsPageScrollData If set, make the canvas frame scrollable by creating a [ScrollFrame](https://wowpedia.fandom.com/wiki/UIOBJECT_ScrollFrame) as its child
+---@field optionsKeys? string[] A list of unique keys linking collections of widget options data to be saved & loaded with this settings category page
 ---@field storage? storageData[] Array of subtables containing settings data storage table references to move data between when saving, loading or modifying setting data
 ---@field autoSave? boolean If true, automatically save the values of all widgets registered for options data management under options keys listed in **t.optionsKeys** to their specified working tables via ***WidgetToolbox*.SaveOptionsData(...)** before committing data to the corresponding storage tables | ***Default:*** true if **t.optionsKeys** ~= nil<ul><li>***Note:*** If **t.optionsKeys** is not set, the automatic load will not be executed even if this is set to true.</li></ul>
 ---@field autoLoad? boolean If true, automatically load all data to the widgets registered for options data management under options keys listed in **t.optionsKeys** from their specified working tables via ***WidgetToolbox*.LoadOptionsData(...)** | ***Default:*** true if **t.optionsKeys** ~= nil<ul><li>***Note:*** If **t.optionsKeys** is not set, the automatic load will not be executed even if this is set to true.</li></ul>
 
----@class aboutPageCreationData : optionsPageCreationData_base
----@field description? string Text to be shown as the description below the title of the options page | ***Default:*** [GetAddOnMetadata(**addon**, "Notes")](https://wowpedia.fandom.com/wiki/API_GetAddOnMetadata)
+---@class aboutPageCreationData : settingsPageCreationData_base
+---@field description? string Text to be shown as the description below the title of the settings page | ***Default:*** [GetAddOnMetadata(**addon**, "Notes")](https://wowpedia.fandom.com/wiki/API_GetAddOnMetadata)
 ---@field changelog? { [table[]] : string[] } String arrays nested in subtables representing a version containing the raw changelog data, lines of text with formatting directives included<ul><li>***Note:*** The first line is expected to be the title containing the version number and/or the date of release.</li><li>***Note:*** Version tables are expected to be listed in ascending order by date of release (latest release last).</li><li>***Examples:***<ul><li>**Title formatting - version title:** `#V_`*Title text*`_#` (*it will appear as:* • Title text)</li><li>**Color formatting - highlighted text:** `#H_`*text to be colored*`_#` (*it will be colored white*)</li><li>**Color formatting - new updates:** `#N_`*text to be colored*`_#` (*it will be colored with:* #FF66EE66)</li><li>**Color formatting - fixes:** `#F_`*text to be colored*`_#` (*it will be colored with:* #FFEE4444)</li><li>**Color formatting - changes:** `#C_`*text to be colored*`_#` (*it will be colored with:* #FF8888EE)</li><li>**Color formatting - note:** `#O_`*text to be colored*`_#` (*it will be colored with:* #FFEEEE66)</li></ul></li></ul>
+---@field static? boolean If true, disable the "Restore Defaults" & "Revert Changes" buttons | ***Default:*** true
 
----@class dataManagementPageCreationData : optionsPageCreationData_base, optionsPageEvents
----@field name? string Unique string used to set the name of the options frame | ***Default:*** "Profiles"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
----@field title? string Text to be shown as the title of the options page | ***Default:*** "Data Management"
----@field description? string Text to be shown as the description below the title of the options page | ***Default:*** *describing profiles & backup*
+---@class dataManagementPageCreationData : settingsPageCreationData_base, settingsPageEvents
+---@field name? string Unique string used to set the name of the canvas frame | ***Default:*** "Profiles"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
+---@field title? string Text to be shown as the title of the settings page | ***Default:*** "Data Management"
+---@field description? string Text to be shown as the description below the title of the settings page | ***Default:*** *describing profiles & backup*
 ---@field accountData profileStorage|table Reference to the account-bound SavedVariables addon database where profile data is to be stored<ul><li>***Note:*** A subtable will be created under the key **profiles** if it doesn't already exist, any other keys will be removed (any possible old data will be recovered and incorporated into the active profile data).</li></ul>
 ---@field characterData table Reference to the character-specific SavedVariablesPerCharacter addon database where selected profiles are to be specified<ul><li>***Note:*** An integer value will be created under the key **activeProfile** if it doesn't already exist.</li></ul>
 ---@field settingsData table Reference to the SavedVariables or SavedVariablesPerCharacter table where settings specifications are to be stored and loaded from<ul><li>***Note:*** The following key, value pairs will are used for storing settings data within this table:<ul><li>**compactBackup** boolean — Whether to skip including additional white spaces to the backup string for more readability</li><li>**backupDataScope** boolean — Whether to include only the current profile or all profiles in the backup string</li></li></ul>
 ---@field workingTable? table Reference to the operational options table where the data of the current profile is to be copied to to be modified live by the options widgets instead of the storage profile subtable inside **t.accountData.profiles** so changes may be reverted before being committed to storage
 ---@field defaultsTable table A static table containing all default settings values to be cloned when creating a new profile
 ---@field onProfilesLoaded? function Called during profiles initialization after the active profile has been loaded and profiles data is validated (with **t.onImportAllProfiles(...)** also being called later when profiles data is imported via user interaction through the backup all profiles box)
----@field onProfileActivated? fun(index: integer) Called after a profile was set as the currently activate profile<hr><p>@*param* `index` integer — The index of the activated profile</p>
----@field onImport? fun(success: boolean, data: table) Function called after a settings backup string import has been performed by the user loading data for the currently active profile<hr><p>@*param* `success` boolean — Whether the imported string was successfully processed</p><p>@*param* `data` table — The table containing the imported backup data</p>
----@field onImportAllProfiles? fun(success: boolean, data: table) Function called after a settings backup string import has been performed by the user loading data for all profiles<ul><li>***Note:*** *t.onProfilesLoaded will also be called if the import was successful.</li></ul><hr><p>@*param* `success` boolean — Whether the imported string was successfully processed</p><p>@*param* `data` table — The table containing the imported backup data</p>
+---@field onProfileActivated? fun(index: integer) Called after a profile was activated<hr><p>@*param* `index` integer — The index of the profile that was activated</p>
+---@field onProfileCreated? fun(index: integer) Called after a new profile was created<hr><p>@*param* `index` integer — The index of the new profile</p>
+---@field onProfileDeleted? fun(title: string, index: integer) Called after the active profile was deleted<hr><p>@*param* `title` string — The old title of the deleted profile</p><p>@*param* `index` integer — The old index of the deleted profile</p>
+---@field onProfileReset? fun(index: integer) Called after the data of a profile was reset to defaults<hr><p>@*param* `index` integer — The index of the profile that was reset</p>
+---@field onImport? fun(success: boolean, data: table) Called after a settings backup string import has been performed by the user loading data for the currently active profile<hr><p>@*param* `success` boolean — Whether the imported string was successfully processed</p><p>@*param* `data` table — The table containing the imported backup data</p>
+---@field onImportAllProfiles? fun(success: boolean, data: table) Called after a settings backup string import has been performed by the user loading data for all profiles<ul><li>***Note:*** *t.onProfilesLoaded will also be called if the import was successful.</li></ul><hr><p>@*param* `success` boolean — Whether the imported string was successfully processed</p><p>@*param* `data` table — The table containing the imported backup data</p>
 ---@field valueChecker? fun(k: number|string, v: any): boolean Helper function for validating values when checking profile data, returning true if the value is to be accepted as valid
 ---@field onRecovery? fun(profileData: table, recoveredData: table): recoveryMap: table<string, recoveryData>|nil Function to call when removed data is to be recovered when checking profile data, providing a way to dynamically create a recovery map based on the recovered data<hr><p>@*param* `profileData` table — Reference to the profile data table being checked</p><p>@*param* `recoveredData` table — All removed recoverable data packed in a table</p><hr><p>@*return* `recoveryMap` table<string, recoveryData>|nil — Save removed profile data from matching key chains under the specified key when checking profile data<ul><li>***Example:*** String chain of keys pointing to the removed old data to be recovered from **profileData**: `"keyOne[2].keyThree.keyFour[1]"`.</li><li>***Note:*** Using the reference of **profileData** as the root table for **saveTo** in the recovery data specifications is recommended.</li></ul></p>
+
+--[ Settings Category ]
+
+---@class settingsCategoryCreationData
+---@field onLoad? fun(user: boolean) Called after the data of the options widgets linked to all pages of this settings category has been loaded from the working tables<hr><p>@*param* `user` boolean — Marking whether the call is due to a user interaction or not</p>
+---@field onDefaults? fun(user: boolean) Called after options data handled by all pages of this settings category has been restored to default values (for example when the "All Settings" option is clicked in the dialogue opened by clicking on the "Restore Defaults" button)<hr><p>@*param* `user` boolean — Marking whether the call is due to a user interaction or not</p>
 
 --[ Attribute Value Data ]
 
@@ -903,7 +920,7 @@
 ---@class buttonEventList
 ---@field events? table<ScriptButton, fun(...: any)> Table of key, value pairs of the names of script event handlers to be set for the button and the functions to assign as event handlers called when they trigger<ul><li>***Example:*** "[OnClick](https://wowpedia.fandom.com/wiki/UIHANDLER_OnClick)" when the button is clicked.</li><li>***Note:*** **t.action** will automatically be called when an "[OnClick](https://wowpedia.fandom.com/wiki/UIHANDLER_OnClick)" event triggers, there is no need to register it here as well.</li></ul>
 
----@class buttonCreationData : labeledChildObject, tooltipDescribableObject, arrangeableObject, positionableObject, customizableObject, visibleObject_base, buttonEventList, togglableObject
+---@class buttonCreationData : labeledChildObject, tooltipDescribableObject, arrangeableObject, positionableObject, customizableObject, visibleObject_base, buttonEventList, togglableObject, liteObject
 ---@field name? string Unique string used to set the frame name | ***Default:*** "Button"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
 ---@field titleOffset? offsetData Offset the position of the label of the button
 ---@field size? sizeData_button
@@ -912,8 +929,7 @@
 ---@field attributeEvents? table<string|ButtonAttributes, fun(...: any)> Table of key, value pairs of the names of custom widget attributes and the functions to assign as event handlers called when [OnAttributeChanged](https://wowpedia.fandom.com/wiki/UIHANDLER_OnAttributeChanged) events trigger for specific custom widget attributes
 
 ---@class contextButtonCreationData : contextMenuItem, titledObject_base, tooltipDescribableObject, contextItemLabelJustify, buttonEventList, togglableObject
----@field name? string Unique string to append this to the name of **contextMenu** when setting the name | ***Default:*** "Item" *followed by the the increment of the last index of* **contextMenu.items**<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
----@field font? labelFontOptions_small List of the [Font](https://wowpedia.fandom.com/wiki/UIOBJECT_Font) object names to be used for the label | ***Default:*** *small default Blizzard UI fonts*<ul><li>***Note:*** A new font object (or a modified copy of an existing one) can be created via ***WidgetToolbox*.CreateFont(...)** (even within this table definition).</li></ul>
+---@field font? labelFontOptions_small Table of the [Font](https://wowpedia.fandom.com/wiki/UIOBJECT_Font) object names to be used for the label | ***Default:*** *small default Blizzard UI fonts*<ul><li>***Note:*** A new font object (or a modified copy of an existing one) can be created via ***WidgetToolbox*.CreateFont(...)** (even within this table definition).</li></ul>
 
 --| Toggle
 
@@ -947,7 +963,6 @@
 ---@class selectorCreationData_base : labeledChildObject, tooltipDescribableObject, arrangeableObject, positionableObject, visibleObject_base, togglableObject
 ---@field name? string Unique string used to set the frame name | ***Default:*** "Selector"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
 ---@field width? number The height is dynamically set to fit all items (and the title if set), the width may be specified | ***Default:*** *dynamically set to fit all columns of items* or **t.label** and 160 or 0 *(whichever is greater)*<ul><li>***Note:*** The width of each individual item will be set to **t.width** if **t.columns** is 1 and **t.width** is specified.</li></ul>
----@field items (selectorItem|radioButton)[] Table containing subtables with data used to create item widgets, or already existing radio buttons
 ---@field labels? boolean Whether or not to add the labels to the right of each newly created widget item | ***Default:*** true
 ---@field columns? integer Arrange the newly created widget items in a grid with the specified number of columns instead of a vertical list | ***Default:*** 1
 ---@field events? table<ScriptFrame, fun(...: any)> Table of key, value pairs of the names of script event handlers to be set for the selector frame and the functions to assign as event handlers called when they trigger
@@ -958,6 +973,7 @@
 ---@field clearable? boolean Whether the selector input should be clearable by right clicking on its radio buttons or not (the functionality of **setSelected** called with nil to clear the input will not be affected) | ***Default:*** false
 
 ---@class selectorCreationData : selectorCreationData_base, clearableSelector
+---@field items? (selectorItem|radioButton)[] Table containing subtables with data used to create item widgets, or already existing radio buttons
 ---@field selected? integer The index of the item to be set as selected on load | ***Default:*** nil *(no selection)*
 ---@field onSelection? fun(index?: integer) The function to be called after a radio button was clicked and an item was selected, or the input was cleared by the user<hr><p>@*param* `index`? integer — The index of the currently selected item</p><ul><li>***Note:*** A custom [OnAttributeChanged](https://wowpedia.fandom.com/wiki/UIHANDLER_OnAttributeChanged) event will also be invoked whenever an item is selected *(see below)*.</li></ul>
 ---@field optionsData? integerOptionsData If set, add the selector to the options data table to save & load its value automatically to/from the specified workingTable
@@ -968,13 +984,12 @@
 
 ---@class multiSelectorCreationData : selectorCreationData_base
 ---@field limits? limitValues Parameters to specify the limits of the number of selectable items
----@field items (selectorItem|checkbox)[] Table containing subtables with data used to create item widgets, or already existing checkboxes
+---@field items? (selectorItem|checkbox)[] Table containing subtables with data used to create item widgets, or already existing checkboxes
 ---@field selections? boolean[] List of item states to set in order | ***Default:*** nil *(no selected items)*<ul><li>**[*index*]** boolean? — Whether this item should be set as selected or not | ***Default:*** false</li></ul>
 ---@field onSelection? fun(selections?: boolean[]) The function to be called after a checkbox was clicked and an item was selected, or the input was cleared by the user<hr><p>@*param* `selections`? boolean[] — List of current item states in order</p><ul><li>***Note:*** A custom [OnAttributeChanged](https://wowpedia.fandom.com/wiki/UIHANDLER_OnAttributeChanged) event will also be invoked whenever an item is selected *(see below)*.</li></ul>
 ---@field optionsData? booleanArrayOptionsData If set, add the selector to the options data table to save & load its value automatically to/from the specified workingTable
 
 ---@class specialSelectorCreationData : selectorCreationData_base, clearableSelector
----@field itemset string Specify what type of selector should be created | ***Value:*** "anchor"|"justifyH"|"justifyV"|"frameStrata"<ul><li>***Note:*** Setting this to "anchor" will use the set of [AnchorPoint](https://wowpedia.fandom.com/wiki/Anchors) items.</li><li>***Note:*** Setting this to "justifyH" will use the set of horizontal text alignment items (JustifyH).</li><li>***Note:*** Setting this to "justifyV" will use the set of vertical text alignment items (JustifyV).</li><li>***Note:*** Setting this to "frameStrata" will use the set of [FrameStrata](https://wowpedia.fandom.com/wiki/Frame_Strata) items (excluding "WORLD").</li></ul>
 ---@field selected? integer The item to be set as selected on load | ***Default:*** 0
 ---@field onSelection? fun(selected?: AnchorPoint|JustifyH|JustifyV|FrameStrata) The function to be called after a radio button was clicked and an item was selected, or the input was cleared by the user<hr><p>@*param* `selected`? AnchorPoint|JustifyH|JustifyV|FrameStrata — The currently selected item</p><ul><li>***Note:*** A custom [OnAttributeChanged](https://wowpedia.fandom.com/wiki/UIHANDLER_OnAttributeChanged) event will also be invoked whenever an item is selected *(see below)*.</li></ul>
 ---@field optionsData? specialOptionsData If set, add the selector to the options data table to save & load its value automatically to/from the specified workingTable
@@ -993,9 +1008,9 @@
 
 ---@class sizeData_editbox
 ---@field w? number Width | ***Default:***  180
----@field h? number Height | ***Default:*** 17
+---@field h? number Height | ***Default:*** 18
 
----@class textboxCreationData : labeledObject, tooltipDescribableObject, arrangeableObject, positionableObject, customizableObject, visibleObject_base, togglableObject
+---@class textboxCreationData : labeledChildObject, tooltipDescribableObject, arrangeableObject, positionableObject, customizableObject, visibleObject_base, togglableObject
 ---@field name? string Unique string used to set the frame name | ***Default:*** "Text Box"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
 ---@field text? string Text to be shown inside editbox, loaded whenever the text box is shown
 ---@field size? sizeData_editbox
@@ -1005,6 +1020,8 @@
 ---@field justify? justifyData_left Set the justification of the text (overriding all font objects set in **t.font**)
 ---@field maxLetters? number The value to set by [EditBox:SetMaxLetters()](https://wowpedia.fandom.com/wiki/API_EditBox_SetMaxLetters) | ***Default:*** 0 (*no limit*)
 ---@field readOnly? boolean The text will be uneditable if true | ***Default:*** false
+---@field focusOnShow? boolean Focus the editbox when its shown and highlight the text | ***Default:*** false
+---@field keepFocused? boolean Keep the editbox focused while its being shown | ***Default:*** false
 ---@field unfocusOnEnter? boolean Whether to automatically clear the focus from the editbox when the ENTER key is pressed | ***Default:*** true
 ---@field events? table<ScriptEditBox, fun(...: any)> Table of key, value pairs of the names of script event handlers to be set for the editbox frame and the functions to assign as event handlers called when they trigger<ul><li>***Note:*** "[OnChar](https://wowpedia.fandom.com/wiki/UIHANDLER_OnChar)" will be called with custom parameters:<p>@*param* `self` Frame ― Reference to the editbox frame</p><p>@*param* `char` string ― The UTF-8 character that was typed</p><p>@*param* `text` string ― The text typed into the editbox</p></li><li>***Note:*** "[OnTextChanged](https://wowpedia.fandom.com/wiki/UIHANDLER_OnTextChanged)" will be called with custom parameters:<p>@*param* `self` Frame ― Reference to the editbox frame</p><p>@*param* `user` string ― True if the value was changed by the user, false if it was done programmatically</p><p>@*param* `text` string ― The text typed into the editbox</p></li><li>***Note:*** "[OnEnterPressed](https://wowpedia.fandom.com/wiki/UIHANDLER_OnEnterPressed)" will be called with custom parameters:<p>@*param* `self` Frame ― Reference to the editbox frame</p><p>@*param* `text` string ― The text typed into the editbox</p></li></ul>
 ---@field attributeEvents? table<string|TextboxAttributes, fun(...: any)> Table of key, value pairs of the names of custom widget attributes and the functions to assign as event handlers called when [OnAttributeChanged](https://wowpedia.fandom.com/wiki/UIHANDLER_OnAttributeChanged) events trigger for specific custom widget attributes
@@ -1093,7 +1110,7 @@
 ---@field modifier? ModifierKey The specific (or any) modifier key required to be pressed down to move **frame** (if **frame** has the "OnUpdate" script defined) | ***Default:*** "SHIFT"<ul><li>***Note:*** Used to determine the specific modifier check to use. Example: when set to "any" [IsModifierKeyDown](https://wowpedia.fandom.com/wiki/API_IsModifierKeyDown) is used.</li></ul>
 
 ---@class positionOptionsCreationData
----@field canvas Frame The canvas frame child item of an existing options category page to add the position panel to
+---@field canvas Frame The canvas frame child item of an existing settings category page to add the position panel to
 ---@field frame Frame Reference to the frame to create the position options for
 ---@field frameName string Include this string in the tooltips and descriptions of options widgets when referring to **t.frame**
 ---@field presets? presetItemList Reference to the table containing **t.frame** position presets to be managed by options widgets added when set
@@ -1106,15 +1123,15 @@
 ---@field onChangePosition? function Function to call after the value of **panel.position.anchor**, **panel.position.relativeTo**, **panel.position.relativePoint**, **panel.position.offset.x** or **panel.position.offset.y** was changed by the user or via options data management before the base onChange handler is called built-in to the functionality of the position options panel template updating the position of **t.frame**
 ---@field onChangeKeepInBounds? function Function to call after the value of **panel.position.keepInBounds** was changed by the user or via options data management before the base onChange handlers are called built-in to the functionality of the position options panel template updating **t.frame**
 ---@field onChangeStrata? function Function to call after the value of **panel.layer.strata** was changed by the user or via options data management before the base onChange handlers are called built-in to the functionality of the position options panel template updating **t.frame**
----@field onChangeLevel? function Function to call after the value of **panel.layer.level** widgets was changed by the user or via options data management before the base onChange handlers are called built-in to the functionality of the position options panel template updating **t.frame**
----@field onChangeKeepOnTop? function Function to call after the value of **panel.layer.keepOnTop** widgets was changed by the user or via options data management before the base onChange handlers are called built-in to the functionality of the position options panel template updating **t.frame**
+---@field onChangeLevel? function Function to call after the value of **panel.layer.level** was changed by the user or via options data management before the base onChange handlers are called built-in to the functionality of the position options panel template updating **t.frame**
+---@field onChangeKeepOnTop? function Function to call after the value of **panel.layer.keepOnTop** was changed by the user or via options data management before the base onChange handlers are called built-in to the functionality of the position options panel template updating **t.frame**
 
 --[ Addon Compartment ]
 
 ---@class addonCompartmentFunctions
 ---@field onClick? fun(addon: string, button: string, frame: Button) Called when the **addon**'s compartment button is clicked<ul><li>***Note:*** `AddonCompartmentFunc`, must be set in the specified **addon**'s TOC file, defining the name of the global function to be set for call.</li></ul>
----@field onEnter? fun(addon: string, frame: Button) Called when the **addon**'s compartment button is being hovered<ul><li>***Note:*** `AddonCompartmentFuncOnEnter`, must be set in the specified **addon**'s TOC file, defining the name of the global function to be set for call.</li></ul>
----@field onLeave? fun(addon: string, frame: Button) Called when the **addon**'s compartment button is stopped being hovered<ul><li>***Note:*** `AddonCompartmentFuncOnLeave`, must be set in the specified **addon**'s TOC file, defining the name of the global function to be set for call.</li></ul>
+---@field onEnter? fun(addon: string, frame: Button) Called when the **addon**'s compartment button is being hovered before the tooltip (if set) is shown<ul><li>***Note:*** `AddonCompartmentFuncOnEnter`, must be set in the specified **addon**'s TOC file, defining the name of the global function to be set for call.</li></ul>
+---@field onLeave? fun(addon: string, frame: Button) Called when the **addon**'s compartment button is stopped being hovered before the tooltip (if set) is hidden<ul><li>***Note:*** `AddonCompartmentFuncOnLeave`, must be set in the specified **addon**'s TOC file, defining the name of the global function to be set for call.</li></ul>
 
 --[ Profiles ]
 

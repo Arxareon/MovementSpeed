@@ -75,18 +75,21 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 	--| Main Page
 
 	local mainPage = wt.CreateAboutPage(ns.name, {
+		register = true,
 		name = "About",
 		changelog = ns.changelog
 	})
 
 	--| Specifications Page
 
-	wt.CreateOptionsCategory(ns.name, {
-		parent = mainPage,
+	---@type checkbox
+	local liteToggle
+
+	wt.CreateSettingsPage(ns.name, {
+		register = mainPage,
 		name = "Specifications",
 		title = ns.strings.specifications.title,
 		description = ns.strings.specifications.description,
-		logo = ns.textures.logo,
 		optionsKeys = { ns.name .. "Specifications", },
 		storage = { {
 			workingTable = w,
@@ -101,30 +104,28 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 				description = ns.strings.specifications.general.description,
 				arrange = {},
 				initialize = function(panel)
-					local lite
-
-					local popup = wt.CreatePopup(ns.name, {
-						name = "DISABLE_LITE_MODE",
+					local enableLitePopup = wt.CreatePopupDialogueData(ns.name, "ENABLE_LITE_MODE", {
 						text = ns.strings.specifications.general.lite.warning:gsub("#ADDON", addonTitle),
 						accept = ns.strings.specifications.general.lite.accept,
-						onAccept = function() lite.setState(true) end,
+						onAccept = function() liteToggle.setState(true) end,
 					})
 
-					lite = wt.CreateCheckbox({
+					liteToggle = wt.CreateCheckbox({
 						parent = panel,
 						name = "LiteMode",
 						title = ns.strings.specifications.general.lite.label,
 						tooltip = { lines = { { text = ns.strings.specifications.general.lite.tooltip, }, } },
 						arrange = {},
 						events = { OnClick = function (_, state)
-							if state then StaticPopup_Show(popup) end
+							if state then StaticPopup_Show(enableLitePopup) end
 
-							lite.setState(false)
+							liteToggle.setState(false)
 						end, },
 						optionsData = {
 							optionsKey = ns.name .. "Specifications",
 							storageKey = "lite",
 							workingTable = w,
+							storageTable = WidgetToolsDB,
 							onCommit = function() if loaded.lite ~= w.lite then wt.CreateReloadNotice() end end,
 						},
 					})
@@ -212,14 +213,14 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 
 	--| Addons Page
 
-	wt.CreateOptionsCategory(ns.name, {
-		parent = mainPage,
+	wt.CreateSettingsPage(ns.name, {
+		register = mainPage,
 		name = "Addons",
 		appendOptions = false,
 		title = ns.strings.addons.title,
 		description = ns.strings.addons.description:gsub("#ADDON", addonTitle),
-		logo = ns.textures.logo,
 		scroll = { speed = 0.2 },
+		static = true,
 		optionsKeys = { ns.name .. "Addons", },
 		initialize = function(canvas)
 			--List Toolbox versions in use
@@ -325,7 +326,7 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 											offset = { x = 10, }
 										},
 										text = ns.strings.about.date:gsub(
-											"#DATE", WrapTextInColorCode(ns.toolboxStrings.about.date:gsub(
+											"#DATE", WrapTextInColorCode(ns.strings.date:gsub(
 												"#DAY", GetAddOnMetadata(v[i], "X-Day") or "?"
 											):gsub(
 												"#MONTH", GetAddOnMetadata(v[i], "X-Month") or "?"
@@ -412,29 +413,29 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 
 	--[[ ADDON COMPARTMENT ]]
 
-	local litePopup
+	local disableLitePopup
 
 	wt.SetUpAddonCompartment(ns.name, {
 		onClick = function()
 			if WidgetToolsDB.lite then
-				litePopup = litePopup or wt.CreatePopup(ns.name, {
-					name = "DISABLE_LITE_MODE",
+				disableLitePopup = disableLitePopup or wt.CreatePopupDialogueData(ns.name, "DISABLE_LITE_MODE", {
 					text = ns.strings.lite.warning:gsub("#ADDON", addonTitle),
 					accept = ns.strings.lite.accept,
-					onAccept = function()
-						WidgetToolsDB.lite = false
-
-						wt.CreateReloadNotice()
-					end,
+					onAccept = function() liteToggle.setData(false, true) end,
 				})
 
-				StaticPopup_Show(litePopup)
+				StaticPopup_Show(disableLitePopup)
 			else mainPage.open() end
 		end,
+		onEnter = function(_, frame) frame.tooltipData.lines[5] = {
+			text = "\n" .. (WidgetToolsDB.lite and ns.strings.compartment.lite or ns.strings.compartment.open),
+			font = GameFontNormalTiny,
+			color = ns.colors.grey[1],
+		} end
 	}, { lines = {
 		{ text = ns.strings.about.version:gsub("#VERSION", WrapTextInColorCode(GetAddOnMetadata(ns.name, "Version") or "?", "FFFFFFFF")), },
 		{ text = ns.strings.about.date:gsub(
-			"#DATE", WrapTextInColorCode(ns.toolboxStrings.about.date:gsub(
+			"#DATE", WrapTextInColorCode(ns.strings.date:gsub(
 				"#DAY", GetAddOnMetadata(ns.name, "X-Day") or "?"
 			):gsub(
 				"#MONTH", GetAddOnMetadata(ns.name, "X-Month") or "?"
@@ -444,6 +445,11 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 		), },
 		{ text = ns.strings.about.author:gsub("#AUTHOR", WrapTextInColorCode(GetAddOnMetadata(ns.name, "Author") or "?", "FFFFFFFF")), },
 		{ text = ns.strings.about.license:gsub("#LICENSE", WrapTextInColorCode(GetAddOnMetadata(ns.name, "X-License") or "?", "FFFFFFFF")), },
+		{
+			text = "\n" .. (WidgetToolsDB.lite and ns.strings.compartment.lite or ns.strings.compartment.open),
+			font = GameFontNormalTiny,
+			color = ns.colors.grey[1],
+		},
 	} })
 end
 
