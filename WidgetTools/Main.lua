@@ -59,7 +59,7 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 	--[ Data ]
 
 	--Working DB reference
-	local w = wt.Clone(WidgetToolsDB)
+	-- local w = wt.Clone(WidgetToolsDB)
 
 	--Loaded DB reference
 	local loaded = wt.Clone(WidgetToolsDB)
@@ -91,11 +91,7 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 		title = ns.strings.specifications.title,
 		description = ns.strings.specifications.description,
 		optionsKeys = { ns.name .. "Specifications", },
-		storage = { {
-			workingTable = w,
-			storageTable = WidgetToolsDB,
-			defaultsTable = ns.defaults,
-		}, },
+		storage = { { storageTable = WidgetToolsDB, defaultsTable = ns.defaults, }, },
 		initialize = function(canvas)
 			wt.CreatePanel({
 				parent = canvas,
@@ -123,10 +119,9 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 						end, },
 						optionsData = {
 							optionsKey = ns.name .. "Specifications",
-							storageKey = "lite",
-							workingTable = w,
 							storageTable = WidgetToolsDB,
-							onCommit = function() if loaded.lite ~= w.lite then wt.CreateReloadNotice() end end,
+							storageKey = "lite",
+							onCommit = function() if loaded.lite ~= WidgetToolsDB.lite then wt.CreateReloadNotice() end end,
 						},
 					})
 
@@ -138,9 +133,10 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 						arrange = {},
 						optionsData = {
 							optionsKey = ns.name .. "Specifications",
+							-- workingTable = w,
+							storageTable = WidgetToolsDB,
 							storageKey = "positioningAids",
-							workingTable = w,
-							onCommit = function() if loaded.positioningAids ~= w.positioningAids then wt.CreateReloadNotice() end end,
+							onCommit = function() if loaded.positioningAids ~= WidgetToolsDB.positioningAids then wt.CreateReloadNotice() end end,
 						},
 					})
 				end,
@@ -162,13 +158,13 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 						arrange = {},
 						optionsData = {
 							optionsKey = ns.name .. "Specifications",
+							storageTable = WidgetToolsDB.frameAttributes,
 							storageKey = "enabled",
-							workingTable = w.frameAttributes,
 							onChange = { ToggleWideFrameAttributes = function()
-								if w.frameAttributes.enabled then
+								if WidgetToolsDB.frameAttributes.enabled then
 									if _G["TableAttributeDisplay"] then
-										TableAttributeDisplay:SetWidth(w.frameAttributes.width + 70)
-										TableAttributeDisplay.LinesScrollFrame:SetWidth(w.frameAttributes.width)
+										TableAttributeDisplay:SetWidth(WidgetToolsDB.frameAttributes.width + 70)
+										TableAttributeDisplay.LinesScrollFrame:SetWidth(WidgetToolsDB.frameAttributes.width)
 									end
 
 									WidgetTools.frame:RegisterEvent("FRAMESTACK_VISIBILITY_UPDATED")
@@ -196,11 +192,11 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 						dependencies = { { frame = toggle, } },
 						optionsData = {
 							optionsKey = ns.name .. "Specifications",
+							storageTable = WidgetToolsDB.frameAttributes,
 							storageKey = "width",
-							workingTable = w.frameAttributes,
 							onChange = { ResizeWideFrameAttributes = function() if _G["TableAttributeDisplay"] then
-								TableAttributeDisplay:SetWidth(w.frameAttributes.width + 70)
-								TableAttributeDisplay.LinesScrollFrame:SetWidth(w.frameAttributes.width)
+								TableAttributeDisplay:SetWidth(WidgetToolsDB.frameAttributes.width + 70)
+								TableAttributeDisplay.LinesScrollFrame:SetWidth(WidgetToolsDB.frameAttributes.width)
 							end end, },
 						},
 					})

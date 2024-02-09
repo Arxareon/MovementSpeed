@@ -113,7 +113,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			}
 		},
 		settings = {
-			save = "Changes will be saved on close.",
+			save = "Changes will be finalized on close.",
 			cancel = {
 				label = "Revert Changes",
 				tooltip = "Dismiss all changes made on this page, and load the saved values.",
@@ -1040,11 +1040,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			if type(ttc) ~= "table" then return end
 
 			for k, v in pairs(ttc) do
-				rck = rck .. (type(k) == "number" and ("[" .. k .. "]") or ("." .. k))
-
-				GoDeeper(v, rck)
-
-				if type(v) ~= "table" then recoveredData[rck:sub(2)] = v end
+				if type(v) == "table" then GoDeeper(v, rck .. (type(k) == "number" and ("[" .. k .. "]") or ("." .. k)))
+				else recoveredData[(rck .. (type(k) == "number" and ("[" .. k .. "]") or ("." .. k))):sub(2)] = v end
 			end
 		end
 
@@ -1627,21 +1624,14 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			for i = 1, #keys do table.insert(optionsData.onChange, keys[i]) end
 		end
 
-		--Add the options data rules to the collection
+		--Add widget reference
 		optionsData.widget = widget
+
+		--Add the options data rules to the collection
 		table.insert(optionsTable.rules[optionsData.optionsKey], optionsData)
 	end
 
-	---Save all data from the widgets to the working table(s) specified in the options data list referenced by the options key by calling **[*widget*].saveData()** for each
-	---***
-	---@param optionsKey table A unique key referencing the collection of widget options data to be saved
-	function wt.SaveOptionsData(optionsKey)
-		if not optionsTable.rules[optionsKey] then return end
-
-		for i = 1, #optionsTable.rules[optionsKey] do optionsTable.rules[optionsKey][i].widget.saveData(nil, true) end
-	end
-
-	---Load all data from the working table(s) to the widgets specified in the options data list referenced by the options key by calling **[*widget*].loadData(false)** for each
+	---Load all data from the storage table(s) to the widgets specified in the options data list referenced by the options key by calling **[*widget*].loadData(...)** for each
 	---***
 	---@param optionsKey table A unique key referencing the collection of widget options data to be loaded
 	---@param changes boolean Whether to call **onChange** handlers or not | ***Default:*** false
@@ -1663,13 +1653,36 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		if changes then for k in pairs(changes) do optionsTable.changeHandlers[optionsKey][k]() end end
 	end
 
+	---Save all data from the widgets to the storage table(s) specified in the options data list referenced by the options key by calling **[*widget*].saveData(...)** for each
+	---***
+	---@param optionsKey table A unique key referencing the collection of widget options data to be saved
+	function wt.SaveOptionsData(optionsKey)
+		if not optionsTable.rules[optionsKey] then return end
+
+		for i = 1, #optionsTable.rules[optionsKey] do optionsTable.rules[optionsKey][i].widget.saveData(nil, true) end
+	end
+
+	--Set a data snapshot for each widget specified in the options data list referenced by the options key by calling **[*widget*].revertData()** for each
+	function wt.SnapshotOptionsData(optionsKey)
+		if not optionsTable.rules[optionsKey] then return end
+
+		for i = 1, #optionsTable.rules[optionsKey] do optionsTable.rules[optionsKey][i].widget.snapshotData() end
+	end
+
+	--Set and load the stored data managed by each widget specified in the options data list referenced by the options key by calling **[*widget*].snapshotData()** for each
+	function wt.RevertOptionsData(optionsKey)
+		if not optionsTable.rules[optionsKey] then return end
+
+		for i = 1, #optionsTable.rules[optionsKey] do optionsTable.rules[optionsKey][i].widget.revertData() end
+	end
+
 	--| Widget Data Handlers
 
-	---Load the data from the specified working (or storage) table under the specified storage key to the widget
+	---Load the data from the specified storage table under the specified storage key to the widget
 	---***
 	---@param widget checkbox|radioButton|selector|multiSelector|specialSelector|dropdownSelector|textbox|multilineTextbox|numericSlider|colorPicker Reference to the widget to be saved & loaded data to/from with defined **loadData** and **saveData** functions
 	---@param optionsData booleanOptionsData|stringOptionsData|numberOptionsData|integerOptionsData|booleanArrayOptionsData|specialOptionsData|colorOptionsData Table with the information on options data handling
-	---@param set fun(data?: any): data: any|nil Called to check the loaded (and converted) data retrieved from **optionsData.workingTable** is set, or **optionsData.storageTable** if set and load it to **widget**
+	---@param set fun(data?: any): data: any|nil Called to check the loaded (and converted) data retrieved from **optionsData.storageTable** and load it to **widget**
 	---@param handleChanges? boolean If true, call **optionsData.onChange** (if set) | ***Default:*** true
 	function wt.LoadWidgetData(widget, optionsData, set, handleChanges)
 		if type(optionsData) ~= "table" then return end
@@ -1679,66 +1692,46 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		if widget.frame then
 			widget.frame:SetAttributeNoHandler("loaded", false)
 
-			if optionsData.storageKey then
-				if optionsData.workingTable then data = optionsData.workingTable[optionsData.storageKey]
-				elseif optionsData.storageTable then data = optionsData.storageTable[optionsData.storageKey] end
-			end
-
+			if optionsData.storageKey and optionsData.storageTable then data = optionsData.storageTable[optionsData.storageKey] end
 			if optionsData.convertLoad then data = optionsData.convertLoad(data) end
-
 			data = set(data)
 
 			--Invoke an event
 			widget.frame:SetAttribute("loaded", true)
 		end
 
-		--| Call listeners
-
+		--Call listeners
 		if optionsData.onLoad then optionsData.onLoad(widget, data) end
-
 		if handleChanges ~= false and optionsData.onChange then
 			for i = 1, #optionsData.onChange do optionsTable.changeHandlers[optionsData.optionsKey][optionsData.onChange[i]]() end
 		end
 	end
 
-	---Save the provided data or the current value of the widget to the specified working (and/or storage) table under the specified storage key
+	---Save the provided data or the current value of the widget to the specified storage table under the specified storage key
 	---***
 	---@param widget checkbox|radioButton|selector|multiSelector|specialSelector|dropdownSelector|textbox|multilineTextbox|numericSlider|colorPicker Reference to the widget to be saved & loaded data to/from with defined **loadData** and **saveData** functions
 	---@param optionsData booleanOptionsData|stringOptionsData|numberOptionsData|integerOptionsData|booleanArrayOptionsData|specialOptionsData|colorOptionsData Table with the information on options data handling
-	---@param get fun(): data: any|nil Called to retrieve the data from the widget and save it to **optionsData.workingTable** (if set) and/or **optionsData.storageTable** (if set)
-	---@param commit? boolean If true, also commit the data to **optionsData.storageTable** (if set) | ***Default:*** false
-	function wt.SaveWidgetData(widget, optionsData, get, commit)
+	---@param get fun(): data: any|nil Called to retrieve the data from the widget and save it to **optionsData.storageTable**
+	function wt.SaveWidgetData(widget, optionsData, get)
 		if type(optionsData) ~= "table" then return end
 
 		local data = get()
-
 		if optionsData.convertSave then data = optionsData.convertSave(data) end
+		if optionsData.storageKey and optionsData.storageTable then optionsData.storageTable[optionsData.storageKey] = data end
 
-		if optionsData.storageKey then
-			if optionsData.workingTable then optionsData.workingTable[optionsData.storageKey] = data end
-			if commit and optionsData.storageTable then optionsData.storageTable[optionsData.storageKey] = data end
-		end
-
-		--| Call listeners
-
+		--Call listeners
 		if optionsData.onSave then optionsData.onSave(widget, data) end
-		if commit and optionsData.onCommit then optionsData.onCommit(widget, data) end
 	end
 
-	---Get the currently stored data from the specified working table under the specified storage key
+	---Get the currently stored data from the specified storage table under the specified storage key
 	---@param optionsData booleanOptionsData|stringOptionsData|numberOptionsData|integerOptionsData|booleanArrayOptionsData|specialOptionsData|colorOptionsData Table with the information on options data handling
 	---@param unconverted? boolean If true, use **optionsData.convertLoad** (if set) when reading the data or return the raw data unconverted | ***Default:*** false
 	---@return any
 	function wt.GetWidgetData(optionsData, unconverted)
-		if type(optionsData) ~= "table"  or not optionsData.storageKey then return end
+		if type(optionsData) ~= "table" or not optionsData.storageKey or not optionsData.storageTable then return end
 
-		if optionsData.workingTable then
-			if not unconverted and optionsData.convertLoad then return optionsData.convertLoad(optionsData.workingTable[optionsData.storageKey]) end
-			return optionsData.workingTable[optionsData.storageKey]
-		elseif optionsData.storageTable then
-			if not unconverted and optionsData.convertLoad then return optionsData.convertLoad(optionsData.workingTable[optionsData.storageKey]) end
-			return optionsData.workingTable[optionsData.storageKey]
-		end
+		if not unconverted and optionsData.convertLoad then return optionsData.convertLoad(optionsData.storageTable[optionsData.storageKey]) end
+		return optionsData.storageTable[optionsData.storageKey]
 	end
 
 	--[ Settings Page Management ]
@@ -3250,9 +3243,6 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			--Retrieve data from settings widgets and commit to the storage table
 			if t.autoSave ~= false and t.optionsKeys then for i = 1, #t.optionsKeys do wt.SaveOptionsData(t.optionsKeys[i]) end end
 
-			--Update the working table
-			if t.storage then for i = 1, #t.storage do wt.CopyValues(t.storage[i].storageTable, t.storage[i].workingTable) end end
-
 			--Call listener
 			if t.onSave then t.onSave(user == true) end
 		end
@@ -3263,21 +3253,21 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		---@param user? boolean Whether to mark the call as being the result of a user interaction | ***Default:*** false
 		function page.load(changes, user)
 			--Update settings widgets
-			if t.autoLoad ~= false and t.optionsKeys then for i = 1, #t.optionsKeys do wt.LoadOptionsData(t.optionsKeys[i], changes) end end
+			if t.autoLoad ~= false and t.optionsKeys then for i = 1, #t.optionsKeys do
+				wt.LoadOptionsData(t.optionsKeys[i], changes)
+				wt.SnapshotOptionsData(t.optionsKeys[i])
+			end end
 
 			--Call listener
 			if t.onLoad then t.onLoad(user == true) end
 		end
 
-		---Call to cancel any changes made in this category page
+		---Call to cancel any changes made in this category page and reload all linked widget data
 		---***
 		---@param user? boolean Whether to mark the call as being the result of a user interaction | ***Default:*** false
 		function page.cancel(user)
-			--Commit to the storage table
-			if t.storage then for i = 1, #t.storage do wt.CopyValues(t.storage[i].workingTable, t.storage[i].storageTable) end end
-
 			--Update settings widgets
-			if t.optionsKeys then for i = 1, #t.optionsKeys do wt.LoadOptionsData(t.optionsKeys[i], true) end end
+			if t.optionsKeys then for i = 1, #t.optionsKeys do wt.RevertOptionsData(t.optionsKeys[i]) end end
 
 			--Call listener
 			if t.onCancel then t.onCancel(user == true) end
@@ -3288,10 +3278,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		---@param user? boolean Whether to mark the call as being the result of a user interaction | ***Default:*** false
 		function page.defaults(user)
 			--Update with default values
-			if t.storage then for i = 1, #t.storage do
-				wt.CopyValues(t.storage[i].storageTable, t.storage[i].defaultsTable)
-				wt.CopyValues(t.storage[i].workingTable, t.storage[i].defaultsTable)
-			end end
+			if t.storage then for i = 1, #t.storage do wt.CopyValues(t.storage[i].storageTable, t.storage[i].defaultsTable) end end
 
 			--Update settings widgets
 			if t.optionsKeys then for i = 1, #t.optionsKeys do wt.LoadOptionsData(t.optionsKeys[i], true) end end
@@ -3497,10 +3484,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				local onDefaults = category.pages[i].getProperty("onDefaults")
 
 				--Update with default values
-				if storage then for i = 1, #storage do
-					wt.CopyValues(storage[i].storageTable, storage[i].defaultsTable)
-					wt.CopyValues(storage[i].workingTable, storage[i].defaultsTable)
-				end end
+				if storage then for i = 1, #storage do wt.CopyValues(storage[i].storageTable, storage[i].defaultsTable) end end
 
 				--Update settings widgets
 				if optionsKeys then for i = 1, #optionsKeys do wt.LoadOptionsData(optionsKeys[i], true) end end
@@ -3936,7 +3920,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			toggle.frame:SetAttribute("enabled", state)
 		end
 
-		---Returns the current toggle state of the widget or the data stored in the working table (if specified) in lite mode
+		---Returns the current toggle state of the widget or the data stored in the storage table (if specified) in lite mode
 		---@return boolean|nil
 		function toggle.getState()
 			if toggle.widget then return toggle.widget:GetChecked() else return toggle.getData() end
@@ -3982,7 +3966,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| Options data management
 
-		---Load the data from the specified working table under the specified storage key to the widget
+		local snapshot
+
+		---Load the data from the specified storage table under the specified storage key to the widget
 		---***
 		---@param handleChanges? boolean Whether to call the specified onChange handlers or not | ***Default:*** true
 		function toggle.loadData(handleChanges) wt.LoadWidgetData(toggle, t.optionsData, function(data)
@@ -3993,28 +3979,32 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			return data
 		end, handleChanges) end
 
-		---Save the provided data or the current value of the widget to the specified working table under the specified storage key
+		---Save the provided data or the current value of the widget to the specified storage table under the specified storage key
 		---***
 		---@param state? boolean Data to be saved | ***Default:*** *the currently set value of the widget*
-		---@param commit? boolean If true, also commit the value to the specified storage table | ***Default:*** false
-		function toggle.saveData(state, commit) wt.SaveWidgetData(toggle, t.optionsData, function()
+		function toggle.saveData(state) wt.SaveWidgetData(toggle, t.optionsData, function()
 			if state == nil then return toggle.getState() else return state end
-		end, commit) end
+		end) end
 
-		---Save the provided data to the specified working table under the specified storage key then load it to the widget
+		---Save the provided data to the specified storage table under the specified storage key then load it to the widget
 		---***
 		---@param state? boolean Data to be saved | ***Default:*** *the currently set value of the widget*
-		---@param commit? boolean If true, also commit the value to the specified storage table | ***Default:*** false
 		---@param handleChanges? boolean Whether to call the specified onChange handlers or not | ***Default:*** true
-		function toggle.setData(state, commit, handleChanges)
-			toggle.saveData(state, commit)
+		function toggle.setData(state, handleChanges)
+			toggle.saveData(state)
 			toggle.loadData(handleChanges)
 		end
 
-		---Get the currently stored data from the specified working table under the specified storage key
+		---Get the currently stored data from the specified storage table under the specified storage key
 		---@param unconverted? boolean If true, use the specified convert function when reading the data, or if not true, return the raw data unconverted | ***Default:*** false
 		---@return any
-		function toggle.getData(unconverted) wt.GetWidgetData(t.optionsData, unconverted) end
+		function toggle.getData(unconverted) return wt.GetWidgetData(t.optionsData, unconverted) end
+
+		--Set a data snapshot so any changes made to the widget and/or the stored data can be reverted to this value via **toggle.revertData()**
+		function toggle.snapshotData() snapshot = toggle.getData() end
+
+		--Set and load the stored data managed by the widget to the last saved data snapshot set via **toggle.snapshotData()**
+		function toggle.revertData() toggle.setData(snapshot) end
 
 		--[ GUI Widget ]
 
@@ -4139,8 +4129,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 				--Manage data & call listeners
 				if t.optionsData then
-					--Instant save
-					toggle.saveData(nil, t.optionsData.autoCommit)
+					toggle.saveData()
 
 					--Call onChange handlers
 					if t.optionsData.onChange then for i = 1, #t.optionsData.onChange do optionsTable.changeHandlers[t.optionsData.optionsKey][t.optionsData.onChange[i]]() end end
@@ -4238,8 +4227,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 				--Manage data & call listeners
 				if t.optionsData then
-					--Instant save
-					toggle.saveData(nil, t.optionsData.autoCommit)
+					toggle.saveData()
 
 					--Call onChange handlers
 					if t.optionsData.onChange then for i = 1, #t.optionsData.onChange do optionsTable.changeHandlers[t.optionsData.optionsKey][t.optionsData.onChange[i]]() end end
@@ -4401,7 +4389,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| Options data management
 
-		---Load the data from the specified working table under the specified storage key to the widget
+		local snapshot
+
+		---Load the data from the specified storage table under the specified storage key to the widget
 		---***
 		---@param handleChanges? boolean Whether to call the specified onChange handlers or not | ***Default:*** true
 		function selector.loadData(handleChanges) wt.LoadWidgetData(selector, t.optionsData, function(data)
@@ -4412,28 +4402,32 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			return data
 		end, handleChanges) end
 
-		---Save the provided data or the current value of the widget to the specified working table under the specified storage key
+		---Save the provided data or the current value of the widget to the specified storage table under the specified storage key
 		---***
 		---@param data? wrappedIntegerValue If set, save the value wrapped in this table | ***Default:*** *the currently set value of the widget*
-		---@param commit? boolean If true, also commit the value to the specified storage table | ***Default:*** false
-		function selector.saveData(data, commit) wt.SaveWidgetData(selector, t.optionsData, function()
+		function selector.saveData(data) wt.SaveWidgetData(selector, t.optionsData, function()
 			return type(data) == "table" and data.index or selector.getSelected()
-		end, commit) end
+		end) end
 
-		---Save the provided data to the specified working table under the specified storage key then load it to the widget
+		---Save the provided data to the specified storage table under the specified storage key then load it to the widget
 		---***
 		---@param data? wrappedIntegerValue If set, save the value wrapped in this table | ***Default:*** *the currently set value of the widget*
-		---@param commit? boolean If true, also commit the value to the specified storage table | ***Default:*** false
 		---@param handleChanges? boolean Whether to call the specified onChange handlers or not | ***Default:*** true
-		function selector.setData(data, commit, handleChanges)
-			selector.saveData(data, commit)
+		function selector.setData(data, handleChanges)
+			selector.saveData(data)
 			selector.loadData(handleChanges)
 		end
 
-		---Get the currently stored data from the specified working table under the specified storage key
+		---Get the currently stored data from the specified storage table under the specified storage key
 		---@param unconverted? boolean If true, use the specified convert function when reading the data, or if not true, return the raw data unconverted | ***Default:*** false
 		---@return any
-		function selector.getData(unconverted) wt.GetWidgetData(t.optionsData, unconverted) end
+		function selector.getData(unconverted) return wt.GetWidgetData(t.optionsData, unconverted) end
+
+		--Set a data snapshot so any changes made to the widget and/or the stored data can be reverted to this value via **selector.revertData()**
+		function selector.snapshotData() snapshot = selector.getData() end
+
+		--Set and load the stored data managed by the widget to the last saved data snapshot set via **selector.snapshotData()**
+		function selector.revertData() selector.setData({ index = snapshot }) end
 
 		--[ GUI Widget ]
 
@@ -4619,8 +4613,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			selector.setListener("selected", function(value)
 				if not value.user or not t.optionsData then return end
 
-				--Instant save
-				selector.saveData(nil, t.optionsData.autoCommit)
+				selector.saveData()
 
 				--Call onChange handlers
 				if t.optionsData.onChange then for i = 1, #t.optionsData.onChange do optionsTable.changeHandlers[t.optionsData.optionsKey][t.optionsData.onChange[i]]() end end
@@ -4779,7 +4772,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| Options data management
 
-		---Load the data from the specified working table under the specified storage key to the widget
+		local snapshot
+
+		---Load the data from the specified storage table under the specified storage key to the widget
 		---***
 		---@param handleChanges? boolean Whether to call the specified onChange handlers or not | ***Default:*** true
 		function selector.loadData(handleChanges) wt.LoadWidgetData(selector, t.optionsData, function(data)
@@ -4790,23 +4785,27 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			return data
 		end, handleChanges) end
 
-		---Save the provided data or the current value of the widget to the specified working table under the specified storage key
+		---Save the provided data or the current value of the widget to the specified storage table under the specified storage key
 		---***
 		---@param data? wrappedBooleanArrayData If set, save the value wrapped in this table | ***Default:*** *the currently set value of the widget*
-		---@param commit? boolean If true, also commit the value to the specified storage table | ***Default:*** false
-		function selector.saveData(data, commit) wt.SaveWidgetData(selector, t.optionsData, function()
+		function selector.saveData(data) wt.SaveWidgetData(selector, t.optionsData, function()
 			return type(data) == "table" and data.selections or selector.getSelected()
-		end, commit) end
+		end) end
 
-		---Save the provided data to the specified working table under the specified storage key then load it to the widget
+		---Save the provided data to the specified storage table under the specified storage key then load it to the widget
 		---***
 		---@param data? wrappedBooleanArrayData If set, save the value wrapped in this table | ***Default:*** *the currently set value of the widget*
-		---@param commit? boolean If true, also commit the value to the specified storage table | ***Default:*** false
 		---@param handleChanges? boolean Whether to call the specified onChange handlers or not | ***Default:*** true
-		function selector.setData(data, commit, handleChanges)
-			selector.saveData(data, commit)
+		function selector.setData(data, handleChanges)
+			selector.saveData(data)
 			selector.loadData(handleChanges)
 		end
+
+		--Set a data snapshot so any changes made to the widget and/or the stored data can be reverted to this value via **selector.revertData()**
+		function selector.snapshotData() snapshot = selector.getData() end
+
+		--Set and load the stored data managed by the widget to the last saved data snapshot set via **selector.snapshotData()**
+		function selector.revertData() selector.setData({ selections = snapshot }) end
 
 		--[ GUI Widget ]
 
@@ -5140,7 +5139,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| Options data management
 
-		---Load the data from the specified working table under the specified storage key to the widget
+		local snapshot
+
+		---Load the data from the specified storage table under the specified storage key to the widget
 		---***
 		---@param handleChanges? boolean Whether to call the specified onChange handlers or not | ***Default:*** true
 		function selector.loadData(handleChanges) wt.LoadWidgetData(selector, t.optionsData, function(data)
@@ -5151,24 +5152,28 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			return data
 		end, handleChanges) end
 
-		---Save the provided data or the current value of the widget to the specified working table under the specified storage key
+		---Save the provided data or the current value of the widget to the specified storage table under the specified storage key
 		---***
 		---@param data? wrappedSpecialData If set, save the value wrapped in this table | ***Default:*** *the currently set value of the widget*
-		---@param commit? boolean If true, also commit the value to the specified storage table | ***Default:*** false
-		function selector.saveData(data, commit) wt.SaveWidgetData(selector, t.optionsData, function()
+		function selector.saveData(data) wt.SaveWidgetData(selector, t.optionsData, function()
 			return type(data) == "table" and data.value or selector.getSelected()
-		end, commit) end
+		end) end
 
-		---Save the provided data to the specified working table under the specified storage key then load it to the widget
+		---Save the provided data to the specified storage table under the specified storage key then load it to the widget
 		---***
 		---@param data? wrappedSpecialData If set, save the value wrapped in this table | ***Default:*** *the currently set value of the widget*
-		---@param commit? boolean If true, also commit the value to the specified storage table | ***Default:*** false
 		---@param handleChanges? boolean Whether to call the specified onChange handlers or not | ***Default:*** true
 		---<hr><p></p>
-		function selector.setData(data, commit, handleChanges)
-			selector.saveData(data, commit)
+		function selector.setData(data, handleChanges)
+			selector.saveData(data)
 			selector.loadData(handleChanges)
 		end
+
+		--Set a data snapshot so any changes made to the widget and/or the stored data can be reverted to this value via **selector.revertData()**
+		function selector.snapshotData() snapshot = selector.getData() end
+
+		--Set and load the stored data managed by the widget to the last saved data snapshot set via **selector.snapshotData()**
+		function selector.revertData() selector.setData({ value = snapshot }) end
 
 		return selector
 	end
@@ -5638,8 +5643,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			dropdown.setListener("selected", function(value)
 				if not value.user or not t.optionsData then return end
 
-				--Instant save
-				dropdown.saveData(nil, t.optionsData.autoCommit)
+				dropdown.saveData()
 
 				--Call onChange handlers
 				if t.optionsData.onChange then for i = 1, #t.optionsData.onChange do optionsTable.changeHandlers[t.optionsData.optionsKey][t.optionsData.onChange[i]]() end end
@@ -5721,6 +5725,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			anchor = "ANCHOR_RIGHT",
 		}) end
 		--Getters & setters
+		local snapshot
 		function dropdown.getType() return "Selector" end
 		function dropdown.isType(type) return type == "Selector" end
 		function dropdown.getProperty(key) return wt.FindKey(t, key) end
@@ -5745,42 +5750,25 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			end
 			dropdown:SetAttribute("enabled", state)
 		end
-		function dropdown.loadData(handleChanges)
-			if not t.optionsData then return end
-			local value
-			if (t.optionsData.workingTable and t.optionsData.storageKey) or t.optionsData.convertLoad then
-				dropdown:SetAttributeNoHandler("loaded", false)
-				if t.optionsData.workingTable and t.optionsData.storageKey then value = t.optionsData.workingTable[t.optionsData.storageKey] end
-				if t.optionsData.convertLoad then value = t.optionsData.convertLoad(value) end
-				value = type(value) == "number" and math.floor(value) or nil
-				if value or t.clearable then dropdown.setSelected(value) end
-				dropdown:SetAttribute("loaded", true)
-			end
-			if t.optionsData.onLoad then t.optionsData.onLoad(dropdown, value) end
-			if handleChanges ~= false and t.optionsData.onChange then
-				for i = 1, #t.optionsData.onChange do optionsTable.changeHandlers[t.optionsData.optionsKey][t.optionsData.onChange[i]]() end
-			end
-		end
-		function dropdown.saveData(data, commit)
-			if not t.optionsData then return end
-			local value
-			if data then value = data.index else value = dropdown.getSelected() end
-			if t.optionsData.convertSave then value = t.optionsData.convertSave(value) end
-			if t.optionsData.storageKey then
-				if t.optionsData.workingTable then t.optionsData.workingTable[t.optionsData.storageKey] = value end
-				if commit and t.optionsData.storageTable then t.optionsData.storageTable[t.optionsData.storageKey] = value end
-			end
-			if t.optionsData.onSave then t.optionsData.onSave(dropdown, value) end
-			if commit and t.optionsData.onCommit then t.optionsData.onCommit(dropdown, value) end
-		end
-		function dropdown.setData(data, commit, handleChanges)
-			dropdown.saveData(data, commit)
+		function dropdown.loadData(handleChanges) wt.LoadWidgetData(dropdown, t.optionsData, function(data)
+			data = type(data) == "number" and math.floor(data) or nil
+			if data or t.clearable then dropdown.setSelected(data) end
+			return data
+		end, handleChanges) end
+		function dropdown.saveData(data) wt.SaveWidgetData(dropdown, t.optionsData, function()
+			return type(data) == "table" and data.index or dropdown.getSelected()
+		end) end
+		function dropdown.setData(data, handleChanges)
+			dropdown.saveData(data)
 			dropdown.loadData(handleChanges)
 		end
+		function dropdown.getData(unconverted) return wt.GetWidgetData(t.optionsData, unconverted) end
+		function dropdown.snapshotData() snapshot = dropdown.getData() end
+		function dropdown.revertData() dropdown.setData(snapshot) end
 		--Manage data & call listeners
 		dropdown.setListener("selected", function(value)
 			if not value.user or not t.optionsData then return end
-			dropdown.saveData(nil, t.optionsData.autoCommit)
+			dropdown.saveData()
 			if t.optionsData.onChange then for i = 1, #t.optionsData.onChange do optionsTable.changeHandlers[t.optionsData.optionsKey][t.optionsData.onChange[i]]() end end
 		end)
 		--Register attribute event handlers
@@ -5884,7 +5872,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| Options data management
 
-		---Load the data from the specified working table under the specified storage key to the widget
+		local snapshot
+
+		---Load the data from the specified storage table under the specified storage key to the widget
 		---***
 		---@param handleChanges? boolean Whether to call the specified onChange handlers or not | ***Default:*** true
 		function textbox.loadData(handleChanges) wt.LoadWidgetData(textbox, t.optionsData, function(data)
@@ -5893,26 +5883,30 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			return data
 		end, handleChanges) end
 
-		---Save the provided data or the current value of the widget to the specified working table under the specified storage key
+		---Save the provided data or the current value of the widget to the specified storage table under the specified storage key
 		---***
 		---@param text? string Text to be saved | ***Default:*** *the currently set value of the widget*
-		---@param commit? boolean If true, also commit the value to the specified storage table | ***Default:*** false
-		function textbox.saveData(text, commit) wt.SaveWidgetData(textbox, t.optionsData, function() return text or textbox.getText() end, commit) end
+		function textbox.saveData(text) wt.SaveWidgetData(textbox, t.optionsData, function() return text or textbox.getText() end) end
 
-		---Save the provided data to the specified working table under the specified storage key then load it to the widget
+		---Save the provided data to the specified storage table under the specified storage key then load it to the widget
 		---***
 		---@param text? string Text to be saved | ***Default:*** *the currently set value of the widget*
-		---@param commit? boolean If true, also commit the value to the specified storage table | ***Default:*** false
 		---@param handleChanges? boolean Whether to call the specified onChange handlers or not | ***Default:*** true
-		function textbox.setData(text, commit, handleChanges)
-			textbox.saveData(text, commit)
+		function textbox.setData(text, handleChanges)
+			textbox.saveData(text)
 			textbox.loadData(handleChanges)
 		end
 
-		---Get the currently stored data from the specified working table under the specified storage key
+		---Get the currently stored data from the specified storage table under the specified storage key
 		---@param unconverted? boolean If true, use the specified convert function when reading the data, or if not true, return the raw data unconverted | ***Default:*** false
 		---@return any
-		function textbox.getData(unconverted) wt.GetWidgetData(t.optionsData, unconverted) end
+		function textbox.getData(unconverted) return wt.GetWidgetData(t.optionsData, unconverted) end
+
+		--Set a data snapshot so any changes made to the widget and/or the stored data can be reverted to this value via **textbox.revertData()**
+		function textbox.snapshotData() snapshot = textbox.getData() end
+
+		--Set and load the stored data managed by the widget to the last saved data snapshot set via **textbox.snapshotData()**
+		function textbox.revertData() textbox.setData(snapshot) end
 
 		--[ GUI Widget ]
 
@@ -5972,8 +5966,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 				--Manage data & call listeners
 				if user and t.optionsData then
-					--Instant save
-					textbox.saveData(nil, t.optionsData.autoCommit)
+					textbox.saveData()
 
 					--Call onChange handlers
 					if t.optionsData.onChange then for i = 1, #t.optionsData.onChange do optionsTable.changeHandlers[t.optionsData.optionsKey][t.optionsData.onChange[i]]() end end
@@ -6492,7 +6485,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| Options data management
 
-		---Load the data from the specified working table under the specified storage key to the widget
+		local snapshot
+
+		---Load the data from the specified storage table under the specified storage key to the widget
 		---***
 		---@param handleChanges? boolean Whether to call the specified onChange handlers or not | ***Default:*** true
 		function numeric.loadData(handleChanges) wt.LoadWidgetData(numeric, t.optionsData, function(data)
@@ -6501,26 +6496,30 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			return data
 		end, handleChanges) end
 
-		---Save the provided data or the current value of the widget to the specified working table under the specified storage key
+		---Save the provided data or the current value of the widget to the specified storage table under the specified storage key
 		---***
 		---@param value? number Data to be saved | ***Default:*** *the currently set value of the widget*
-		---@param commit? boolean If true, also commit the value to the specified storage table | ***Default:*** false
-		function numeric.saveData(value, commit) wt.SaveWidgetData(numeric, t.optionsData, function() return value or numeric.getValue() end, commit) end
+		function numeric.saveData(value) wt.SaveWidgetData(numeric, t.optionsData, function() return value or numeric.getValue() end) end
 
-		---Save the provided data to the specified working table under the specified storage key then load it to the widget
+		---Save the provided data to the specified storage table under the specified storage key then load it to the widget
 		---***
 		---@param value? number Data to be saved | ***Default:*** *the currently set value of the widget*
-		---@param commit? boolean If true, also commit the value to the specified storage table | ***Default:*** false
 		---@param handleChanges? boolean Whether to call the specified onChange handlers or not | ***Default:*** true
-		function numeric.setData(value, commit, handleChanges)
-			numeric.saveData(value, commit)
+		function numeric.setData(value, handleChanges)
+			numeric.saveData(value)
 			numeric.loadData(handleChanges)
 		end
 
-		---Get the currently stored data from the specified working table under the specified storage key
+		---Get the currently stored data from the specified storage table under the specified storage key
 		---@param unconverted? boolean If true, use the specified convert function when reading the data, or if not true, return the raw data unconverted | ***Default:*** false
 		---@return any
-		function numeric.getData(unconverted) wt.GetWidgetData(t.optionsData, unconverted) end
+		function numeric.getData(unconverted) return wt.GetWidgetData(t.optionsData, unconverted) end
+
+		--Set a data snapshot so any changes made to the widget and/or the stored data can be reverted to this value via **numeric.revertData()**
+		function numeric.snapshotData() snapshot = numeric.getData() end
+
+		--Set and load the stored data managed by the widget to the last saved data snapshot set via **numeric.snapshotData()**
+		function numeric.revertData() numeric.setData(snapshot) end
 
 		--[ GUI Widget ]
 
@@ -6810,8 +6809,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 				--Manage data & call listeners
 				if user and t.optionsData then
-					--Instant save
-					numeric.saveData(nil, t.optionsData.autoCommit)
+					numeric.saveData()
 
 					--Call onChange handlers
 					if t.optionsData.onChange then for i = 1, #t.optionsData.onChange do optionsTable.changeHandlers[t.optionsData.optionsKey][t.optionsData.onChange[i]]() end end
@@ -6978,35 +6976,41 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| Options data management
 
-		---Load the data from the specified working table under the specified storage key to the widget
+		local snapshot
+
+		---Load the data from the specified storage table under the specified storage key to the widget
 		---***
 		---@param handleChanges? boolean Whether to call the specified onChange handlers or not | ***Default:*** true
-		function colorPicker.loadData(handleChanges) wt.LoadWidgetData(colorPicker, t.optionsData, function(data)
+		function colorPicker.loadData(handleChanges, snapshot) wt.LoadWidgetData(colorPicker, t.optionsData, function(data)
 			colorPicker.setColor(wt.UnpackColor(data))
 
 			return data
 		end, handleChanges) end
 
-		---Save the provided data or the current value of the widget to the specified working table under the specified storage key
+		---Save the provided data or the current value of the widget to the specified storage table under the specified storage key
 		---***
 		---@param color? colorData Table containing the color values to be saved | ***Default:*** *the currently set value of the widget*
-		---@param commit? boolean If true, also commit the value to the specified storage table | ***Default:*** false
-		function colorPicker.saveData(color, commit) wt.SaveWidgetData(colorPicker, t.optionsData, function() return color or wt.PackColor(colorPicker.getColor()) end, commit) end
+		function colorPicker.saveData(color) wt.SaveWidgetData(colorPicker, t.optionsData, function() return color or wt.PackColor(colorPicker.getColor()) end) end
 
-		---Save the provided data to the specified working table under the specified storage key then load it to the widget
+		---Save the provided data to the specified storage table under the specified storage key then load it to the widget
 		---***
 		---@param color? colorData Table containing the color values to be saved | ***Default:*** *the currently set value of the widget*
-		---@param commit? boolean If true, also commit the value to the specified storage table | ***Default:*** false
 		---@param handleChanges? boolean Whether to call the specified onChange handlers or not | ***Default:*** true
-		function colorPicker.setData(color, commit, handleChanges)
-			colorPicker.saveData(color, commit)
+		function colorPicker.setData(color, handleChanges)
+			colorPicker.saveData(color)
 			colorPicker.loadData(handleChanges)
 		end
 
-		---Get the currently stored data from the specified working table under the specified storage key
+		---Get the currently stored data from the specified storage table under the specified storage key
 		---@param unconverted? boolean If true, use the specified convert function when reading the data, or if not true, return the raw data unconverted | ***Default:*** false
 		---@return any
-		function colorPicker.getData(unconverted) wt.GetWidgetData(t.optionsData, unconverted) end
+		function colorPicker.getData(unconverted) return wt.GetWidgetData(t.optionsData, unconverted) end
+
+		--Set a data snapshot so any changes made to the widget and/or the stored data can be reverted to this value via **colorPicker.revertData()**
+		function colorPicker.snapshotData() snapshot = colorPicker.getData() end
+
+		--Set and load the stored data managed by the widget to the last saved data snapshot set via **colorPicker.snapshotData()**
+		function colorPicker.revertData() colorPicker.setData(snapshot) end
 
 		--[ GUI Widget ]
 
@@ -7046,8 +7050,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 			--[ Color Picker Button ]
 
-			if not t.startColor and t.optionsData and t.optionsData.workingTable and t.optionsData.storageKey or false then
-				t.startColor = wt.Clone(t.optionsData.workingTable[t.optionsData.storageKey])
+			if not t.startColor and t.optionsData and t.optionsData.storageTable and t.optionsData.storageKey or false then
+				t.startColor = wt.Clone(t.optionsData.storageTable[t.optionsData.storageKey])
 			else t.startColor = {} end
 
 			--Color picker button background update utility
@@ -7226,8 +7230,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			colorPicker.frame:HookScript("OnAttributeChanged", function(_, attribute, value)
 				if attribute ~= "colored" or not value.user or not t.optionsData then return end
 
-				--Instant save
-				colorPicker.saveData(nil, t.optionsData.autoCommit)
+				colorPicker.saveData()
 
 				--Call onChange handlers
 				if t.optionsData.onChange then for i = 1, #t.optionsData.onChange do optionsTable.changeHandlers[t.optionsData.optionsKey][t.optionsData.onChange[i]]() end end
@@ -7781,7 +7784,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 					wt.RemoveEmpty(profileData, t.valueChecker)
 					wt.AddMissing(profileData, compareWith)
-					if t.onRecovery then wt.RemoveMismatch(profileData, compareWith, nil, function(recoveredData) t.onRecovery(profileData, recoveredData) end)
+					if t.onRecovery then wt.Dump(profileData, "PRE", nil, 2) wt.RemoveMismatch(profileData, compareWith, nil, function(recoveredData) t.onRecovery(profileData, recoveredData) end)
 					else wt.RemoveMismatch(profileData, compareWith) end
 				end
 
@@ -7820,9 +7823,6 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 					index = Clamp(index, 1, #t.accountData.profiles)
 					t.characterData.activeProfile = index
-
-					--Populate the working profile data table
-					if t.workingTable then wt.CopyValues(t.workingTable, t.accountData.profiles[t.characterData.activeProfile].data) end
 
 					--Call listener
 					if t.onProfileActivated then t.onProfileActivated(t.characterData.activeProfile) end
@@ -7931,9 +7931,6 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					--| Activate profile
 
 					t.characterData.activeProfile = Clamp(t.accountData.profiles[activeProfile] and activeProfile or t.characterData.activeProfile or 1, 1, #t.accountData.profiles)
-
-					--Populate the working table
-					if t.workingTable then checkData(t.workingTable, t.accountData.profiles[t.characterData.activeProfile].data) end
 
 					--| Recover misplaced data
 
@@ -8087,9 +8084,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 							--Update the backup box and load the current profile data of the selected scope to the backup string, formatted based on the compact setting
 							function dataManagement.refreshBackupBox()
-								dataManagement.backup.box.setText(
-									wt.TableToString(t.workingTable or t.accountData.profiles[t.characterData.activeProfile].data, t.settingsData.compactBackup)
-								)
+								dataManagement.backup.box.setText(wt.TableToString(t.accountData.profiles[t.characterData.activeProfile].data, t.settingsData.compactBackup))
 
 								--Set focus after text change to set the scroll to the top and refresh the position character counter
 								dataManagement.backup.box.scrollFrame.EditBox:SetFocus()
@@ -8144,7 +8139,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 								},
 								optionsData = {
 									optionsKey = addon .. "Backup",
-									workingTable = t.settingsData,
+									storageTable = t.settingsData,
 									storageKey = "compactBackup",
 									onChange = { RefreshBackupBox = dataManagement.refreshBackupBox }
 								}
@@ -8158,10 +8153,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 									success = success and type(load) == "table"
 
 									if success then
-										local target = t.workingTable or t.accountData.profiles[t.characterData.activeProfile].data
-
-										checkData(load, target)
-										wt.CopyValues(target, load)
+										checkData(load, t.accountData.profiles[t.characterData.activeProfile].data)
+										wt.CopyValues(t.accountData.profiles[t.characterData.activeProfile].data, load)
 									end
 
 									t.onImport(success, load)

@@ -13,9 +13,8 @@ local addonChat = wt.Color(addonTitle .. ":", ns.colors.green[1]) .. " "
 --Custom Tooltip
 ns.tooltip = wt.CreateGameTooltip(ns.name)
 
---Database tables
-local s --Profile data storage table reference
-local d = {} --Active profile data table
+--Profile data table reference
+local db = {}
 
 --[ References ]
 
@@ -183,7 +182,9 @@ local function GetRecoveryMap(data)
 		["speedDisplay.font.color.a"] = { saveTo = { data.playerSpeed.font.color, data.travelSpeed.font.color, }, saveKey = "a", },
 		["speedDisplay.font.text.valueType"] = { saveTo = { data.playerSpeed.value, data.travelSpeed.value, }, saveKey = "units", convertSave = ConvertOldValueType },
 		["speedDisplay.value.type"] = { saveTo = { data.playerSpeed.value, data.travelSpeed.value, }, saveKey = "units", convertSave = ConvertOldValueType },
-		["speedDisplay.value.units"] = { saveTo = { data.playerSpeed.value, data.travelSpeed.value, }, saveKey = "units", },
+		["speedDisplay.value.units[1]"] = { saveTo = { data.playerSpeed.value, data.travelSpeed.value.units, }, saveKey = 1, },
+		["speedDisplay.value.units[2]"] = { saveTo = { data.playerSpeed.value, data.travelSpeed.value.units, }, saveKey = 2, },
+		["speedDisplay.value.units[3]"] = { saveTo = { data.playerSpeed.value, data.travelSpeed.value.units, }, saveKey = 3, },
 		["speedDisplay.font.text.decimals"] = { saveTo = { data.playerSpeed.value, data.travelSpeed.value, }, saveKey = "fractionals", },
 		["speedDisplay.value.decimals"] = { saveTo = { data.playerSpeed.value, data.travelSpeed.value, }, saveKey = "fractionals", },
 		["speedDisplay.value.fractionals"] = { saveTo = { data.playerSpeed.value, data.travelSpeed.value, }, saveKey = "fractionals", },
@@ -238,18 +239,18 @@ end
 ---@return string
 local function FormatSpeedValue(type)
 	local speedType = type:sub(1, -6)
-	local f = max(d[type].value.fractionals, 1)
+	local f = max(db[type].value.fractionals, 1)
 
 	return speedText[speedType]:gsub(
 		"#PERCENT", wt.FormatThousands(
-			speed[speedType].yards / BASE_MOVEMENT_SPEED * 100, d[type].value.fractionals, true, not d[type].value.zeros
+			speed[speedType].yards / BASE_MOVEMENT_SPEED * 100, db[type].value.fractionals, true, not db[type].value.zeros
 		) .. (type == "targetSpeed" and "%%%%" or "")
 	):gsub(
-		"#YARDS", wt.FormatThousands(speed[speedType].yards, d[type].value.fractionals, true, not d[type].value.zeros)
+		"#YARDS", wt.FormatThousands(speed[speedType].yards, db[type].value.fractionals, true, not db[type].value.zeros)
 	):gsub(
-		"#X", wt.FormatThousands(speed[speedType].coords.x, f, true, not d[type].value.zeros)
+		"#X", wt.FormatThousands(speed[speedType].coords.x, f, true, not db[type].value.zeros)
 	):gsub(
-		"#Y", wt.FormatThousands(speed[speedType].coords.y, f, true, not d[type].value.zeros)
+		"#Y", wt.FormatThousands(speed[speedType].coords.y, f, true, not db[type].value.zeros)
 	)
 end
 
@@ -289,8 +290,8 @@ end
 ---@param font? string Font path | ***Default:*** db[**display**].font.family
 local function SetDisplaySize(display, height, units, fractionals, font)
 	height = math.ceil(height or frames[display].text:GetStringHeight()) + 2.4
-	units = units or d[display].value.units
-	fractionals = fractionals or d[display].value.fractionals
+	units = units or db[display].value.units
+	fractionals = fractionals or db[display].value.fractionals
 
 	--Calculate width to height ratio
 	local ratio = 0
@@ -300,7 +301,7 @@ local function SetDisplaySize(display, height, units, fractionals, font)
 	for i = 1, 3 do if units[i] then ratio = ratio + 0.2 end end --Separators
 
 	--Resize the display
-	frames[display].display:SetSize(height * ratio * ns.fonts[GetFontID(font or d[display].font.family)].widthRatio - 4, height)
+	frames[display].display:SetSize(height * ratio * ns.fonts[GetFontID(font or db[display].font.family)].widthRatio - 4, height)
 end
 
 ---Set the backdrop of the speed display elements
@@ -349,7 +350,7 @@ local function SetDisplayValues(display, data)
 
 	--Font & text
 	frames[display].text:SetFont(data[display].font.family, data[display].font.size, "THINOUTLINE")
-	frames[display].text:SetTextColor(wt.UnpackColor(d[display].font.valueColoring and ns.colors.grey[2] or d[display].font.color))
+	frames[display].text:SetTextColor(wt.UnpackColor(db[display].font.valueColoring and ns.colors.grey[2] or db[display].font.color))
 	frames[display].text:SetJustifyH(data[display].font.alignment)
 	wt.SetPosition(frames[display].text, { anchor = data[display].font.alignment, })
 end
@@ -423,8 +424,8 @@ end
 local function StartSpeedDisplayUpdates(display)
 	local speedUpdater = display == "playerSpeed" and UpdatePlayerSpeed or UpdateTravelSpeed
 
-	if d[display].update.throttle then
-		frames[display].updater.ticker = C_Timer.NewTicker(d[display].update.frequency, function()
+	if db[display].update.throttle then
+		frames[display].updater.ticker = C_Timer.NewTicker(db[display].update.frequency, function()
 			speedUpdater()
 			frames[display].text:SetText(" " .. FormatSpeedValue(display))
 		end)
@@ -458,7 +459,7 @@ local function EnableTargetSpeedUpdates()
 
 	--Start mouseover Target Speed updates
 	TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Unit, function(tooltip)
-		if not d.targetSpeed.enabled then return end
+		if not db.targetSpeed.enabled then return end
 
 		frames.targetSpeed:SetScript("OnUpdate", function()
 			if UnitName("mouseover") == nil then return end
@@ -514,11 +515,11 @@ local function CreateVisibilityOptions(panel, display, optionsKey)
 		arrange = {},
 		optionsData = {
 			optionsKey = optionsKey,
-			workingTable = d[display].visibility,
+			storageTable = db[display].visibility,
 			storageKey = "hidden",
 			onChange = { DisplayToggle = function()
-				wt.SetVisibility(frames[display].display, not d[display].visibility.hidden)
-				if d[display].visibility.hidden then StopSpeedDisplayUpdates(display) else StartSpeedDisplayUpdates(display) end
+				wt.SetVisibility(frames[display].display, not db[display].visibility.hidden)
+				if db[display].visibility.hidden then StopSpeedDisplayUpdates(display) else StartSpeedDisplayUpdates(display) end
 			end, }
 		}
 	})
@@ -532,7 +533,7 @@ local function CreateVisibilityOptions(panel, display, optionsKey)
 		dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
 		optionsData = {
 			optionsKey = optionsKey,
-			workingTable = d[display].visibility,
+			storageTable = db[display].visibility,
 			storageKey = "autoHide",
 		}
 	})
@@ -545,7 +546,7 @@ local function CreateVisibilityOptions(panel, display, optionsKey)
 		arrange = { newRow = false, },
 		optionsData = {
 			optionsKey = optionsKey,
-			workingTable = d[display].visibility,
+			storageTable = db[display].visibility,
 			storageKey = "statusNotice",
 		}
 	})
@@ -560,7 +561,7 @@ local function CreateUpdateOptions(panel, display, optionsKey)
 		dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
 		optionsData = {
 			optionsKey = optionsKey,
-			workingTable = d[display].update,
+			storageTable = db[display].update,
 			storageKey = "throttle",
 			onChange = {
 				RefreshSpeedUpdates = function()
@@ -586,7 +587,7 @@ local function CreateUpdateOptions(panel, display, optionsKey)
 		},
 		optionsData = {
 			optionsKey = optionsKey,
-			workingTable = d[display].update,
+			storageTable = db[display].update,
 			storageKey = "frequency",
 			convertSave = function(value) return wt.Round(value, 2) end,
 			onChange = { "RefreshSpeedUpdates", }
@@ -624,11 +625,11 @@ local function CreateSpeedValueOptions(panel, display, optionsKey, type)
 		dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
 		optionsData = {
 			optionsKey = optionsKey,
-			workingTable = d[display].value,
+			storageTable = db[display].value,
 			storageKey = "units",
 			onChange = {
 				UpdateDisplaySize = function() SetDisplaySize(display) end,
-				UpdateSpeedTextTemplate = function() UpdateSpeedText(type, d[display].value.units, d[display].font.valueColoring) end,
+				UpdateSpeedTextTemplate = function() UpdateSpeedText(type, db[display].value.units, db[display].font.valueColoring) end,
 			}
 		}
 	})
@@ -643,7 +644,7 @@ local function CreateSpeedValueOptions(panel, display, optionsKey, type)
 		dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
 		optionsData = {
 			optionsKey = optionsKey,
-			workingTable = d[display].value,
+			storageTable = db[display].value,
 			storageKey = "fractionals",
 			onChange = { "UpdateDisplaySize", }
 		}
@@ -662,7 +663,7 @@ local function CreateSpeedValueOptions(panel, display, optionsKey, type)
 		},
 		optionsData = {
 			optionsKey = optionsKey,
-			workingTable = d[display].value,
+			storageTable = db[display].value,
 			storageKey = "zeros",
 		}
 	})
@@ -693,12 +694,12 @@ local function CreateFontOptions(panel, display, optionsKey, type)
 		dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
 		optionsData = {
 			optionsKey = optionsKey,
-			workingTable = d[display].font,
+			storageTable = db[display].font,
 			storageKey = "family",
 			convertSave = function(value) return ns.fonts[value or 1].path end,
 			convertLoad = function(font) return GetFontID(font) end,
 			onChange = {
-				UpdateDisplayFont = function() frames[display].text:SetFont(d[display].font.family, d[display].font.size, "THINOUTLINE") end,
+				UpdateDisplayFont = function() frames[display].text:SetFont(db[display].font.family, db[display].font.size, "THINOUTLINE") end,
 				UpdateDisplaySize = function() SetDisplaySize(display) end, --TODO: solve the duplication issue
 				-- "UpdateDisplaySize",
 				RefreshDisplayText = function() --Refresh the text so the font will be applied right away (if the font is loaded)
@@ -736,7 +737,7 @@ local function CreateFontOptions(panel, display, optionsKey, type)
 		dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
 		optionsData = {
 			optionsKey = optionsKey,
-			workingTable = d[display].font,
+			storageTable = db[display].font,
 			storageKey = "size",
 			onChange = {
 				"UpdateDisplayFont",
@@ -755,11 +756,11 @@ local function CreateFontOptions(panel, display, optionsKey, type)
 		dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
 		optionsData = {
 			optionsKey = optionsKey,
-			workingTable = d[display].font,
+			storageTable = db[display].font,
 			storageKey = "alignment",
 			onChange = { UpdateDisplayTextAlignment = function()
-				frames[display].text:SetJustifyH(d[display].font.alignment)
-				wt.SetPosition(frames[display].text, { anchor = d[display].font.alignment, })
+				frames[display].text:SetJustifyH(db[display].font.alignment)
+				wt.SetPosition(frames[display].text, { anchor = db[display].font.alignment, })
 			end, }
 		}
 	})
@@ -773,14 +774,14 @@ local function CreateFontOptions(panel, display, optionsKey, type)
 		dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
 		optionsData = {
 			optionsKey = optionsKey,
-			workingTable = d[display].font,
+			storageTable = db[display].font,
 			storageKey = "valueColoring",
 			onChange = {
 				UpdateDisplayFontColor = function()
-					frames[display].text:SetTextColor(wt.UnpackColor(d[display].font.valueColoring and ns.colors.grey[2] or d[display].font.color))
+					frames[display].text:SetTextColor(wt.UnpackColor(db[display].font.valueColoring and ns.colors.grey[2] or db[display].font.color))
 				end,
 				UpdateEmbeddedValueColoring = function()
-					if d[display].font.valueColoring then UpdateSpeedText(type, d[display].value.units, true) else speedText[type] = wt.Clear(speedText[type]) end
+					if db[display].font.valueColoring then UpdateSpeedText(type, db[display].value.units, true) else speedText[type] = wt.Clear(speedText[type]) end
 				end,
 			}
 		}
@@ -798,7 +799,7 @@ local function CreateFontOptions(panel, display, optionsKey, type)
 		},
 		optionsData = {
 			optionsKey = optionsKey,
-			workingTable = d[display].font,
+			storageTable = db[display].font,
 			storageKey = "color",
 			onChange = { "UpdateDisplayFontColor", }
 		}
@@ -814,10 +815,10 @@ local function CreateBackgroundOptions(panel, display, optionsKey)
 		dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
 		optionsData = {
 			optionsKey = optionsKey,
-			workingTable = d[display].background,
+			storageTable = db[display].background,
 			storageKey = "visible",
 			onChange = { ToggleDisplayBackdrops = function()
-				SetDisplayBackdrop(display, d[display].background.visible, d[display].background.colors.bg, d[display].background.colors.border)
+				SetDisplayBackdrop(display, db[display].background.visible, db[display].background.colors.bg, db[display].background.colors.border)
 			end, }
 		}
 	})
@@ -833,10 +834,10 @@ local function CreateBackgroundOptions(panel, display, optionsKey)
 		},
 		optionsData = {
 			optionsKey = optionsKey,
-			workingTable = d[display].background.colors,
+			storageTable = db[display].background.colors,
 			storageKey = "bg",
 			onChange = { UpdateDisplayBackgroundColor = function()
-				if frames[display].display:GetBackdrop() ~= nil then frames[display].display:SetBackdropColor(wt.UnpackColor(d[display].background.colors.bg)) end
+				if frames[display].display:GetBackdrop() ~= nil then frames[display].display:SetBackdropColor(wt.UnpackColor(db[display].background.colors.bg)) end
 			end }
 		}
 	})
@@ -852,10 +853,10 @@ local function CreateBackgroundOptions(panel, display, optionsKey)
 		},
 		optionsData = {
 			optionsKey = optionsKey,
-			workingTable = d[display].background.colors,
+			storageTable = db[display].background.colors,
 			storageKey = "border",
 			onChange = { UpdateDisplayBorderColor = function()
-				if frames[display].display:GetBackdrop() ~= nil then frames[display].display:SetBackdropBorderColor(wt.UnpackColor(d[display].background.colors.border)) end
+				if frames[display].display:GetBackdrop() ~= nil then frames[display].display:SetBackdropBorderColor(wt.UnpackColor(db[display].background.colors.border)) end
 			end }
 		}
 	})
@@ -884,11 +885,7 @@ local function CreateSpeedDisplayOptionsPage(display)
 		logo = ns.textures.logo,
 		scroll = { speed = 0.21 },
 		optionsKeys = optionsKeys,
-		storage = { {
-			workingTable = d[display],
-			storageTable = s[display],
-			defaultsTable = ns.profileDefault[display],
-		}, },
+		storage = { { storageTable = db[display], defaultsTable = ns.profileDefault[display], }, },
 		onDefault = function()
 			options[display].position.resetCustomPreset()
 
@@ -928,7 +925,7 @@ local function CreateSpeedDisplayOptionsPage(display)
 							disabled = "GameFontDisableSmall"
 						},
 						action = function()
-							wt.CopyValues(d[display].visibility, d[otherDisplay].visibility)
+							wt.CopyValues(db[display].visibility, db[otherDisplay].visibility)
 							wt.LoadOptionsData(optionsKeys[1], true)
 						end,
 						dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
@@ -1042,8 +1039,8 @@ local function CreateSpeedDisplayOptionsPage(display)
 						), ns.colors.yellow[2]))
 					end,
 					custom = {
-						workingTable = d.customPreset,
-						storageTable = s.customPreset,
+						workingTable = db.customPreset, --REMOVE wt
+						storageTable = db.customPreset,
 						defaultsTable = ns.profileDefault.customPreset,
 						onSave = function() print(addonChat .. wt.Color(ns.strings.chat.save.response:gsub(
 							"#CUSTOM", wt.Color(options[display].position.presetList[1].title, ns.colors.green[2])
@@ -1062,8 +1059,8 @@ local function CreateSpeedDisplayOptionsPage(display)
 				}, },
 				dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
 				optionsKey = optionsKeys[2],
-				workingTable = d[display],
-				storageTable = s[display],
+				workingTable = db[display], --REMOVE wt
+				storageTable = db[display],
 				settingsData = MovementSpeedCS,
 			})
 
@@ -1085,7 +1082,7 @@ local function CreateSpeedDisplayOptionsPage(display)
 					disabled = "GameFontDisableSmall"
 				},
 				action = function()
-					wt.CopyValues(d[display].position, d[otherDisplay].position)
+					wt.CopyValues(db[display].position, db[otherDisplay].position)
 					wt.LoadOptionsData(optionsKeys[2], true)
 				end,
 				dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
@@ -1120,9 +1117,9 @@ local function CreateSpeedDisplayOptionsPage(display)
 							disabled = "GameFontDisableSmall"
 						},
 						action = function()
-							wt.CopyValues(d[display].updates, d[otherDisplay].updates)
+							wt.CopyValues(db[display].updates, db[otherDisplay].updates)
 							wt.LoadOptionsData(optionsKeys[3], true)
-							d.travelSpeed.update.dragonridingOnly = nil
+							db.travelSpeed.update.dragonridingOnly = nil
 						end,
 						dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
 					})
@@ -1159,7 +1156,7 @@ local function CreateSpeedDisplayOptionsPage(display)
 							disabled = "GameFontDisableSmall"
 						},
 						action = function()
-							wt.CopyValues(d[display].value, d[otherDisplay].value)
+							wt.CopyValues(db[display].value, db[otherDisplay].value)
 							wt.LoadOptionsData(optionsKeys[4], true)
 						end,
 						dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
@@ -1197,7 +1194,7 @@ local function CreateSpeedDisplayOptionsPage(display)
 							disabled = "GameFontDisableSmall"
 						},
 						action = function()
-							wt.CopyValues(d[display].font, d[otherDisplay].font)
+							wt.CopyValues(db[display].font, db[otherDisplay].font)
 							wt.LoadOptionsData(optionsKeys[5], true)
 						end,
 						dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
@@ -1235,7 +1232,7 @@ local function CreateSpeedDisplayOptionsPage(display)
 							disabled = "GameFontDisableSmall"
 						},
 						action = function()
-							wt.CopyValues(d[display].background, d[otherDisplay].background)
+							wt.CopyValues(db[display].background, db[otherDisplay].background)
 							wt.LoadOptionsData(optionsKeys[6], true)
 						end,
 						dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
@@ -1262,7 +1259,7 @@ local function CreateTargetSpeedTooltipOptions(panel)
 		arrange = {},
 		optionsData = {
 			optionsKey = ns.name .. "TargetSpeed",
-			workingTable = d.targetSpeed,
+			storageTable = db.targetSpeed,
 			storageKey = "enabled",
 			onChange = { EnableTargetSpeedUpdates = function() if not targetSpeedEnabled then EnableTargetSpeedUpdates() end end, }
 		}
@@ -1280,9 +1277,9 @@ local function CreateTargetSpeedValueOptions(panel)
 		dependencies = { { frame = options.targetSpeed.enabled, }, },
 		optionsData = {
 			optionsKey = ns.name .. "TargetSpeed",
-			workingTable = d.targetSpeed.value,
+			storageTable = db.targetSpeed.value,
 			storageKey = "units",
-			onChange = { UpdateTargetSpeedTextTemplate = function() UpdateSpeedText("target", d.targetSpeed.value.units) end, }
+			onChange = { UpdateTargetSpeedTextTemplate = function() UpdateSpeedText("target", db.targetSpeed.value.units) end, }
 		}
 	})
 
@@ -1296,7 +1293,7 @@ local function CreateTargetSpeedValueOptions(panel)
 		dependencies = { { frame = options.targetSpeed.enabled, }, },
 		optionsData = {
 			optionsKey = ns.name .. "TargetSpeed",
-			workingTable = d.targetSpeed.value,
+			storageTable = db.targetSpeed.value,
 			storageKey = "fractionals",
 		}
 	})
@@ -1314,7 +1311,7 @@ local function CreateTargetSpeedValueOptions(panel)
 		},
 		optionsData = {
 			optionsKey = ns.name .. "TargetSpeed",
-			workingTable = d.targetSpeed.value,
+			storageTable = db.targetSpeed.value,
 			storageKey = "zeros",
 		}
 	})
@@ -1329,11 +1326,7 @@ local function CreateTargetSpeedOptionsPage()
 		description = ns.strings.options.targetSpeed.description:gsub("#ADDON", addonTitle),
 		logo = ns.textures.logo,
 		optionsKeys = { ns.name .. "TargetSpeed" },
-		storage = { {
-			workingTable = d.targetSpeed,
-			storageTable = s.targetSpeed,
-			defaultsTable = ns.profileDefault.targetSpeed,
-		}, },
+		storage = { { storageTable = db.targetSpeed, defaultsTable = ns.profileDefault.targetSpeed, }, },
 		onDefault = function()
 			--Notification
 			print(addonChat .. wt.Color(ns.strings.chat.defaults.response:gsub(
@@ -1377,13 +1370,13 @@ end
 ---Print visibility info
 ---@param load boolean | ***Default:*** false
 local function PrintStatus(load)
-	if load == true and not d[d.mainDisplay].visibility.statusNotice then return end
+	if load == true and not db[db.mainDisplay].visibility.statusNotice then return end
 
 	print(addonChat .. wt.Color(frames.main:IsVisible() and (
-		not frames[d.mainDisplay].display:IsVisible() and ns.strings.chat.status.notVisible or ns.strings.chat.status.visible
+		not frames[db.mainDisplay].display:IsVisible() and ns.strings.chat.status.notVisible or ns.strings.chat.status.visible
 	) or ns.strings.chat.status.hidden, ns.colors.yellow[1]):gsub(
 		"#AUTO", wt.Color(ns.strings.chat.status.auto:gsub(
-			"#STATE", wt.Color(d[d.mainDisplay].visibility.autoHide and ns.strings.misc.enabled or ns.strings.misc.disabled, ns.colors.green[2])
+			"#STATE", wt.Color(db[db.mainDisplay].visibility.autoHide and ns.strings.misc.enabled or ns.strings.misc.disabled, ns.colors.green[2])
 		), ns.colors.yellow[2])
 	))
 end
@@ -1425,15 +1418,15 @@ local commandManager = wt.RegisterChatCommands(ns.name, { ns.chat.keyword }, {
 	},
 	{
 		command = ns.chat.commands.preset,
-		handler = function(parameter) return options[d.mainDisplay].position.applyPreset(tonumber(parameter)) end,
+		handler = function(parameter) return options[db.mainDisplay].position.applyPreset(tonumber(parameter)) end,
 		onError = function()
 			print(addonChat .. wt.Color(ns.strings.chat.preset.unchanged, ns.colors.yellow[1]))
 			print(wt.Color(ns.strings.chat.preset.error:gsub("#INDEX", wt.Color(ns.chat.commands.preset .. " " .. 1, ns.colors.green[2])), ns.colors.yellow[2]))
 			print(wt.Color(ns.strings.chat.preset.list, ns.colors.green[2]))
-			for j = 1, #options[d.mainDisplay].position.presetList, 2 do
-				local list = "    " .. wt.Color(j, ns.colors.green[2]) .. wt.Color(" - " .. options[d.mainDisplay].position.presetList[j].name, ns.colors.yellow[2])
-				if j + 1 <= #options[d.mainDisplay].position.presetList then
-					list = list .. "    " .. wt.Color(j + 1, ns.colors.green[2]) .. wt.Color(" - " .. options[d.mainDisplay].position.presetList[j + 1].name, ns.colors.yellow[2])
+			for j = 1, #options[db.mainDisplay].position.presetList, 2 do
+				local list = "    " .. wt.Color(j, ns.colors.green[2]) .. wt.Color(" - " .. options[db.mainDisplay].position.presetList[j].name, ns.colors.yellow[2])
+				if j + 1 <= #options[db.mainDisplay].position.presetList then
+					list = list .. "    " .. wt.Color(j + 1, ns.colors.green[2]) .. wt.Color(" - " .. options[db.mainDisplay].position.presetList[j + 1].name, ns.colors.yellow[2])
 				end
 				print(list)
 			end
@@ -1444,44 +1437,44 @@ local commandManager = wt.RegisterChatCommands(ns.name, { ns.chat.keyword }, {
 	},
 	{
 		command = ns.chat.commands.save,
-		handler = function() options[d.mainDisplay].position.saveCustomPreset() end,
+		handler = function() options[db.mainDisplay].position.saveCustomPreset() end,
 		onHelp = function() PrintCommand(ns.chat.commands.save, ns.strings.chat.save.description:gsub(
-			"#CUSTOM", wt.Color(options[d.mainDisplay].position.presetList[1].title, ns.colors.green[2])
+			"#CUSTOM", wt.Color(options[db.mainDisplay].position.presetList[1].title, ns.colors.green[2])
 		)) end
 	},
 	{
 		command = ns.chat.commands.reset,
-		handler = function() options[d.mainDisplay].position.resetCustomPreset() end,
+		handler = function() options[db.mainDisplay].position.resetCustomPreset() end,
 		onHelp = function() PrintCommand(ns.chat.commands.reset, ns.strings.chat.reset.description:gsub(
-			"#CUSTOM", wt.Color(options[d.mainDisplay].position.presetList[1].title, ns.colors.green[2])
+			"#CUSTOM", wt.Color(options[db.mainDisplay].position.presetList[1].title, ns.colors.green[2])
 		)) end
 	},
 	{
 		command = ns.chat.commands.toggle,
 		handler = function()
-			options[d.mainDisplay].visibility.hidden.setData(not d[d.mainDisplay].visibility.hidden, true)
+			options[db.mainDisplay].visibility.hidden.setData(not db[db.mainDisplay].visibility.hidden, true)
 
 			return true
 		end,
 		onSuccess = function()
-			print(addonChat .. wt.Color(d[d.mainDisplay].visibility.hidden and ns.strings.chat.toggle.hiding or ns.strings.chat.toggle.unhiding, ns.colors.yellow[2]))
+			print(addonChat .. wt.Color(db[db.mainDisplay].visibility.hidden and ns.strings.chat.toggle.hiding or ns.strings.chat.toggle.unhiding, ns.colors.yellow[2]))
 		end,
 		onHelp = function() PrintCommand(ns.chat.commands.toggle, ns.strings.chat.toggle.description:gsub(
-			"#HIDDEN", wt.Color(d[d.mainDisplay].visibility.hidden and ns.strings.chat.toggle.hidden or ns.strings.chat.toggle.notHidden, ns.colors.green[2])
+			"#HIDDEN", wt.Color(db[db.mainDisplay].visibility.hidden and ns.strings.chat.toggle.hidden or ns.strings.chat.toggle.notHidden, ns.colors.green[2])
 		)) end
 	},
 	{
 		command = ns.chat.commands.auto,
 		handler = function()
-			options[d.mainDisplay].visibility.autoHide.setData(not d[d.mainDisplay].visibility.autoHide, true)
+			options[db.mainDisplay].visibility.autoHide.setData(not db[db.mainDisplay].visibility.autoHide, true)
 
 			return true
 		end,
 		onSuccess = function() print(addonChat .. wt.Color(ns.strings.chat.auto.response:gsub(
-			"#STATE", wt.Color(d[d.mainDisplay].visibility.autoHide and ns.strings.misc.enabled or ns.strings.misc.disabled, ns.colors.green[2])
+			"#STATE", wt.Color(db[db.mainDisplay].visibility.autoHide and ns.strings.misc.enabled or ns.strings.misc.disabled, ns.colors.green[2])
 		), ns.colors.yellow[2])) end,
 		onHelp = function() PrintCommand(ns.chat.commands.auto, ns.strings.chat.auto.description:gsub(
-			"#STATE", wt.Color(d[d.mainDisplay].visibility.autoHide and ns.strings.misc.enabled or ns.strings.misc.disabled, ns.colors.green[2])
+			"#STATE", wt.Color(db[db.mainDisplay].visibility.autoHide and ns.strings.misc.enabled or ns.strings.misc.disabled, ns.colors.green[2])
 		)) end
 	},
 	{
@@ -1490,7 +1483,7 @@ local commandManager = wt.RegisterChatCommands(ns.name, { ns.chat.keyword }, {
 			local size = tonumber(parameter)
 			if not size then return false end
 
-			options[d.mainDisplay].font.size.setData(size, true)
+			options[db.mainDisplay].font.size.setData(size, true)
 
 			return true, size
 		end,
@@ -1498,11 +1491,11 @@ local commandManager = wt.RegisterChatCommands(ns.name, { ns.chat.keyword }, {
 		onError = function()
 			print(addonChat .. wt.Color(ns.strings.chat.size.unchanged, ns.colors.yellow[1]))
 			print(wt.Color(ns.strings.chat.size.error:gsub(
-				"#SIZE", wt.Color(ns.chat.commands.size .. " " .. ns.profileDefault[d.mainDisplay].font.size, ns.colors.green[2])
+				"#SIZE", wt.Color(ns.chat.commands.size .. " " .. ns.profileDefault[db.mainDisplay].font.size, ns.colors.green[2])
 			), ns.colors.yellow[2]))
 		end,
 		onHelp = function() PrintCommand(ns.chat.commands.size, ns.strings.chat.size.description:gsub(
-			"#SIZE", wt.Color(ns.chat.commands.size .. " " .. ns.profileDefault[d.mainDisplay].font.size, ns.colors.green[2])
+			"#SIZE", wt.Color(ns.chat.commands.size .. " " .. ns.profileDefault[db.mainDisplay].font.size, ns.colors.green[2])
 		)) end
 	},
 	{
@@ -1561,8 +1554,8 @@ local function _CreateContextMenu(parent)
 		title = ns.strings.options.speedDisplay.position.presets.label,
 		tooltip = { lines = { { text = ns.strings.options.speedDisplay.position.presets.tooltip, }, } },
 	})
-	for i = 1, #options[d.mainDisplay].position.presetList do wt.AddContextButton(presetsMenu, contextMenu, {
-		title = options[d.mainDisplay].position.presetList[i].title,
+	for i = 1, #options[db.mainDisplay].position.presetList do wt.AddContextButton(presetsMenu, contextMenu, {
+		title = options[db.mainDisplay].position.presetList[i].title,
 		events = { OnClick = function() commandManager.handleCommand(ns.chat.commands.preset, i) end, },
 	}) end
 end --TODO: Reinstate after fix or delete
@@ -1643,11 +1636,10 @@ frames.main = wt.CreateBaseFrame({
 				accountData = MovementSpeedDB,
 				characterData = MovementSpeedDBC,
 				settingsData = MovementSpeedCS,
-				workingTable = d,
 				defaultsTable = ns.profileDefault,
-				onProfilesLoaded = function() s = MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data end,
+				onProfilesLoaded = function() wt.AddMissing(db, MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data) end,
 				onProfileActivated = function(index)
-					s = MovementSpeedDB.profiles[index].data
+					wt.CopyValues(db, MovementSpeedDB.profiles[index].data)
 
 					--Update the interface options
 					options.playerSpeed.page.load(true)
@@ -1700,30 +1692,30 @@ frames.main = wt.CreateBaseFrame({
 
 			--Player Speed
 			CreateContextMenu("playerSpeed")
-			wt.SetPosition(frames.playerSpeed.display, wt.AddMissing({ relativePoint = d.playerSpeed.position.anchor, }, d.playerSpeed.position))
+			wt.SetPosition(frames.playerSpeed.display, wt.AddMissing({ relativePoint = db.playerSpeed.position.anchor, }, db.playerSpeed.position))
 			wt.ConvertToAbsolutePosition(frames.playerSpeed.display)
-			SetDisplayValues("playerSpeed", d)
+			SetDisplayValues("playerSpeed", db)
 
 			--Travel Speed
 			CreateContextMenu("travelSpeed")
-			wt.SetPosition(frames.travelSpeed.display, wt.AddMissing({ relativePoint = d.travelSpeed.position.anchor, }, d.travelSpeed.position))
+			wt.SetPosition(frames.travelSpeed.display, wt.AddMissing({ relativePoint = db.travelSpeed.position.anchor, }, db.travelSpeed.position))
 			wt.ConvertToAbsolutePosition(frames.travelSpeed.display)
-			SetDisplayValues("travelSpeed", d)
+			SetDisplayValues("travelSpeed", db)
 		end,
 		PLAYER_ENTERING_WORLD = function(self)
 			self:UnregisterEvent("PLAYER_ENTERING_WORLD")
 
 			--Visibility notice
-			if not self:IsVisible() or not frames[d.mainDisplay].display:IsVisible() then PrintStatus(true) end
+			if not self:IsVisible() or not frames[db.mainDisplay].display:IsVisible() then PrintStatus(true) end
 
 			--Start speed updates
 			UpdateMapInfo()
-			UpdateSpeedText("player", d.playerSpeed.value.units, d.playerSpeed.font.valueColoring)
-			UpdateSpeedText("travel", d.travelSpeed.value.units, d.travelSpeed.font.valueColoring)
-			UpdateSpeedText("target", d.targetSpeed.value.units, true)
-			if not d.playerSpeed.visibility.hidden then StartSpeedDisplayUpdates("playerSpeed") end
-			if not d.travelSpeed.visibility.hidden then StartSpeedDisplayUpdates("travelSpeed") end
-			if d.targetSpeed.enabled then EnableTargetSpeedUpdates() end
+			UpdateSpeedText("player", db.playerSpeed.value.units, db.playerSpeed.font.valueColoring)
+			UpdateSpeedText("travel", db.travelSpeed.value.units, db.travelSpeed.font.valueColoring)
+			UpdateSpeedText("target", db.targetSpeed.value.units, true)
+			if not db.playerSpeed.visibility.hidden then StartSpeedDisplayUpdates("playerSpeed") end
+			if not db.travelSpeed.visibility.hidden then StartSpeedDisplayUpdates("travelSpeed") end
+			if db.targetSpeed.enabled then EnableTargetSpeedUpdates() end
 		end,
 		ZONE_CHANGED_NEW_AREA = function() UpdateMapInfo() end,
 		PET_BATTLE_OPENING_START = function(self) self:Hide() end,
@@ -1731,12 +1723,12 @@ frames.main = wt.CreateBaseFrame({
 	},
 	events = {
 		OnShow = function()
-			frames.playerSpeed.display:Hide()
-			frames.travelSpeed.display:Hide()
+			if not db.playerSpeed.visibility.hidden then frames.playerSpeed.display:Show() end
+			if not db.travelSpeed.visibility.hidden then frames.travelSpeed.display:Show() end
 		end,
 		OnHide = function()
-			if not d.playerSpeed.visibility.hidden then frames.playerSpeed.display:Hide() end
-			if not d.travelSpeed.visibility.hidden then frames.travelSpeed.display:Hide() end
+			frames.playerSpeed.display:Hide()
+			frames.travelSpeed.display:Hide()
 		end
 	},
 	initialize = function(frame)
