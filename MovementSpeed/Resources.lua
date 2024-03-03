@@ -239,7 +239,7 @@ ns.changelog = {
 		"Other small fixes, changes & improvements.",
 	},
 	{
-		"#V_Version 3.0_# #H_(2/3/2024)_#",
+		"#V_Version 3.0_# #H_(2/20/2024)_#",
 		"#C_Changes:_#",
 		"Shortcuts have been removed from the main addon settings page in Classic.",
 		"Significant under the hood improvements.",

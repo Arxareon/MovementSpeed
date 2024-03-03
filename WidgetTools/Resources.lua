@@ -87,7 +87,7 @@ ns.changelog = {
 		"Under the hood improvements.",
 	},
 	{
-		"#V_Version 2.0_# #H_(2/3/2024)_#",
+		"#V_Version 2.0_# #H_(2/21/2024)_#",
 		"#C_Changes:_#",
 		"Significant under the hood improvements.",
 		"#H_If you encounter any issues, do not hesitate to report them! Try including when & how they occur, and which other addons are you using to give me the best chance of being able to reproduce & fix them. Try proving any LUA script error messages and if you know how, taint logs as well (when relevant). Thanks a lot for helping!_#",

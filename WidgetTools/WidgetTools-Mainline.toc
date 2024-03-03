@@ -6,7 +6,7 @@
 ## AddonCompartmentFuncOnEnter: AddonCompartment_OnEnter_WidgetTools
 ## AddonCompartmentFuncOnLeave: AddonCompartment_OnLeave_WidgetTools
 ## Version: 2.0
-## X-Day: 3
+## X-Day: 21
 ## X-Month: 2
 ## X-Year: 2024
 ## Author: Barnabas Nagy (Arxareon)

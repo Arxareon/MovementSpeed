@@ -3,7 +3,7 @@
 ## Notes: Responsible for doing the heavy lifting for dependant addons in the background.
 ## IconTexture: Interface/AddOns/WidgetTools/Textures/Logo.tga
 ## Version: 2.0
-## X-Day: 3
+## X-Day: 21
 ## X-Month: 2
 ## X-Year: 2024
 ## Author: Barnabas Nagy (Arxareon)

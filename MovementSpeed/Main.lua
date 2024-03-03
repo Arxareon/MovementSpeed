@@ -13,9 +13,6 @@ local addonChat = wt.Color(addonTitle .. ":", ns.colors.green[1]) .. " "
 --Custom Tooltip
 ns.tooltip = wt.CreateGameTooltip(ns.name)
 
---Profile data table reference
-local db = {}
-
 --[ References ]
 
 --Local frames
@@ -239,18 +236,18 @@ end
 ---@return string
 local function FormatSpeedValue(type)
 	local speedType = type:sub(1, -6)
-	local f = max(db[type].value.fractionals, 1)
+	local f = max(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[type].value.fractionals, 1)
 
 	return speedText[speedType]:gsub(
 		"#PERCENT", wt.FormatThousands(
-			speed[speedType].yards / BASE_MOVEMENT_SPEED * 100, db[type].value.fractionals, true, not db[type].value.zeros
+			speed[speedType].yards / BASE_MOVEMENT_SPEED * 100, MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[type].value.fractionals, true, not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[type].value.zeros
 		) .. (type == "targetSpeed" and "%%%%" or "")
 	):gsub(
-		"#YARDS", wt.FormatThousands(speed[speedType].yards, db[type].value.fractionals, true, not db[type].value.zeros)
+		"#YARDS", wt.FormatThousands(speed[speedType].yards, MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[type].value.fractionals, true, not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[type].value.zeros)
 	):gsub(
-		"#X", wt.FormatThousands(speed[speedType].coords.x, f, true, not db[type].value.zeros)
+		"#X", wt.FormatThousands(speed[speedType].coords.x, f, true, not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[type].value.zeros)
 	):gsub(
-		"#Y", wt.FormatThousands(speed[speedType].coords.y, f, true, not db[type].value.zeros)
+		"#Y", wt.FormatThousands(speed[speedType].coords.y, f, true, not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[type].value.zeros)
 	)
 end
 
@@ -285,13 +282,13 @@ end
 ---Set the size of the speed display
 ---@param display "playerSpeed"|"travelSpeed"
 ---@param height? number Text height | ***Default:*** frames[**display**].text:GetStringHeight()
----@param units? table Displayed units | ***Default:*** db[**display**].value.units
----@param fractionals? number Height:Width ratio | ***Default:*** db[**display**].value.fractionals
----@param font? string Font path | ***Default:*** db[**display**].font.family
+---@param units? table Displayed units | ***Default:*** MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[**display**].value.units
+---@param fractionals? number Height:Width ratio | ***Default:*** MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[**display**].value.fractionals
+---@param font? string Font path | ***Default:*** MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[**display**].font.family
 local function SetDisplaySize(display, height, units, fractionals, font)
 	height = math.ceil(height or frames[display].text:GetStringHeight()) + 2.4
-	units = units or db[display].value.units
-	fractionals = fractionals or db[display].value.fractionals
+	units = units or MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].value.units
+	fractionals = fractionals or MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].value.fractionals
 
 	--Calculate width to height ratio
 	local ratio = 0
@@ -301,7 +298,7 @@ local function SetDisplaySize(display, height, units, fractionals, font)
 	for i = 1, 3 do if units[i] then ratio = ratio + 0.2 end end --Separators
 
 	--Resize the display
-	frames[display].display:SetSize(height * ratio * ns.fonts[GetFontID(font or db[display].font.family)].widthRatio - 4, height)
+	frames[display].display:SetSize(height * ratio * ns.fonts[GetFontID(font or MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].font.family)].widthRatio - 4, height)
 end
 
 ---Set the backdrop of the speed display elements
@@ -350,7 +347,7 @@ local function SetDisplayValues(display, data)
 
 	--Font & text
 	frames[display].text:SetFont(data[display].font.family, data[display].font.size, "THINOUTLINE")
-	frames[display].text:SetTextColor(wt.UnpackColor(db[display].font.valueColoring and ns.colors.grey[2] or db[display].font.color))
+	frames[display].text:SetTextColor(wt.UnpackColor(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].font.valueColoring and ns.colors.grey[2] or MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].font.color))
 	frames[display].text:SetJustifyH(data[display].font.alignment)
 	wt.SetPosition(frames[display].text, { anchor = data[display].font.alignment, })
 end
@@ -424,8 +421,8 @@ end
 local function StartSpeedDisplayUpdates(display)
 	local speedUpdater = display == "playerSpeed" and UpdatePlayerSpeed or UpdateTravelSpeed
 
-	if db[display].update.throttle then
-		frames[display].updater.ticker = C_Timer.NewTicker(db[display].update.frequency, function()
+	if MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].update.throttle then
+		frames[display].updater.ticker = C_Timer.NewTicker(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].update.frequency, function()
 			speedUpdater()
 			frames[display].text:SetText(" " .. FormatSpeedValue(display))
 		end)
@@ -459,7 +456,7 @@ local function EnableTargetSpeedUpdates()
 
 	--Start mouseover Target Speed updates
 	TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Unit, function(tooltip)
-		if not db.targetSpeed.enabled then return end
+		if not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.targetSpeed.enabled then return end
 
 		frames.targetSpeed:SetScript("OnUpdate", function()
 			if UnitName("mouseover") == nil then return end
@@ -513,15 +510,14 @@ local function CreateVisibilityOptions(panel, display, optionsKey)
 		title = ns.strings.options.speedDisplay.visibility.hidden.label,
 		tooltip = { lines = { { text = ns.strings.options.speedDisplay.visibility.hidden.tooltip:gsub("#ADDON", addonTitle), }, } },
 		arrange = {},
-		optionsData = {
-			optionsKey = optionsKey,
-			storageTable = db[display].visibility,
-			storageKey = "hidden",
-			onChange = { DisplayToggle = function()
-				wt.SetVisibility(frames[display].display, not db[display].visibility.hidden)
-				if db[display].visibility.hidden then StopSpeedDisplayUpdates(display) else StartSpeedDisplayUpdates(display) end
-			end, }
-		}
+		optionsKey = optionsKey,
+		getData = function() return MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].visibility.hidden end,
+		saveData = function(state) MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].visibility.hidden = state end,
+		onChange = { DisplayToggle = function()
+			wt.SetVisibility(frames[display].display, not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].visibility.hidden)
+			if MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].visibility.hidden then StopSpeedDisplayUpdates(display) else StartSpeedDisplayUpdates(display) end
+		end, },
+		default = ns.profileDefault[display].visibility.hidden
 	})
 
 	options[display].visibility.autoHide = wt.CreateCheckbox({
@@ -531,11 +527,10 @@ local function CreateVisibilityOptions(panel, display, optionsKey)
 		tooltip = { lines = { { text = ns.strings.options.speedDisplay.visibility.autoHide.tooltip, }, } },
 		arrange = { newRow = false, },
 		dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
-		optionsData = {
-			optionsKey = optionsKey,
-			storageTable = db[display].visibility,
-			storageKey = "autoHide",
-		}
+		optionsKey = optionsKey,
+		getData = function() return MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].visibility.autoHide end,
+		saveData = function(state) MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].visibility.autoHide = state end,
+		default = ns.profileDefault[display].visibility.autoHide
 	})
 
 	options[display].visibility.status = wt.CreateCheckbox({
@@ -544,11 +539,10 @@ local function CreateVisibilityOptions(panel, display, optionsKey)
 		title = ns.strings.options.speedDisplay.visibility.statusNotice.label,
 		tooltip = { lines = { { text = ns.strings.options.speedDisplay.visibility.statusNotice.tooltip, }, } },
 		arrange = { newRow = false, },
-		optionsData = {
-			optionsKey = optionsKey,
-			storageTable = db[display].visibility,
-			storageKey = "statusNotice",
-		}
+		optionsKey = optionsKey,
+		getData = function() return MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].visibility.statusNotice end,
+		saveData = function(state) MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].visibility.statusNotice = state end,
+		default = ns.profileDefault[display].visibility.statusNotice
 	})
 end
 local function CreateUpdateOptions(panel, display, optionsKey)
@@ -559,17 +553,14 @@ local function CreateUpdateOptions(panel, display, optionsKey)
 		tooltip = { lines = { { text = ns.strings.options.speedDisplay.update.throttle.tooltip, }, } },
 		arrange = {},
 		dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
-		optionsData = {
-			optionsKey = optionsKey,
-			storageTable = db[display].update,
-			storageKey = "throttle",
-			onChange = {
-				RefreshSpeedUpdates = function()
-					StopSpeedDisplayUpdates(display)
-					StartSpeedDisplayUpdates(display)
-				end
-			}
-		}
+		optionsKey = optionsKey,
+		getData = function() return MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].update.throttle end,
+		saveData = function(state) MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].update.throttle = state end,
+		onChange = { RefreshSpeedUpdates = function()
+			StopSpeedDisplayUpdates(display)
+			StartSpeedDisplayUpdates(display)
+		end },
+		default = ns.profileDefault[display].update.throttle
 	})
 
 	options[display].update.frequency = wt.CreateNumericSlider({
@@ -585,13 +576,11 @@ local function CreateUpdateOptions(panel, display, optionsKey)
 			{ frame = options[display].visibility.hidden, evaluate = function(state) return not state end },
 			{ frame = options[display].update.throttle },
 		},
-		optionsData = {
-			optionsKey = optionsKey,
-			storageTable = db[display].update,
-			storageKey = "frequency",
-			convertSave = function(value) return wt.Round(value, 2) end,
-			onChange = { "RefreshSpeedUpdates", }
-		}
+		optionsKey = optionsKey,
+		getData = function() return MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].update.frequency end,
+		saveData = function(value) MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].update.frequency = wt.Round(value, 2) end,
+		onChange = { "RefreshSpeedUpdates", },
+		default = ns.profileDefault[display].update.frequency
 	})
 
 	-- if display ~= "playerSpeed" then return end
@@ -606,11 +595,10 @@ local function CreateUpdateOptions(panel, display, optionsKey)
 	-- 		{ frame = options.playerSpeed.visibility.hidden, evaluate = function(state) return not state end },
 	-- 		{ frame = options.playerSpeed.update.frequency, evaluate = function(value) return value < 1 end },
 	-- 	},
-	-- 	optionsData = {
-	-- 		optionsKey = optionsKey,
-	-- 		workingTable = db.playerSpeed.update,
-	-- 		storageKey = "dragonridingOnly",
-	-- 	}
+	-- 	optionsKey = optionsKey,
+	-- 	getData = function() return MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.update.dragonridingOnly end,
+	-- 	saveData = function(state) MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.update.dragonridingOnly = state end,
+	-- 	default = ns.profileDefault.playerSpeed.update.dragonridingOnly
 	-- })
 end
 local function CreateSpeedValueOptions(panel, display, optionsKey, type)
@@ -623,15 +611,14 @@ local function CreateSpeedValueOptions(panel, display, optionsKey, type)
 		items = valueTypes,
 		limits = { min = 1, },
 		dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
-		optionsData = {
-			optionsKey = optionsKey,
-			storageTable = db[display].value,
-			storageKey = "units",
-			onChange = {
-				UpdateDisplaySize = function() SetDisplaySize(display) end,
-				UpdateSpeedTextTemplate = function() UpdateSpeedText(type, db[display].value.units, db[display].font.valueColoring) end,
-			}
-		}
+		optionsKey = optionsKey,
+		getData = function() return MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].value.units end,
+		saveData = function(selections) MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].value.units = selections end,
+		onChange = {
+			UpdateDisplaySize = function() SetDisplaySize(display) end,
+			UpdateSpeedTextTemplate = function() UpdateSpeedText(type, MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].value.units, MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].font.valueColoring) end,
+		},
+		default = ns.profileDefault[display].value.units
 	})
 
 	options[display].value.fractionals = wt.CreateNumericSlider({
@@ -642,12 +629,11 @@ local function CreateSpeedValueOptions(panel, display, optionsKey, type)
 		arrange = { newRow = false, },
 		value = { min = 0, max = 4, increment = 1 },
 		dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
-		optionsData = {
-			optionsKey = optionsKey,
-			storageTable = db[display].value,
-			storageKey = "fractionals",
-			onChange = { "UpdateDisplaySize", }
-		}
+		optionsKey = optionsKey,
+		getData = function() return MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].value.fractionals end,
+		saveData = function(value) MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].value.fractionals = value end,
+		onChange = { "UpdateDisplaySize", },
+		default = ns.profileDefault[display].value.fractionals
 	})
 
 	options[display].value.zeros = wt.CreateCheckbox({
@@ -661,11 +647,10 @@ local function CreateSpeedValueOptions(panel, display, optionsKey, type)
 			{ frame = options[display].visibility.hidden, evaluate = function(state) return not state end },
 			{ frame = options[display].value.fractionals, evaluate = function(value) return value > 0 end },
 		},
-		optionsData = {
-			optionsKey = optionsKey,
-			storageTable = db[display].value,
-			storageKey = "zeros",
-		}
+		optionsKey = optionsKey,
+		getData = function() return MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].value.zeros end,
+		saveData = function(state) MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].value.zeros = state end,
+		default = ns.profileDefault[display].value.zeros
 	})
 end
 local function CreateFontOptions(panel, display, optionsKey, type)
@@ -692,33 +677,30 @@ local function CreateFontOptions(panel, display, optionsKey, type)
 		arrange = {},
 		items = fontItems,
 		dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
-		optionsData = {
-			optionsKey = optionsKey,
-			storageTable = db[display].font,
-			storageKey = "family",
-			convertSave = function(value) return ns.fonts[value or 1].path end,
-			convertLoad = function(font) return GetFontID(font) end,
-			onChange = {
-				UpdateDisplayFont = function() frames[display].text:SetFont(db[display].font.family, db[display].font.size, "THINOUTLINE") end,
-				UpdateDisplaySize = function() SetDisplaySize(display) end, --TODO: solve the duplication issue
-				-- "UpdateDisplaySize",
-				RefreshDisplayText = function() --Refresh the text so the font will be applied right away (if the font is loaded)
-					local text = frames[display].text:GetText()
-					frames[display].text:SetText("")
-					frames[display].text:SetText(text)
-				end,
-				UpdateFontFamilyDropdownText = function()
-					--Update the font of the dropdown toggle button label
-					local _, size, flags = options[display].font.family.toggle.label:GetFont()
-					options[display].font.family.toggle.label:SetFont(ns.fonts[options[display].font.family.getSelected() or 1].path, size, flags)
+		optionsKey = optionsKey,
+		getData = function() return GetFontID(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].font.family) end,
+		saveData = function(selected) MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].font.family = ns.fonts[selected or 1].path end,
+		onChange = {
+			UpdateDisplayFont = function() frames[display].text:SetFont(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].font.family, MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].font.size, "THINOUTLINE") end,
+			UpdateDisplaySize = function() SetDisplaySize(display) end, --TODO: solve the duplication issue
+			-- "UpdateDisplaySize",
+			RefreshDisplayText = function() --Refresh the text so the font will be applied right away (if the font is loaded)
+				local text = frames[display].text:GetText()
+				frames[display].text:SetText("")
+				frames[display].text:SetText(text)
+			end,
+			UpdateFontFamilyDropdownText = function()
+				--Update the font of the dropdown toggle button label
+				local _, size, flags = options[display].font.family.toggle.label:GetFont()
+				options[display].font.family.toggle.label:SetFont(ns.fonts[options[display].font.family.getSelected() or 1].path, size, flags)
 
-					--Refresh the text so the font will be applied right away (if the font is loaded)
-					local text = options[display].font.family.toggle.label:GetText()
-					options[display].font.family.toggle.label:SetText("")
-					options[display].font.family.toggle.label:SetText(text)
-				end,
-			}
-		}
+				--Refresh the text so the font will be applied right away (if the font is loaded)
+				local text = options[display].font.family.toggle.label:GetText()
+				options[display].font.family.toggle.label:SetText("")
+				options[display].font.family.toggle.label:SetText(text)
+			end,
+		},
+		default = GetFontID(ns.profileDefault[display].font.family)
 	})
 	--Update the font of the dropdown items
 	if options[display].font.family.frame then for i = 1, #options[display].font.family.widgets do if options[display].font.family.widgets[i].label then
@@ -735,15 +717,14 @@ local function CreateFontOptions(panel, display, optionsKey, type)
 		value = { min = 8, max = 64, increment = 1 },
 		altStep = 3,
 		dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
-		optionsData = {
-			optionsKey = optionsKey,
-			storageTable = db[display].font,
-			storageKey = "size",
-			onChange = {
-				"UpdateDisplayFont",
-				"UpdateDisplaySize",
-			}
-		}
+		optionsKey = optionsKey,
+		getData = function() return MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].font.size end,
+		saveData = function(value) MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].font.size = value end,
+		onChange = {
+			"UpdateDisplayFont",
+			"UpdateDisplaySize",
+		},
+		default = ns.profileDefault[display].font.size
 	})
 
 	options[display].font.alignment = wt.CreateSpecialSelector("justifyH", {
@@ -754,15 +735,14 @@ local function CreateFontOptions(panel, display, optionsKey, type)
 		arrange = { newRow = false, },
 		width = 140,
 		dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
-		optionsData = {
-			optionsKey = optionsKey,
-			storageTable = db[display].font,
-			storageKey = "alignment",
-			onChange = { UpdateDisplayTextAlignment = function()
-				frames[display].text:SetJustifyH(db[display].font.alignment)
-				wt.SetPosition(frames[display].text, { anchor = db[display].font.alignment, })
-			end, }
-		}
+		optionsKey = optionsKey,
+		getData = function() return MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].font.alignment end,
+		saveData = function(value) MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].font.alignment = value end,
+		onChange = { UpdateDisplayTextAlignment = function()
+			frames[display].text:SetJustifyH(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].font.alignment)
+			wt.SetPosition(frames[display].text, { anchor = MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].font.alignment, })
+		end, },
+		default = ns.profileDefault[display].font.alignment
 	})
 
 	options[display].font.valueColoring = wt.CreateCheckbox({
@@ -772,19 +752,14 @@ local function CreateFontOptions(panel, display, optionsKey, type)
 		tooltip = { lines = { { text = ns.strings.options.speedDisplay.font.valueColoring.tooltip:gsub("#ADDON", addonTitle), }, } },
 		arrange = {},
 		dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
-		optionsData = {
-			optionsKey = optionsKey,
-			storageTable = db[display].font,
-			storageKey = "valueColoring",
-			onChange = {
-				UpdateDisplayFontColor = function()
-					frames[display].text:SetTextColor(wt.UnpackColor(db[display].font.valueColoring and ns.colors.grey[2] or db[display].font.color))
-				end,
-				UpdateEmbeddedValueColoring = function()
-					if db[display].font.valueColoring then UpdateSpeedText(type, db[display].value.units, true) else speedText[type] = wt.Clear(speedText[type]) end
-				end,
-			}
-		}
+		optionsKey = optionsKey,
+		getData = function() return MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].font.valueColoring end,
+		saveData = function(state) MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].font.valueColoring = state end,
+		onChange = {
+			UpdateDisplayFontColor = function() frames[display].text:SetTextColor(wt.UnpackColor(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].font.valueColoring and ns.colors.grey[2] or MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].font.color)) end,
+			UpdateEmbeddedValueColoring = function() if MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].font.valueColoring then UpdateSpeedText(type, MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].value.units, true) else speedText[type] = wt.Clear(speedText[type]) end end,
+		},
+		default = ns.profileDefault[display].font.valueColoring
 	})
 
 	options[display].font.color = wt.CreateColorPicker({
@@ -797,12 +772,11 @@ local function CreateFontOptions(panel, display, optionsKey, type)
 			{ frame = options[display].visibility.hidden, evaluate = function(state) return not state end },
 			{ frame = options[display].font.valueColoring, evaluate = function(state) return not state end },
 		},
-		optionsData = {
-			optionsKey = optionsKey,
-			storageTable = db[display].font,
-			storageKey = "color",
-			onChange = { "UpdateDisplayFontColor", }
-		}
+		optionsKey = optionsKey,
+		getData = function() return MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].font.color end,
+		saveData = function(color) MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].font.color = color end,
+		onChange = { "UpdateDisplayFontColor", },
+		default = ns.profileDefault[display].font.color
 	})
 end
 local function CreateBackgroundOptions(panel, display, optionsKey)
@@ -813,14 +787,11 @@ local function CreateBackgroundOptions(panel, display, optionsKey)
 		tooltip = { lines = { { text = ns.strings.options.speedDisplay.background.visible.tooltip, }, } },
 		arrange = {},
 		dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
-		optionsData = {
-			optionsKey = optionsKey,
-			storageTable = db[display].background,
-			storageKey = "visible",
-			onChange = { ToggleDisplayBackdrops = function()
-				SetDisplayBackdrop(display, db[display].background.visible, db[display].background.colors.bg, db[display].background.colors.border)
-			end, }
-		}
+		optionsKey = optionsKey,
+		getData = function() return MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].background.visible end,
+		saveData = function(state) MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].background.visible = state end,
+		onChange = { ToggleDisplayBackdrops = function() SetDisplayBackdrop(display, MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].background.visible, MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].background.colors.bg, MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].background.colors.border) end, },
+		default = ns.profileDefault[display].background.visible
 	})
 
 	options[display].background.colors.bg = wt.CreateColorPicker({
@@ -832,14 +803,11 @@ local function CreateBackgroundOptions(panel, display, optionsKey)
 			{ frame = options[display].visibility.hidden, evaluate = function(state) return not state end },
 			{ frame = options[display].background.visible, },
 		},
-		optionsData = {
-			optionsKey = optionsKey,
-			storageTable = db[display].background.colors,
-			storageKey = "bg",
-			onChange = { UpdateDisplayBackgroundColor = function()
-				if frames[display].display:GetBackdrop() ~= nil then frames[display].display:SetBackdropColor(wt.UnpackColor(db[display].background.colors.bg)) end
-			end }
-		}
+		optionsKey = optionsKey,
+		getData = function() return MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].background.colors.bg end,
+		saveData = function(color) MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].background.colors.bg = color end,
+		onChange = { UpdateDisplayBackgroundColor = function() if frames[display].display:GetBackdrop() ~= nil then frames[display].display:SetBackdropColor(wt.UnpackColor(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].background.colors.bg)) end end },
+		default = ns.profileDefault[display].background.colors.bg
 	})
 
 	options[display].background.colors.border = wt.CreateColorPicker({
@@ -851,14 +819,11 @@ local function CreateBackgroundOptions(panel, display, optionsKey)
 			{ frame = options[display].visibility.hidden, evaluate = function(state) return not state end },
 			{ frame = options[display].background.visible, },
 		},
-		optionsData = {
-			optionsKey = optionsKey,
-			storageTable = db[display].background.colors,
-			storageKey = "border",
-			onChange = { UpdateDisplayBorderColor = function()
-				if frames[display].display:GetBackdrop() ~= nil then frames[display].display:SetBackdropBorderColor(wt.UnpackColor(db[display].background.colors.border)) end
-			end }
-		}
+		optionsKey = optionsKey,
+		getData = function() return MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].background.colors.border end,
+		saveData = function(color) MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].background.colors.border = color end,
+		onChange = { UpdateDisplayBorderColor = function() if frames[display].display:GetBackdrop() ~= nil then frames[display].display:SetBackdropBorderColor(wt.UnpackColor(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].background.colors.border)) end end },
+		default = ns.profileDefault[display].background.colors.border
 	})
 end
 
@@ -885,7 +850,7 @@ local function CreateSpeedDisplayOptionsPage(display)
 		logo = ns.textures.logo,
 		scroll = { speed = 0.21 },
 		optionsKeys = optionsKeys,
-		storage = { { storageTable = db[display], defaultsTable = ns.profileDefault[display], }, },
+		storage = { { storageTable = MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display], defaultsTable = ns.profileDefault[display], }, },
 		onDefault = function()
 			options[display].position.resetCustomPreset()
 
@@ -925,7 +890,7 @@ local function CreateSpeedDisplayOptionsPage(display)
 							disabled = "GameFontDisableSmall"
 						},
 						action = function()
-							wt.CopyValues(db[display].visibility, db[otherDisplay].visibility)
+							wt.CopyValues(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].visibility, MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[otherDisplay].visibility)
 							wt.LoadOptionsData(optionsKeys[1], true)
 						end,
 						dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
@@ -1039,8 +1004,7 @@ local function CreateSpeedDisplayOptionsPage(display)
 						), ns.colors.yellow[2]))
 					end,
 					custom = {
-						workingTable = db.customPreset, --REMOVE wt
-						storageTable = db.customPreset,
+						getData = function() return MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.customPreset end,
 						defaultsTable = ns.profileDefault.customPreset,
 						onSave = function() print(addonChat .. wt.Color(ns.strings.chat.save.response:gsub(
 							"#CUSTOM", wt.Color(options[display].position.presetList[1].title, ns.colors.green[2])
@@ -1059,8 +1023,8 @@ local function CreateSpeedDisplayOptionsPage(display)
 				}, },
 				dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
 				optionsKey = optionsKeys[2],
-				workingTable = db[display], --REMOVE wt
-				storageTable = db[display],
+				getData = function() return MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display] end,
+				defaultsTable = ns.profileDefault[display],
 				settingsData = MovementSpeedCS,
 			})
 
@@ -1082,7 +1046,7 @@ local function CreateSpeedDisplayOptionsPage(display)
 					disabled = "GameFontDisableSmall"
 				},
 				action = function()
-					wt.CopyValues(db[display].position, db[otherDisplay].position)
+					wt.CopyValues(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].position, MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[otherDisplay].position)
 					wt.LoadOptionsData(optionsKeys[2], true)
 				end,
 				dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
@@ -1117,9 +1081,9 @@ local function CreateSpeedDisplayOptionsPage(display)
 							disabled = "GameFontDisableSmall"
 						},
 						action = function()
-							wt.CopyValues(db[display].updates, db[otherDisplay].updates)
+							wt.CopyValues(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].updates, MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[otherDisplay].updates)
 							wt.LoadOptionsData(optionsKeys[3], true)
-							db.travelSpeed.update.dragonridingOnly = nil
+							MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.travelSpeed.update.dragonridingOnly = nil
 						end,
 						dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
 					})
@@ -1156,7 +1120,7 @@ local function CreateSpeedDisplayOptionsPage(display)
 							disabled = "GameFontDisableSmall"
 						},
 						action = function()
-							wt.CopyValues(db[display].value, db[otherDisplay].value)
+							wt.CopyValues(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].value, MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[otherDisplay].value)
 							wt.LoadOptionsData(optionsKeys[4], true)
 						end,
 						dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
@@ -1194,7 +1158,7 @@ local function CreateSpeedDisplayOptionsPage(display)
 							disabled = "GameFontDisableSmall"
 						},
 						action = function()
-							wt.CopyValues(db[display].font, db[otherDisplay].font)
+							wt.CopyValues(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].font, MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[otherDisplay].font)
 							wt.LoadOptionsData(optionsKeys[5], true)
 						end,
 						dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
@@ -1232,7 +1196,7 @@ local function CreateSpeedDisplayOptionsPage(display)
 							disabled = "GameFontDisableSmall"
 						},
 						action = function()
-							wt.CopyValues(db[display].background, db[otherDisplay].background)
+							wt.CopyValues(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].background, MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[otherDisplay].background)
 							wt.LoadOptionsData(optionsKeys[6], true)
 						end,
 						dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
@@ -1257,12 +1221,11 @@ local function CreateTargetSpeedTooltipOptions(panel)
 		title = ns.strings.options.targetSpeed.mouseover.enabled.label,
 		tooltip = { lines = { { text = ns.strings.options.targetSpeed.mouseover.enabled.tooltip:gsub("#ADDON", addonTitle), }, } },
 		arrange = {},
-		optionsData = {
-			optionsKey = ns.name .. "TargetSpeed",
-			storageTable = db.targetSpeed,
-			storageKey = "enabled",
-			onChange = { EnableTargetSpeedUpdates = function() if not targetSpeedEnabled then EnableTargetSpeedUpdates() end end, }
-		}
+		optionsKey = ns.name .. "TargetSpeed",
+		getData = function() return MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.targetSpeed.enabled end,
+		saveData = function(state) MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.targetSpeed.enabled = state end,
+		onChange = { EnableTargetSpeedUpdates = function() if not targetSpeedEnabled then EnableTargetSpeedUpdates() end end, },
+		default = ns.profileDefault.targetSpeed.enabled
 	})
 end
 local function CreateTargetSpeedValueOptions(panel)
@@ -1275,12 +1238,11 @@ local function CreateTargetSpeedValueOptions(panel)
 		items = valueTypes,
 		limits = { min = 1, },
 		dependencies = { { frame = options.targetSpeed.enabled, }, },
-		optionsData = {
-			optionsKey = ns.name .. "TargetSpeed",
-			storageTable = db.targetSpeed.value,
-			storageKey = "units",
-			onChange = { UpdateTargetSpeedTextTemplate = function() UpdateSpeedText("target", db.targetSpeed.value.units) end, }
-		}
+		optionsKey = ns.name .. "TargetSpeed",
+		getData = function() return MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.targetSpeed.value.units end,
+		saveData = function(selections) MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.targetSpeed.value.units = selections end,
+		onChange = { UpdateTargetSpeedTextTemplate = function() UpdateSpeedText("target", MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.targetSpeed.value.units) end, },
+		default = ns.profileDefault.targetSpeed.value.units
 	})
 
 	options.targetSpeed.value.fractionals = wt.CreateNumericSlider({
@@ -1291,11 +1253,10 @@ local function CreateTargetSpeedValueOptions(panel)
 		arrange = { newRow = false, },
 		value = { min = 0, max = 4, increment = 1 },
 		dependencies = { { frame = options.targetSpeed.enabled, }, },
-		optionsData = {
-			optionsKey = ns.name .. "TargetSpeed",
-			storageTable = db.targetSpeed.value,
-			storageKey = "fractionals",
-		}
+		optionsKey = ns.name .. "TargetSpeed",
+		getData = function() return MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.targetSpeed.value.fractionals end,
+		saveData = function(value) MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.targetSpeed.value.fractionals = value end,
+		default = ns.profileDefault.targetSpeed.value.fractionals
 	})
 
 	options.targetSpeed.value.zeros = wt.CreateCheckbox({
@@ -1309,11 +1270,10 @@ local function CreateTargetSpeedValueOptions(panel)
 			{ frame = options.targetSpeed.enabled, },
 			{ frame = options.targetSpeed.value.fractionals, evaluate = function(value) return value > 0 end },
 		},
-		optionsData = {
-			optionsKey = ns.name .. "TargetSpeed",
-			storageTable = db.targetSpeed.value,
-			storageKey = "zeros",
-		}
+		optionsKey = ns.name .. "TargetSpeed",
+		getData = function() return MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.targetSpeed.value.zeros end,
+		saveData = function(state) MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.targetSpeed.value.zeros = state end,
+		default = ns.profileDefault.targetSpeed.value.zeros
 	})
 end
 
@@ -1326,7 +1286,7 @@ local function CreateTargetSpeedOptionsPage()
 		description = ns.strings.options.targetSpeed.description:gsub("#ADDON", addonTitle),
 		logo = ns.textures.logo,
 		optionsKeys = { ns.name .. "TargetSpeed" },
-		storage = { { storageTable = db.targetSpeed, defaultsTable = ns.profileDefault.targetSpeed, }, },
+		storage = { { storageTable = MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.targetSpeed, defaultsTable = ns.profileDefault.targetSpeed, }, },
 		onDefault = function()
 			--Notification
 			print(addonChat .. wt.Color(ns.strings.chat.defaults.response:gsub(
@@ -1370,13 +1330,13 @@ end
 ---Print visibility info
 ---@param load boolean | ***Default:*** false
 local function PrintStatus(load)
-	if load == true and not db[db.mainDisplay].visibility.statusNotice then return end
+	if load == true and not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].visibility.statusNotice then return end
 
 	print(addonChat .. wt.Color(frames.main:IsVisible() and (
-		not frames[db.mainDisplay].display:IsVisible() and ns.strings.chat.status.notVisible or ns.strings.chat.status.visible
+		not frames[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].display:IsVisible() and ns.strings.chat.status.notVisible or ns.strings.chat.status.visible
 	) or ns.strings.chat.status.hidden, ns.colors.yellow[1]):gsub(
 		"#AUTO", wt.Color(ns.strings.chat.status.auto:gsub(
-			"#STATE", wt.Color(db[db.mainDisplay].visibility.autoHide and ns.strings.misc.enabled or ns.strings.misc.disabled, ns.colors.green[2])
+			"#STATE", wt.Color(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].visibility.autoHide and ns.strings.misc.enabled or ns.strings.misc.disabled, ns.colors.green[2])
 		), ns.colors.yellow[2])
 	))
 end
@@ -1418,15 +1378,15 @@ local commandManager = wt.RegisterChatCommands(ns.name, { ns.chat.keyword }, {
 	},
 	{
 		command = ns.chat.commands.preset,
-		handler = function(parameter) return options[db.mainDisplay].position.applyPreset(tonumber(parameter)) end,
+		handler = function(parameter) return options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].position.applyPreset(tonumber(parameter)) end,
 		onError = function()
 			print(addonChat .. wt.Color(ns.strings.chat.preset.unchanged, ns.colors.yellow[1]))
 			print(wt.Color(ns.strings.chat.preset.error:gsub("#INDEX", wt.Color(ns.chat.commands.preset .. " " .. 1, ns.colors.green[2])), ns.colors.yellow[2]))
 			print(wt.Color(ns.strings.chat.preset.list, ns.colors.green[2]))
-			for j = 1, #options[db.mainDisplay].position.presetList, 2 do
-				local list = "    " .. wt.Color(j, ns.colors.green[2]) .. wt.Color(" - " .. options[db.mainDisplay].position.presetList[j].name, ns.colors.yellow[2])
-				if j + 1 <= #options[db.mainDisplay].position.presetList then
-					list = list .. "    " .. wt.Color(j + 1, ns.colors.green[2]) .. wt.Color(" - " .. options[db.mainDisplay].position.presetList[j + 1].name, ns.colors.yellow[2])
+			for j = 1, #options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].position.presetList, 2 do
+				local list = "    " .. wt.Color(j, ns.colors.green[2]) .. wt.Color(" - " .. options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].position.presetList[j].name, ns.colors.yellow[2])
+				if j + 1 <= #options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].position.presetList then
+					list = list .. "    " .. wt.Color(j + 1, ns.colors.green[2]) .. wt.Color(" - " .. options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].position.presetList[j + 1].name, ns.colors.yellow[2])
 				end
 				print(list)
 			end
@@ -1437,44 +1397,44 @@ local commandManager = wt.RegisterChatCommands(ns.name, { ns.chat.keyword }, {
 	},
 	{
 		command = ns.chat.commands.save,
-		handler = function() options[db.mainDisplay].position.saveCustomPreset() end,
+		handler = function() options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].position.saveCustomPreset() end,
 		onHelp = function() PrintCommand(ns.chat.commands.save, ns.strings.chat.save.description:gsub(
-			"#CUSTOM", wt.Color(options[db.mainDisplay].position.presetList[1].title, ns.colors.green[2])
+			"#CUSTOM", wt.Color(options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].position.presetList[1].title, ns.colors.green[2])
 		)) end
 	},
 	{
 		command = ns.chat.commands.reset,
-		handler = function() options[db.mainDisplay].position.resetCustomPreset() end,
+		handler = function() options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].position.resetCustomPreset() end,
 		onHelp = function() PrintCommand(ns.chat.commands.reset, ns.strings.chat.reset.description:gsub(
-			"#CUSTOM", wt.Color(options[db.mainDisplay].position.presetList[1].title, ns.colors.green[2])
+			"#CUSTOM", wt.Color(options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].position.presetList[1].title, ns.colors.green[2])
 		)) end
 	},
 	{
 		command = ns.chat.commands.toggle,
 		handler = function()
-			options[db.mainDisplay].visibility.hidden.setData(not db[db.mainDisplay].visibility.hidden, true)
+			options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].visibility.hidden.setData(not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].visibility.hidden, true)
 
 			return true
 		end,
 		onSuccess = function()
-			print(addonChat .. wt.Color(db[db.mainDisplay].visibility.hidden and ns.strings.chat.toggle.hiding or ns.strings.chat.toggle.unhiding, ns.colors.yellow[2]))
+			print(addonChat .. wt.Color(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].visibility.hidden and ns.strings.chat.toggle.hiding or ns.strings.chat.toggle.unhiding, ns.colors.yellow[2]))
 		end,
 		onHelp = function() PrintCommand(ns.chat.commands.toggle, ns.strings.chat.toggle.description:gsub(
-			"#HIDDEN", wt.Color(db[db.mainDisplay].visibility.hidden and ns.strings.chat.toggle.hidden or ns.strings.chat.toggle.notHidden, ns.colors.green[2])
+			"#HIDDEN", wt.Color(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].visibility.hidden and ns.strings.chat.toggle.hidden or ns.strings.chat.toggle.notHidden, ns.colors.green[2])
 		)) end
 	},
 	{
 		command = ns.chat.commands.auto,
 		handler = function()
-			options[db.mainDisplay].visibility.autoHide.setData(not db[db.mainDisplay].visibility.autoHide, true)
+			options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].visibility.autoHide.setData(not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].visibility.autoHide, true)
 
 			return true
 		end,
 		onSuccess = function() print(addonChat .. wt.Color(ns.strings.chat.auto.response:gsub(
-			"#STATE", wt.Color(db[db.mainDisplay].visibility.autoHide and ns.strings.misc.enabled or ns.strings.misc.disabled, ns.colors.green[2])
+			"#STATE", wt.Color(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].visibility.autoHide and ns.strings.misc.enabled or ns.strings.misc.disabled, ns.colors.green[2])
 		), ns.colors.yellow[2])) end,
 		onHelp = function() PrintCommand(ns.chat.commands.auto, ns.strings.chat.auto.description:gsub(
-			"#STATE", wt.Color(db[db.mainDisplay].visibility.autoHide and ns.strings.misc.enabled or ns.strings.misc.disabled, ns.colors.green[2])
+			"#STATE", wt.Color(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].visibility.autoHide and ns.strings.misc.enabled or ns.strings.misc.disabled, ns.colors.green[2])
 		)) end
 	},
 	{
@@ -1483,7 +1443,7 @@ local commandManager = wt.RegisterChatCommands(ns.name, { ns.chat.keyword }, {
 			local size = tonumber(parameter)
 			if not size then return false end
 
-			options[db.mainDisplay].font.size.setData(size, true)
+			options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].font.size.setData(size, true)
 
 			return true, size
 		end,
@@ -1491,11 +1451,11 @@ local commandManager = wt.RegisterChatCommands(ns.name, { ns.chat.keyword }, {
 		onError = function()
 			print(addonChat .. wt.Color(ns.strings.chat.size.unchanged, ns.colors.yellow[1]))
 			print(wt.Color(ns.strings.chat.size.error:gsub(
-				"#SIZE", wt.Color(ns.chat.commands.size .. " " .. ns.profileDefault[db.mainDisplay].font.size, ns.colors.green[2])
+				"#SIZE", wt.Color(ns.chat.commands.size .. " " .. ns.profileDefault[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].font.size, ns.colors.green[2])
 			), ns.colors.yellow[2]))
 		end,
 		onHelp = function() PrintCommand(ns.chat.commands.size, ns.strings.chat.size.description:gsub(
-			"#SIZE", wt.Color(ns.chat.commands.size .. " " .. ns.profileDefault[db.mainDisplay].font.size, ns.colors.green[2])
+			"#SIZE", wt.Color(ns.chat.commands.size .. " " .. ns.profileDefault[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].font.size, ns.colors.green[2])
 		)) end
 	},
 	{
@@ -1554,8 +1514,8 @@ local function _CreateContextMenu(parent)
 		title = ns.strings.options.speedDisplay.position.presets.label,
 		tooltip = { lines = { { text = ns.strings.options.speedDisplay.position.presets.tooltip, }, } },
 	})
-	for i = 1, #options[db.mainDisplay].position.presetList do wt.AddContextButton(presetsMenu, contextMenu, {
-		title = options[db.mainDisplay].position.presetList[i].title,
+	for i = 1, #options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].position.presetList do wt.AddContextButton(presetsMenu, contextMenu, {
+		title = options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].position.presetList[i].title,
 		events = { OnClick = function() commandManager.handleCommand(ns.chat.commands.preset, i) end, },
 	}) end
 end --TODO: Reinstate after fix or delete
@@ -1637,10 +1597,7 @@ frames.main = wt.CreateBaseFrame({
 				characterData = MovementSpeedDBC,
 				settingsData = MovementSpeedCS,
 				defaultsTable = ns.profileDefault,
-				onProfilesLoaded = function() wt.AddMissing(db, MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data) end,
 				onProfileActivated = function(index)
-					wt.CopyValues(db, MovementSpeedDB.profiles[index].data)
-
 					--Update the interface options
 					options.playerSpeed.page.load(true)
 					options.travelSpeed.page.load(true)
@@ -1692,30 +1649,30 @@ frames.main = wt.CreateBaseFrame({
 
 			--Player Speed
 			CreateContextMenu("playerSpeed")
-			wt.SetPosition(frames.playerSpeed.display, wt.AddMissing({ relativePoint = db.playerSpeed.position.anchor, }, db.playerSpeed.position))
+			wt.SetPosition(frames.playerSpeed.display, wt.AddMissing({ relativePoint = MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.position.anchor, }, MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.position))
 			wt.ConvertToAbsolutePosition(frames.playerSpeed.display)
-			SetDisplayValues("playerSpeed", db)
+			SetDisplayValues("playerSpeed", MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data)
 
 			--Travel Speed
 			CreateContextMenu("travelSpeed")
-			wt.SetPosition(frames.travelSpeed.display, wt.AddMissing({ relativePoint = db.travelSpeed.position.anchor, }, db.travelSpeed.position))
+			wt.SetPosition(frames.travelSpeed.display, wt.AddMissing({ relativePoint = MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.travelSpeed.position.anchor, }, MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.travelSpeed.position))
 			wt.ConvertToAbsolutePosition(frames.travelSpeed.display)
-			SetDisplayValues("travelSpeed", db)
+			SetDisplayValues("travelSpeed", MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data)
 		end,
 		PLAYER_ENTERING_WORLD = function(self)
 			self:UnregisterEvent("PLAYER_ENTERING_WORLD")
 
 			--Visibility notice
-			if not self:IsVisible() or not frames[db.mainDisplay].display:IsVisible() then PrintStatus(true) end
+			if not self:IsVisible() or not frames[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].display:IsVisible() then PrintStatus(true) end
 
 			--Start speed updates
 			UpdateMapInfo()
-			UpdateSpeedText("player", db.playerSpeed.value.units, db.playerSpeed.font.valueColoring)
-			UpdateSpeedText("travel", db.travelSpeed.value.units, db.travelSpeed.font.valueColoring)
-			UpdateSpeedText("target", db.targetSpeed.value.units, true)
-			if not db.playerSpeed.visibility.hidden then StartSpeedDisplayUpdates("playerSpeed") end
-			if not db.travelSpeed.visibility.hidden then StartSpeedDisplayUpdates("travelSpeed") end
-			if db.targetSpeed.enabled then EnableTargetSpeedUpdates() end
+			UpdateSpeedText("player", MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.value.units, MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.font.valueColoring)
+			UpdateSpeedText("travel", MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.travelSpeed.value.units, MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.travelSpeed.font.valueColoring)
+			UpdateSpeedText("target", MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.targetSpeed.value.units, true)
+			if not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.visibility.hidden then StartSpeedDisplayUpdates("playerSpeed") end
+			if not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.travelSpeed.visibility.hidden then StartSpeedDisplayUpdates("travelSpeed") end
+			if MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.targetSpeed.enabled then EnableTargetSpeedUpdates() end
 		end,
 		ZONE_CHANGED_NEW_AREA = function() UpdateMapInfo() end,
 		PET_BATTLE_OPENING_START = function(self) self:Hide() end,
@@ -1723,8 +1680,8 @@ frames.main = wt.CreateBaseFrame({
 	},
 	events = {
 		OnShow = function()
-			if not db.playerSpeed.visibility.hidden then frames.playerSpeed.display:Show() end
-			if not db.travelSpeed.visibility.hidden then frames.travelSpeed.display:Show() end
+			if not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.visibility.hidden then frames.playerSpeed.display:Show() end
+			if not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.travelSpeed.visibility.hidden then frames.travelSpeed.display:Show() end
 		end,
 		OnHide = function()
 			frames.playerSpeed.display:Hide()
