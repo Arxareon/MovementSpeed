@@ -120,7 +120,7 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 						optionsKey = ns.name .. "Specifications",
 						getData = function() return WidgetToolsDB.lite end,
 						saveData = function(state) WidgetToolsDB.lite = state end,
-						onSave = function() if loaded.lite ~= WidgetToolsDB.lite then wt.CreateReloadNotice() end end,
+						listeners = { saved = { { handler = function() if loaded.lite ~= WidgetToolsDB.lite then wt.CreateReloadNotice() end end, }, }, },
 						instantSave = false,
 						default = false,
 					})
@@ -134,7 +134,7 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 						optionsKey = ns.name .. "Specifications",
 						getData = function() return WidgetToolsDB.positioningAids end,
 						saveData = function(state) WidgetToolsDB.positioningAids = state end,
-						onSave = function() if loaded.positioningAids ~= WidgetToolsDB.positioningAids then wt.CreateReloadNotice() end end,
+						listeners = { saved = { { handler = function() if loaded.positioningAids ~= WidgetToolsDB.positioningAids then wt.CreateReloadNotice() end end, }, }, },
 						instantSave = false,
 						default = true,
 					})
@@ -287,7 +287,7 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 										optionsKey = ns.name .. "Addons",
 										getData = function() return GetAddOnEnableState(nil, v[i]) > 0 end,
 										saveData = function(state) toggleAddon(state) end,
-										onSave = function(_, state) if not state then wt.CreateReloadNotice() end end,
+										listeners = { saved = { { handler = function(_, state) if not state then wt.CreateReloadNotice() end end, }, }, },
 										instantSave = false,
 									})
 

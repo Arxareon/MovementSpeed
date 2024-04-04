@@ -182,7 +182,9 @@ end
 --[ Speed Update ]
 
 --Get the current Player Speed values accessible through **speed**
-local function UpdatePlayerSpeed() speed.player.yards = GetUnitSpeed("player") end
+local function UpdatePlayerSpeed()
+	speed.player.yards = GetUnitSpeed(UnitInVehicle("player") and "vehicle" or "player")
+end
 
 ---Format the specified speed value based on the DB specifications
 ---@param type "playerSpeed"|"targetSpeed"
@@ -488,7 +490,7 @@ local function CreateUpdateOptions(panel, optionsKey)
 	})
 end
 local function CreateSpeedValueOptions(panel, optionsKey)
-	options.playerSpeed.value.units = wt.CreateMultipleSelector({
+	options.playerSpeed.value.units = wt.CreateCheckboxSelector({
 		parent = panel,
 		name = "Units",
 		title = ns.strings.options.speedValue.units.label,
@@ -612,7 +614,7 @@ local function CreateFontOptions(panel, optionsKey)
 		default = ns.profileDefault.playerSpeed.font.size
 	})
 
-	options.playerSpeed.font.alignment = wt.CreateSpecialSelector("justifyH", {
+	options.playerSpeed.font.alignment = wt.CreateSpecialRadioSelector("justifyH", {
 		parent = panel,
 		name = "Alignment",
 		title = ns.strings.options.speedDisplay.font.alignment.label,
@@ -891,7 +893,7 @@ local function CreateTargetSpeedTooltipOptions(panel)
 	})
 end
 local function CreateTargetSpeedValueOptions(panel)
-	options.targetSpeed.value.units = wt.CreateMultipleSelector({
+	options.targetSpeed.value.units = wt.CreateCheckboxSelector({
 		parent = panel,
 		name = "Units",
 		title = ns.strings.options.speedValue.units.label,

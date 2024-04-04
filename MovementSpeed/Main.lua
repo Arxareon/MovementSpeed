@@ -602,7 +602,7 @@ local function CreateUpdateOptions(panel, display, optionsKey)
 	-- })
 end
 local function CreateSpeedValueOptions(panel, display, optionsKey, type)
-	options[display].value.units = wt.CreateMultipleSelector({
+	options[display].value.units = wt.CreateCheckboxSelector({
 		parent = panel,
 		name = "Units",
 		title = ns.strings.options.speedValue.units.label,
@@ -727,7 +727,7 @@ local function CreateFontOptions(panel, display, optionsKey, type)
 		default = ns.profileDefault[display].font.size
 	})
 
-	options[display].font.alignment = wt.CreateSpecialSelector("justifyH", {
+	options[display].font.alignment = wt.CreateSpecialRadioSelector("justifyH", {
 		parent = panel,
 		name = "Alignment",
 		title = ns.strings.options.speedDisplay.font.alignment.label,
@@ -872,7 +872,7 @@ local function CreateSpeedDisplayOptionsPage(display)
 				initialize = function(panel)
 					CreateVisibilityOptions(panel, display, optionsKeys[1])
 
-					wt.CreateButton({
+					wt.CreateSimpleButton({
 						parent = canvas,
 						name = "CopyVisibility",
 						title =  ns.strings.options.speedDisplay.copy.label:gsub("#TYPE", ns.strings.options[otherDisplay].title),
@@ -1028,7 +1028,7 @@ local function CreateSpeedDisplayOptionsPage(display)
 				settingsData = MovementSpeedCS,
 			})
 
-			wt.CreateButton({
+			wt.CreateSimpleButton({
 				parent = canvas,
 				name = "CopyPosition",
 				title =  ns.strings.options.speedDisplay.copy.label:gsub("#TYPE", ns.strings.options[otherDisplay].title),
@@ -1063,7 +1063,7 @@ local function CreateSpeedDisplayOptionsPage(display)
 				initialize = function(panel)
 					CreateUpdateOptions(panel, display, optionsKeys[3])
 
-					wt.CreateButton({
+					wt.CreateSimpleButton({
 						parent = canvas,
 						name = "CopyUpdates",
 						title =  ns.strings.options.speedDisplay.copy.label:gsub("#TYPE", ns.strings.options[otherDisplay].title),
@@ -1102,7 +1102,7 @@ local function CreateSpeedDisplayOptionsPage(display)
 				initialize = function(panel)
 					CreateSpeedValueOptions(panel, display, optionsKeys[4], displayType)
 
-					wt.CreateButton({
+					wt.CreateSimpleButton({
 						parent = canvas,
 						name = "CopyValue",
 						title =  ns.strings.options.speedDisplay.copy.label:gsub("#TYPE", ns.strings.options[otherDisplay].title),
@@ -1140,7 +1140,7 @@ local function CreateSpeedDisplayOptionsPage(display)
 				initialize = function(panel)
 					CreateFontOptions(panel, display, optionsKeys[5], displayType)
 
-					wt.CreateButton({
+					wt.CreateSimpleButton({
 						parent = canvas,
 						name = "CopyFont",
 						title =  ns.strings.options.speedDisplay.copy.label:gsub("#TYPE", ns.strings.options[otherDisplay].title),
@@ -1178,7 +1178,7 @@ local function CreateSpeedDisplayOptionsPage(display)
 				initialize = function(panel)
 					CreateBackgroundOptions(panel, display, optionsKeys[6])
 
-					wt.CreateButton({
+					wt.CreateSimpleButton({
 						parent = canvas,
 						name = "CopyBackground",
 						title =  ns.strings.options.speedDisplay.copy.label:gsub("#TYPE", ns.strings.options[otherDisplay].title),
@@ -1229,7 +1229,7 @@ local function CreateTargetSpeedTooltipOptions(panel)
 	})
 end
 local function CreateTargetSpeedValueOptions(panel)
-	options.targetSpeed.value.units = wt.CreateMultipleSelector({
+	options.targetSpeed.value.units = wt.CreateCheckboxSelector({
 		parent = panel,
 		name = "Units",
 		title = ns.strings.options.speedValue.units.label,
