@@ -703,9 +703,9 @@ local function CreateFontOptions(panel, display, optionsKey, type)
 		default = GetFontID(ns.profileDefault[display].font.family)
 	})
 	--Update the font of the dropdown items
-	if options[display].font.family.frame then for i = 1, #options[display].font.family.widgets do if options[display].font.family.widgets[i].label then
-		local _, size, flags = options[display].font.family.widgets[i].label:GetFont()
-		options[display].font.family.widgets[i].label:SetFont(ns.fonts[i].path, size, flags)
+	if options[display].font.family.frame then for i = 1, #options[display].font.family.toggles do if options[display].font.family.toggles[i].label then
+		local _, size, flags = options[display].font.family.toggles[i].label:GetFont()
+		options[display].font.family.toggles[i].label:SetFont(ns.fonts[i].path, size, flags)
 	end end end
 
 	options[display].font.size = wt.CreateNumericSlider({

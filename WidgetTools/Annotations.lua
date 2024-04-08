@@ -1367,10 +1367,10 @@
 ---|fun(self: NumericType, number: number, user: boolean) Called when an "changed" event is invoked after **numeric.setNumber(...)** was called<hr><p>@*param* `self` NumericType ― Reference to the toggle widget</p><p>@*param* `number` number ― The current value of the widget</p><p>@*param* `user` boolean ― True if the event was invoked by an action taken by the user</p>
 
 ---@alias NumericEventHandler_min
----|fun(self: NumericType, min: number) Called when an "min" event is invoked after **numeric.setMin(...)** was called<hr><p>@*param* `self` NumericType ― Reference to the toggle widget</p><p>@*param* `number` number ― The current lower limit of the number value of the widget</p>
+---|fun(self: NumericType, limitMin: number) Called when an "min" event is invoked after **numeric.setMin(...)** was called<hr><p>@*param* `self` NumericType ― Reference to the toggle widget</p><p>@*param* `limitMin` number ― The current lower limit of the number value of the widget</p>
 
 ---@alias NumericEventHandler_max
----|fun(self: NumericType, max: number) Called when an "max" event is invoked after **numeric.setMax(...)** was called<hr><p>@*param* `self` NumericType ― Reference to the toggle widget</p><p>@*param* `number` number ― The current upper limit of the number value of the widget</p>
+---|fun(self: NumericType, limitMax: number) Called when an "max" event is invoked after **numeric.setMax(...)** was called<hr><p>@*param* `self` NumericType ― Reference to the toggle widget</p><p>@*param* `limitMax` number ― The current upper limit of the number value of the widget</p>
 
 ---@alias NumericEventHandler_any
 ---|fun(self: NumericType, ...: any) Called when a custom event is invoked<hr><p>@*param* `self` NumericType ― Reference to the widget</p><p>@*param* `...` any — Any leftover arguments</p>
@@ -1414,7 +1414,7 @@
 ---@field fractional? integer If the value is fractional, display this many decimal digits | ***Default:*** *the most amount of digits present in the fractional part of* **t.min**, **t.max** *or* **t.increment**
 ---@field min? number Lower numeric value limit | ***Range:*** (any, **t.max**) | ***Default:*** 0
 ---@field max? number Upper numeric value limit | ***Range:*** (**t.min**, any) | ***Default:*** 100
----@field increment? number Size of value increment | ***Default:*** *the value can be freely changed (within range)*
+---@field increment? number Size of value increment | ***Range:*** (> 0) | ***Default:*** *the value can be freely changed (within range)*
 ---@field step? number Add/subtract this much when calling **numeric.increase(...)** or **numeric.decrease(...)** | ***Default:*** **t.increment** or (t.max - t.min) / 10
 ---@field altStep? number If set, add/subtract this much when calling **numeric.increase(...)** or **numeric.decrease(...)** with **alt** == true | ***Default:*** *no alternative step value*
 ---@field listeners? numericEventListeners Table of key, value pairs of custom widget event tags and functions to assign as event handlers to call on trigger

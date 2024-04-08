@@ -1560,7 +1560,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					if rules[i].evaluate then state = rules[i].evaluate(rules[i].frame.getState()) else state = rules[i].frame.getState() end
 				elseif rules[i].frame.isType("Selector") then state = rules[i].evaluate(rules[i].frame.getSelected())
 				elseif rules[i].frame.isType("Textbox") then state = rules[i].evaluate(rules[i].frame.getText())
-				elseif rules[i].frame.isType("Numeric") then state = rules[i].evaluate(rules[i].frame.getValue())
+				elseif rules[i].frame.isType("Numeric") then state = rules[i].evaluate(rules[i].frame.getNumber())
 				end
 			end
 
@@ -3632,6 +3632,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		--Get a trigger function to call all registered listeners for the specified custom widget event with
 		button.invoke = {
 			enabled = function() callListeners(button, listeners, "enabled", enabled) end,
+
+			trigger = function(user) callListeners(button, listeners, "trigger", user) end,
 
 			---@param event string Custom event tag
 			---@param ... any
@@ -7044,7 +7046,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		local limitMin = t.min or 0
 		local limitMax = t.max or 100
-		t.step = t.step or t.increment or ((t.increment - t.increment) / 10)
+		t.step = t.step or t.increment or ((limitMin - limitMax) / 10)
 		local value = t.number or t.default or type(t.getData) == "function" and t.getData() or 0
 		local snapshot
 
@@ -7131,28 +7133,6 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			_ = function(event, listener, callIndex) addListener(listeners, event, listener, callIndex) end
 		}
 
-		--| Value limits
-
-		---Set the lower value limit of the widget
-		---***
-		---@param number number Updates the lower limit value | ***Range:*** (any, *current upper limit*) *capped automatically*
-		---@param silent? boolean If false, invoke a "min" event and call registered listeners | ***Default:*** false
-		function numeric.setMin(number, silent)
-			limitMin = min(number, limitMax)
-
-			if not silent then numeric.invoke.min() end
-		end
-
-		---Set the upper value limit of the widget
-		---***
-		---@param number number Updates the upper limit value | ***Range:*** (*current lower limit*, any) *floored automatically*
-		---@param silent? boolean If false, invoke a "max" event and call registered listeners | ***Default:*** false
-		function numeric.setMax(number, silent)
-			limitMax = max(limitMin, number)
-
-			if not silent then numeric.invoke.max() end
-		end
-
 		--| Options data management
 
 		---Load the data from storage to the widget via **t.getData()**
@@ -7202,10 +7182,10 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			numeric.loadData(handleChanges, silent)
 		end
 
-		--Set a data snapshot so any changes made to the widget and/or the stored data can be reverted to this value via **number.revertData()**
+		--Set a data snapshot so any changes made to the widget and/or the stored data can be reverted to this value via **numeric.revertData()**
 		function numeric.snapshotData() snapshot = numeric.getData() end
 
-		---Set and load the stored data managed by the widget to the last saved data snapshot set via **number.snapshotData()**
+		---Set and load the stored data managed by the widget to the last saved data snapshot set via **numeric.snapshotData()**
 		---@param handleChanges? boolean If true, call the specified onChange handlers | ***Default:*** true
 		---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** false
 		function numeric.revertData(handleChanges, silent) if snapshot then numeric.setData(snapshot, handleChanges, silent) end end
@@ -7260,6 +7240,32 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 			if not silent then numeric.invoke.enabled() end
 		end
+
+		--| Value limits
+
+		---Set the lower value limit of the widget
+		---***
+		---@param number number Updates the lower limit value | ***Range:*** (any, *current upper limit*) *capped automatically*
+		---@param silent? boolean If false, invoke a "min" event and call registered listeners | ***Default:*** false
+		function numeric.setMin(number, silent)
+			limitMin = min(number, limitMax)
+
+			if not silent then numeric.invoke.min() end
+		end
+
+		function numeric.getMin() return limitMin end
+
+		---Set the upper value limit of the widget
+		---***
+		---@param number number Updates the upper limit value | ***Range:*** (*current lower limit*, any) *floored automatically*
+		---@param silent? boolean If false, invoke a "max" event and call registered listeners | ***Default:*** false
+		function numeric.setMax(number, silent)
+			limitMax = max(limitMin, number)
+
+			if not silent then numeric.invoke.max() end
+		end
+
+		function numeric.getMax() return limitMax end
 
 		--[ Initialization ]
 
@@ -7343,13 +7349,13 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		if t.valueBox ~= false then
 			--Calculate the required number of fractal digits, assemble string patterns for value validation
 			local decimals = t.fractional or max(
-				tostring(t.increment):gsub("-?[%d]+[%.]?([%d]*).*", "%1"):len(),
-				tostring(t.increment):gsub("-?[%d]+[%.]?([%d]*).*", "%1"):len(),
-				tostring(t.increment or 0):gsub("-?[%d]+[%.]?([%d]*).*", "%1"):len()
+				tostring(numeric.getMin()):gsub("-?[%d]+[%.]?([%d]*).*", "%1"):len(),
+				tostring(numeric.getMax()):gsub("-?[%d]+[%.]?([%d]*).*", "%1"):len(),
+				tostring(t.step or 0):gsub("-?[%d]+[%.]?([%d]*).*", "%1"):len()
 			)
 			local decimalPattern = ""
 			for _ = 1, decimals do decimalPattern = decimalPattern .. "[%d]?" end
-			local matchPattern = "(" .. (t.increment < 0 and "-?" or "") .. "[%d]*)" .. (decimals > 0 and "([%.]?" .. decimalPattern .. ")" or "") .. ".*"
+			local matchPattern = "(" .. (numeric.getMin() < 0 and "-?" or "") .. "[%d]*)" .. (decimals > 0 and "([%.]?" .. decimalPattern .. ")" or "") .. ".*"
 			local replacePattern = "%1" .. (decimals > 0 and "%2" or "")
 
 			numeric.valueBox = wt.CreateCustomEditbox({
@@ -7372,7 +7378,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					disabled = "GameFontDisableSmall",
 				},
 				justify = { h = "CENTER", },
-				maxLetters = tostring(math.floor(t.increment)):len() + (decimals + (decimals > 0 and 1 or 0)) + (t.increment < 0 and 1 or 0),
+				maxLetters = tostring(math.floor(t.step)):len() + (decimals + (decimals > 0 and 1 or 0)) + (t.step < 0 and 1 or 0),
 				backdrop = {
 					background = {
 						texture = {
@@ -7394,7 +7400,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					OnChar = function(self, _, text) self:SetText(text:gsub(matchPattern, replacePattern)) end,
 					OnEnterPressed = function(self)
 						local v = self:GetNumber()
-						if t.increment then v = max(t.increment, min(t.increment, floor(v * (1 / t.increment) + 0.5) / (1 / t.increment))) end
+						if t.increment then v = max(numeric.getMin(), min(floor(v * (1 / t.increment) + 0.5) / (1 / t.increment)), numeric.getMax()) end
 
 						numeric.setValue(v, true)
 					end,
@@ -7412,7 +7418,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 			--| Decrease
 
-			numeric.decrease = wt.CreateCustomButton({
+			numeric.decreaseButton = wt.CreateCustomButton({
 				parent = numeric.frame,
 				name = "SelectPrevious",
 				title = "-",
@@ -7473,12 +7479,12 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					end },
 				},
 				action = function() numeric.decrease(IsAltKeyDown(), true) end,
-				dependencies = { { frame = numeric.slider, evaluate = function(value) return value > t.increment end }, }
+				dependencies = { { frame = numeric.slider, evaluate = function(value) return value > numeric.getMin() end }, }
 			})
 
 			--| Increase
 
-			numeric.increase = wt.CreateCustomButton({
+			numeric.increaseButton = wt.CreateCustomButton({
 				parent = numeric.frame,
 				name = "SelectNext",
 				title = "+",
@@ -7539,7 +7545,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					end },
 				},
 				action = function() numeric.increase(IsAltKeyDown(), true) end,
-				dependencies = { { frame = numeric.slider, evaluate = function(value) return value < t.increment end }, }
+				dependencies = { { frame = numeric.slider, evaluate = function(value) return value < numeric.getMax() end }, }
 			})
 		end
 
@@ -7553,23 +7559,6 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--Handle updates
 		numeric.setListener.changed(function(_, number, user) numeric.slider:SetValue(number, user) end)
-
-		--| Min / max
-
-		numeric.slider:SetMinMaxValues(t.increment, t.increment)
-
-		numeric.slider.min:SetText(tostring(t.increment))
-		numeric.slider.max:SetText(tostring(t.increment))
-
-		--Handle updates
-		numeric.setListener.min(function(_, value)
-			numeric.slider:SetMinMaxValues(value, t.increment)
-			numeric.slider.min:SetText(tostring(value))
-		end)
-		numeric.setListener.max(function(_, value)
-			numeric.slider:SetMinMaxValues(t.increment, value)
-			numeric.slider.min:SetText(tostring(value))
-		end)
 
 		--[ Events ]
 
@@ -7585,10 +7574,22 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		---@param _ numeric
 		---@param number number
 		---@param user? boolean ***Default:*** false
-		local function updateNumber(_, number, user) number.slider:SetValue(number, user) end
+		local function updateNumber(_, number, user) numeric.slider:SetValue(number, user) end
+
+		---Update the min/max limits of the slider
+		---@param limitMin? number
+		---@param limitMax? number
+		local function updateLimits(limitMin, limitMax)
+			if limitMin then numeric.slider.min:SetText(tostring(limitMin)) else limitMin = numeric.getMin() end
+			if limitMax then numeric.slider.max:SetText(tostring(limitMax)) else limitMax = numeric.getMax() end
+
+			numeric.slider:SetMinMaxValues(limitMin, limitMax)
+		end
 
 		--Handle updates
 		numeric.setListener.changed(updateNumber, 1)
+		numeric.setListener.min(function(_, limitMin) updateLimits(limitMin) end, 1)
+		numeric.setListener.max(function(_, limitMax) updateLimits(nil, limitMax) end, 1)
 
 		numeric.slider:HookScript("OnMouseUp", function() PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON) end)
 
@@ -7613,8 +7614,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			if t.valueBox ~= false then numeric.valueBox.setEnabled(state) end
 
 			if t.sideButtons ~= false then
-				numeric.decrease.setEnabled(state and wt.CheckDependencies({ { frame = numeric.slider, evaluate = function(value) return value > t.increment end }, }))
-				numeric.increase.setEnabled(state and wt.CheckDependencies({ { frame = numeric.slider, evaluate = function(value) return value < t.increment end }, }))
+				numeric.decreaseButton.setEnabled(state and wt.CheckDependencies({ { frame = numeric.slider, evaluate = function(value) return value > numeric.getMin() end }, }))
+				numeric.increaseButton.setEnabled(state and wt.CheckDependencies({ { frame = numeric.slider, evaluate = function(value) return value < numeric.getMax() end }, }))
 			end
 		end
 
@@ -7624,6 +7625,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--Set up starting state
 		updateState(nil, numeric.isEnabled())
+
+		--Set up the limits
+		updateLimits(numeric.getMin(), numeric.getMax())
 
 		--Set up slider value
 		updateNumber(nil, numeric.getNumber(), false)
