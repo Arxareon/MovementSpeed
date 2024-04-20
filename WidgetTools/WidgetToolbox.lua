@@ -912,7 +912,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	---@param tableToCheck table Reference to the table to find a value at a certain key in
 	---@param keyToFind any Key to look for in **tableToCheck** (including all subtables, recursively)
 	---***
-	---@return any|nil match Value found at **keyToFind**, returns the first match only
+	---@return any|nil match The first match of the value found at **keyToFind**, or nil if no match was found
 	function wt.FindValueByKey(tableToCheck, keyToFind)
 		if type(tableToCheck) ~= "table" then return nil end
 
@@ -932,7 +932,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	---@param tableToCheck table Reference to the table to find a value at a certain key in
 	---@param valueToFind any Value to look for in **tableToCheck** (including all subtables, recursively)
 	---***
-	---@return any|nil match Key of the found value, returns the first match only
+	---@return any|nil match The first match of the key of the found **valueToFind**, or nil if no match was found
 	function wt.FindKeyByValue(tableToCheck, valueToFind)
 		if type(tableToCheck) ~= "table" then return nil end
 
@@ -1550,15 +1550,15 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		for i = 1, #rules do
 			if wt.IsFrame(rules[i].frame) then --Base Blizzard frames
-				if rules[i].frame:IsObjectType("CheckButton") then
-					if rules[i].evaluate then state = rules[i].evaluate(rules[i].frame:GetChecked()) else state = rules[i].frame:GetChecked() end
+				if rules[i].frame:IsObjectType("CheckButton") then state = rules[i].evaluate and rules[i].evaluate(rules[i].frame:GetChecked()) or rules[i].frame:GetChecked()
 				elseif rules[i].frame:IsObjectType("EditBox") then state = rules[i].evaluate(rules[i].frame:GetText())
 				elseif rules[i].frame:IsObjectType("Slider") then state = rules[i].evaluate(rules[i].frame:GetValue())
 				end
 			elseif rules[i].frame.isType then --Custom WidgetTools widgets
-				if rules[i].frame.isType("Toggle") then
-					if rules[i].evaluate then state = rules[i].evaluate(rules[i].frame.getState()) else state = rules[i].frame.getState() end
+				if rules[i].frame.isType("Toggle") then if rules[i].evaluate then state = rules[i].evaluate(rules[i].frame.getState()) else state = rules[i].frame.getState() end
 				elseif rules[i].frame.isType("Selector") then state = rules[i].evaluate(rules[i].frame.getSelected())
+				elseif rules[i].frame.isType("Multiselector") then state = rules[i].evaluate(rules[i].frame.getSelected())
+				elseif rules[i].frame.isType("SpecialSelector") then state = rules[i].evaluate(rules[i].frame.getSelected())
 				elseif rules[i].frame.isType("Textbox") then state = rules[i].evaluate(rules[i].frame.getText())
 				elseif rules[i].frame.isType("Numeric") then state = rules[i].evaluate(rules[i].frame.getNumber())
 				end
@@ -1586,13 +1586,14 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				elseif rules[i].frame:IsObjectType("EditBox") then rules[i].frame:HookScript("OnTextChanged", setter)
 				elseif rules[i].frame:IsObjectType("Slider") then rules[i].frame:HookScript("OnValueChanged", setter)
 				end
-			elseif rules[i].frame.isType and rules[i].frame.dropdown then --Custom WidgetTools widgets
+			elseif rules[i].frame.isType then --Custom WidgetTools widgets
 				--Watch value load events
-				rules[i].frame.setListener.loaded(function(success) if success then setter() end end)
+				rules[i].frame.setListener.loaded(function(_, success) if success then setter() end end)
 
 				--Watch value change events
 				if rules[i].frame.isType("Toggle") then rules[i].frame.setListener.toggled(setter)
-				elseif rules[i].frame.isType("Selector") then rules[i].frame.setListener.selected(setter)
+				elseif rules[i].frame.isType("Selector") or rules[i].frame.isType("Multiselector") or rules[i].frame.isType("SpecialSelector") then
+					rules[i].frame.setListener.selected(setter)
 				elseif rules[i].frame.isType("Textbox") or rules[i].frame.isType("Numeric") then rules[i].frame.setListener.changed(setter)
 				end
 			end
@@ -3800,7 +3801,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		--Set up starting state
 		updateState(button, button.isEnabled())
 
-		--Handle state updates
+		--Handle widget updates
 		button.setListener.enabled(updateState, 1)
 	end
 
@@ -4172,7 +4173,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		---@param silent? boolean If false, invoke a "saved" event and call registered listeners | ***Default:*** false
 		function toggle.saveData(state, silent)
 			if t.saveData then
-				state = state == nil and value or state ~= nil
+				if state == nil then state = value end
 
 				t.saveData(state)
 
@@ -4313,7 +4314,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		---@param state boolean
 		local function updateToggleState(_, state) toggle.button:SetChecked(state) end
 
-		--Handle updates
+		--Handle widget updates
 		toggle.setListener.toggled(updateToggleState, 1)
 
 		--| Tooltip
@@ -4422,7 +4423,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			if toggle.label then toggle.label:SetFontObject(state and "GameFontHighlight" or "GameFontDisable") end
 		end
 
-		--Handle state updates
+		--Handle widget updates
 		toggle.setListener.enabled(updateState, 1)
 
 		--[ Initialization ]
@@ -4524,7 +4525,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			if toggle.label then toggle.label:SetFontObject(state and "GameFontHighlightSmall" or "GameFontDisableSmall") end
 		end
 
-		--Handle state updates
+		--Handle widget updates
 		toggle.setListener.enabled(updateState, 1)
 
 		--[ Initialization ]
@@ -4740,9 +4741,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		---@param silent? boolean If false, invoke a "loaded" event and call registered listeners | ***Default:*** false
 		function selector.saveData(data, silent)
 			if t.saveData then
-				local selected = type(data) == "table" and data.index or value
-
-				t.saveData(selected)
+				t.saveData(type(data) == "table" and data.index or value)
 
 				if not silent then selector.invoke.saved(true) end
 			elseif not silent then selector.invoke.saved(false) end
@@ -5061,9 +5060,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		---@param silent? boolean If false, invoke a "loaded" event and call registered listeners | ***Default:*** false
 		function selector.saveData(data, silent)
 			if t.saveData then
-				local selections = type(data) == "table" and data.selections or value
-
-				t.saveData(selections)
+				t.saveData(type(data) == "table" and data.selections or value)
 
 				if not silent then selector.invoke.saved(true) end
 			elseif not silent then selector.invoke.saved(false) end
@@ -5358,9 +5355,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		---@param silent? boolean If false, invoke a "loaded" event and call registered listeners | ***Default:*** false
 		function selector.saveData(data, silent)
 			if t.saveData then
-				local selected = type(data) == "table" and data.index or value
-
-				t.saveData(selected)
+				t.saveData(type(data) == "table" and wt.FindKeyByValue(itemsets[itemset], data.value) and data.value or value)
 
 				if not silent then selector.invoke.saved(true) end
 			elseif not silent then selector.invoke.saved(false) end
@@ -5406,6 +5401,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			if selected then
 				selected = min(type(selected) == "string" and selector.toIndex(selected:upper()) or type(selected) == "number" and math.floor(selected) or 0, #selector.toggles)
 			end
+			selected = selected or itemsets[itemset][1]
 			value = selector.toValue(selected)
 
 			--Update toggle states
@@ -5554,7 +5550,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		---@param state boolean
 		local function updateState(_, state) if selector.label then selector.label:SetFontObject(state and "GameFontNormal" or "GameFontDisable") end end
 
-		--Handle updates
+		--Handle widget updates
 		selector.setListener.enabled(updateState, 1)
 
 		--[ Initialization ]
@@ -5596,37 +5592,43 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		---@param item selectorToggle|selectorRadioButton
 		---@param active boolean
 		local function setRadioButton(item, active)
-			local sameRow = (item.index - 1) % t.columns > 0
+			if active and not item.frame then
+				local sameRow = (item.index - 1) % t.columns > 0
 
-			if not item.frame then wt.CreateRadioButton({
-				parent = selector.frame,
-				name = findName(name, item.index),
-				title = t.items[item.index].title,
-				label = t.labels,
-				tooltip = t.items[item.index].tooltip,
-				position = {
-					relativeTo = item.index ~= 1 and selector.toggles[sameRow and item.index - 1 or item.index - t.columns].frame or selector.label,
-					relativePoint = item.index > 1 and (sameRow and "TOPRIGHT" or "BOTTOMLEFT") or (selector.label and "BOTTOMLEFT" or nil),
-					offset = { x = selector.label and item.index == 1 and -4 or 0, y = selector.label and item.index == 1 and -2 or 0}
-				},
-				size = { w = (t.width and t.columns == 1) and t.width or nil, },
-				clearable = t.clearable,
-				events = { OnClick = function(_, _, button)
-					if button == "LeftButton" then selector.setSelected(selector.toggles[item.index].index, true)
-					elseif t.clearable and button == "RightButton" and not selector.getSelected() then selector.setSelected(nil, true) end
-				end, },
-			}, item) end
+				wt.CreateRadioButton({
+					parent = selector.frame,
+					name = findName(name, item.index),
+					title = t.items[item.index].title,
+					label = t.labels,
+					tooltip = t.items[item.index].tooltip,
+					position = {
+						relativeTo = item.index ~= 1 and selector.toggles[sameRow and item.index - 1 or item.index - t.columns].frame or selector.label,
+						relativePoint = item.index > 1 and (sameRow and "TOPRIGHT" or "BOTTOMLEFT") or (selector.label and "BOTTOMLEFT" or nil),
+						offset = { x = selector.label and item.index == 1 and -4 or 0, y = selector.label and item.index == 1 and -2 or 0}
+					},
+					size = { w = (t.width and t.columns == 1) and t.width or nil, },
+					clearable = t.clearable,
+					events = { OnClick = function(_, _, button)
+						if button == "LeftButton" then selector.setSelected(selector.toggles[item.index].index, true)
+						elseif t.clearable and button == "RightButton" and not selector.getSelected() then selector.setSelected(nil, true) end
+					end, },
+				}, item)
+			elseif active then
+				--Update label
+				if item.label then item.label:SetText(t.items[item.index].title) end
 
-			wt.SetVisibility(item.frame, active)
-
-			if active then
-				if item.label then item.label:SetText(item.title) end
-
-				if item.frame.tooltipData then
-					item.frame.tooltipData.title = item.title
-					item.frame.tooltipData.tooltip = item.tooltip
-				end
-			end
+				--Update tooltip
+				if t.items[item.index].tooltip and not item.frame.tooltipData then wt.AddTooltip(item.frame, {
+					title = t.items[item.index].tooltip.title or t.title or t.name or "Toggle",
+					lines = t.items[item.index].tooltip.lines,
+					anchor = "ANCHOR_NONE",
+					position = {
+						anchor = "BOTTOMLEFT",
+						relativeTo = item.button,
+						relativePoint = "TOPRIGHT",
+					},
+				}, { triggers = { item.button, }, }) elseif item.frame.tooltipData then item.frame.tooltipData = t.items[item.index].tooltip end
+			else wt.SetVisibility(item.frame, false) end
 		end
 
 		--Set up current items
@@ -5718,45 +5720,51 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		---@param item selectorToggle|selectorCheckbox
 		---@param active boolean
 		local function setCheckbox(item, active)
-			local sameRow = (item.index - 1) % t.columns > 0
+			if active and not item.frame then
+				local sameRow = (item.index - 1) % t.columns > 0
 
-			if not item.frame then wt.CreateCheckbox({
-				parent = selector.frame,
-				name = findName(name, item.index),
-				title = t.items[item.index].title,
-				label = t.labels,
-				tooltip = t.items[item.index].tooltip,
-				position = {
-					relativeTo = item.index ~= 1 and selector.toggles[sameRow and item.index - 1 or item.index - t.columns].frame or selector.label,
-					relativePoint = sameRow and "TOPRIGHT" or "BOTTOMLEFT",
-					offset = { x = selector.label and item.index == 1 and -4 or 0, y = selector.label and item.index == 1 and -2 or 0}
-				},
-				size = { w = (t.width and t.columns == 1) and t.width or 160, h = 16 },
-				events = { OnClick = function() selector.setSelected(selector.getSelected(), true) end, },
-			}, item) end
+				wt.CreateCheckbox({
+					parent = selector.frame,
+					name = findName(name, item.index),
+					title = t.items[item.index].title,
+					label = t.labels,
+					tooltip = t.items[item.index].tooltip,
+					position = {
+						relativeTo = item.index ~= 1 and selector.toggles[sameRow and item.index - 1 or item.index - t.columns].frame or selector.label,
+						relativePoint = sameRow and "TOPRIGHT" or "BOTTOMLEFT",
+						offset = { x = selector.label and item.index == 1 and -4 or 0, y = selector.label and item.index == 1 and -2 or 0}
+					},
+					size = { w = (t.width and t.columns == 1) and t.width or 160, h = 16 },
+					events = { OnClick = function() selector.setSelected(selector.getSelected(), true) end, },
+					listeners = { enabled = { { handler = function(self, state)
+						if self.label then self.label:SetFontObject(state and "GameFontHighlightSmall" or "GameFontDisableSmall") end
+					end, callIndex = 1 }, }, },
+				}, item)
 
-			wt.SetVisibility(item.frame, active)
-
-			if item.label then
-				item.label:SetFontObject("GameFontHighlightSmall")
-				item.label:SetIgnoreParentAlpha(true)
-			end
-
-			--Handle state updates
-			item.setListener.enabled(function(self, state) if self.label then self.label:SetFontObject(state and "GameFontHighlightSmall" or "GameFontDisableSmall") end end, 1)
-
-			--Handle limit updates
-			selector.setListener.min(function(_, limited) setLock(item, item.getState() and limited) end, item.index)
-			selector.setListener.max(function(_, limited) setLock(item, not item.getState() and limited) end, item.index)
-
-			if active then
-				if item.label then item.label:SetText(item.title) end
-
-				if item.frame.tooltipData then
-					item.frame.tooltipData.title = item.title
-					item.frame.tooltipData.tooltip = item.tooltip
+				if item.label then
+					item.label:SetFontObject("GameFontHighlightSmall")
+					item.label:SetIgnoreParentAlpha(true)
 				end
-			end
+
+				--Handle limit updates
+				selector.setListener.min(function(_, limited) setLock(item, item.getState() and limited) end, item.index)
+				selector.setListener.max(function(_, limited) setLock(item, not item.getState() and limited) end, item.index)
+			elseif active then
+				--Update label
+				if item.label then item.label:SetText(t.items[item.index].title) end
+
+				--Update tooltip
+				if t.items[item.index].tooltip and not item.frame.tooltipData then wt.AddTooltip(item.frame, {
+					title = t.items[item.index].tooltip.title or t.title or t.name or "Toggle",
+					lines = t.items[item.index].tooltip.lines,
+					anchor = "ANCHOR_NONE",
+					position = {
+						anchor = "BOTTOMLEFT",
+						relativeTo = item.button,
+						relativePoint = "TOPRIGHT",
+					},
+				}, { triggers = { item.button, }, }) elseif item.frame.tooltipData then item.frame.tooltipData = t.items[item.index].tooltip end
+			else wt.SetVisibility(item.frame, false) end
 		end
 
 		--Set up starting items
@@ -6161,7 +6169,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			selector.toggleMenu(false)
 		end
 
-		--Handle updates
+		--Handle widget updates
 		selector.toggle.setListener.trigger(function() selector.toggleMenu() end)
 		selector.setListener.selected(function() selector.setText() end, 1)
 		selector.setListener._("open", function(state) if not state then PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_OFF) end end)
@@ -6262,7 +6270,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			UIDropDownMenu_SetText(selector.frame, (t.items[selected] or {}).title or t.text or "")
 		end
 
-		--Handle updates
+		--Handle widget updates
 		selector.setListener.selected(updateSelection, 1)
 
 		--| Tooltip
@@ -6290,7 +6298,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			end
 		end
 
-		--Handle updates
+		--Handle widget updates
 		selector.setListener.enabled(updateState, 1)
 
 		--[ Initialization ]
@@ -6436,9 +6444,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		---@param silent? boolean If false, invoke a "saved" event and call registered listeners | ***Default:*** false
 		function textbox.saveData(text, silent)
 			if t.saveData then
-				text = type(text) == "string" and text or value
-
-				t.saveData(text)
+				t.saveData(type(text) == "string" and text or value)
 
 				if not silent then textbox.invoke.saved(true) end
 			elseif not silent then textbox.invoke.saved(false) end
@@ -6529,7 +6535,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	--| GUI
 
 	---Set the parameters of a GUI textbox widget frame
-	---@param textbox editbox|customEditbox|multilineEditbox
+	---@param textbox singleLineEditbox|customSingleLineEditbox|multilineEditbox
 	---@param t editboxCreationData
 	local function SetUpEditboxFrame(textbox, t)
 
@@ -6558,7 +6564,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			if t.justify.v then textbox.editbox:SetJustifyV(t.justify.v) end
 		end
 
-		if t.maxLetters then textbox.editbox:SetMaxLetters(t.maxLetters) end
+		if t.charLimit then textbox.editbox:SetMaxLetters(t.charLimit) end
 
 		--[ Events ]
 
@@ -6566,24 +6572,33 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		if t.events then for key, value in pairs(t.events) do
 			if key == "attribute" then textbox.editbox:HookScript("OnAttributeChanged", function(_, attribute, ...) if attribute == value.name then value.handler(...) end end)
 			elseif key == "OnChar" then textbox.editbox:SetScript("OnChar", function(self, char) value(self, char, self:GetText()) end)
-			elseif key == "OnTextChanged" then textbox.editbox:SetScript("OnTextChanged", function(self, user) value(self, user, self:GetText()) end)
+			elseif key == "OnTextChanged" then textbox.editbox:SetScript("OnTextChanged", function(self, user) value(self, self:GetText(), user) end)
 			elseif key == "OnEnterPressed" then textbox.editbox:SetScript("OnEnterPressed", function(self) value(self, self:GetText()) end)
 			else textbox.editbox:HookScript(key, value) end
 		end end
 
 		--| UX
 
+		local silent = false
+
 		---Update the widget UI based on the text value
 		---@param _ toggle
 		---@param text string
-		local function updateText(_, text)
+		local function updateText(_, text) if not silent then
 			textbox.editbox:SetText(text)
 
 			if t.resetCursor ~= false then textbox.editbox:SetCursorPosition(0) end
-		end
+		else silent = false end end
 
-		--Handle updates
+		--Handle widget updates
 		textbox.setListener.changed(updateText, 1)
+
+		--Link value changes
+		textbox.editbox:HookScript("OnTextChanged", function(_, text, user)
+			silent = true
+
+			textbox.setText(text, user)
+		end)
 
 		textbox.editbox:SetAutoFocus(t.keepFocused)
 
@@ -6613,7 +6628,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			if textbox.label then textbox.label:SetFontObject(state and "GameFontNormal" or "GameFontDisable") end
 		end
 
-		--Handle updates
+		--Handle widget updates
 		textbox.setListener.enabled(updateState, 1)
 
 		if t.readOnly then textbox.editbox:Disable() end
@@ -6628,7 +6643,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	end
 
 	---Set the parameters of a single-line GUI textbox widget frame
-	---@param textbox editbox|customEditbox
+	---@param textbox singleLineEditbox|customSingleLineEditbox
 	---@param t editboxCreationData
 	local function SetUpSingleLineEditbox(textbox, t)
 
@@ -6672,11 +6687,11 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	---@param t? editboxCreationData Parameters are to be provided in this table
 	---@param widget? selector Reference to an already existing selector to set up as a radio selector instead of creating a new base widget
 	---***
-	---@return editbox|textbox textbox Reference to the new [EditBox](hhttps://warcraft.wiki.gg/wiki/UIOBJECT_EditBox), its holder [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame), utility functions and more wrapped in a table
+	---@return singleLineEditbox|textbox textbox Reference to the new [EditBox](hhttps://warcraft.wiki.gg/wiki/UIOBJECT_EditBox), its holder [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame), utility functions and more wrapped in a table
 	function wt.CreateEditbox(t, widget)
 		t = t or {}
 
-		---@class editbox : textbox
+		---@class singleLineEditbox : textbox
 		local textbox = widget and widget.isType and widget.isType("Textbox") and widget or wt.CreateTextbox(t)
 
 		if WidgetToolsDB.lite and t.lite ~= false then return textbox end
@@ -6710,11 +6725,11 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	---@param t? customEditboxCreationData Parameters are to be provided in this table
 	---@param widget? selector Reference to an already existing selector to set up as a radio selector instead of creating a new base widget
 	---***
-	---@return customEditbox|textbox textbox Reference to the new [EditBox](hhttps://warcraft.wiki.gg/wiki/UIOBJECT_EditBox), its holder [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame), utility functions and more wrapped in a table
+	---@return customSingleLineEditbox|textbox textbox Reference to the new [EditBox](hhttps://warcraft.wiki.gg/wiki/UIOBJECT_EditBox), its holder [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame), utility functions and more wrapped in a table
 	function wt.CreateCustomEditbox(t, widget)
 		t = t or {}
 
-		---@class customEditbox : textbox
+		---@class customSingleLineEditbox : textbox
 		local textbox = widget and widget.isType and widget.isType("Textbox") and widget or wt.CreateTextbox(t)
 
 		if WidgetToolsDB.lite and t.lite ~= false then return textbox end
@@ -6821,7 +6836,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		--| Character counter
 
 		textbox.scrollFrame.CharCount:SetFontObject("GameFontDisableTiny2")
-		if t.charCount == false or (t.maxLetters or 0) == 0 then textbox.scrollFrame.CharCount:Hide() end
+		if t.charCount == false or (t.charLimit or 0) == 0 then textbox.scrollFrame.CharCount:Hide() end
 
 		textbox.editbox.cursorOffset = 0 --WATCH: Remove when the character counter gets fixed..
 
@@ -6835,21 +6850,21 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		---@param scrolling boolean
 		local function resizeEditbox(scrolling)
 			local scrollBarOffset = scrolling and (wt.classic and 32 or 16) or 0
-			local charCountWidth = t.charCount ~= false and (t.maxLetters or 0) > 0 and tostring(t.maxLetters - textbox.getText():len()):len() * 6 + 3 or 0
+			local charCountWidth = t.charCount ~= false and (t.charLimit or 0) > 0 and tostring(t.charLimit - textbox.getText():len()):len() * 6 + 3 or 0
 
 			textbox.editbox:SetWidth(textbox.scrollFrame:GetWidth() - scrollBarOffset - charCountWidth)
 
 			--Update the character counter
-			if textbox.scrollFrame.CharCount:IsVisible() and t.maxLetters then --WATCH: Remove when the character counter gets fixed..
+			if textbox.scrollFrame.CharCount:IsVisible() and t.charLimit then --WATCH: Remove when the character counter gets fixed..
 				textbox.scrollFrame.CharCount:SetWidth(charCountWidth)
-				textbox.scrollFrame.CharCount:SetText(t.maxLetters - textbox.getText():len())
+				textbox.scrollFrame.CharCount:SetText(t.charLimit - textbox.getText():len())
 				textbox.scrollFrame.CharCount:SetPoint("BOTTOMRIGHT", textbox.scrollFrame, "BOTTOMRIGHT", -scrollBarOffset + 1, 0)
 			end
 		end
 
 		--| UX
 
-		textbox.editbox:HookScript("OnTextChanged", function(_, user) if not user and t.scrollToTop then textbox.scrollFrame:SetVerticalScroll(0) end end)
+		textbox.editbox:HookScript("OnTextChanged", function(_, _, user) if not user and t.scrollToTop then textbox.scrollFrame:SetVerticalScroll(0) end end)
 		textbox.editbox:HookScript("OnEditFocusGained", function(self) self:HighlightText() end)
 		textbox.editbox:HookScript("OnEditFocusLost", function(self) self:ClearHighlightText() end)
 
@@ -6976,7 +6991,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				color = t.colorOnMouse or t.color,
 				justify = { h = t.justify, },
 				events = {
-					OnTextChanged = function(self, user)
+					OnTextChanged = function(self, _, user)
 						if not user then return end
 
 						self:SetText((t.colorOnMouse or t.color) and wt.Color(t.text, t.colorOnMouse or t.color) or t.text)
@@ -7160,9 +7175,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		---@param silent? boolean If false, invoke a "saved" event and call registered listeners | ***Default:*** false
 		function numeric.saveData(number, silent)
 			if t.saveData then
-				number = type(number) == "number" and min(max(limitMin, number), limitMax) or value
-
-				t.saveData(number)
+				t.saveData(type(number) == "number" and min(max(limitMin, number), limitMax) or value)
 
 				if not silent then numeric.invoke.saved(true) end
 			elseif not silent then numeric.invoke.saved(false) end
@@ -7217,13 +7230,13 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		---@param alt? boolean If true, use **t.altStep** instead of **t.step** to decrease the value by | ***Default:*** false
 		---@param user? boolean If true, mark the change as being initiated via a user interaction and call change handlers | ***Default:*** false
 		---@param silent? boolean If false, invoke a "changed" event and call registered listeners | ***Default:*** false
-		function numeric.decrease(alt, user, silent) numeric.setValue(value - (alt and t.altStep or t.step), user, silent) end
+		function numeric.decrease(alt, user, silent) numeric.setNumber(value - (alt and t.altStep or t.step), user, silent) end
 
 		---Increase the value of the widget by the specified **t.step** or **t.altStep** amount
 		---@param alt? boolean If true, use **t.altStep** instead of **t.step** to increase the value by | ***Default:*** false
 		---@param user? boolean If true, mark the change as being initiated via a user interaction and call change handlers | ***Default:*** false
 		---@param silent? boolean If false, invoke a "changed" event and call registered listeners | ***Default:*** false
-		function numeric.increase(alt, user, silent) numeric.setValue(value + (alt and t.altStep or t.step), user, silent) end
+		function numeric.increase(alt, user, silent) numeric.setNumber(value + (alt and t.altStep or t.step), user, silent) end
 
 		--| State
 
@@ -7344,18 +7357,27 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			numeric.label:SetText(title)
 		else _G[name .. "FrameText"]:Hide() end
 
+		--| Value step
+
+		if t.increment then
+			numeric.slider:SetValueStep(t.increment)
+			numeric.slider:SetObeyStepOnDrag(true)
+		end
+
 		--| Value box
+
+		local _min, _max = numeric.getMin(), numeric.getMax()
 
 		if t.valueBox ~= false then
 			--Calculate the required number of fractal digits, assemble string patterns for value validation
 			local decimals = t.fractional or max(
-				tostring(numeric.getMin()):gsub("-?[%d]+[%.]?([%d]*).*", "%1"):len(),
-				tostring(numeric.getMax()):gsub("-?[%d]+[%.]?([%d]*).*", "%1"):len(),
+				tostring(_min):gsub("-?[%d]+[%.]?([%d]*).*", "%1"):len(),
+				tostring(_max):gsub("-?[%d]+[%.]?([%d]*).*", "%1"):len(),
 				tostring(t.step or 0):gsub("-?[%d]+[%.]?([%d]*).*", "%1"):len()
 			)
 			local decimalPattern = ""
 			for _ = 1, decimals do decimalPattern = decimalPattern .. "[%d]?" end
-			local matchPattern = "(" .. (numeric.getMin() < 0 and "-?" or "") .. "[%d]*)" .. (decimals > 0 and "([%.]?" .. decimalPattern .. ")" or "") .. ".*"
+			local matchPattern = "(" .. (_min < 0 and "-?" or "") .. "[%d]*)" .. (decimals > 0 and "([%.]?" .. decimalPattern .. ")" or "") .. ".*"
 			local replacePattern = "%1" .. (decimals > 0 and "%2" or "")
 
 			numeric.valueBox = wt.CreateCustomEditbox({
@@ -7372,13 +7394,13 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					relativePoint = "BOTTOM",
 				},
 				size = { w = 64, },
-				text = tostring(wt.Round(numeric.slider:GetValue(), decimals)):gsub(matchPattern, replacePattern),
+				text = tostring(numeric.getNumber()):gsub(matchPattern, replacePattern),
 				font = {
 					normal = "GameFontHighlightSmall",
 					disabled = "GameFontDisableSmall",
 				},
 				justify = { h = "CENTER", },
-				maxLetters = tostring(math.floor(t.step)):len() + (decimals + (decimals > 0 and 1 or 0)) + (t.step < 0 and 1 or 0),
+				charLimit = max(tostring(math.floor(t.step)):len(), tostring(math.floor(_min)):len(), tostring(math.floor(_max)):len()) + (decimals > 0 and decimals + 1 or 0),
 				backdrop = {
 					background = {
 						texture = {
@@ -7402,13 +7424,13 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 						local v = self:GetNumber()
 						if t.increment then v = max(numeric.getMin(), min(floor(v * (1 / t.increment) + 0.5) / (1 / t.increment)), numeric.getMax()) end
 
-						numeric.setValue(v, true)
+						numeric.setNumber(v, true)
 					end,
 					OnEscapePressed = function(self) self.setText(tostring(wt.Round(numeric.slider:GetValue(), decimals)):gsub(matchPattern, replacePattern)) end,
 				},
 			})
 
-			--Handle updates
+			--Handle widget updates
 			numeric.setListener.changed(function(_, number) numeric.valueBox.setText(tostring(wt.Round(number, decimals)):gsub(matchPattern, replacePattern)) end)
 		end
 
@@ -7549,17 +7571,6 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			})
 		end
 
-		--[ Value ]
-
-		--Increment
-		if t.increment then
-			numeric.slider:SetValueStep(t.increment)
-			numeric.slider:SetObeyStepOnDrag(true)
-		end
-
-		--Handle updates
-		numeric.setListener.changed(function(_, number, user) numeric.slider:SetValue(number, user) end)
-
 		--[ Events ]
 
 		--Register script event handlers
@@ -7570,11 +7581,13 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| UX
 
+		local silent = false
+
 		---Update the widget UI based on the number value
 		---@param _ numeric
 		---@param number number
 		---@param user? boolean ***Default:*** false
-		local function updateNumber(_, number, user) numeric.slider:SetValue(number, user) end
+		local function updateNumber(_, number, user) if not silent then numeric.slider:SetValue(number, user) else silent = false end end
 
 		---Update the min/max limits of the slider
 		---@param limitMin? number
@@ -7586,12 +7599,19 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			numeric.slider:SetMinMaxValues(limitMin, limitMax)
 		end
 
-		--Handle updates
+		--Handle widget updates
 		numeric.setListener.changed(updateNumber, 1)
 		numeric.setListener.min(function(_, limitMin) updateLimits(limitMin) end, 1)
 		numeric.setListener.max(function(_, limitMax) updateLimits(nil, limitMax) end, 1)
 
-		numeric.slider:HookScript("OnMouseUp", function() PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON) end)
+		--Link value changes
+		numeric.slider:HookScript("OnValueChanged", function(_, number, user)
+			silent = true
+
+			numeric.setNumber(number, user)
+
+			PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+		end)
 
 		--| Tooltip
 
@@ -7627,7 +7647,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		updateState(nil, numeric.isEnabled())
 
 		--Set up the limits
-		updateLimits(numeric.getMin(), numeric.getMax())
+		updateLimits(_min, _max)
 
 		--Set up slider value
 		updateNumber(nil, numeric.getNumber(), false)
@@ -7757,9 +7777,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		---@param silent? boolean If false, invoke a "saved" event and call registered listeners | ***Default:*** false
 		function colorPicker.saveData(color, silent)
 			if t.saveData then
-				color = color and wt.PackColor(wt.UnpackColor(color)) or value
-
-				t.saveData(color)
+				t.saveData(color and wt.PackColor(wt.UnpackColor(color)) or value)
 
 				if not silent then colorPicker.invoke.saved(true) end
 			elseif not silent then colorPicker.invoke.saved(false) end
@@ -8060,7 +8078,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				normal = "GameFontWhiteSmall",
 				disabled = "GameFontDisableSmall",
 			},
-			maxLetters = 7 + (t.color.a and 2 or 0),
+			charLimit = 7 + (t.color.a and 2 or 0),
 			backdrop = {
 				background = {
 					texture = {
@@ -8112,7 +8130,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			colorPicker.hexBox.setText(wt.ColorToHex(r, g, b, a))
 		end
 
-		--Handle updates
+		--Handle widget updates
 		colorPicker.setListener.colored(function(_, color) updateColor(wt.UnpackColor(color)) end)
 
 		--Color wheel toggle updates
@@ -9143,7 +9161,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 								action = function()
 									allProfilesBackupFrame:Show()
 
-									dataManagement.backupAllProfiles.compact.setState(t.settingsData.compactBackup)
+									dataManagement.backupAllProfiles.compact.setState(t.settingsData.compactBackup, nil, true)
 
 									dataManagement.refreshAllProfilesBackupBox()
 								end,
@@ -9158,11 +9176,11 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 									anchor = "BOTTOMLEFT",
 									offset = { x = 12, y = 12 }
 								},
-								events = { OnClick = function()
-									dataManagement.backup.compact.setData(not t.settingsData.compactBackup)
+								listeners = { toggled = { { handler = function()
+									dataManagement.backup.compact.toggleState(true)
 
 									dataManagement.refreshAllProfilesBackupBox()
-								end},
+								end, }, }, },
 							})
 
 							local allProfilesImportPopup = wt.CreatePopupDialogueData(addon, "IMPORT_AllProfiles", {
@@ -9656,7 +9674,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					title = ns.toolboxStrings.position.offsetX.label,
 					tooltip = { lines = { { text = ns.toolboxStrings.position.offsetX.tooltip:gsub("#FRAME", t.frameName), }, } },
 					arrange = {},
-					value = { min = -500, max = 500, fractional = 2 },
+					min = -500,
+					max = 500,
+					fractional = 2,
 					step = 1,
 					altStep = 25,
 					events = t.presets and {
@@ -9679,7 +9699,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					title = ns.toolboxStrings.position.offsetY.label,
 					tooltip = { lines = { { text = ns.toolboxStrings.position.offsetY.tooltip:gsub("#FRAME", t.frameName), }, } },
 					arrange = { newRow = false, },
-					value = { min = -500, max = 500, fractional = 2 },
+					min = -500,
+					max = 500,
+					fractional = 2,
 					step = 1,
 					altStep = 25,
 					events = t.presets and {
@@ -9721,7 +9743,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				-- 	arrange = { newRow = false, },
 				-- 	width = 170,
 				-- 	events = {
-				-- 		OnTextChanged = function(self, _, text)
+				-- 		OnTextChanged = function(self, text)
 				-- 			print("SET TEXT CHANGED", t.frameName, text) --REMOVE
 				-- 			if text then
 				-- 				text = wt.Clear(text)
@@ -9818,7 +9840,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 						title = ns.toolboxStrings.layer.level.label,
 						tooltip = { lines = { { text = ns.toolboxStrings.layer.level.tooltip:gsub("#FRAME", t.frameName), }, } },
 						arrange = { newRow = false, },
-						value = { min = 0, max = 10000, },
+						min = 0,
+						max = 10000,
 						step = 1,
 						altStep = 100,
 						events = t.presets and {

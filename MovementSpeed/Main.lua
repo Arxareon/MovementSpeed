@@ -569,7 +569,9 @@ local function CreateUpdateOptions(panel, display, optionsKey)
 		title = ns.strings.options.speedDisplay.update.frequency.label,
 		tooltip = { lines = { { text = ns.strings.options.speedDisplay.update.frequency.tooltip, }, } },
 		arrange = { newRow = false, },
-		value = { min = 0.05, max = 1, increment = 0.05 },
+		min = 0.05,
+		max = 1,
+		increment = 0.05,
 		altStep = 0.2,
 		events = { OnValueChanged = function(_, value)  end, },
 		dependencies = {
@@ -627,7 +629,9 @@ local function CreateSpeedValueOptions(panel, display, optionsKey, type)
 		title = ns.strings.options.speedValue.fractionals.label,
 		tooltip = { lines = { { text = ns.strings.options.speedValue.fractionals.tooltip, }, } },
 		arrange = { newRow = false, },
-		value = { min = 0, max = 4, increment = 1 },
+		min = 0,
+		max = 4,
+		increment = 1,
 		dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
 		optionsKey = optionsKey,
 		getData = function() return MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].value.fractionals end,
@@ -712,9 +716,11 @@ local function CreateFontOptions(panel, display, optionsKey, type)
 		parent = panel,
 		name = "Size",
 		title = ns.strings.options.speedDisplay.font.size.label,
-		tooltip = { lines = { { text = ns.strings.options.speedDisplay.font.size.tooltip .. "\n\n" .. ns.strings.misc.default .. ": " .. ns.profileDefault[display].font.size, }, } },
+		tooltip = { lines = { { text = ns.strings.options.speedDisplay.font.size.tooltip, }, } },
 		arrange = { newRow = false, },
-		value = { min = 8, max = 64, increment = 1 },
+		min = 8,
+		max = 64,
+		increment = 1,
 		altStep = 3,
 		dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
 		optionsKey = optionsKey,
@@ -1000,17 +1006,17 @@ local function CreateSpeedDisplayOptionsPage(display)
 
 						--Notification
 						print(addonChat .. wt.Color(ns.strings.chat.preset.response:gsub(
-							"#PRESET", wt.Color(options[display].position.presetList[i].title, ns.colors.green[2])
+							"#PRESET", wt.Color(ns.strings.presets[1], ns.colors.green[2])
 						), ns.colors.yellow[2]))
 					end,
 					custom = {
 						getData = function() return MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.customPreset end,
 						defaultsTable = ns.profileDefault.customPreset,
 						onSave = function() print(addonChat .. wt.Color(ns.strings.chat.save.response:gsub(
-							"#CUSTOM", wt.Color(options[display].position.presetList[1].title, ns.colors.green[2])
+							"#CUSTOM", wt.Color(ns.strings.presets[1], ns.colors.green[2])
 						), ns.colors.yellow[2])) end,
 						onReset = function() print(addonChat .. wt.Color(ns.strings.chat.reset.response:gsub(
-							"#CUSTOM", wt.Color(options[display].position.presetList[1].title, ns.colors.green[2])
+							"#CUSTOM", wt.Color(ns.strings.presets[1], ns.colors.green[2])
 						), ns.colors.yellow[2])) end
 					}
 				},
@@ -1251,7 +1257,9 @@ local function CreateTargetSpeedValueOptions(panel)
 		title = ns.strings.options.speedValue.fractionals.label,
 		tooltip = { lines = { { text = ns.strings.options.speedValue.fractionals.tooltip, }, } },
 		arrange = { newRow = false, },
-		value = { min = 0, max = 4, increment = 1 },
+		min = 0,
+		max = 4,
+		increment = 1,
 		dependencies = { { frame = options.targetSpeed.enabled, }, },
 		optionsKey = ns.name .. "TargetSpeed",
 		getData = function() return MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.targetSpeed.value.fractionals end,
