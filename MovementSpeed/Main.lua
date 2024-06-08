@@ -273,6 +273,9 @@ end
 
 local function UpdateMapInfo()
 	map.id = C_Map.GetBestMapForUnit("player")
+
+	if not map.id then return end
+
 	map.name = C_Map.GetMapInfo(map.id).name
 	map.size.w, map.size.h = C_Map.GetMapWorldSize(map.id)
 end
@@ -768,7 +771,7 @@ local function CreateFontOptions(panel, display, optionsKey, type)
 		default = ns.profileDefault[display].font.valueColoring
 	})
 
-	options[display].font.color = wt.CreateColorPicker({
+	options[display].font.color = wt.CreateColorPickerFrame({
 		parent = panel,
 		name = "Color",
 		title = ns.strings.options.speedDisplay.font.color.label,
@@ -800,10 +803,11 @@ local function CreateBackgroundOptions(panel, display, optionsKey)
 		default = ns.profileDefault[display].background.visible
 	})
 
-	options[display].background.colors.bg = wt.CreateColorPicker({
+	options[display].background.colors.bg = wt.CreateColorPickerFrame({
 		parent = panel,
 		name = "Color",
 		title = ns.strings.options.speedDisplay.background.colors.bg.label,
+		tooltip = { lines = { { text = ns.strings.options.speedDisplay.background.colors.bg.tooltip, }, } },
 		arrange = { newRow = false, },
 		dependencies = {
 			{ frame = options[display].visibility.hidden, evaluate = function(state) return not state end },
@@ -816,10 +820,11 @@ local function CreateBackgroundOptions(panel, display, optionsKey)
 		default = ns.profileDefault[display].background.colors.bg
 	})
 
-	options[display].background.colors.border = wt.CreateColorPicker({
+	options[display].background.colors.border = wt.CreateColorPickerFrame({
 		parent = panel,
 		name = "BorderColor",
 		title = ns.strings.options.speedDisplay.background.colors.border.label,
+		tooltip = { lines = { { text = ns.strings.options.speedDisplay.background.colors.border.tooltip, }, } },
 		arrange = { newRow = false, },
 		dependencies = {
 			{ frame = options[display].visibility.hidden, evaluate = function(state) return not state end },
@@ -1567,6 +1572,7 @@ frames.main = wt.CreateBaseFrame({
 	onEvent = {
 		ADDON_LOADED = function(self, addon)
 			if addon ~= ns.name then return end
+
 			self:UnregisterEvent("ADDON_LOADED")
 
 			--[ Data ]

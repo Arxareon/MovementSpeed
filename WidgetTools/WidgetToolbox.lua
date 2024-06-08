@@ -26,7 +26,6 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 	--[ Wrapper Table ]
 
-	---WidgetTools toolbox
 	---@class wt
 	local wt = ns.WidgetToolbox
 
@@ -61,7 +60,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		dropdown = {
 			selected = "This is the currently selected option.",
 			none = "No option has been selected.",
-			open = "\nClick to view the list of options.",
+			open = "Click to view the list of options.",
 			previous = {
 				label = "Previous option",
 				tooltip = "Select the previous option.",
@@ -71,16 +70,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				tooltip = "Select the next option.",
 			},
 		},
-		copy = {
-			textline = {
-				label = "Click to copy",
-				tooltip = "Click to reveal the text field you will be able to copy the text from."
-			},
-			editbox = {
-				label = "Copy the text",
-				tooltip = "You may copy the contents of the text field by pressing " .. CTRL_KEY_TEXT .." + C (on Windows) or " .. COMMAND .. " + C (on Mac).",
-			},
-		},
+		copyBox = "Copy the text by pressing:\n" .. CTRL_KEY_TEXT .." + C (Windows)\n" .. COMMAND .. " + C (Mac)",
 		slider = {
 			value = {
 				label = "Specify the value",
@@ -322,7 +312,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	}
 
 	--Load the current localization
-	local function LoadLocale()
+	local function loadLocale()
 
 		--| Load localized strings
 
@@ -353,7 +343,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		ns.toolboxStrings.default = "\n" .. WrapTextInColorCode(DEFAULT, "FF66FF66") .. ": "
 	end
 
-	LoadLocale()
+	loadLocale()
 
 
 	--[[ UTILITIES ]]
@@ -402,7 +392,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	---@param depth? integer How many levels of subtables to print out (root level: 0) | ***Default:*** *full depth*
 	---@param currentKey? string
 	---@param currentLevel? integer
-	local function GetDumpOutput(object, outputTable, name, blockrule, depth, digTables, digFrames, currentKey, currentLevel)
+	local function getDumpOutput(object, outputTable, name, blockrule, depth, digTables, digFrames, currentKey, currentLevel)
 		--Check whether the current key is to be skipped
 		local skip = false
 		if currentKey and blockrule then skip = blockrule(currentKey) end
@@ -430,7 +420,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			table.insert(outputTable, s .. (digTables == false and " {…}" or ""))
 
 			--Convert & format the subtable
-			for k, v in wt.SortedPairs(object) do GetDumpOutput(v, outputTable, nil, blockrule, depth, digTables, digFrames, k, currentLevel + 1) end
+			for k, v in wt.SortedPairs(object) do getDumpOutput(v, outputTable, nil, blockrule, depth, digTables, digFrames, k, currentLevel + 1) end
 		elseif digTables == false then return else
 			local line = (currentKey and currentKey .. " = " or "Dump " .. name .. " value: ") .. (skip and "…" or wt.ToString(object))
 
@@ -483,7 +473,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		local output = {}
 
-		GetDumpOutput(object, output, name, blockrule, depth, digTables, digFrames)
+		getDumpOutput(object, output, name, blockrule, depth, digTables, digFrames)
 
 		--| Print the output
 
@@ -850,7 +840,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	---@param newLine string Character(s) to add for breaking lines (or not)
 	---@param indentation string Chain of characters to use as the indentation for subtables
 	---@return string
-	local function FormatTableString(table, compact, space, newLine, indentation)
+	local function formatTableString(table, compact, space, newLine, indentation)
 		if wt.IsFrame(table) then return (wt.ToString(table)) end
 
 		local tableString = "{"
@@ -865,7 +855,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 			--Value
 			local valueString, valueType = wt.ToString(value)
-			if valueType == "table" then valueString = FormatTableString(value, compact, space, newLine, indentation .. (compact and "" or "    ")) end
+			if valueType == "table" then valueString = formatTableString(value, compact, space, newLine, indentation .. (compact and "" or "    ")) end
 
 			tableString = tableString .. space .. valueString
 
@@ -888,7 +878,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	function wt.TableToString(table, compact)
 		if type(table) ~= "table" then return (wt.ToString(table)) end
 
-		return FormatTableString(table, compact, compact and "" or " ", compact and "" or "\n", "    ")
+		return formatTableString(table, compact, compact and "" or " ", compact and "" or "\n", "    ")
 	end
 
 	--[ Table Management ]
@@ -1041,18 +1031,18 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	---@param recoveredKey? string
 	---***
 	---@return table recoveredData Table containing the removed key, value pairs (nested keys chained together with period characters in-between)
-	local function CleanTable(tableToCheck, tableToSample, recoveredData, recoveredKey)
+	local function cleanTable(tableToCheck, tableToSample, recoveredData, recoveredKey)
 		recoveredData = recoveredData or {}
 		local tc, ts = type(tableToCheck), type(tableToSample)
 
 		--| Utilities
 
 		--Go deeper to fully map out recoverable keys
-		local function GoDeeper(ttc, rck)
+		local function goDeeper(ttc, rck)
 			if type(ttc) ~= "table" then return end
 
 			for k, v in pairs(ttc) do
-				if type(v) == "table" then GoDeeper(v, rck .. (type(k) == "number" and ("[" .. k .. "]") or ("." .. k)))
+				if type(v) == "table" then goDeeper(v, rck .. (type(k) == "number" and ("[" .. k .. "]") or ("." .. k)))
 				else recoveredData[(rck .. (type(k) == "number" and ("[" .. k .. "]") or ("." .. k))):sub(2)] = v end
 			end
 		end
@@ -1063,7 +1053,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			local rk = (recoveredKey or "") .. (type(recoveredKey) == "number" and ("[" .. recoveredKey .. "]") or ("." .. recoveredKey))
 
 			--Save the old item to the recovered data container
-			if tc ~= "table" then recoveredData[rk:sub(2)] = tableToCheck else GoDeeper(tableToCheck, rk) end
+			if tc ~= "table" then recoveredData[rk:sub(2)] = tableToCheck else goDeeper(tableToCheck, rk) end
 
 			--Remove the unneeded item
 			tableToCheck = nil
@@ -1081,11 +1071,11 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 			if tableToSample[key] == nil then
 				--Save the old item to the recovered data container
-				if type(value) ~= "table" then recoveredData[rk:sub(2)] = value else GoDeeper(value, rk) end
+				if type(value) ~= "table" then recoveredData[rk:sub(2)] = value else goDeeper(value, rk) end
 
 				--Remove the unneeded item
 				tableToCheck[key] = nil
-			else recoveredData = CleanTable(tableToCheck[key], tableToSample[key], recoveredData, rk) end
+			else recoveredData = cleanTable(tableToCheck[key], tableToSample[key], recoveredData, rk) end
 		end
 
 		return recoveredData
@@ -1101,7 +1091,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	---***
 	---@return table tableToCheck Reference to **tableToCheck** (it was already overwritten during the operation, no need for setting it again)
 	function wt.RemoveMismatch(tableToCheck, tableToSample, recoveryMap, onRecovery)
-		local recoveredData = CleanTable(tableToCheck, tableToSample)
+		local recoveredData = cleanTable(tableToCheck, tableToSample)
 
 		if next(recoveredData) then
 			if onRecovery then recoveryMap = onRecovery(tableToCheck, recoveredData) end
@@ -1766,7 +1756,6 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	---@param content? string A colon-separated chain of data strings carried by the hyperlink to be provided to the handler function (Example: "content1:content2:content3") | ***Default:*** ""
 	---@param text string Clickable text to be displayed as the hyperlink
 	function wt.CustomHyperlink(addon, type, content, text)
-		-- return wt.Hyperlink(wt.classic and "item" or "addon", addon .. ":" .. (type or "-") .. ":" .. (content or ""), text) --REMOVE
 		return wt.Hyperlink("addon", addon .. ":" .. (type or "-") .. ":" .. (content or ""), text)
 	end
 
@@ -2628,6 +2617,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		return line
 	end
+
 
 	--[[ CONTAINERS ]]
 
@@ -3705,7 +3695,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	---@param name string
 	---@param title string
 	---@param useHighlight boolean
-	local function SetUpButtonFrame(button, t, name, title, useHighlight)
+	local function setUpButtonFrame(button, t, name, title, useHighlight)
 
 		--[ Frame Setup ]
 
@@ -3856,7 +3846,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| Shared setup
 
-		SetUpButtonFrame(button, t, name, title, useHighlight)
+		setUpButtonFrame(button, t, name, title, useHighlight)
 
 		return button
 	end
@@ -3908,7 +3898,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| Shared setup
 
-		SetUpButtonFrame(button, t, name, title, true)
+		setUpButtonFrame(button, t, name, title, true)
 
 		return button
 	end
@@ -4222,7 +4212,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 			if not silent then toggle.invoke.toggled(user == true) end
 
-			if t.instantSave ~= false then toggle.saveData(nil, silent) end
+			if user and t.instantSave ~= false then toggle.saveData(nil, silent) end
 
 			--Handle changes
 			if user and t.optionsKey and type(t.onChange) == "table" then for i = 1, #t.onChange do optionsTable.changeHandlers[t.optionsKey][t.onChange[i]]() end end
@@ -4274,7 +4264,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	---Set the parameters of a GUI toggle widget frame
 	---@param toggle checkbox|radioButton
 	---@param t checkboxCreationData
-	local function SetUpToggleFrame(toggle, t)
+	local function setUpToggleFrame(toggle, t)
 
 		--[ Frame Setup ]
 
@@ -4321,7 +4311,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		if t.tooltip then wt.AddTooltip(toggle.frame, {
 			title = t.tooltip.title or t.title or t.name or "Toggle",
-			lines = t.default ~= nil and table.insert(t.tooltip.lines, { text = ns.toolboxStrings.default .. tostring(t.default) }) or t.tooltip.lines,
+			lines = t.default ~= nil and table.insert(t.tooltip.lines, {
+				text = ns.toolboxStrings.default .. (t.default and VIDEO_OPTIONS_ENABLED or VIDEO_OPTIONS_DISABLED)
+			}) or t.tooltip.lines,
 			anchor = "ANCHOR_NONE",
 			position = {
 				anchor = "BOTTOMLEFT",
@@ -4380,7 +4372,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		t.size.h = t.size.h or 26
 		t.size.w = t.label == false and t.size.h or t.size.w or 180
 
-		SetUpToggleFrame(toggle, t)
+		setUpToggleFrame(toggle, t)
 
 		--[ Events ]
 
@@ -4478,7 +4470,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		t.size.h = t.size.h or 16
 		t.size.w = t.label == false and t.size.h or t.size.w or 160
 
-		SetUpToggleFrame(toggle, t)
+		setUpToggleFrame(toggle, t)
 
 		--[ Events ]
 
@@ -4537,6 +4529,40 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	end
 
 	--[ Selector ]
+
+	local itemsets = {
+		anchor = {
+			{ name = ns.toolboxStrings.points.top.left, value = "TOPLEFT" },
+			{ name = ns.toolboxStrings.points.top.center, value = "TOP" },
+			{ name = ns.toolboxStrings.points.top.right, value = "TOPRIGHT" },
+			{ name = ns.toolboxStrings.points.left, value = "LEFT" },
+			{ name = ns.toolboxStrings.points.center, value = "CENTER" },
+			{ name = ns.toolboxStrings.points.right, value = "RIGHT" },
+			{ name = ns.toolboxStrings.points.bottom.left, value = "BOTTOMLEFT" },
+			{ name = ns.toolboxStrings.points.bottom.center, value = "BOTTOM" },
+			{ name = ns.toolboxStrings.points.bottom.right, value = "BOTTOMRIGHT" },
+		},
+		justifyH = {
+			{ name = ns.toolboxStrings.points.left, value = "LEFT" },
+			{ name = ns.toolboxStrings.points.center, value = "CENTER" },
+			{ name = ns.toolboxStrings.points.right, value = "RIGHT" },
+		},
+		justifyV = {
+			{ name = ns.toolboxStrings.points.top.center, value = "TOP" },
+			{ name = ns.toolboxStrings.points.center, value = "MIDDLE" },
+			{ name = ns.toolboxStrings.points.bottom.center, value = "BOTTOM" },
+		},
+		frameStrata = {
+			{ name = ns.toolboxStrings.strata.lowest, value = "BACKGROUND" },
+			{ name = ns.toolboxStrings.strata.lower, value = "LOW" },
+			{ name = ns.toolboxStrings.strata.low, value = "MEDIUM" },
+			{ name = ns.toolboxStrings.strata.lowMid, value = "HIGH" },
+			{ name = ns.toolboxStrings.strata.highMid, value = "DIALOG" },
+			{ name = ns.toolboxStrings.strata.high, value = "FULLSCREEN" },
+			{ name = ns.toolboxStrings.strata.higher, value = "FULLSCREEN_DIALOG" },
+			{ name = ns.toolboxStrings.strata.highest, value = "TOOLTIP" },
+		}
+	}
 
 	---@class selectorToggle : toggle
 	---@field index integer The index of this toggle item inside a selector widget
@@ -4789,7 +4815,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			--Update toggle states
 			for i = 1, #selector.toggles do selector.toggles[i].setState(i == value, user, silent) end
 
-			if t.instantSave ~= false then selector.saveData(nil, silent) end
+			if user and t.instantSave ~= false then selector.saveData(nil, silent) end
 
 			if not silent then selector.invoke.selected(user == true) end
 
@@ -4825,6 +4851,282 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--Register starting items
 		for i = 1, #t.items do setToggle(t.items[i], i) end
+
+		--Register to options data management
+		if t.optionsKey then wt.AddToOptionsTable(selector, t.optionsKey, t.onChange) end
+
+		--Assign dependencies
+		if t.dependencies then wt.AddDependencies(t.dependencies, selector.setEnabled) end
+
+		--Set starting value
+		selector.setSelected(value, false, true)
+
+		return selector
+	end
+
+	---Create a non-GUI special selector widget (with a collection of toggle widgets) with data management logic specific to the specified **itemset**
+	---***
+	---@param itemset string Specify what type of selector should be created | ***Value:*** "anchor"|"justifyH"|"justifyV"|"frameStrata"
+	--- - ***Note:*** Setting this to "anchor" will use the set of [AnchorPoint](https://warcraft.wiki.gg/wiki/Anchors) items.
+	--- - ***Note:*** Setting this to "justifyH" will use the set of horizontal text alignment items (JustifyH).
+	--- - ***Note:*** Setting this to "justifyV" will use the set of vertical text alignment items (JustifyV).
+	--- - ***Note:*** Setting this to "frameStrata" will use the set of [FrameStrata](https://warcraft.wiki.gg/wiki/Frame_Strata) items (excluding "WORLD").</li></ul>
+	---@param t? specialSelectorCreationData Parameters are to be provided in this table
+	---***
+	---@return selector selector Reference to the new selector widget, utility functions and more wrapped in a table
+	function wt.CreateSpecialSelector(itemset, t)
+		t = t or {}
+
+		--[ Wrapper table ]
+
+		---@class specialSelector
+		local selector = {}
+
+		--[ Properties ]
+
+		t.items = {}
+		for i = 1, #itemsets[itemset] do
+			t.items[i] = {}
+			t.items[i].title = itemsets[itemset][i].name
+			t.items[i].tooltip = { lines = { { text = "(" .. itemsets[itemset][i].value .. ")", }, } }
+		end
+
+		---@type selectorToggle[]
+		selector.toggles = {}
+
+		---@type selectorToggle[]
+		local inactive = {}
+
+		--| Data
+
+		local value = t.selected or t.default or type(t.getData) == "function" and t.getData() or nil
+		local snapshot
+
+		--| State
+
+		local enabled = t.disabled ~= false
+
+		--| Events
+
+		---@type table<string, function[]>
+		local listeners = {}
+
+		--[ Getters & Setters ]
+
+		---Returns the object type of this widget
+		---***
+		---@return WidgetTypeName type ***Value:*** "SpecialSelector"
+		---<hr><p></p>
+		function selector.getType() return "SpecialSelector" end
+
+		---Checks and returns if the type of this widget is equal to the string provided
+		---@param type string
+		---@return boolean
+		function selector.isType(type) return type == "SpecialSelector" end
+
+		---Return a value at the specified key from the table used for creating the widget
+		---@param key string
+		---@return any
+		function selector.getProperty(key) return wt.FindValueByKey(t, key) end
+
+		--| Event handling
+
+		--Get a trigger function to call all registered listeners for the specified custom widget event with
+		selector.invoke = {
+			enabled = function() callListeners(selector, listeners, "enabled", enabled) end,
+
+			---@param success boolean
+			loaded = function(success) callListeners(selector, listeners, "loaded", success) end,
+
+			---@param success boolean
+			saved = function(success) callListeners(selector, listeners, "saved", success) end,
+
+			---@param user boolean
+			selected = function(user) callListeners(selector, listeners, "selected", value, user) end,
+
+			---@param event string Custom event tag
+			---@param ... any
+			_ = function(event, ...) callListeners(selector, listeners, event, ...) end
+		}
+
+		--Hook a handler function as a listener for a custom widget event
+		selector.setListener = {
+			---@param listener SpecialSelectorEventHandler_enabled Handler function to set
+			---@param callIndex? integer Set when to call **listener** in the execution order | ***Default:*** *placed at the end of the current list*
+			enabled = function(listener, callIndex) addListener(listeners, "enabled", listener, callIndex) end,
+
+			---@param listener SpecialSelectorEventHandler_loaded Handler function to set
+			---@param callIndex? integer Set when to call **listener** in the execution order | ***Default:*** *placed at the end of the current list*
+			loaded = function(listener, callIndex) addListener(listeners, "loaded", listener, callIndex) end,
+
+			---@param listener SpecialSelectorEventHandler_saved Handler function to set
+			---@param callIndex? integer Set when to call **listener** in the execution order | ***Default:*** *placed at the end of the current list*
+			saved = function(listener, callIndex) addListener(listeners, "saved", listener, callIndex) end,
+
+			---@param listener SpecialSelectorEventHandler_selected Handler function to set
+			---@param callIndex? integer Set when to call **listener** in the execution order | ***Default:*** *placed at the end of the current list*
+			selected = function(listener, callIndex) addListener(listeners, "selected", listener, callIndex) end,
+
+			---@param event string Custom event tag
+			---@param listener SpecialSelectorEventHandler_any Handler function to set
+			---@param callIndex? integer Set when to call **listener** in the execution order | ***Default:*** *placed at the end of the current list*
+			_ = function(event, listener, callIndex) addListener(listeners, event, listener, callIndex) end
+		}
+
+		--| Value
+
+		---Convert an index to a corresponding value (based on the specified **itemset**)
+		---@param index integer
+		---@return AnchorPoint|JustifyH|JustifyV|FrameStrata|nil value
+		---<hr><p></p>
+		function selector.toValue(index) return itemsets[itemset][index] and itemsets[itemset][index].value or nil end
+
+		---Convert an specific value to a corresponding index (based on the specified **itemset**)
+		---@param value AnchorPoint|JustifyH|JustifyV|FrameStrata
+		---***
+		---@return integer|nil index
+		---<hr><p></p>
+		function selector.toIndex(value)
+			for i = 1, #itemsets[itemset] do if itemsets[itemset][i].value == value then return i end end
+
+			return nil
+		end
+
+		--| Options data management
+
+		---Load the data from storage to the widget via **t.getData()**
+		---***
+		---@param handleChanges? boolean If true, call the specified onChange handlers | ***Default:*** true
+		---@param silent? boolean If false, invoke a "loaded" event and call registered listeners | ***Default:*** false
+		function selector.loadData(handleChanges, silent)
+			handleChanges = handleChanges ~= false
+
+			if type(t.getData) == "function" then
+				selector.setSelected(t.getData(), handleChanges)
+
+				if not silent then selector.invoke.loaded(true) end
+			else
+				if handleChanges and t.optionsKey and type(t.onChange) == "table" then for i = 1, #t.onChange do optionsTable.changeHandlers[t.optionsKey][t.onChange[i]]() end end
+
+				if not silent then selector.invoke.loaded(false) end
+			end
+		end
+
+		---Save the provided data or the current value of the widget to storage via **t.saveData(...)**
+		---***
+		---@param data? wrappedSpecialData If set, save the value wrapped in this table | ***Default:*** *the currently set value of the widget*
+		---@param silent? boolean If false, invoke a "loaded" event and call registered listeners | ***Default:*** false
+		function selector.saveData(data, silent)
+			if t.saveData then
+				t.saveData(type(data) == "table" and wt.FindKeyByValue(itemsets[itemset], data.value) and data.value or value)
+
+				if not silent then selector.invoke.saved(true) end
+			elseif not silent then selector.invoke.saved(false) end
+		end
+
+		---Get the currently stored data via **t.getData()**
+		---@return AnchorPoint|JustifyH|JustifyV|FrameStrata|nil
+		function selector.getData() return t.getData and t.getData() end
+
+		---Save the provided data to storage via **t.saveData(...)** then load it to the widget via **t.loadData()**
+		---***
+		---@param data? wrappedSpecialData If set, save the value wrapped in this table | ***Default:*** *the currently set value of the widget*
+		---@param handleChanges? boolean If true, call the specified onChange handlers | ***Default:*** true
+		---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** false
+		function selector.setData(data, handleChanges, silent)
+			selector.saveData(data, silent)
+			selector.loadData(handleChanges, silent)
+		end
+
+		--Set a data snapshot so any changes made to the widget and/or the stored data can be reverted to this value via **selector.revertData()**
+		function selector.snapshotData() snapshot = { index = selector.getData() } end
+
+		---Set and load the stored data managed by the widget to the last saved data snapshot set via **selector.snapshotData()**
+		---@param handleChanges? boolean If true, call the specified onChange handlers | ***Default:*** true
+		---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** false
+		function selector.revertData(handleChanges, silent) if snapshot then selector.setData(snapshot, handleChanges, silent) end end
+
+		---Set and load the stored data managed by the widget to the specified default value of **t.default**
+		---@param handleChanges? boolean If true, call the specified onChange handlers | ***Default:*** true
+		---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** false
+		function selector.resetData(handleChanges, silent) if t.default then selector.setData({ index = t.default }, handleChanges, silent) end end
+
+		---Returns the value of the currently selected item or nil if there is no selection
+		---@return AnchorPoint|JustifyH|JustifyV|FrameStrata|nil
+		function selector.getSelected() return value end
+
+		---Set the specified item as selected
+		---***
+		---@param selected? integer|AnchorPoint|JustifyH|JustifyV|FrameStrata The index or the value of the item to be set as selected ***Default:*** nil *(no selection)*
+		---@param user? boolean If true, mark the change as being initiated via a user interaction and call change handlers | ***Default:*** false
+		---@param silent? boolean If false, invoke a "selected" event and call registered listeners | ***Default:*** false
+		function selector.setSelected(selected, user, silent)
+			if selected then
+				selected = min(type(selected) == "string" and selector.toIndex(selected:upper()) or type(selected) == "number" and math.floor(selected) or 0, #selector.toggles)
+			end
+			selected = selected or itemsets[itemset][1]
+			value = selector.toValue(selected)
+
+			--Update toggle states
+			for i = 1, #selector.toggles do selector.toggles[i].setState(i == selected, user, silent) end
+
+			if user and t.instantSave ~= false then selector.saveData(nil, silent) end
+
+			if not silent then selector.invoke.selected(user == true) end
+
+			--Handle changes
+			if user and t.optionsKey and type(t.onChange) == "table" then for i = 1, #t.onChange do optionsTable.changeHandlers[t.optionsKey][t.onChange[i]]() end end
+		end
+
+		--| State
+
+		---Return the current enabled state of the widget
+		---@return boolean enabled True, if the widget is enabled
+		function selector.isEnabled() return enabled end
+
+		---Enable or disable the widget based on the specified value
+		---***
+		---@param state? boolean Enable the input if true, disable if not | ***Default:*** true
+		---@param silent? boolean If false, invoke an "enabled" event and call registered listeners | ***Default:*** false
+		function selector.setEnabled(state, silent)
+			enabled = state ~= false
+
+			--Update toggle items
+			for i = 1, #selector.toggles do selector.toggles[i].setEnabled(state, silent) end
+
+			if not silent then selector.invoke.enabled() end
+		end
+
+		--[ Initialization ]
+
+		if t.default then t.default = type(t.default) == "string" and selector.toIndex(t.default) or t.default end
+
+		--Register event handlers
+		if type(t.listeners) == "table" then for k, v in pairs(t.listeners) do if type(v) == "table" then for i = 1, #v do
+			if k == "_" then selector.setListener._(v[i].event, v[i].handler, v[i].callIndex) else selector.setListener[k](v[i].handler, v[i].callIndex) end
+		end end end end
+
+		--Register starting items
+		for i = 1, #t.items do if type(t.items[i]) == "table" then
+			if t.items[i].isType and t.items[i].isType("Toggle") then
+				--| Register the already defined toggle widget
+
+				selector.toggles[i] = t.items[i]
+			elseif #inactive > 0 then
+				--| Reenable an inactive toggle widget
+
+				selector.toggles[i] = inactive[#inactive]
+				table.remove(inactive, #inactive)
+			else
+				--| Create a new toggle widget
+
+				selector.toggles[i] = wt.CreateToggle({ listeners = { toggled = { { handler = function (_, state, user)
+					if type(t.items[selector.toggles[i].index].onSelect) == "function" and user and state then t.items[selector.toggles[i].index].onSelect() end
+				end, }, }, }, })
+			end
+
+			selector.toggles[i].index = i
+		end end
 
 		--Register to options data management
 		if t.optionsKey then wt.AddToOptionsTable(selector, t.optionsKey, t.onChange) end
@@ -5111,7 +5413,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			--Update toggle states
 			for i = 1, #selector.toggles do selector.toggles[i].setState(i == value, user, silent) end
 
-			if t.instantSave ~= false then selector.saveData(nil, silent) end
+			if user and t.instantSave ~= false then selector.saveData(nil, silent) end
 
 			if not silent then
 				selector.invoke.selected(user == true)
@@ -5171,310 +5473,6 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		return selector
 	end
 
-	local itemsets = {
-		anchor = {
-			{ name = ns.toolboxStrings.points.top.left, value = "TOPLEFT" },
-			{ name = ns.toolboxStrings.points.top.center, value = "TOP" },
-			{ name = ns.toolboxStrings.points.top.right, value = "TOPRIGHT" },
-			{ name = ns.toolboxStrings.points.left, value = "LEFT" },
-			{ name = ns.toolboxStrings.points.center, value = "CENTER" },
-			{ name = ns.toolboxStrings.points.right, value = "RIGHT" },
-			{ name = ns.toolboxStrings.points.bottom.left, value = "BOTTOMLEFT" },
-			{ name = ns.toolboxStrings.points.bottom.center, value = "BOTTOM" },
-			{ name = ns.toolboxStrings.points.bottom.right, value = "BOTTOMRIGHT" },
-		},
-		justifyH = {
-			{ name = ns.toolboxStrings.points.left, value = "LEFT" },
-			{ name = ns.toolboxStrings.points.center, value = "CENTER" },
-			{ name = ns.toolboxStrings.points.right, value = "RIGHT" },
-		},
-		justifyV = {
-			{ name = ns.toolboxStrings.points.top.center, value = "TOP" },
-			{ name = ns.toolboxStrings.points.center, value = "MIDDLE" },
-			{ name = ns.toolboxStrings.points.bottom.center, value = "BOTTOM" },
-		},
-		frameStrata = {
-			{ name = ns.toolboxStrings.strata.lowest, value = "BACKGROUND" },
-			{ name = ns.toolboxStrings.strata.lower, value = "LOW" },
-			{ name = ns.toolboxStrings.strata.low, value = "MEDIUM" },
-			{ name = ns.toolboxStrings.strata.lowMid, value = "HIGH" },
-			{ name = ns.toolboxStrings.strata.highMid, value = "DIALOG" },
-			{ name = ns.toolboxStrings.strata.high, value = "FULLSCREEN" },
-			{ name = ns.toolboxStrings.strata.higher, value = "FULLSCREEN_DIALOG" },
-			{ name = ns.toolboxStrings.strata.highest, value = "TOOLTIP" },
-		}
-	}
-
-	---Create a non-GUI special selector widget (with a collection of toggle widgets) with data management logic specific to the specified **itemset**
-	---***
-	---@param itemset string Specify what type of selector should be created | ***Value:*** "anchor"|"justifyH"|"justifyV"|"frameStrata"
-	--- - ***Note:*** Setting this to "anchor" will use the set of [AnchorPoint](https://warcraft.wiki.gg/wiki/Anchors) items.
-	--- - ***Note:*** Setting this to "justifyH" will use the set of horizontal text alignment items (JustifyH).
-	--- - ***Note:*** Setting this to "justifyV" will use the set of vertical text alignment items (JustifyV).
-	--- - ***Note:*** Setting this to "frameStrata" will use the set of [FrameStrata](https://warcraft.wiki.gg/wiki/Frame_Strata) items (excluding "WORLD").</li></ul>
-	---@param t? specialSelectorCreationData Parameters are to be provided in this table
-	---***
-	---@return selector selector Reference to the new selector widget, utility functions and more wrapped in a table
-	function wt.CreateSpecialSelector(itemset, t)
-		t = t or {}
-
-		--[ Wrapper table ]
-
-		---@class specialSelector
-		local selector = {}
-
-		--[ Properties ]
-
-		t.items = t.items or {}
-
-		---@type selectorToggle[]
-		selector.toggles = {}
-
-		---@type selectorToggle[]
-		local inactive = {}
-
-		--| Data
-
-		local value = t.selected or t.default or type(t.getData) == "function" and t.getData() or nil
-		value = wt.FindKeyByValue(itemsets[itemset], value) and value or nil
-		local snapshot
-
-		--| State
-
-		local enabled = t.disabled ~= false
-
-		--| Events
-
-		---@type table<string, function[]>
-		local listeners = {}
-
-		--[ Getters & Setters ]
-
-		---Returns the object type of this widget
-		---***
-		---@return WidgetTypeName type ***Value:*** "SpecialSelector"
-		---<hr><p></p>
-		function selector.getType() return "SpecialSelector" end
-
-		---Checks and returns if the type of this widget is equal to the string provided
-		---@param type string
-		---@return boolean
-		function selector.isType(type) return type == "SpecialSelector" end
-
-		---Return a value at the specified key from the table used for creating the widget
-		---@param key string
-		---@return any
-		function selector.getProperty(key) return wt.FindValueByKey(t, key) end
-
-		--| Event handling
-
-		--Get a trigger function to call all registered listeners for the specified custom widget event with
-		selector.invoke = {
-			enabled = function() callListeners(selector, listeners, "enabled", enabled) end,
-
-			---@param success boolean
-			loaded = function(success) callListeners(selector, listeners, "loaded", success) end,
-
-			---@param success boolean
-			saved = function(success) callListeners(selector, listeners, "saved", success) end,
-
-			---@param user boolean
-			selected = function(user) callListeners(selector, listeners, "selected", value, user) end,
-
-			---@param event string Custom event tag
-			---@param ... any
-			_ = function(event, ...) callListeners(selector, listeners, event, ...) end
-		}
-
-		--Hook a handler function as a listener for a custom widget event
-		selector.setListener = {
-			---@param listener SpecialSelectorEventHandler_enabled Handler function to set
-			---@param callIndex? integer Set when to call **listener** in the execution order | ***Default:*** *placed at the end of the current list*
-			enabled = function(listener, callIndex) addListener(listeners, "enabled", listener, callIndex) end,
-
-			---@param listener SpecialSelectorEventHandler_loaded Handler function to set
-			---@param callIndex? integer Set when to call **listener** in the execution order | ***Default:*** *placed at the end of the current list*
-			loaded = function(listener, callIndex) addListener(listeners, "loaded", listener, callIndex) end,
-
-			---@param listener SpecialSelectorEventHandler_saved Handler function to set
-			---@param callIndex? integer Set when to call **listener** in the execution order | ***Default:*** *placed at the end of the current list*
-			saved = function(listener, callIndex) addListener(listeners, "saved", listener, callIndex) end,
-
-			---@param listener SpecialSelectorEventHandler_selected Handler function to set
-			---@param callIndex? integer Set when to call **listener** in the execution order | ***Default:*** *placed at the end of the current list*
-			selected = function(listener, callIndex) addListener(listeners, "selected", listener, callIndex) end,
-
-			---@param event string Custom event tag
-			---@param listener SpecialSelectorEventHandler_any Handler function to set
-			---@param callIndex? integer Set when to call **listener** in the execution order | ***Default:*** *placed at the end of the current list*
-			_ = function(event, listener, callIndex) addListener(listeners, event, listener, callIndex) end
-		}
-
-		--| Value
-
-		---Convert an index to a corresponding value (based on the specified **itemset**)
-		---@param index integer
-		---@return AnchorPoint|JustifyH|JustifyV|FrameStrata|nil value
-		---<hr><p></p>
-		function selector.toValue(index) return itemsets[itemset][index] and itemsets[itemset][index].value or nil end
-
-		---Convert an specific value to a corresponding index (based on the specified **itemset**)
-		---@param value AnchorPoint|JustifyH|JustifyV|FrameStrata
-		---***
-		---@return integer|nil index
-		---<hr><p></p>
-		function selector.toIndex(value)
-			for i = 1, #itemsets[itemset] do if itemsets[itemset][i].value == value then return i end end
-
-			return nil
-		end
-
-		--| Options data management
-
-		---Load the data from storage to the widget via **t.getData()**
-		---***
-		---@param handleChanges? boolean If true, call the specified onChange handlers | ***Default:*** true
-		---@param silent? boolean If false, invoke a "loaded" event and call registered listeners | ***Default:*** false
-		function selector.loadData(handleChanges, silent)
-			handleChanges = handleChanges ~= false
-
-			if type(t.getData) == "function" then
-				selector.setSelected(t.getData(), handleChanges)
-
-				if not silent then selector.invoke.loaded(true) end
-			else
-				if handleChanges and t.optionsKey and type(t.onChange) == "table" then for i = 1, #t.onChange do optionsTable.changeHandlers[t.optionsKey][t.onChange[i]]() end end
-
-				if not silent then selector.invoke.loaded(false) end
-			end
-		end
-
-		---Save the provided data or the current value of the widget to storage via **t.saveData(...)**
-		---***
-		---@param data? wrappedSpecialData If set, save the value wrapped in this table | ***Default:*** *the currently set value of the widget*
-		---@param silent? boolean If false, invoke a "loaded" event and call registered listeners | ***Default:*** false
-		function selector.saveData(data, silent)
-			if t.saveData then
-				t.saveData(type(data) == "table" and wt.FindKeyByValue(itemsets[itemset], data.value) and data.value or value)
-
-				if not silent then selector.invoke.saved(true) end
-			elseif not silent then selector.invoke.saved(false) end
-		end
-
-		---Get the currently stored data via **t.getData()**
-		---@return AnchorPoint|JustifyH|JustifyV|FrameStrata|nil
-		function selector.getData() return t.getData and t.getData() end
-
-		---Save the provided data to storage via **t.saveData(...)** then load it to the widget via **t.loadData()**
-		---***
-		---@param data? wrappedSpecialData If set, save the value wrapped in this table | ***Default:*** *the currently set value of the widget*
-		---@param handleChanges? boolean If true, call the specified onChange handlers | ***Default:*** true
-		---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** false
-		function selector.setData(data, handleChanges, silent)
-			selector.saveData(data, silent)
-			selector.loadData(handleChanges, silent)
-		end
-
-		--Set a data snapshot so any changes made to the widget and/or the stored data can be reverted to this value via **selector.revertData()**
-		function selector.snapshotData() snapshot = { index = selector.getData() } end
-
-		---Set and load the stored data managed by the widget to the last saved data snapshot set via **selector.snapshotData()**
-		---@param handleChanges? boolean If true, call the specified onChange handlers | ***Default:*** true
-		---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** false
-		function selector.revertData(handleChanges, silent) if snapshot then selector.setData(snapshot, handleChanges, silent) end end
-
-		---Set and load the stored data managed by the widget to the specified default value of **t.default**
-		---@param handleChanges? boolean If true, call the specified onChange handlers | ***Default:*** true
-		---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** false
-		function selector.resetData(handleChanges, silent) if t.default then selector.setData({ index = t.default }, handleChanges, silent) end end
-
-		---Returns the value of the currently selected item or nil if there is no selection
-		---@return AnchorPoint|JustifyH|JustifyV|FrameStrata|nil
-		function selector.getSelected() return value end
-
-		---Set the specified item as selected
-		---***
-		---@param selected? integer|AnchorPoint|JustifyH|JustifyV|FrameStrata The index or the value of the item to be set as selected ***Default:*** nil *(no selection)*
-		---@param user? boolean If true, mark the change as being initiated via a user interaction and call change handlers | ***Default:*** false
-		---@param silent? boolean If false, invoke a "selected" event and call registered listeners | ***Default:*** false
-		function selector.setSelected(selected, user, silent)
-			if selected then
-				selected = min(type(selected) == "string" and selector.toIndex(selected:upper()) or type(selected) == "number" and math.floor(selected) or 0, #selector.toggles)
-			end
-			selected = selected or itemsets[itemset][1]
-			value = selector.toValue(selected)
-
-			--Update toggle states
-			for i = 1, #selector.toggles do selector.toggles[i].setState(i == selected, user, silent) end
-
-			if t.instantSave ~= false then selector.saveData(nil, silent) end
-
-			if not silent then selector.invoke.selected(user == true) end
-
-			--Handle changes
-			if user and t.optionsKey and type(t.onChange) == "table" then for i = 1, #t.onChange do optionsTable.changeHandlers[t.optionsKey][t.onChange[i]]() end end
-		end
-
-		--| State
-
-		---Return the current enabled state of the widget
-		---@return boolean enabled True, if the widget is enabled
-		function selector.isEnabled() return enabled end
-
-		---Enable or disable the widget based on the specified value
-		---***
-		---@param state? boolean Enable the input if true, disable if not | ***Default:*** true
-		---@param silent? boolean If false, invoke an "enabled" event and call registered listeners | ***Default:*** false
-		function selector.setEnabled(state, silent)
-			enabled = state ~= false
-
-			--Update toggle items
-			for i = 1, #selector.toggles do selector.toggles[i].setEnabled(state, silent) end
-
-			if not silent then selector.invoke.enabled() end
-		end
-
-		--[ Initialization ]
-
-		--Register event handlers
-		if type(t.listeners) == "table" then for k, v in pairs(t.listeners) do if type(v) == "table" then for i = 1, #v do
-			if k == "_" then selector.setListener._(v[i].event, v[i].handler, v[i].callIndex) else selector.setListener[k](v[i].handler, v[i].callIndex) end
-		end end end end
-
-		--Register starting items
-		for i = 1, #t.items do if type(t.items[i]) == "table" then
-			if t.items[i].isType and t.items[i].isType("Toggle") then
-				--| Register the already defined toggle widget
-
-				selector.toggles[i] = t.items[i]
-			elseif #inactive > 0 then
-				--| Reenable an inactive toggle widget
-
-				selector.toggles[i] = inactive[#inactive]
-				table.remove(inactive, #inactive)
-			else
-				--| Create a new toggle widget
-
-				selector.toggles[i] = wt.CreateToggle({ listeners = { toggled = { { handler = function (_, state, user)
-					if type(t.items[selector.toggles[i].index].onSelect) == "function" and user and state then t.items[selector.toggles[i].index].onSelect() end
-				end, }, }, }, })
-			end
-
-			selector.toggles[i].index = i
-		end end
-
-		--Register to options data management
-		if t.optionsKey then wt.AddToOptionsTable(selector, t.optionsKey, t.onChange) end
-
-		--Assign dependencies
-		if t.dependencies then wt.AddDependencies(t.dependencies, selector.setEnabled) end
-
-		--Set starting value
-		selector.setSelected(value, false, true)
-
-		return selector
-	end
-
 	--| GUI
 
 	---Item naming utility
@@ -5494,7 +5492,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	---@param t selectorCreationData|multiselectorCreationData
 	---@param name string
 	---@param title string
-	local function SetUpSelectorFrame(selector, t, name, title)
+	local function setUpSelectorFrame(selector, t, name, title)
 
 		--[ Frame Setup ]
 
@@ -5534,14 +5532,6 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			if key == "attribute" then selector.frame:HookScript("OnAttributeChanged", function(_, attribute, ...) if attribute == value.name then value.handler(...) end end)
 			else selector.frame:HookScript(key, value) end
 		end end
-
-		--| Tooltip
-
-		if t.tooltip then wt.AddTooltip(selector.frame, {
-			title = t.tooltip.title or title,
-			lines = t.default and table.insert(t.tooltip.lines, { text = ns.toolboxStrings.default .. tostring(t.default) }) or t.tooltip.lines,
-			anchor = "ANCHOR_RIGHT",
-		}) end
 
 		--| State
 
@@ -5583,7 +5573,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		local name = (t.append ~= false and t.parent and t.parent~= UIParent and t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "Selector")
 		local title = t.title or t.name or "Selector"
 
-		SetUpSelectorFrame(selector, t, name, title)
+		setUpSelectorFrame(selector, t, name, title)
 
 		--| Radio button items
 
@@ -5642,6 +5632,16 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		--Handle item list updates
 		selector.setListener.updated(function() selector.frame:SetHeight(math.ceil((#selector.toggles) / t.columns) * 16 + (t.label ~= false and 14 or 0)) end, 1)
 
+		--[ Events ]
+
+		--| Tooltip
+
+		if t.tooltip then wt.AddTooltip(selector.frame, {
+			title = t.tooltip.title or title,
+			lines = t.default and table.insert(t.tooltip.lines, { text = ns.toolboxStrings.default .. (t.items[t.default].title or tostring(t.default)) }) or t.tooltip.lines,
+			anchor = "ANCHOR_RIGHT",
+		}) end
+
 		return selector
 	end
 
@@ -5652,18 +5652,12 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	--- - ***Note:*** Setting this to "justifyH" will use the set of horizontal text alignment items (JustifyH).
 	--- - ***Note:*** Setting this to "justifyV" will use the set of vertical text alignment items (JustifyV).
 	--- - ***Note:*** Setting this to "frameStrata" will use the set of [FrameStrata](https://warcraft.wiki.gg/wiki/Frame_Strata) items (excluding "WORLD").</li></ul>
-	---@param t? specialSelectorCreationData Parameters are to be provided in this table
+	---@param t? specialRadioSelectorCreationData Parameters are to be provided in this table
 	---@param widget? selector Reference to an already existing special selector widget to set up as a special selector frame instead of creating a new base widget
 	---***
 	---@return specialSelector selector References to the new [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame), an array of its child [CheckButton](https://warcraft.wiki.gg/wiki/UIOBJECT_CheckButton) widget items, utility functions and more wrapped in a table
 	function wt.CreateSpecialRadioSelector(itemset, t, widget)
 		t = t or {}
-		t.items = {}
-		for i = 1, #itemsets[itemset] do
-			t.items[i] = {}
-			t.items[i].title = itemsets[itemset][i].name
-			t.items[i].tooltip = { lines = { { text = "(" .. itemsets[itemset][i].value .. ")", }, } }
-		end
 		t.labels = false
 		t.columns = itemset == "frameStrata" and 8 or 3
 
@@ -5697,7 +5691,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		local name = (t.append ~= false and t.parent and t.parent~= UIParent and t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "Selector")
 		local title = t.title or t.name or "Selector"
 
-		SetUpSelectorFrame(selector, t, name, title)
+		setUpSelectorFrame(selector, t, name, title)
 
 		--| Checkbox items
 
@@ -5777,6 +5771,16 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--Handle item list updates
 		selector.setListener.updated(function() selector.frame:SetHeight(math.ceil((#selector.toggles) / t.columns) * 16 + (t.label ~= false and 14 or 0)) end, 1)
+
+		--[ Events ]
+
+		--| Tooltip
+
+		if t.tooltip then wt.AddTooltip(selector.frame, {
+			title = t.tooltip.title or title,
+			lines = t.default and table.insert(t.tooltip.lines, { text = ns.toolboxStrings.default .. wt.TableToString(t.default) }) or t.tooltip.lines,
+			anchor = "ANCHOR_RIGHT",
+		}) end
 
 		return selector
 	end
@@ -5880,7 +5884,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			title = "…",
 			tooltip = { lines = {
 				{ text = ns.toolboxStrings.dropdown.selected, },
-				{ text = ns.toolboxStrings.dropdown.open, },
+				{ text = "\n" .. ns.toolboxStrings.dropdown.open, },
 			} },
 			position = { anchor = "BOTTOM", },
 			size = { w = t.width - (t.cycleButtons ~= false and 44 or 0), },
@@ -6122,8 +6126,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 			table.insert(wt.AddMissing(tooltip, {
 				title = text,
-				lines = { { text = index and ns.toolboxStrings.dropdown.selected or ns.toolboxStrings.dropdown.none, }, } --CHECK add newline before?
-			}).lines, { text = ns.toolboxStrings.dropdown.open, })
+				lines = { { text = index and ns.toolboxStrings.dropdown.selected or ns.toolboxStrings.dropdown.none, }, }
+			}).lines, { text = "\n" .. ns.toolboxStrings.dropdown.open, })
 
 			selector.toggle.label:SetText(text)
 			selector.toggle.setTooltip(tooltip)
@@ -6178,7 +6182,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		if t.tooltip then wt.AddTooltip(selector.dropdown, {
 			title = t.tooltip.title or title,
-			lines = t.default and table.insert(t.tooltip.lines, { text = ns.toolboxStrings.default .. tostring(t.default) }) or t.tooltip.lines,
+			lines = t.default and table.insert(t.tooltip.lines, { text = ns.toolboxStrings.default .. (t.items[t.default].title or tostring(t.default)) }) or t.tooltip.lines,
 			anchor = "ANCHOR_RIGHT",
 		}) end
 
@@ -6277,7 +6281,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		if t.tooltip then wt.AddTooltip(selector.frame, {
 			title = t.tooltip.title or title,
-			lines = t.default and table.insert(t.tooltip.lines, { text = ns.toolboxStrings.default .. tostring(t.default) }) or t.tooltip.lines,
+			lines = t.default and table.insert(t.tooltip.lines, { text = ns.toolboxStrings.default .. (t.items[t.default].title or tostring(t.default)) }) or t.tooltip.lines,
 			anchor = "ANCHOR_RIGHT",
 		}) end
 
@@ -6491,7 +6495,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 			if not silent then textbox.invoke.changed(user == true) end
 
-			if t.instantSave ~= false then textbox.saveData(nil, silent) end
+			if user and t.instantSave ~= false then textbox.saveData(nil, silent) end
 
 			--Handle changes
 			if user and t.optionsKey and type(t.onChange) == "table" then for i = 1, #t.onChange do optionsTable.changeHandlers[t.optionsKey][t.onChange[i]]() end end
@@ -6537,7 +6541,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	---Set the parameters of a GUI textbox widget frame
 	---@param textbox singleLineEditbox|customSingleLineEditbox|multilineEditbox
 	---@param t editboxCreationData
-	local function SetUpEditboxFrame(textbox, t)
+	local function setUpEditboxFrame(textbox, t)
 
 		--[ Frame Setup ]
 
@@ -6579,23 +6583,23 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| UX
 
-		local silent = false
+		local scriptEvent = false
 
 		---Update the widget UI based on the text value
 		---@param _ toggle
 		---@param text string
-		local function updateText(_, text) if not silent then
+		local function updateText(_, text) if not scriptEvent then
 			textbox.editbox:SetText(text)
 
 			if t.resetCursor ~= false then textbox.editbox:SetCursorPosition(0) end
-		else silent = false end end
+		else scriptEvent = false end end
 
 		--Handle widget updates
 		textbox.setListener.changed(updateText, 1)
 
 		--Link value changes
 		textbox.editbox:HookScript("OnTextChanged", function(_, text, user)
-			silent = true
+			scriptEvent = true
 
 			textbox.setText(text, user)
 		end)
@@ -6621,7 +6625,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		---@param _ textbox
 		---@param state boolean
 		local function updateState(_, state)
-			textbox.editbox:SetEnabled(state)
+			if t.readOnly then textbox.editbox:Disable() else textbox.editbox:SetEnabled(state) end
 
 			if state then if t.font.normal then textbox.editbox:SetFontObject(t.font.normal) end elseif t.font.disabled then textbox.editbox:SetFontObject(t.font.disabled) end
 
@@ -6630,8 +6634,6 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--Handle widget updates
 		textbox.setListener.enabled(updateState, 1)
-
-		if t.readOnly then textbox.editbox:Disable() end
 
 		--[ Initialization ]
 
@@ -6645,7 +6647,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	---Set the parameters of a single-line GUI textbox widget frame
 	---@param textbox singleLineEditbox|customSingleLineEditbox
 	---@param t editboxCreationData
-	local function SetUpSingleLineEditbox(textbox, t)
+	local function setUpSingleLineEditbox(textbox, t)
 
 		--Set as single line
 		textbox.editbox:SetMultiLine(false)
@@ -6669,7 +6671,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| Shared setup
 
-		SetUpEditboxFrame(textbox, t)
+		setUpEditboxFrame(textbox, t)
 
 		--[ Events ]
 
@@ -6677,7 +6679,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		if t.tooltip then wt.AddTooltip(textbox.editbox, {
 			title = t.tooltip.title or title,
-			lines = t.default and table.insert(t.tooltip.lines, { text = ns.toolboxStrings.default .. tostring(t.default) }) or t.tooltip.lines,
+			lines = t.default and table.insert(t.tooltip.lines, { text = ns.toolboxStrings.default .. t.default }) or t.tooltip.lines,
 			anchor = "ANCHOR_RIGHT",
 		}) end
 	end
@@ -6710,12 +6712,12 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		t.size.w = t.size.w or 180
 		t.size.h = t.size.h or 18
 
-		textbox.frame:SetSize(t.size.w, t.size.h - (t.label ~= false and -18 or 0))
+		textbox.frame:SetSize(t.size.w, t.size.h + (t.label ~= false and 18 or 0))
 		textbox.editbox:SetSize(t.size.w - 6, t.size.h - 1)
 
 		--| Shared setup
 
-		SetUpSingleLineEditbox(textbox, t)
+		setUpSingleLineEditbox(textbox, t)
 
 		return textbox
 	end
@@ -6756,7 +6758,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| Shared setup
 
-		SetUpSingleLineEditbox(textbox, t)
+		setUpSingleLineEditbox(textbox, t)
 
 		--[ Events ]
 
@@ -6842,9 +6844,15 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| Shared setup
 
-		SetUpEditboxFrame(textbox, t) --CHECK if it should be after [ Events ], so resizes are handled on initialization
+		setUpEditboxFrame(textbox, t)
 
 		--[ Events ]
+
+		--| UX
+
+		textbox.editbox:HookScript("OnTextChanged", function(_, _, user) if not user and t.scrollToTop then textbox.scrollFrame:SetVerticalScroll(0) end end)
+		textbox.editbox:HookScript("OnEditFocusGained", function(self) self:HighlightText() end)
+		textbox.editbox:HookScript("OnEditFocusLost", function(self) self:ClearHighlightText() end)
 
 		---Update the width of the editbox
 		---@param scrolling boolean
@@ -6862,12 +6870,6 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			end
 		end
 
-		--| UX
-
-		textbox.editbox:HookScript("OnTextChanged", function(_, _, user) if not user and t.scrollToTop then textbox.scrollFrame:SetVerticalScroll(0) end end)
-		textbox.editbox:HookScript("OnEditFocusGained", function(self) self:HighlightText() end)
-		textbox.editbox:HookScript("OnEditFocusLost", function(self) self:ClearHighlightText() end)
-
 		--Resize updates
 		textbox.scrollFrame.ScrollBar:HookScript("OnShow", function() resizeEditbox(true) end)
 		textbox.scrollFrame.ScrollBar:HookScript("OnHide", function() resizeEditbox(false) end)
@@ -6876,7 +6878,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		if t.tooltip then wt.AddTooltip(textbox.scrollFrame, {
 			title = t.tooltip.title or title,
-			lines = t.default and table.insert(t.tooltip.lines, { text = ns.toolboxStrings.default .. tostring(t.default) }) or t.tooltip.lines,
+			lines = t.default and table.insert(t.tooltip.lines, { text = ns.toolboxStrings.default .. t.default }) or t.tooltip.lines,
 			anchor = "ANCHOR_RIGHT",
 		}, { triggers = { textbox.frame, textbox.editbox }, }) end
 
@@ -6911,12 +6913,11 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 			t.size = t.size or {}
 			t.size.w = t.size.w or 180
-			t.size.h = t.size.h or 17
-			local titleOffset = t.label ~= false and -12 or 0
+			t.size.h = t.size.h or 18
 
 			if t.arrange then copybox.frame.arrangementInfo = t.arrange else wt.SetPosition(copybox.frame, t.position) end
 
-			copybox.frame:SetSize(t.size.w, t.size.h - titleOffset)
+			copybox.frame:SetSize(t.size.w, t.size.h + (t.label ~= false and 12 or 0))
 
 			--| Visibility
 
@@ -6928,7 +6929,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 			--| Label
 
-			local title = t.title or t.name or "Copy Box"
+			local title = t.title or t.name or "Copybox"
 
 			copybox.label = wt.AddTitle({
 				parent = copybox.frame,
@@ -6939,102 +6940,52 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				} or nil,
 			})
 
-			--[ Flipper Button ]
+			--| Textbox
 
-			copybox.flipper = wt.CreateFrame("Button", name .. "Flipper", copybox.frame)
+			t.font = t.font or {}
+			t.font.normal = t.font.normal or "GameFontNormalSmall"
+			t.font.disabled = t.font.disabled or "GameFontNormalSmall"
+			t.color = t.color or { r = 0.6, g = 0.8, b = 1, a = 1 }
+			t.colorOnMouse = t.colorOnMouse or { r = 0.8, g = 0.95, b = 1, a = 1 }
 
-			--| Position & dimensions
-
-			copybox.flipper:SetPoint("TOPLEFT", 0, titleOffset)
-			copybox.flipper:SetSize(t.size.w, t.size.h)
-
-			--| Text
-
-			copybox.flipper.textLine = wt.CreateText({
-				parent = copybox.flipper,
-				name = "DisplayText",
-				position = { anchor = "LEFT", },
-				width = t.size.w,
-				layer = t.layer,
+			copybox.textbox = wt.CreateCustomEditbox({
+				parent = copybox.frame,
+				name = "Textline",
+				title = title,
+				label = false,
+				tooltip = { lines = { { text = ns.toolboxStrings.copyBox, }, } },
+				position = { anchor = "BOTTOMLEFT", },
+				size = t.size,
 				text = t.text,
 				font = t.font,
 				color = t.color,
-				justify = { h = t.justify or "LEFT", },
-				wrap = false
-			})
-
-			--| UX
-
-			--Tooltip
-			wt.AddTooltip(copybox.flipper, {
-				title = ns.toolboxStrings.copy.textline.label,
-				lines = { { text = ns.toolboxStrings.copy.textline.tooltip, }, },
-				anchor = "ANCHOR_RIGHT",
-			})
-
-			--[ Text Copybox ]
-
-			copybox.textbox = wt.CreateEditbox({
-				parent = copybox.frame,
-				name = "CopyText",
-				title = ns.toolboxStrings.copy.editbox.label,
-				label = false,
-				tooltip = { lines = { { text = ns.toolboxStrings.copy.editbox.tooltip, }, } },
-				position = {
-					anchor = "LEFT",
-					relativeTo = copybox.flipper,
-					relativePoint = "LEFT",
-				},
-				size = t.size,
-				text = t.text,
-				font = { normal = copybox.flipper.textLine:GetFontObject(), }, --CHECK
-				color = t.colorOnMouse or t.color,
 				justify = { h = t.justify, },
 				events = {
 					OnTextChanged = function(self, _, user)
 						if not user then return end
 
-						self:SetText((t.colorOnMouse or t.color) and wt.Color(t.text, t.colorOnMouse or t.color) or t.text)
-						self:HighlightText()
+						self:SetText(wt.Color(t.text, t.colorOnMouse))
 						self:SetCursorPosition(0)
+						self:HighlightText()
 					end,
-					[t.flipOnMouse and "OnLeave" or "OnEditFocusLost"] = function()
-						copybox.textbox.frame:Hide()
-						copybox.flipper:Show()
-
-						PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_OFF)
+					OnEnter = function(self)
+						self:SetText(wt.Color(t.text, t.colorOnMouse))
+						self:SetCursorPosition(0)
+						self:HighlightText()
+						self:SetFocus()
+					end,
+					OnLeave = function(self)
+						self:SetText(wt.Color(t.text, t.color))
+						self:SetCursorPosition(0)
+						self:ClearHighlightText()
+						self:ClearFocus()
+					end,
+					OnMouseUp = function(self)
+						self:SetCursorPosition(0)
+						self:HighlightText()
 					end,
 				},
 			})
-
-			--[ Events ]
-
-			--| Toggle
-
-			--Base state
-			copybox.textbox.frame:Hide()
-
-			copybox.flipper:HookScript(t.flipOnMouse and "OnEnter" or "OnClick", function()
-				copybox.flipper:Hide()
-				copybox.textbox.frame:Show()
-				copybox.textbox.editbox:SetFocus()
-				copybox.textbox.editbox:HighlightText()
-				PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
-			end)
-
-			--| UX
-
-			if not t.flipOnMouse and t.colorOnMouse then
-				copybox.flipper:HookScript("OnEnter", function() copybox.flipper.textLine:SetTextColor(wt.UnpackColor(t.colorOnMouse)) end)
-				copybox.flipper:HookScript("OnLeave", function() copybox.flipper.textLine:SetTextColor(wt.UnpackColor(t.color)) end)
-			end
-
-			--Tooltip
-			if t.tooltip then wt.AddTooltip(copybox.frame, {
-				title = t.tooltip.title or title,
-				lines = t.tooltip.lines,
-				anchor = "ANCHOR_RIGHT",
-			}) end
 		end
 
 		return copybox
@@ -7220,7 +7171,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 			if not silent then numeric.invoke.changed(user == true) end
 
-			if t.instantSave ~= false then numeric.saveData(nil, silent) end
+			if user and t.instantSave ~= false then numeric.saveData(nil, silent) end
 
 			--Handle changes
 			if user and t.optionsKey and type(t.onChange) == "table" then for i = 1, #t.onChange do optionsTable.changeHandlers[t.optionsKey][t.onChange[i]]() end end
@@ -7581,13 +7532,13 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| UX
 
-		local silent = false
+		local scriptEvent = false
 
 		---Update the widget UI based on the number value
 		---@param _ numeric
 		---@param number number
 		---@param user? boolean ***Default:*** false
-		local function updateNumber(_, number, user) if not silent then numeric.slider:SetValue(number, user) else silent = false end end
+		local function updateNumber(_, number, user) if not scriptEvent then numeric.slider:SetValue(number, user) else scriptEvent = false end end
 
 		---Update the min/max limits of the slider
 		---@param limitMin? number
@@ -7606,7 +7557,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--Link value changes
 		numeric.slider:HookScript("OnValueChanged", function(_, number, user)
-			silent = true
+			scriptEvent = true
 
 			numeric.setNumber(number, user)
 
@@ -7828,7 +7779,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 			if not silent then colorPicker.invoke.colored(user == true) end
 
-			if t.instantSave ~= false then colorPicker.saveData(nil, silent) end
+			if user and t.instantSave ~= false then colorPicker.saveData(nil, silent) end
 
 			--Handle changes
 			if user and t.optionsKey and type(t.onChange) == "table" then for i = 1, #t.onChange do optionsTable.changeHandlers[t.optionsKey][t.onChange[i]]() end end
@@ -8141,7 +8092,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		if t.tooltip then wt.AddTooltip(colorPicker.frame, {
 			title = t.tooltip.title or title,
-			lines = t.default and table.insert(t.tooltip.lines, { text = ns.toolboxStrings.default .. tostring(t.default) }) or t.tooltip.lines,
+			lines = t.default and table.insert(t.tooltip.lines, { text = ns.toolboxStrings.default .. wt.ColorToHex(wt.UnpackColor(t.default)) }) or t.tooltip.lines,
 			anchor = "ANCHOR_RIGHT",
 		}) end
 
@@ -8232,16 +8183,15 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 						--[ Information ]
 
-						local position = { offset = { x = 16, y = -32 } }
-						local version
+						local position = { offset = { x = 16, y = -30 } }
 
 						if data.version then
-							version = wt.CreateText({
+							local version = wt.CreateText({
 								parent = panel,
 								name = "VersionTitle",
 								position = position,
 								width = 45,
-								text = ns.toolboxStrings.about.version .. ":",
+								text = ns.toolboxStrings.about.version,
 								font = "GameFontNormalSmall",
 								justify = { h = "RIGHT", },
 							})
@@ -8259,11 +8209,10 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 								justify = { h = "LEFT", },
 							})
 
-							position = {
-								relativeTo = version,
-								relativePoint = "BOTTOMLEFT",
-								offset = { y = -8 }
-							}
+							position.relativeTo = version
+							position.relativePoint = "BOTTOMLEFT"
+							position.offset.x = 0
+							position.offset.y = -8
 						end
 
 						if data.day and data.month and data.year then
@@ -8272,7 +8221,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 								name = "DateTitle",
 								position = position,
 								width = 45,
-								text = ns.toolboxStrings.about.date .. ":",
+								text = ns.toolboxStrings.about.date,
 								font = "GameFontNormalSmall",
 								justify = { h = "RIGHT", },
 							})
@@ -8296,11 +8245,10 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 								justify = { h = "LEFT", },
 							})
 
-							position = {
-								relativeTo = date,
-								relativePoint = "BOTTOMLEFT",
-								offset = { y = -8 }
-							}
+							position.relativeTo = date
+							position.relativePoint = "BOTTOMLEFT"
+							position.offset.x = 0
+							position.offset.y = -8
 						end
 
 						if data.author then
@@ -8309,7 +8257,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 								name = "AuthorTitle",
 								position = position,
 								width = 45,
-								text = ns.toolboxStrings.about.author .. ":",
+								text = ns.toolboxStrings.about.author,
 								font = "GameFontNormalSmall",
 								justify = { h = "RIGHT", },
 							})
@@ -8327,11 +8275,10 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 								justify = { h = "LEFT", },
 							})
 
-							position = {
-								relativeTo = author,
-								relativePoint = "BOTTOMLEFT",
-								offset = { y = -8 }
-							}
+							position.relativeTo = author
+							position.relativePoint = "BOTTOMLEFT"
+							position.offset.x = 0
+							position.offset.y = -8
 						end
 
 						if data.license then
@@ -8340,7 +8287,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 								name = "LicenseTitle",
 								position = position,
 								width = 45,
-								text = ns.toolboxStrings.about.license .. ":",
+								text = ns.toolboxStrings.about.license,
 								font = "GameFontNormalSmall",
 								justify = { h = "RIGHT", },
 							})
@@ -8358,87 +8305,70 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 								justify = { h = "LEFT", },
 							})
 
-							position = {
-								relativeTo = license,
-								relativePoint = "BOTTOMLEFT",
-								offset = { y = -8 }
-							}
+							position.relativeTo = license
+							position.relativePoint = "BOTTOMLEFT"
+							position.offset.x = 0
 						end
 
 						--[ Links ]
 
-						if position.relativeTo then position.offset.y = -11 end
+						if position.relativeTo then position.offset.y = -12 end
 
 						if data.curse then
 							local curse = wt.CreateCopybox({
 								parent = panel,
 								name = "CurseForge",
-								title = ns.toolboxStrings.about.curseForge .. ":",
+								title = ns.toolboxStrings.about.curseForge,
 								position = position,
 								size = { w = 190, },
 								text = data.curse,
-								font = "GameFontNormalSmall",
-								color = { r = 0.6, g = 0.8, b = 1, a = 1 },
-								colorOnMouse = { r = 0.8, g = 0.95, b = 1, a = 1 },
 							})
 
-							position = {
-								relativeTo = curse.frame,
-								relativePoint = "BOTTOMLEFT",
-								offset = { y = -8 }
-							}
+							position.relativeTo = curse.frame
+							position.relativePoint = "BOTTOMLEFT"
+							position.offset.x = 0
+							position.offset.y = -8
 						end
 
 						if data.wago then
 							local wago = wt.CreateCopybox({
 								parent = panel,
 								name = "Wago",
-								title = ns.toolboxStrings.about.wago .. ":",
+								title = ns.toolboxStrings.about.wago,
 								position = position,
 								size = { w = 190, },
 								text = data.wago,
-								font = "GameFontNormalSmall",
-								color = { r = 0.6, g = 0.8, b = 1, a = 1 },
-								colorOnMouse = { r = 0.8, g = 0.95, b = 1, a = 1 },
 							})
 
-							position = {
-								relativeTo = wago.frame,
-								relativePoint = "BOTTOMLEFT",
-								offset = { y = -8 }
-							}
+							position.relativeTo = wago.frame
+							position.relativePoint = "BOTTOMLEFT"
+							position.offset.x = 0
+							position.offset.y = -8
 						end
 
 						if data.repo then
 							local repo = wt.CreateCopybox({
 								parent = panel,
 								name = "Repository",
-								title = ns.toolboxStrings.about.repository .. ":",
+								title = ns.toolboxStrings.about.repository,
 								position = position,
 								size = { w = 190, },
 								text = data.repo,
-								font = "GameFontNormalSmall",
-								color = { r = 0.6, g = 0.8, b = 1, a = 1 },
-								colorOnMouse = { r = 0.8, g = 0.95, b = 1, a = 1 },
 							})
 
-							position = {
-								relativeTo = repo.frame,
-								relativePoint = "BOTTOMLEFT",
-								offset = { y = -8 }
-							}
+							position.relativeTo = repo.frame
+							position.relativePoint = "BOTTOMLEFT"
+							position.offset.x = 0
+							position.offset.y = -8
 						end
 
 						if data.issues then wt.CreateCopybox({
 							parent = panel,
 							name = "Issues",
-							title = ns.toolboxStrings.about.issues .. ":",
+							title = ns.toolboxStrings.about.issues,
 							position = position,
 							size = { w = 190, },
 							text = data.issues,
-							font = "GameFontNormalSmall",
-							color = { r = 0.6, g = 0.8, b = 1, a = 1 },
-							colorOnMouse = { r = 0.8, g = 0.95, b = 1, a = 1 },
 						}) end
 
 						--[ Changelog ]
@@ -9584,14 +9514,14 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					width = 140,
 					listeners = t.presets and { selected = { { handler = function() panel.presets.apply.setText(nil, nil, ns.toolboxStrings.presets.apply.select) end, }, }, } or nil,
 					dependencies = t.dependencies,
-					optionsKey = t.optionsKey,
-					getData = function() return t.getData().position.relativePoint end,
-					saveData = function(value) t.getData().position.relativePoint = value end,
-					onChange = {
-						CustomPositionChangeHandler = function() if type(t.onChangePosition) == "function" then t.onChangePosition() end end,
-						UpdateFramePosition = function() wt.SetPosition(t.frame, t.getData().position, true) end,
-						UpdatePositioningVisualAids = function() if WidgetToolsDB.positioningAids then positioningVisualAids.update(t.frame, t.getData().position) end end,
-					},
+					-- optionsKey = t.optionsKey, --TODO reinstate
+					-- getData = function() return t.getData().position.relativePoint end,
+					-- saveData = function(value) t.getData().position.relativePoint = value end,
+					-- onChange = {
+					-- 	CustomPositionChangeHandler = function() if type(t.onChangePosition) == "function" then t.onChangePosition() end end,
+					-- 	UpdateFramePosition = function() wt.SetPosition(t.frame, t.getData().position, true) end,
+					-- 	UpdatePositioningVisualAids = function() if WidgetToolsDB.positioningAids then positioningVisualAids.update(t.frame, t.getData().position) end end,
+					-- },
 					default = t.defaultsTable.position.relativePoint,
 				})
 
@@ -9604,55 +9534,55 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					width = 140,
 					listeners = t.presets and { selected = { { handler = function() panel.presets.apply.setText(nil, nil, ns.toolboxStrings.presets.apply.select) end, }, }, } or nil,
 					dependencies = t.dependencies,
-					optionsKey = t.optionsKey,
-					getData = function() return t.getData().position.anchor end,
-					saveData = function(value) t.getData().position.anchor = value end,
-					onChange = {
-						UpdateFrameOffsetsAndPosition = function() if not t.settingsData.keepInPlace then wt.SetPosition(t.frame, t.getData().position, true) else
-							local x, y = 0, 0
+					-- optionsKey = t.optionsKey, --TODO reinstate
+					-- getData = function() return t.getData().position.anchor end,
+					-- saveData = function(value) t.getData().position.anchor = value end,
+					-- onChange = {
+					-- 	UpdateFrameOffsetsAndPosition = function() if not t.settingsData.keepInPlace then wt.SetPosition(t.frame, t.getData().position, true) else
+					-- 		local x, y = 0, 0
 
-							if previousAnchor:find("LEFT") then
-								if t.getData().position.anchor:find("RIGHT") then x = -t.frame:GetWidth()
-								elseif t.getData().position.anchor == "CENTER" or t.getData().position.anchor == "TOP" or t.getData().position.anchor == "BOTTOM" then
-									x = -t.frame:GetWidth() / 2
-								end
-							elseif previousAnchor:find("RIGHT") then
-								if t.getData().position.anchor:find("LEFT") then x = t.frame:GetWidth()
-								elseif t.getData().position.anchor == "CENTER" or t.getData().position.anchor == "TOP" or t.getData().position.anchor == "BOTTOM" then
-									x = t.frame:GetWidth() / 2
-								end
-							elseif previousAnchor == "CENTER" or previousAnchor == "TOP" or previousAnchor == "BOTTOM" then
-								if t.getData().position.anchor:find("LEFT") then x = t.frame:GetWidth() / 2
-								elseif t.getData().position.anchor:find("RIGHT") then x = -t.frame:GetWidth() / 2 end
-							end
+					-- 		if previousAnchor:find("LEFT") then
+					-- 			if t.getData().position.anchor:find("RIGHT") then x = -t.frame:GetWidth()
+					-- 			elseif t.getData().position.anchor == "CENTER" or t.getData().position.anchor == "TOP" or t.getData().position.anchor == "BOTTOM" then
+					-- 				x = -t.frame:GetWidth() / 2
+					-- 			end
+					-- 		elseif previousAnchor:find("RIGHT") then
+					-- 			if t.getData().position.anchor:find("LEFT") then x = t.frame:GetWidth()
+					-- 			elseif t.getData().position.anchor == "CENTER" or t.getData().position.anchor == "TOP" or t.getData().position.anchor == "BOTTOM" then
+					-- 				x = t.frame:GetWidth() / 2
+					-- 			end
+					-- 		elseif previousAnchor == "CENTER" or previousAnchor == "TOP" or previousAnchor == "BOTTOM" then
+					-- 			if t.getData().position.anchor:find("LEFT") then x = t.frame:GetWidth() / 2
+					-- 			elseif t.getData().position.anchor:find("RIGHT") then x = -t.frame:GetWidth() / 2 end
+					-- 		end
 
-							if previousAnchor:find("TOP") then
-								if t.getData().position.anchor:find("BOTTOM") then y = t.frame:GetHeight()
-								elseif t.getData().position.anchor == "CENTER" or t.getData().position.anchor == "LEFT" or t.getData().position.anchor == "RIGHT" then
-									y = t.frame:GetHeight() / 2
-								end
-							elseif previousAnchor:find("BOTTOM") then
-								if t.getData().position.anchor:find("TOP") then y = -t.frame:GetHeight()
-								elseif t.getData().position.anchor == "CENTER" or t.getData().position.anchor == "LEFT" or t.getData().position.anchor == "RIGHT" then
-									y = -t.frame:GetHeight() / 2
-								end
-							elseif previousAnchor == "CENTER" or previousAnchor == "LEFT" or previousAnchor == "RIGHT" then
-								if t.getData().position.anchor:find("TOP") then y = -t.frame:GetHeight() / 2
-								elseif t.getData().position.anchor:find("BOTTOM") then y = t.frame:GetHeight() / 2 end
-							end
+					-- 		if previousAnchor:find("TOP") then
+					-- 			if t.getData().position.anchor:find("BOTTOM") then y = t.frame:GetHeight()
+					-- 			elseif t.getData().position.anchor == "CENTER" or t.getData().position.anchor == "LEFT" or t.getData().position.anchor == "RIGHT" then
+					-- 				y = t.frame:GetHeight() / 2
+					-- 			end
+					-- 		elseif previousAnchor:find("BOTTOM") then
+					-- 			if t.getData().position.anchor:find("TOP") then y = -t.frame:GetHeight()
+					-- 			elseif t.getData().position.anchor == "CENTER" or t.getData().position.anchor == "LEFT" or t.getData().position.anchor == "RIGHT" then
+					-- 				y = -t.frame:GetHeight() / 2
+					-- 			end
+					-- 		elseif previousAnchor == "CENTER" or previousAnchor == "LEFT" or previousAnchor == "RIGHT" then
+					-- 			if t.getData().position.anchor:find("TOP") then y = -t.frame:GetHeight() / 2
+					-- 			elseif t.getData().position.anchor:find("BOTTOM") then y = t.frame:GetHeight() / 2 end
+					-- 		end
 
-							previousAnchor = t.getData().position.anchor
+					-- 		previousAnchor = t.getData().position.anchor
 
-							--Update offsets
-							panel.position.offset.x.setData(t.getData().position.offset.x - x, false, false)
-							panel.position.offset.y.setData(t.getData().position.offset.y - y, false, false)
+					-- 		--Update offsets
+					-- 		panel.position.offset.x.setData(t.getData().position.offset.x - x, false, false)
+					-- 		panel.position.offset.y.setData(t.getData().position.offset.y - y, false, false)
 
-							--Update frame position
-							wt.SetPosition(t.frame, t.getData().position, true)
-						end end,
-						"CustomPositionChangeHandler",
-						"UpdatePositioningVisualAids"
-					},
+					-- 		--Update frame position
+					-- 		wt.SetPosition(t.frame, t.getData().position, true)
+					-- 	end end,
+					-- 	"CustomPositionChangeHandler",
+					-- 	"UpdatePositioningVisualAids"
+					-- },
 					default = t.defaultsTable.position.anchor,
 				})
 
@@ -9683,13 +9613,13 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 						OnValueChanged = function(_, _, user) if user then panel.presets.apply.setText(nil, nil, ns.toolboxStrings.presets.apply.select) end end,
 					} or nil,
 					dependencies = t.dependencies,
-					optionsKey = t.optionsKey,
-					getData = function() return t.getData().position.offset.x end,
-					saveData = function(value) t.getData().position.offset.x = value end,
-					onChange = {
-						"CustomPositionChangeHandler",
-						"UpdateFramePosition",
-					},
+					-- optionsKey = t.optionsKey, --TODO reinstate
+					-- getData = function() return t.getData().position.offset.x end,
+					-- saveData = function(value) t.getData().position.offset.x = value end,
+					-- onChange = {
+					-- 	"CustomPositionChangeHandler",
+					-- 	"UpdateFramePosition",
+					-- },
 					default = t.defaultsTable.position.offset.x,
 				})
 
@@ -9708,13 +9638,13 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 						OnValueChanged = function(_, _, user) if user then panel.presets.apply.setText(nil, nil, ns.toolboxStrings.presets.apply.select) end end,
 					} or nil,
 					dependencies = t.dependencies,
-					optionsKey = t.optionsKey,
-					getData = function() return t.getData().position.offset.y end,
-					saveData = function(value) t.getData().position.offset.y = value end,
-					onChange = {
-						"CustomPositionChangeHandler",
-						"UpdateFramePosition",
-					},
+					-- optionsKey = t.optionsKey, --TODO reinstate
+					-- getData = function() return t.getData().position.offset.y end,
+					-- saveData = function(value) t.getData().position.offset.y = value end,
+					-- onChange = {
+					-- 	"CustomPositionChangeHandler",
+					-- 	"UpdateFramePosition",
+					-- },
 					default = t.defaultsTable.position.offset.y,
 				})
 
@@ -9725,13 +9655,13 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					tooltip = { lines = { { text = ns.toolboxStrings.position.keepInBounds.tooltip:gsub("#FRAME", t.frameName), }, } },
 					arrange = { newRow = false, },
 					dependencies = t.dependencies,
-					optionsKey = t.optionsKey,
-					getData = function() return t.getData().keepInBounds end,
-					saveData = function(state) t.getData().keepInBounds = state end,
-					onChange = {
-						CustomKeepInBoundsChangeHandler = function() if type(t.onChangeKeepInBounds) == "function" then t.onChangeKeepInBounds() end end,
-						UpdateScreenClamp = function() t.frame:SetClampedToScreen(t.getData().keepInBounds) end,
-					},
+					-- optionsKey = t.optionsKey, --TODO reinstate
+					-- getData = function() return t.getData().keepInBounds end,
+					-- saveData = function(state) t.getData().keepInBounds = state end,
+					-- onChange = {
+					-- 	CustomKeepInBoundsChangeHandler = function() if type(t.onChangeKeepInBounds) == "function" then t.onChangeKeepInBounds() end end,
+					-- 	UpdateScreenClamp = function() t.frame:SetClampedToScreen(t.getData().keepInBounds) end,
+					-- },
 					default = t.defaultsTable.keepInBounds,
 				}) end
 
@@ -9807,13 +9737,13 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 							selected = { { handler = function() panel.presets.apply.setText(nil, nil, ns.toolboxStrings.presets.apply.select) end, }, },
 						} or nil,
 						dependencies = t.dependencies,
-						optionsKey = t.optionsKey,
-						getData = function() return t.getData().layer.strata end,
-						saveData = function(value) t.getData().layer.strata = value end,
-						onChange = {
-							CustomStrataChangeHandler = function() if type(t.onChangeStrata) == "function" then t.onChangeStrata() end end,
-							UpdateFrameStrata = function() t.frame:SetFrameStrata(t.getData().layer.strata) end,
-						},
+						-- optionsKey = t.optionsKey, --TODO reinstate
+						-- getData = function() return t.getData().layer.strata end,
+						-- saveData = function(value) t.getData().layer.strata = value end,
+						-- onChange = {
+						-- 	CustomStrataChangeHandler = function() if type(t.onChangeStrata) == "function" then t.onChangeStrata() end end,
+						-- 	UpdateFrameStrata = function() t.frame:SetFrameStrata(t.getData().layer.strata) end,
+						-- },
 						default = t.defaultsTable.layer.strata,
 					}) end
 
@@ -9824,13 +9754,13 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 						tooltip = { lines = { { text = ns.toolboxStrings.layer.keepOnTop.tooltip:gsub("#FRAME", t.frameName), }, } },
 						arrange = { newRow = false, },
 						dependencies = t.dependencies,
-						optionsKey = t.optionsKey,
-						getData = function() return t.getData().layer.keepOnTop end,
-						saveData = function(state) t.getData().layer.keepOnTop = state end,
-						onChange = {
-							CustomKeepOnTopChangeHandler = function() if type(t.onChangeKeepOnTop) == "function" then t.onChangeKeepOnTop() end end,
-							UpdateTopLevel = function() t.frame:SetToplevel(t.getData().layer.keepOnTop) end,
-						},
+						-- optionsKey = t.optionsKey, --TODO reinstate
+						-- getData = function() return t.getData().layer.keepOnTop end,
+						-- saveData = function(state) t.getData().layer.keepOnTop = state end,
+						-- onChange = {
+						-- 	CustomKeepOnTopChangeHandler = function() if type(t.onChangeKeepOnTop) == "function" then t.onChangeKeepOnTop() end end,
+						-- 	UpdateTopLevel = function() t.frame:SetToplevel(t.getData().layer.keepOnTop) end,
+						-- },
 						default = t.defaultsTable.layer.keepOnTop,
 					}) end
 
@@ -9848,13 +9778,13 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 							OnValueChanged = function(_, _, user) if user then panel.presets.apply.setText(nil, nil, ns.toolboxStrings.presets.apply.select) end end,
 						} or nil,
 						dependencies = t.dependencies,
-						optionsKey = t.optionsKey,
-						getData = function() return t.getData().layer.level end,
-						saveData = function(value) t.getData().layer.level = value end,
-						onChange = {
-							CustomLevelChangeHandler = function() if type(t.onChangeLevel) == "function" then t.onChangeLevel() end end,
-							UpdateFrameLevel = function() t.frame:SetFrameLevel(t.getData().layer.level) end,
-						},
+						-- optionsKey = t.optionsKey, --TODO reinstate
+						-- getData = function() return t.getData().layer.level end,
+						-- saveData = function(value) t.getData().layer.level = value end,
+						-- onChange = {
+						-- 	CustomLevelChangeHandler = function() if type(t.onChangeLevel) == "function" then t.onChangeLevel() end end,
+						-- 	UpdateFrameLevel = function() t.frame:SetFrameLevel(t.getData().layer.level) end,
+						-- },
 						default = t.defaultsTable.layer.level,
 					}) end
 				end

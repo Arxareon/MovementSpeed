@@ -1,4 +1,4 @@
-## Interface: 30403
+## Interface: 40400
 ## Title: Movement Speed |TInterface/AddOns/MovementSpeed/Textures/Logo.tga:0|t
 ## Notes: View the movement speed of anyone in customizable displays and tooltips with fast updates.
 ## IconTexture: Interface/AddOns/MovementSpeed/Textures/Logo.tga

@@ -1183,13 +1183,20 @@
 
 --| Constructors
 
----@class selectorCreationData : labeledChildObject, tooltipDescribableObject, arrangeableObject, positionableObject, visibleObject_base, togglableObject, optionsWidget
+---@class selectorCreationData : togglableObject, optionsWidget
 ---@field items? (selectorItem|toggle)[] Table containing subtables with data used to create item widgets, or already existing toggles
 ---@field selected? integer The index of the item to be set as selected during initialization | ***Default:*** nil *(no selection)*
 ---@field listeners? selectorEventListeners Table of key, value pairs of custom widget event tags and functions to assign as event handlers to call on trigger
 ---@field getData? fun(): selected: integer|nil Called to (if needed, modify and) load the widget data from storage<hr><p>@*return* `selected` integer|nil | ***Default:*** nil *(no selection)*</p>
 ---@field saveData? fun(selected?: integer) Called to (if needed, modify and) save the widget data to storage<hr><p>@*param* `selected`? integer</p>
 ---@field default? integer Default value of the widget
+
+---@class specialSelectorCreationData : togglableObject, optionsWidget
+---@field selected? integer|AnchorPoint|JustifyH|JustifyV|FrameStrata The item to be set as selected during initialization | ***Default:*** nil *(no selection)*
+---@field listeners? specialSelectorEventListeners Table of key, value pairs of custom widget event tags and functions to assign as event handlers to call on trigger
+---@field getData? fun(): value: integer|AnchorPoint|JustifyH|JustifyV|FrameStrata|nil Called to (if needed, modify and) load the widget data from storage<hr><p>@*return* `value` integer|AnchorPoint|JustifyH|JustifyV|FrameStrata|nil — The index or the value of the item to be set as selected ***Default:*** nil *(no selection)*</p>
+---@field saveData? fun(value?: AnchorPoint|JustifyH|JustifyV|FrameStrata) Called to (if needed, modify and) save the widget data to storage<hr><p>@*param* `value`? AnchorPoint|JustifyH|JustifyV|FrameStrata</p>
+---@field default? integer|AnchorPoint|JustifyH|JustifyV|FrameStrata Default value of the widget
 
 ---@class multiselectorCreationData : togglableObject, optionsWidget
 ---@field items? (selectorItem|toggle)[] Table containing subtables with data used to create item widgets, or already existing toggles
@@ -1200,29 +1207,24 @@
 ---@field saveData? fun(selections?: boolean[]) Called to (if needed, modify and) save the widget data to storage<hr><p>@*param* `selections`? boolean[]</p>
 ---@field default? boolean[] Default value of the widget
 
----@class radioSelectorCreationData : selectorCreationData, labeledChildObject, tooltipDescribableObject, arrangeableObject, positionableObject, visibleObject_base, liteObject
+---@class selectorFrameCreationData : labeledChildObject, tooltipDescribableObject, arrangeableObject, positionableObject, visibleObject_base, liteObject
 ---@field name? string Unique string used to set the frame name | ***Default:*** "Selector"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
+---@field clearable? boolean Whether the selector input should be clearable by right clicking on its radio buttons or not (the functionality of **setSelected** called with nil to clear the input will not be affected) | ***Default:*** false
+---@field events? table<ScriptFrame, fun(...: any)|attributeEventData> Table of key, value pairs of the names of script event handlers to be set for the selector frame and the functions to assign as event handlers called when they trigger
+
+---@class radioSelectorCreationData : selectorCreationData, selectorFrameCreationData
 ---@field width? number The height is dynamically set to fit all items (and the title if set), the width may be specified | ***Default:*** *dynamically set to fit all columns of items* or **t.label** and 160 or 0 *(whichever is greater)*<ul><li>***Note:*** The width of each individual item will be set to **t.width** if **t.columns** is 1 and **t.width** is specified.</li></ul>
 ---@field items? (selectorItem|selectorRadioButton)[] Table containing subtables with data used to create item widgets, or already existing radio buttons
 ---@field columns? integer Arrange the newly created widget items in a grid with the specified number of columns instead of a vertical list | ***Default:*** 1
 ---@field labels? boolean Whether or not to add the labels to the right of each newly created widget item | ***Default:*** true
----@field clearable? boolean Whether the selector input should be clearable by right clicking on its radio buttons or not (the functionality of **setSelected** called with nil to clear the input will not be affected) | ***Default:*** false
----@field events? table<ScriptFrame, fun(...: any)|attributeEventData> Table of key, value pairs of the names of script event handlers to be set for the selector frame and the functions to assign as event handlers called when they trigger
 
----@class checkboxSelectorCreationData : multiselectorCreationData, labeledChildObject, tooltipDescribableObject, arrangeableObject, positionableObject, visibleObject_base, liteObject
----@field name? string Unique string used to set the frame name | ***Default:*** "Selector"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
+---@class specialRadioSelectorCreationData : specialSelectorCreationData, selectorFrameCreationData
+
+---@class checkboxSelectorCreationData : multiselectorCreationData, selectorFrameCreationData
 ---@field width? number The height is dynamically set to fit all items (and the title if set), the width may be specified | ***Default:*** *dynamically set to fit all columns of items* or **t.label** and 160 or 0 *(whichever is greater)*<ul><li>***Note:*** The width of each individual item will be set to **t.width** if **t.columns** is 1 and **t.width** is specified.</li></ul>
 ---@field items? (selectorItem|selectorCheckbox)[] Table containing subtables with data used to create item widgets, or already existing checkboxes
 ---@field labels? boolean Whether or not to add the labels to the right of each newly created widget item | ***Default:*** true
 ---@field columns? integer Arrange the newly created widget items in a grid with the specified number of columns instead of a vertical list | ***Default:*** 1
----@field events? table<ScriptFrame, fun(...: any)|attributeEventData> Table of key, value pairs of the names of script event handlers to be set for the selector frame and the functions to assign as event handlers called when they trigger
-
----@class specialSelectorCreationData : radioSelectorCreationData
----@field selected? integer The item to be set as selected during initialization | ***Default:*** 0
----@field listeners? specialSelectorEventListeners Table of key, value pairs of custom widget event tags and functions to assign as event handlers to call on trigger
----@field getData? fun(): value: integer|AnchorPoint|JustifyH|JustifyV|FrameStrata|nil Called to (if needed, modify and) load the widget data from storage<hr><p>@*return* `value` integer|AnchorPoint|JustifyH|JustifyV|FrameStrata|nil — The index or the value of the item to be set as selected ***Default:*** nil *(no selection)*</p>
----@field saveData? fun(value?: AnchorPoint|JustifyH|JustifyV|FrameStrata) Called to (if needed, modify and) save the widget data to storage<hr><p>@*param* `value`? AnchorPoint|JustifyH|JustifyV|FrameStrata</p>
----@field default? AnchorPoint|JustifyH|JustifyV|FrameStrata Default value of the widget
 
 ---@class dropdownSelectorCreationData : radioSelectorCreationData, widgetWidthValue
 ---@field name? string Unique string used to set the frame name | ***Default:*** "Dropdown"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>

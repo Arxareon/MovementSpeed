@@ -58,9 +58,6 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 
 	--[ Data ]
 
-	--Working DB reference
-	-- local w = wt.Clone(WidgetToolsDB)
-
 	--Loaded DB reference
 	local loaded = wt.Clone(WidgetToolsDB)
 
