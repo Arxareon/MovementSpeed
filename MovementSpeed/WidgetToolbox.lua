@@ -3244,7 +3244,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		function page.open()
 			if WidgetToolsDB.lite or not page.category then return end --ADD: tip about lite mode, how to disable it
 
-			Settings.OpenToCategory(page.category:GetID()) --WATCH: Add support when they add support for opening to subcategories
+			-- Settings.OpenToCategory(page.category:GetID()) --WATCH: Add support when they add support for opening to subcategories
+			SettingsPanel:Open()
+			SettingsPanel:SelectCategory(page.category, true) --CHECK for taint
 		end
 
 		--| Batch options data management

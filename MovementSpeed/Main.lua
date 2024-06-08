@@ -1517,9 +1517,9 @@ local function _CreateContextMenu(parent)
 	-- 	events = { OnClick = function() options.targetSpeed.page.open() end, },
 	-- })
 	-- wt.AddContextButton(optionsMenu, contextMenu, {
-	-- 	title = ns.strings.options.advanced.title,
-	-- 	tooltip = { lines = { { text = ns.strings.options.advanced.description:gsub("#ADDON", addonTitle), }, } },
-	-- 	events = { OnClick = function() options.advanced.page.open() end, },
+	-- 	title = wt.GetStrings("dataManagement").title,
+	-- 	tooltip = { lines = { { text = wt.GetStrings("dataManagement").description:gsub("#ADDON", addonTitle), }, } },
+	-- 	events = { OnClick = function() options.dataManagement.page.open() end, },
 	-- })
 
 	--Presets submenu
@@ -1541,7 +1541,34 @@ local function CreateContextMenu(display)
 		},
 		{
 			text = ns.strings.misc.options,
-			func = function() options.main.page.open() end,
+			hasArrow = true,
+			menuList = {
+				{
+					text = wt.GetStrings("about").title,
+					func = function() options.main.page.open() end,
+					notCheckable = true,
+				},
+				{
+					text = ns.strings.options.playerSpeed.title,
+					func = function() options.playerSpeed.page.open() end,
+					notCheckable = true,
+				},
+				{
+					text = ns.strings.options.travelSpeed.title,
+					func = function() options.travelSpeed.page.open() end,
+					notCheckable = true,
+				},
+				{
+					text = ns.strings.options.targetSpeed.title,
+					func = function() options.targetSpeed.page.open() end,
+					notCheckable = true,
+				},
+				{
+					text = wt.GetStrings("dataManagement").title,
+					func = function() options.dataManagement.page.open() end,
+					notCheckable = true,
+				},
+			},
 			notCheckable = true,
 		},
 		{
@@ -1635,8 +1662,8 @@ frames.main = wt.CreateBaseFrame({
 					options.travelSpeed.page.load(true)
 					options.targetSpeed.page.load(true)
 					options.dataManagement.page.load(true)
-				else print(addonChat .. wt.Color(ns.strings.options.advanced.backup.error, ns.colors.yellow[2])) end end,
-				onImportAllProfiles = function(success) if not success then print(addonChat .. wt.Color(ns.strings.options.advanced.backup.error, ns.colors.yellow[2])) end end,
+				else print(addonChat .. wt.Color(wt.GetStrings("backup").error, ns.colors.yellow[2])) end end,
+				onImportAllProfiles = function(success) if not success then print(addonChat .. wt.GetStrings("backup").error, ns.colors.yellow[2]) end end,
 				valueChecker = CheckValidity,
 				onRecovery = GetRecoveryMap
 			})

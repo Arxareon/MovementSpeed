@@ -256,7 +256,7 @@ ns.changelog = {
 local english = {
 	options = {
 		main = {
-			name = "Main page",
+			name = "About",
 			description = "Customize #ADDON to fit your needs. Type #KEYWORD for chat commands.",
 			shortcuts = {
 				title = "Shortcuts",
@@ -403,43 +403,6 @@ local english = {
 					label = "Enable Integration",
 					tooltip = "Enable or disable the #ADDON integration within the mouseover target inspect tooltip."
 				},
-			},
-		},
-		advanced = {
-			title = "Advanced",
-			description = "Configure #ADDON settings further, change options manually or backup your data by importing, exporting settings.",
-			profiles = {
-				title = "Profiles",
-				description = "Create, edit and apply unique options profiles to customize #ADDON separately between your characters. (Soon™)",
-			},
-			backup = {
-				title = "Backup",
-				description = "Import or export #ADDON options to save, share or apply them between your accounts.",
-				backupBox = {
-					label = "Import & Export",
-					tooltip = {
-						"The backup string in this box contains the currently saved addon data and frame positions.",
-						"Copy it to save, share or use it for another account.",
-						"If you have a string, just override the text inside this box. Select it, and paste your string here. Press ENTER to load the data stored in it.",
-						"Note: If you are using a custom font file, that file can not carry over with this string. It will need to be inserted into the addon folder to be applied.",
-						"Only load strings that you have verified yourself or trust the source of!",
-					},
-				},
-				compact = {
-					label = "Compact",
-					tooltip = "Toggle between a compact and a readable view.",
-				},
-				load = {
-					label = "Load",
-					tooltip = "Check the current string, and attempt to load all data from it.",
-				},
-				reset = {
-					label = "Reset",
-					tooltip = "Reset the string to reflect the currently stored values.",
-				},
-				import = "Load the string",
-				warning = "Are you sure you want to attempt to load the currently inserted string?\n\nIf you've copied it from an online source or someone else has sent it to you, only load it after you've checked the code inside and you know what you are doing.\n\nIf don't trust the source, you may want to cancel to prevent any unwanted actions.",
-				error = "The provided backup string could not be validated and no data was loaded. It might be missing some characters or errors may have been introduced if it was edited.",
 			},
 		},
 	},
