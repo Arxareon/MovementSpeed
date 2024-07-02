@@ -376,22 +376,10 @@ local english = {
 		playerSpeed = {
 			title = "Player Speed",
 			description = "Calculate your speed, modified by your Speed stat, mounts, buffs, debuffs or the type movement activity.",
-			dragonridingOnly = {
-				label = "Only while Dragonriding",
-				tooltip = "Only slow the update rate of the speed value to match the specified #FREQUENCY during Dragonriding, making the fast-changing speed more readable.",
-			},
 		},
 		travelSpeed = {
 			title = "Travel Speed",
 			description = "Calculate the estimated speed at which you are actually traveling through the current zone horizontally.",
-			enabled = {
-				label = "Enable Functionality",
-				tooltip = "Enable the Travel Speed functionality, allowing you to view an estimation of the effective speed you are traveling through the world horizontally (moving up & down in elevation can't be calculated).",
-			},
-			replacement = {
-				label = "As a Replacement",
-				tooltip = "Replace the Player Speed value with the estimated horizontal Travel Speed value in the speed display when movement is detected but no information about your speed is available instead of having Travel Speed always visible in the secondary display.",
-			},
 		},
 		targetSpeed = {
 			title = "Target Speed",
@@ -539,9 +527,6 @@ local LoadLocale = function()
 	ns.strings.options.speedDisplay.update.throttle.tooltip = ns.strings.options.speedDisplay.update.throttle.tooltip:gsub(
 		"#FREQUENCY", ns.strings.options.speedDisplay.update.frequency.label
 	)
-	ns.strings.options.playerSpeed.dragonridingOnly.tooltip = ns.strings.options.playerSpeed.dragonridingOnly.tooltip:gsub(
-		"#FREQUENCY", ns.strings.options.speedDisplay.update.frequency.label
-	)
 	ns.strings.options.speedDisplay.font.color.tooltip = ns.strings.options.speedDisplay.font.color.tooltip:gsub(
 		"#VALUE_COLORING", ns.strings.options.speedDisplay.font.valueColoring.label
 	)
@@ -645,7 +630,6 @@ ns.profileDefault = {
 		update = {
 			throttle = false,
 			frequency = 0.15,
-			-- dragonridingOnly = true, --TODO: Check if needed
 		},
 		value = {
 			units = { true, false, false },

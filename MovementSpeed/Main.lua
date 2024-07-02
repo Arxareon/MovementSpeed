@@ -587,24 +587,6 @@ local function CreateUpdateOptions(panel, display, optionsKey)
 		onChange = { "RefreshSpeedUpdates", },
 		default = ns.profileDefault[display].update.frequency
 	})
-
-	-- if display ~= "playerSpeed" then return end
-	--TODO: figure out how to implement it - or delete if unnecessary
-	-- options.playerSpeed.update.dragonridingOnly = wt.CreateCheckbox({
-	-- 	parent = panel,
-	-- 	name = "DragonridingOnly",
-	-- 	title = ns.strings.options.playerSpeed.dragonridingOnly.label,
-	-- 	tooltip = { lines = { { text = ns.strings.options.playerSpeed.dragonridingOnly.tooltip, }, } },
-	-- 	arrange = { newRow = false, },
-	-- 	dependencies = {
-	-- 		{ frame = options.playerSpeed.visibility.hidden, evaluate = function(state) return not state end },
-	-- 		{ frame = options.playerSpeed.update.frequency, evaluate = function(value) return value < 1 end },
-	-- 	},
-	-- 	optionsKey = optionsKey,
-	-- 	getData = function() return MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.update.dragonridingOnly end,
-	-- 	saveData = function(state) MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.update.dragonridingOnly = state end,
-	-- 	default = ns.profileDefault.playerSpeed.update.dragonridingOnly
-	-- })
 end
 local function CreateSpeedValueOptions(panel, display, optionsKey, type)
 	options[display].value.units = wt.CreateCheckboxSelector({
@@ -853,6 +835,21 @@ local function CreateSpeedDisplayOptionsPage(display)
 		ns.name .. displayName .. "Font",
 		ns.name .. displayName .. "Background",
 	}
+	local copyButtonData = {
+		name = "Copy",
+		title =  ns.strings.options.speedDisplay.copy.label:gsub("#TYPE", ns.strings.options[otherDisplay].title),
+		tooltip = { lines = { { text = ns.strings.options.speedDisplay.copy.tooltip:gsub("#TYPE", ns.strings.options[otherDisplay].title), }, } },
+		position = {
+			anchor = "TOPRIGHT",
+			offset = { x = -8, y = 18 }
+		},
+		size = { w = 164, h = 14 },
+		font = {
+			normal = "GameFontNormalSmall",
+			highlight = "GameFontHighlightSmall",
+			disabled = "GameFontDisableSmall"
+		},
+	}
 
 	options[display].page = wt.CreateSettingsPage(ns.name, {
 		name = displayName,
@@ -883,29 +880,17 @@ local function CreateSpeedDisplayOptionsPage(display)
 				initialize = function(panel)
 					CreateVisibilityOptions(panel, display, optionsKeys[1])
 
-					wt.CreateSimpleButton({
-						parent = canvas,
-						name = "CopyVisibility",
-						title =  ns.strings.options.speedDisplay.copy.label:gsub("#TYPE", ns.strings.options[otherDisplay].title),
-						tooltip = { lines = { { text =  ns.strings.options.speedDisplay.copy.tooltip:gsub("#TYPE", ns.strings.options[otherDisplay].title), }, } },
-						position = {
-							anchor = "BOTTOMRIGHT",
-							relativeTo = panel,
-							relativePoint = "TOPRIGHT",
-							offset = { x = -8, y = 4 }
-						},
-						size = { w = 164, h = 14 },
-						font = {
-							normal = "GameFontNormalSmall",
-							highlight = "GameFontHighlightSmall",
-							disabled = "GameFontDisableSmall"
-						},
+					wt.CreateSimpleButton(wt.AddMissing({
+						parent = panel,
 						action = function()
-							wt.CopyValues(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].visibility, MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[otherDisplay].visibility)
+							wt.CopyValues(
+								MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].visibility,
+								MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[otherDisplay].visibility
+							)
 							wt.LoadOptionsData(optionsKeys[1], true)
 						end,
 						dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
-					})
+					}, copyButtonData))
 				end,
 				arrangement = {}
 			})
@@ -1039,29 +1024,17 @@ local function CreateSpeedDisplayOptionsPage(display)
 				settingsData = MovementSpeedCS,
 			})
 
-			wt.CreateSimpleButton({
-				parent = canvas,
-				name = "CopyPosition",
-				title =  ns.strings.options.speedDisplay.copy.label:gsub("#TYPE", ns.strings.options[otherDisplay].title),
-				tooltip = { lines = { { text =  ns.strings.options.speedDisplay.copy.tooltip:gsub("#TYPE", ns.strings.options[otherDisplay].title), }, } },
-				position = {
-					anchor = "BOTTOMRIGHT",
-					relativeTo = options[display].position.frame,
-					relativePoint = "TOPRIGHT",
-					offset = { x = -8, y = 4 }
-				},
-				size = { w = 164, h = 14 },
-				font = {
-					normal = "GameFontNormalSmall",
-					highlight = "GameFontHighlightSmall",
-					disabled = "GameFontDisableSmall"
-				},
+			wt.CreateSimpleButton(wt.AddMissing({
+				parent = options[display].position.frame,
 				action = function()
-					wt.CopyValues(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].position, MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[otherDisplay].position)
+					wt.CopyValues(
+						MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].position,
+						MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[otherDisplay].position
+					)
 					wt.LoadOptionsData(optionsKeys[2], true)
 				end,
 				dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
-			})
+			}, copyButtonData))
 
 			--[ Updates ]
 
@@ -1074,30 +1047,17 @@ local function CreateSpeedDisplayOptionsPage(display)
 				initialize = function(panel)
 					CreateUpdateOptions(panel, display, optionsKeys[3])
 
-					wt.CreateSimpleButton({
-						parent = canvas,
-						name = "CopyUpdates",
-						title =  ns.strings.options.speedDisplay.copy.label:gsub("#TYPE", ns.strings.options[otherDisplay].title),
-						tooltip = { lines = { { text =  ns.strings.options.speedDisplay.copy.tooltip:gsub("#TYPE", ns.strings.options[otherDisplay].title), }, } },
-						position = {
-							anchor = "BOTTOMRIGHT",
-							relativeTo = panel,
-							relativePoint = "TOPRIGHT",
-							offset = { x = -8, y = 4 }
-						},
-						size = { w = 164, h = 14 },
-						font = {
-							normal = "GameFontNormalSmall",
-							highlight = "GameFontHighlightSmall",
-							disabled = "GameFontDisableSmall"
-						},
+					wt.CreateSimpleButton(wt.AddMissing({
+						parent = panel,
 						action = function()
-							wt.CopyValues(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].updates, MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[otherDisplay].updates)
+							wt.CopyValues(
+								MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].updates,
+								MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[otherDisplay].updates
+							)
 							wt.LoadOptionsData(optionsKeys[3], true)
-							MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.travelSpeed.update.dragonridingOnly = nil
 						end,
 						dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
-					})
+					}, copyButtonData))
 				end,
 				arrangement = {}
 			})
@@ -1113,29 +1073,17 @@ local function CreateSpeedDisplayOptionsPage(display)
 				initialize = function(panel)
 					CreateSpeedValueOptions(panel, display, optionsKeys[4], displayType)
 
-					wt.CreateSimpleButton({
-						parent = canvas,
-						name = "CopyValue",
-						title =  ns.strings.options.speedDisplay.copy.label:gsub("#TYPE", ns.strings.options[otherDisplay].title),
-						tooltip = { lines = { { text =  ns.strings.options.speedDisplay.copy.tooltip:gsub("#TYPE", ns.strings.options[otherDisplay].title), }, } },
-						position = {
-							anchor = "BOTTOMRIGHT",
-							relativeTo = panel,
-							relativePoint = "TOPRIGHT",
-							offset = { x = -8, y = 4 }
-						},
-						size = { w = 164, h = 14 },
-						font = {
-							normal = "GameFontNormalSmall",
-							highlight = "GameFontHighlightSmall",
-							disabled = "GameFontDisableSmall"
-						},
+					wt.CreateSimpleButton(wt.AddMissing({
+						parent = panel,
 						action = function()
-							wt.CopyValues(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].value, MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[otherDisplay].value)
+							wt.CopyValues(
+								MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].value,
+								MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[otherDisplay].value
+							)
 							wt.LoadOptionsData(optionsKeys[4], true)
 						end,
 						dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
-					})
+					}, copyButtonData))
 				end,
 				arrangement = {}
 			})
@@ -1151,29 +1099,17 @@ local function CreateSpeedDisplayOptionsPage(display)
 				initialize = function(panel)
 					CreateFontOptions(panel, display, optionsKeys[5], displayType)
 
-					wt.CreateSimpleButton({
-						parent = canvas,
-						name = "CopyFont",
-						title =  ns.strings.options.speedDisplay.copy.label:gsub("#TYPE", ns.strings.options[otherDisplay].title),
-						tooltip = { lines = { { text =  ns.strings.options.speedDisplay.copy.tooltip:gsub("#TYPE", ns.strings.options[otherDisplay].title), }, } },
-						position = {
-							anchor = "BOTTOMRIGHT",
-							relativeTo = panel,
-							relativePoint = "TOPRIGHT",
-							offset = { x = -8, y = 4 }
-						},
-						size = { w = 164, h = 14 },
-						font = {
-							normal = "GameFontNormalSmall",
-							highlight = "GameFontHighlightSmall",
-							disabled = "GameFontDisableSmall"
-						},
+					wt.CreateSimpleButton(wt.AddMissing({
+						parent = panel,
 						action = function()
-							wt.CopyValues(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].font, MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[otherDisplay].font)
+							wt.CopyValues(
+								MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].font,
+								MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[otherDisplay].font
+							)
 							wt.LoadOptionsData(optionsKeys[5], true)
 						end,
 						dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
-					})
+					}, copyButtonData))
 				end,
 				arrangement = {}
 			})
@@ -1189,29 +1125,17 @@ local function CreateSpeedDisplayOptionsPage(display)
 				initialize = function(panel)
 					CreateBackgroundOptions(panel, display, optionsKeys[6])
 
-					wt.CreateSimpleButton({
-						parent = canvas,
-						name = "CopyBackground",
-						title =  ns.strings.options.speedDisplay.copy.label:gsub("#TYPE", ns.strings.options[otherDisplay].title),
-						tooltip = { lines = { { text =  ns.strings.options.speedDisplay.copy.tooltip:gsub("#TYPE", ns.strings.options[otherDisplay].title), }, } },
-						position = {
-							anchor = "BOTTOMRIGHT",
-							relativeTo = panel,
-							relativePoint = "TOPRIGHT",
-							offset = { x = -8, y = 4 }
-						},
-						size = { w = 164, h = 14 },
-						font = {
-							normal = "GameFontNormalSmall",
-							highlight = "GameFontHighlightSmall",
-							disabled = "GameFontDisableSmall"
-						},
+					wt.CreateSimpleButton(wt.AddMissing({
+						parent = panel,
 						action = function()
-							wt.CopyValues(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].background, MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[otherDisplay].background)
+							wt.CopyValues(
+								MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].background,
+								MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[otherDisplay].background
+							)
 							wt.LoadOptionsData(optionsKeys[6], true)
 						end,
 						dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
-					})
+					}, copyButtonData))
 				end,
 				arrangement = {}
 			})
@@ -1398,9 +1322,11 @@ local commandManager = wt.RegisterChatCommands(ns.name, { ns.chat.keyword }, {
 			print(wt.Color(ns.strings.chat.preset.list, ns.colors.green[2]))
 			for j = 1, #options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].position.presetList, 2 do
 				local list = "    " .. wt.Color(j, ns.colors.green[2]) .. wt.Color(" - " .. options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].position.presetList[j].name, ns.colors.yellow[2])
+
 				if j + 1 <= #options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].position.presetList then
 					list = list .. "    " .. wt.Color(j + 1, ns.colors.green[2]) .. wt.Color(" - " .. options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].position.presetList[j + 1].name, ns.colors.yellow[2])
 				end
+
 				print(list)
 			end
 		end,
@@ -1541,36 +1467,41 @@ local function CreateContextMenu(display)
 		},
 		{
 			text = ns.strings.misc.options,
-			hasArrow = true,
-			menuList = {
-				{
-					text = wt.GetStrings("about").title,
-					func = function() options.main.page.open() end,
-					notCheckable = true,
-				},
-				{
-					text = ns.strings.options.playerSpeed.title,
-					func = function() options.playerSpeed.page.open() end,
-					notCheckable = true,
-				},
-				{
-					text = ns.strings.options.travelSpeed.title,
-					func = function() options.travelSpeed.page.open() end,
-					notCheckable = true,
-				},
-				{
-					text = ns.strings.options.targetSpeed.title,
-					func = function() options.targetSpeed.page.open() end,
-					notCheckable = true,
-				},
-				{
-					text = wt.GetStrings("dataManagement").title,
-					func = function() options.dataManagement.page.open() end,
-					notCheckable = true,
-				},
-			},
+			func = function() options.main.page.open() end,
 			notCheckable = true,
 		},
+		-- { --TODO reinstate after fix
+		-- 	text = ns.strings.misc.options,
+		-- 	hasArrow = true,
+		-- 	menuList = {
+		-- 		{
+		-- 			text = wt.GetStrings("about").title,
+		-- 			func = function() options.main.page.open() end,
+		-- 			notCheckable = true,
+		-- 		},
+		-- 		{
+		-- 			text = ns.strings.options.playerSpeed.title,
+		-- 			func = function() options.playerSpeed.page.open() end,
+		-- 			notCheckable = true,
+		-- 		},
+		-- 		{
+		-- 			text = ns.strings.options.travelSpeed.title,
+		-- 			func = function() options.travelSpeed.page.open() end,
+		-- 			notCheckable = true,
+		-- 		},
+		-- 		{
+		-- 			text = ns.strings.options.targetSpeed.title,
+		-- 			func = function() options.targetSpeed.page.open() end,
+		-- 			notCheckable = true,
+		-- 		},
+		-- 		{
+		-- 			text = wt.GetStrings("dataManagement").title,
+		-- 			func = function() options.dataManagement.page.open() end,
+		-- 			notCheckable = true,
+		-- 		},
+		-- 	},
+		-- 	notCheckable = true,
+		-- },
 		{
 			text = wt.GetStrings("apply").label,
 			hasArrow = true,

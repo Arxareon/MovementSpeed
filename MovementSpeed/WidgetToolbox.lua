@@ -153,14 +153,14 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			issues = "Issues & Feedback",
 			changelog = {
 				label = "Update Notes",
-				tooltip = "Notes of all the changes, updates & fixes introduced with the latest version.\n\nThe changelog is only available in English for now.",
+				tooltip = "Notes of all the changes, updates & fixes introduced with the latest version release: #VERSION.",
 			},
 			fullChangelog = {
 				label = "#ADDON Changelog",
-				tooltip = "Notes of all the changes included in the addon updates for all versions.\n\nThe changelog is only available in English for now.",
+				tooltip = "The complete list of update notes of all addon version releases.",
 				open = {
-					label = "Open the full Changelog",
-					tooltip = "Access the full list of update notes of all addon versions.",
+					label = "Changelog",
+					tooltip = "Read the full list of update notes of all addon version releases.",
 				},
 			},
 		},
@@ -203,7 +203,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			title = "Backup",
 			description = "Import or export data in the currently active profile to save, share or move settings, or edit specific values manually.",
 			box = {
-				label = "Import or Export Profile Data",
+				label = "Import or Export Current Profile",
 				tooltip = {
 					"The backup string in this box contains the currently active addon profile data.",
 					"Copy the text to save, share or load data for another account from it.",
@@ -213,11 +213,10 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				},
 			},
 			allProfiles = {
-				title = "Backup All Profiles",
 				label = "Import or Export All Profiles",
 				tooltipLine = "The backup string in this box contains the list of all addon profiles and the data stored in each specific one as well as the name of currently active profile.",
 				open = {
-					label = "Open the backup box with all profiles",
+					label = "All Profiles",
 					tooltip = "Access the full profile list and backup or modify the data stored in each one.",
 				},
 			},
@@ -337,6 +336,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		ns.toolboxStrings.position.relativePoint.tooltip = ns.toolboxStrings.position.relativePoint.tooltip:gsub("#ANCHOR", ns.toolboxStrings.position.anchor.label)
 		ns.toolboxStrings.layer.keepOnTop.tooltip = ns.toolboxStrings.layer.keepOnTop.tooltip:gsub("#STRATA", ns.toolboxStrings.layer.strata.label)
 		ns.toolboxStrings.layer.level.tooltip = ns.toolboxStrings.layer.level.tooltip:gsub("#STRATA", ns.toolboxStrings.layer.strata.label)
+		-- ns.toolboxStrings.about.changelog.tooltip = ns.toolboxStrings.about.changelog.tooltip .. "\n\nThe changelog is only available in English for now." --TODO reinstate when more languages are added
+		-- ns.toolboxStrings.about.fullChangelog.tooltip = ns.toolboxStrings.about.fullChangelog.tooltip .. "\n\nThe changelog is only available in English for now."
 
 		--| Add extra strings
 
@@ -3244,9 +3245,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		function page.open()
 			if WidgetToolsDB.lite or not page.category then return end --ADD: tip about lite mode, how to disable it
 
-			-- Settings.OpenToCategory(page.category:GetID()) --WATCH: Add support when they add support for opening to subcategories
-			SettingsPanel:Open()
-			SettingsPanel:SelectCategory(page.category, true) --CHECK for taint
+			Settings.OpenToCategory(page.category:GetID()) --WATCH: Add support when they add support for opening to subcategories
 		end
 
 		--| Batch options data management
@@ -4714,6 +4713,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		function selector.updateItems(items, silent)
 			t.items = items
 
+			wt.Dump(items, nil, nil, 2)
+
 			--Update the toggle widgets
 			for i = 1, #items do
 				setToggle(items[i], i)
@@ -4728,7 +4729,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				table.insert(inactive, selector.toggles[#selector.toggles])
 				table.remove(selector.toggles, #selector.toggles)
 
-				if not silent then selector.toggles[#selector.toggles].invoke.updated(false) end
+				if not silent then selector.toggles[#selector.toggles].invoke._("updated", false) end
 			end
 
 			if not silent then selector.invoke.updated() end
@@ -5051,7 +5052,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		---Set and load the stored data managed by the widget to the specified default value of **t.default**
 		---@param handleChanges? boolean If true, call the specified onChange handlers | ***Default:*** true
 		---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** false
-		function selector.resetData(handleChanges, silent) if t.default then selector.setData({ index = t.default }, handleChanges, silent) end end
+		function selector.resetData(handleChanges, silent) if t.default then selector.setData({ value = t.default }, handleChanges, silent) end end
 
 		---Returns the value of the currently selected item or nil if there is no selection
 		---@return AnchorPoint|JustifyH|JustifyV|FrameStrata|nil
@@ -5066,7 +5067,6 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			if selected then
 				selected = min(type(selected) == "string" and selector.toIndex(selected:upper()) or type(selected) == "number" and math.floor(selected) or 0, #selector.toggles)
 			end
-			selected = selected or itemsets[itemset][1]
 			value = selector.toValue(selected)
 
 			--Update toggle states
@@ -5318,7 +5318,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				table.insert(inactive, selector.toggles[#selector.toggles])
 				table.remove(selector.toggles, #selector.toggles)
 
-				if not silent then selector.toggles[#selector.toggles].invoke.updated(false) end
+				if not silent then selector.toggles[#selector.toggles].invoke._("updated", false) end
 			end
 
 			if not silent then selector.invoke.updated() end
@@ -5564,7 +5564,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		---@class radioSelector : selector
 		---@field toggles? selectorRadioButton[] The list of radio button widgets linked together in this selector
-		local selector = widget and widget.isType and widget.isType("Selector") and widget or wt.CreateSelector(t)
+		local selector = widget and widget.isType and (widget.isType("Selector") or widget.isType("SpecialSelector")) and widget or wt.CreateSelector(t)
 
 		if WidgetToolsDB.lite and t.lite ~= false then return selector end
 
@@ -5632,7 +5632,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		end
 
 		--Handle item list updates
-		selector.setListener.updated(function() selector.frame:SetHeight(math.ceil((#selector.toggles) / t.columns) * 16 + (t.label ~= false and 14 or 0)) end, 1)
+		if selector.setListener.updated then
+			selector.setListener.updated(function() selector.frame:SetHeight(math.ceil((#selector.toggles) / t.columns) * 16 + (t.label ~= false and 14 or 0)) end, 1)
+		end
 
 		--[ Events ]
 
@@ -6039,7 +6041,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				action = function()
 					local selected = selector.getSelected()
 
-					selector.setText(selected and selected - 1 or #selector.toggles, true)
+					selector.setSelected(selected and selected - 1 or #selector.toggles, true)
 				end,
 				dependencies = previousDependencies
 			})
@@ -6108,7 +6110,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				action = function()
 					local selected = selector.getSelected()
 
-					selector.setText(selected and selected + 1 or 1, true)
+					selector.setSelected(selected and selected + 1 or 1, true)
 				end,
 				dependencies = nextDependencies
 			})
@@ -6600,10 +6602,10 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		textbox.setListener.changed(updateText, 1)
 
 		--Link value changes
-		textbox.editbox:HookScript("OnTextChanged", function(_, text, user)
+		textbox.editbox:HookScript("OnTextChanged", function(self, user)
 			scriptEvent = true
 
-			textbox.setText(text, user)
+			textbox.setText(self:GetText(), user)
 		end)
 
 		textbox.editbox:SetAutoFocus(t.keepFocused)
@@ -7787,26 +7789,12 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			if user and t.optionsKey and type(t.onChange) == "table" then for i = 1, #t.onChange do optionsTable.changeHandlers[t.optionsKey][t.onChange[i]]() end end
 		end
 
-		--| State
-
-		---Return the current enabled state of the widget
-		---@return boolean enabled True, if the widget is enabled
-		function colorPicker.isEnabled() return enabled end
-
-		---Enable or disable the widget based on the specified value
-		---***
-		---@param state? boolean Enable the input if true, disable if not | ***Default:*** true
-		---@param silent? boolean If false, invoke an "enabled" event and call registered listeners | ***Default:*** false
-		function colorPicker.setEnabled(state, silent)
-			enabled = state ~= false
-
-			if not silent then colorPicker.invoke.enabled() end
-		end
-
 		--| Color wheel
 
 		--Color wheel value update utility
 		local function colorUpdate()
+			if not enabled then return end
+
 			local r, g, b = ColorPickerFrame:GetColorRGB()
 
 			colorPicker.setColor(wt.PackColor(r, g, b, ColorPickerFrame:GetColorAlpha()), true)
@@ -7844,6 +7832,25 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		---Return the active status of this color picker, whether the main color wheel window was opened for and is currently updating the color of this widget
 		---@return boolean active True, if the color wheel has been opened for this color picker widget
 		function colorPicker.isActive() return active end
+
+		--| State
+
+		---Return the current enabled state of the widget
+		---@return boolean enabled True, if the widget is enabled
+		function colorPicker.isEnabled() return enabled end
+
+		---Enable or disable the widget based on the specified value
+		---***
+		---@param state? boolean Enable the input if true, disable if not | ***Default:*** true
+		---@param silent? boolean If false, invoke an "enabled" event and call registered listeners | ***Default:*** false
+		function colorPicker.setEnabled(state, silent)
+			enabled = state ~= false
+
+			--Update the color when re-enabled
+			if active then colorUpdate() end
+
+			if not silent then colorPicker.invoke.enabled() end
+		end
 
 		--[ Color Wheel Toggle ]
 
@@ -7925,14 +7932,14 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		--| Color wheel toggle button
 
 		---Toggle the interactability of the color picker elements when [ColorPickerFrame](https://warcraft.wiki.gg/wiki/Using_the_ColorPickerFrame) is opened
-		---@param state boolean
-		local function setLock(state)
-			colorPicker.button.frame:EnableMouse(state)
-			colorPicker.hexBox.editbox:EnableMouse(state)
+		---@param unlocked boolean
+		local function setLock(unlocked)
+			colorPicker.button.frame:EnableMouse(unlocked)
+			colorPicker.hexBox.editbox:EnableMouse(unlocked)
 
 			--| Fade inactive color pickers
 
-			local opacity = (state or colorPicker.isActive()) and 1 or 0.4
+			local opacity = (unlocked or colorPicker.isActive()) and 1 or 0.4
 
 			colorPicker.label:SetAlpha(opacity)
 			colorPicker.hexBox.editbox:SetAlpha(opacity)
@@ -8087,8 +8094,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		colorPicker.setListener.colored(function(_, color) updateColor(wt.UnpackColor(color)) end)
 
 		--Color wheel toggle updates
-		ColorPickerFrame:HookScript("OnShow", function() setLock(true) end)
-		ColorPickerFrame:HookScript("OnHide", function() setLock(false) end)
+		ColorPickerFrame:HookScript("OnShow", function() setLock(false) end)
+		ColorPickerFrame:HookScript("OnHide", function() setLock(true) end)
 
 		--| Tooltip
 
@@ -8109,15 +8116,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 			if colorPicker.label then colorPicker.label:SetFontObject(state and "GameFontNormal" or "GameFontDisable") end
 
-			if ColorPickerFrame:IsVisible() then setLock(true) --CHECK if needed
-
-				--Update the color when re-enabled
-				if colorPicker.isActive() then --CHECK
-					local r, g, b = ColorPickerFrame:GetColorRGB()
-
-					colorPicker.setColor(wt.PackColor(r, g, b, OpacitySliderFrame:GetValue()), true)
-				end
-			end
+			if ColorPickerFrame:IsVisible() then setLock(false) end
 		end
 
 		colorPicker.setListener.enabled(updateState, 1)
@@ -8381,7 +8380,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 							parent = panel,
 							name = "Changelog",
 							title = ns.toolboxStrings.about.changelog.label,
-							tooltip = { lines = { { text = ns.toolboxStrings.about.changelog.tooltip, }, } },
+							tooltip = { lines = { { text = ns.toolboxStrings.about.changelog.tooltip:gsub("#VERSION", WrapTextInColorCode(data.version, "FFFFFFFF")), }, } },
 							arrange = {},
 							size = { w = panel:GetWidth() - 225, h = panel:GetHeight() - 42 },
 							text = wt.FormatChangelog(t.changelog, true),
@@ -8393,7 +8392,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 						local fullChangelogFrame
 						wt.CreateSimpleButton({
 							parent = panel,
-							name = "OpenFullChangelog",
+							name = "ChangelogButton",
 							title = ns.toolboxStrings.about.fullChangelog.open.label,
 							tooltip = { lines = { { text = ns.toolboxStrings.about.fullChangelog.open.tooltip, }, } },
 							position = {
@@ -8402,7 +8401,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 								relativePoint = "TOPRIGHT",
 								offset = { x = -3, y = 2 }
 							},
-							size = { w = 156, h = 14 },
+							size = { w = 100, h = 14 },
 							frameLevel = changelog.frame:GetFrameLevel() + 1, --Make sure it's on top to be clickable
 							font = {
 								normal = "GameFontNormalSmall",
@@ -8973,6 +8972,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 								getData = function() return t.settingsData.compactBackup end,
 								saveData = function(state) t.settingsData.compactBackup = state end,
 								onChange = { RefreshBackupBox = dataManagement.refreshBackupBox },
+								listeners = { loaded = { { handler = function() dataManagement.backupAllProfiles.compact.button:SetChecked(t.settingsData.compactBackup) end, }, }, },
+								events = { OnClick = function(_, state) dataManagement.backupAllProfiles.compact.button:SetChecked(state) end },
 							})
 
 							local importPopup = wt.CreatePopupDialogueData(addon, "IMPORT", {
@@ -9023,7 +9024,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 								parent = canvas,
 								name = addon .. "AllProfilesBackup",
 								append = false,
-								title = ns.toolboxStrings.backup.allProfiles.title,
+								title = ns.toolboxStrings.backup.allProfiles.label,
 								position = { anchor = "BOTTOMRIGHT", },
 								keepInBounds = true,
 								size = { w = 678, h = 610 },
@@ -9075,7 +9076,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 							wt.CreateSimpleButton({
 								parent = panel,
-								name = "OpenAllProfilesBackup",
+								name = "AllProfilesButton",
 								title = ns.toolboxStrings.backup.allProfiles.open.label,
 								tooltip = { lines = { { text = ns.toolboxStrings.backup.allProfiles.open.tooltip, }, } },
 								position = {
@@ -9084,7 +9085,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 									relativePoint = "TOPRIGHT",
 									offset = { x = -3, y = 2 }
 								},
-								size = { w = 216, h = 14 },
+								size = { w = 100, h = 14 },
 								frameLevel = dataManagement.backup.box.frame:GetFrameLevel() + 1, --Make sure it's on top to be clickable
 								font = {
 									normal = "GameFontNormalSmall",
@@ -9108,11 +9109,10 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 									anchor = "BOTTOMLEFT",
 									offset = { x = 12, y = 12 }
 								},
-								listeners = { toggled = { { handler = function()
+								events = { OnClick = function()
 									dataManagement.backup.compact.toggleState(true)
-
 									dataManagement.refreshAllProfilesBackupBox()
-								end, }, }, },
+								end },
 							})
 
 							local allProfilesImportPopup = wt.CreatePopupDialogueData(addon, "IMPORT_AllProfiles", {
@@ -9314,7 +9314,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 					--| Utilities
 
-					local applyPreset = function(i)
+					local applyPreset = function(_, i)
 						if not (panel.presetList[i] or {}).data then
 							--Call the specified handler
 							if t.presets.onPreset then t.presets.onPreset(i) end
@@ -9387,7 +9387,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 						if not i or i < 1 or i > #panel.presetList then return false end
 
 						--Apply the preset data to the frame & update the options widgets
-						applyPreset(i)
+						applyPreset(nil, i)
 
 						--Update the preset selection
 						panel.presets.apply.setText(i)
@@ -9516,14 +9516,14 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					width = 140,
 					listeners = t.presets and { selected = { { handler = function() panel.presets.apply.setText(nil, nil, ns.toolboxStrings.presets.apply.select) end, }, }, } or nil,
 					dependencies = t.dependencies,
-					-- optionsKey = t.optionsKey, --TODO reinstate
-					-- getData = function() return t.getData().position.relativePoint end,
-					-- saveData = function(value) t.getData().position.relativePoint = value end,
-					-- onChange = {
-					-- 	CustomPositionChangeHandler = function() if type(t.onChangePosition) == "function" then t.onChangePosition() end end,
-					-- 	UpdateFramePosition = function() wt.SetPosition(t.frame, t.getData().position, true) end,
-					-- 	UpdatePositioningVisualAids = function() if WidgetToolsDB.positioningAids then positioningVisualAids.update(t.frame, t.getData().position) end end,
-					-- },
+					optionsKey = t.optionsKey,
+					getData = function() return t.getData().position.relativePoint end,
+					saveData = function(value) t.getData().position.relativePoint = value end,
+					onChange = {
+						CustomPositionChangeHandler = function() if type(t.onChangePosition) == "function" then t.onChangePosition() end end,
+						UpdateFramePosition = function() wt.SetPosition(t.frame, t.getData().position, true) end,
+						UpdatePositioningVisualAids = function() if WidgetToolsDB.positioningAids then positioningVisualAids.update(t.frame, t.getData().position) end end,
+					},
 					default = t.defaultsTable.position.relativePoint,
 				})
 
@@ -9536,55 +9536,55 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					width = 140,
 					listeners = t.presets and { selected = { { handler = function() panel.presets.apply.setText(nil, nil, ns.toolboxStrings.presets.apply.select) end, }, }, } or nil,
 					dependencies = t.dependencies,
-					-- optionsKey = t.optionsKey, --TODO reinstate
-					-- getData = function() return t.getData().position.anchor end,
-					-- saveData = function(value) t.getData().position.anchor = value end,
-					-- onChange = {
-					-- 	UpdateFrameOffsetsAndPosition = function() if not t.settingsData.keepInPlace then wt.SetPosition(t.frame, t.getData().position, true) else
-					-- 		local x, y = 0, 0
+					optionsKey = t.optionsKey,
+					getData = function() return t.getData().position.anchor end,
+					saveData = function(value) t.getData().position.anchor = value end,
+					onChange = {
+						"CustomPositionChangeHandler",
+						UpdateFrameOffsetsAndPosition = function() if not t.settingsData.keepInPlace then wt.SetPosition(t.frame, t.getData().position, true) else
+							local x, y = 0, 0
 
-					-- 		if previousAnchor:find("LEFT") then
-					-- 			if t.getData().position.anchor:find("RIGHT") then x = -t.frame:GetWidth()
-					-- 			elseif t.getData().position.anchor == "CENTER" or t.getData().position.anchor == "TOP" or t.getData().position.anchor == "BOTTOM" then
-					-- 				x = -t.frame:GetWidth() / 2
-					-- 			end
-					-- 		elseif previousAnchor:find("RIGHT") then
-					-- 			if t.getData().position.anchor:find("LEFT") then x = t.frame:GetWidth()
-					-- 			elseif t.getData().position.anchor == "CENTER" or t.getData().position.anchor == "TOP" or t.getData().position.anchor == "BOTTOM" then
-					-- 				x = t.frame:GetWidth() / 2
-					-- 			end
-					-- 		elseif previousAnchor == "CENTER" or previousAnchor == "TOP" or previousAnchor == "BOTTOM" then
-					-- 			if t.getData().position.anchor:find("LEFT") then x = t.frame:GetWidth() / 2
-					-- 			elseif t.getData().position.anchor:find("RIGHT") then x = -t.frame:GetWidth() / 2 end
-					-- 		end
+							if previousAnchor:find("LEFT") then
+								if t.getData().position.anchor:find("RIGHT") then x = -t.frame:GetWidth()
+								elseif t.getData().position.anchor == "CENTER" or t.getData().position.anchor == "TOP" or t.getData().position.anchor == "BOTTOM" then
+									x = -t.frame:GetWidth() / 2
+								end
+							elseif previousAnchor:find("RIGHT") then
+								if t.getData().position.anchor:find("LEFT") then x = t.frame:GetWidth()
+								elseif t.getData().position.anchor == "CENTER" or t.getData().position.anchor == "TOP" or t.getData().position.anchor == "BOTTOM" then
+									x = t.frame:GetWidth() / 2
+								end
+							elseif previousAnchor == "CENTER" or previousAnchor == "TOP" or previousAnchor == "BOTTOM" then
+								if t.getData().position.anchor:find("LEFT") then x = t.frame:GetWidth() / 2
+								elseif t.getData().position.anchor:find("RIGHT") then x = -t.frame:GetWidth() / 2 end
+							end
 
-					-- 		if previousAnchor:find("TOP") then
-					-- 			if t.getData().position.anchor:find("BOTTOM") then y = t.frame:GetHeight()
-					-- 			elseif t.getData().position.anchor == "CENTER" or t.getData().position.anchor == "LEFT" or t.getData().position.anchor == "RIGHT" then
-					-- 				y = t.frame:GetHeight() / 2
-					-- 			end
-					-- 		elseif previousAnchor:find("BOTTOM") then
-					-- 			if t.getData().position.anchor:find("TOP") then y = -t.frame:GetHeight()
-					-- 			elseif t.getData().position.anchor == "CENTER" or t.getData().position.anchor == "LEFT" or t.getData().position.anchor == "RIGHT" then
-					-- 				y = -t.frame:GetHeight() / 2
-					-- 			end
-					-- 		elseif previousAnchor == "CENTER" or previousAnchor == "LEFT" or previousAnchor == "RIGHT" then
-					-- 			if t.getData().position.anchor:find("TOP") then y = -t.frame:GetHeight() / 2
-					-- 			elseif t.getData().position.anchor:find("BOTTOM") then y = t.frame:GetHeight() / 2 end
-					-- 		end
+							if previousAnchor:find("TOP") then
+								if t.getData().position.anchor:find("BOTTOM") then y = t.frame:GetHeight()
+								elseif t.getData().position.anchor == "CENTER" or t.getData().position.anchor == "LEFT" or t.getData().position.anchor == "RIGHT" then
+									y = t.frame:GetHeight() / 2
+								end
+							elseif previousAnchor:find("BOTTOM") then
+								if t.getData().position.anchor:find("TOP") then y = -t.frame:GetHeight()
+								elseif t.getData().position.anchor == "CENTER" or t.getData().position.anchor == "LEFT" or t.getData().position.anchor == "RIGHT" then
+									y = -t.frame:GetHeight() / 2
+								end
+							elseif previousAnchor == "CENTER" or previousAnchor == "LEFT" or previousAnchor == "RIGHT" then
+								if t.getData().position.anchor:find("TOP") then y = -t.frame:GetHeight() / 2
+								elseif t.getData().position.anchor:find("BOTTOM") then y = t.frame:GetHeight() / 2 end
+							end
 
-					-- 		previousAnchor = t.getData().position.anchor
+							previousAnchor = t.getData().position.anchor
 
-					-- 		--Update offsets
-					-- 		panel.position.offset.x.setData(t.getData().position.offset.x - x, false, false)
-					-- 		panel.position.offset.y.setData(t.getData().position.offset.y - y, false, false)
+							--Update offsets
+							panel.position.offset.x.setData(t.getData().position.offset.x - x, false, false)
+							panel.position.offset.y.setData(t.getData().position.offset.y - y, false, false)
 
-					-- 		--Update frame position
-					-- 		wt.SetPosition(t.frame, t.getData().position, true)
-					-- 	end end,
-					-- 	"CustomPositionChangeHandler",
-					-- 	"UpdatePositioningVisualAids"
-					-- },
+							--Update frame position
+							wt.SetPosition(t.frame, t.getData().position, true)
+						end end,
+						"UpdatePositioningVisualAids"
+					},
 					default = t.defaultsTable.position.anchor,
 				})
 
@@ -9615,13 +9615,13 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 						OnValueChanged = function(_, _, user) if user then panel.presets.apply.setText(nil, nil, ns.toolboxStrings.presets.apply.select) end end,
 					} or nil,
 					dependencies = t.dependencies,
-					-- optionsKey = t.optionsKey, --TODO reinstate
-					-- getData = function() return t.getData().position.offset.x end,
-					-- saveData = function(value) t.getData().position.offset.x = value end,
-					-- onChange = {
-					-- 	"CustomPositionChangeHandler",
-					-- 	"UpdateFramePosition",
-					-- },
+					optionsKey = t.optionsKey,
+					getData = function() return t.getData().position.offset.x end,
+					saveData = function(value) t.getData().position.offset.x = value end,
+					onChange = {
+						"CustomPositionChangeHandler",
+						"UpdateFramePosition",
+					},
 					default = t.defaultsTable.position.offset.x,
 				})
 
@@ -9640,13 +9640,13 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 						OnValueChanged = function(_, _, user) if user then panel.presets.apply.setText(nil, nil, ns.toolboxStrings.presets.apply.select) end end,
 					} or nil,
 					dependencies = t.dependencies,
-					-- optionsKey = t.optionsKey, --TODO reinstate
-					-- getData = function() return t.getData().position.offset.y end,
-					-- saveData = function(value) t.getData().position.offset.y = value end,
-					-- onChange = {
-					-- 	"CustomPositionChangeHandler",
-					-- 	"UpdateFramePosition",
-					-- },
+					optionsKey = t.optionsKey,
+					getData = function() return t.getData().position.offset.y end,
+					saveData = function(value) t.getData().position.offset.y = value end,
+					onChange = {
+						"CustomPositionChangeHandler",
+						"UpdateFramePosition",
+					},
 					default = t.defaultsTable.position.offset.y,
 				})
 
@@ -9657,13 +9657,13 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					tooltip = { lines = { { text = ns.toolboxStrings.position.keepInBounds.tooltip:gsub("#FRAME", t.frameName), }, } },
 					arrange = { newRow = false, },
 					dependencies = t.dependencies,
-					-- optionsKey = t.optionsKey, --TODO reinstate
-					-- getData = function() return t.getData().keepInBounds end,
-					-- saveData = function(state) t.getData().keepInBounds = state end,
-					-- onChange = {
-					-- 	CustomKeepInBoundsChangeHandler = function() if type(t.onChangeKeepInBounds) == "function" then t.onChangeKeepInBounds() end end,
-					-- 	UpdateScreenClamp = function() t.frame:SetClampedToScreen(t.getData().keepInBounds) end,
-					-- },
+					optionsKey = t.optionsKey,
+					getData = function() return t.getData().keepInBounds end,
+					saveData = function(state) t.getData().keepInBounds = state end,
+					onChange = {
+						CustomKeepInBoundsChangeHandler = function() if type(t.onChangeKeepInBounds) == "function" then t.onChangeKeepInBounds() end end,
+						UpdateScreenClamp = function() t.frame:SetClampedToScreen(t.getData().keepInBounds) end,
+					},
 					default = t.defaultsTable.keepInBounds,
 				}) end
 
@@ -9739,13 +9739,13 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 							selected = { { handler = function() panel.presets.apply.setText(nil, nil, ns.toolboxStrings.presets.apply.select) end, }, },
 						} or nil,
 						dependencies = t.dependencies,
-						-- optionsKey = t.optionsKey, --TODO reinstate
-						-- getData = function() return t.getData().layer.strata end,
-						-- saveData = function(value) t.getData().layer.strata = value end,
-						-- onChange = {
-						-- 	CustomStrataChangeHandler = function() if type(t.onChangeStrata) == "function" then t.onChangeStrata() end end,
-						-- 	UpdateFrameStrata = function() t.frame:SetFrameStrata(t.getData().layer.strata) end,
-						-- },
+						optionsKey = t.optionsKey,
+						getData = function() return t.getData().layer.strata end,
+						saveData = function(value) t.getData().layer.strata = value end,
+						onChange = {
+							CustomStrataChangeHandler = function() if type(t.onChangeStrata) == "function" then t.onChangeStrata() end end,
+							UpdateFrameStrata = function() t.frame:SetFrameStrata(t.getData().layer.strata) end,
+						},
 						default = t.defaultsTable.layer.strata,
 					}) end
 
@@ -9756,13 +9756,13 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 						tooltip = { lines = { { text = ns.toolboxStrings.layer.keepOnTop.tooltip:gsub("#FRAME", t.frameName), }, } },
 						arrange = { newRow = false, },
 						dependencies = t.dependencies,
-						-- optionsKey = t.optionsKey, --TODO reinstate
-						-- getData = function() return t.getData().layer.keepOnTop end,
-						-- saveData = function(state) t.getData().layer.keepOnTop = state end,
-						-- onChange = {
-						-- 	CustomKeepOnTopChangeHandler = function() if type(t.onChangeKeepOnTop) == "function" then t.onChangeKeepOnTop() end end,
-						-- 	UpdateTopLevel = function() t.frame:SetToplevel(t.getData().layer.keepOnTop) end,
-						-- },
+						optionsKey = t.optionsKey,
+						getData = function() return t.getData().layer.keepOnTop end,
+						saveData = function(state) t.getData().layer.keepOnTop = state end,
+						onChange = {
+							CustomKeepOnTopChangeHandler = function() if type(t.onChangeKeepOnTop) == "function" then t.onChangeKeepOnTop() end end,
+							UpdateTopLevel = function() t.frame:SetToplevel(t.getData().layer.keepOnTop) end,
+						},
 						default = t.defaultsTable.layer.keepOnTop,
 					}) end
 
@@ -9780,13 +9780,13 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 							OnValueChanged = function(_, _, user) if user then panel.presets.apply.setText(nil, nil, ns.toolboxStrings.presets.apply.select) end end,
 						} or nil,
 						dependencies = t.dependencies,
-						-- optionsKey = t.optionsKey, --TODO reinstate
-						-- getData = function() return t.getData().layer.level end,
-						-- saveData = function(value) t.getData().layer.level = value end,
-						-- onChange = {
-						-- 	CustomLevelChangeHandler = function() if type(t.onChangeLevel) == "function" then t.onChangeLevel() end end,
-						-- 	UpdateFrameLevel = function() t.frame:SetFrameLevel(t.getData().layer.level) end,
-						-- },
+						optionsKey = t.optionsKey,
+						getData = function() return t.getData().layer.level end,
+						saveData = function(value) t.getData().layer.level = value end,
+						onChange = {
+							CustomLevelChangeHandler = function() if type(t.onChangeLevel) == "function" then t.onChangeLevel() end end,
+							UpdateFrameLevel = function() t.frame:SetFrameLevel(t.getData().layer.level) end,
+						},
 						default = t.defaultsTable.layer.level,
 					}) end
 				end
