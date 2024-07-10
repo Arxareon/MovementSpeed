@@ -1035,6 +1035,9 @@
 ---@alias SelectorEventHandler_updated
 ---|fun(self: SelectorType) Called when an "updated" event is invoked after **selector.updatedItems(...)** was called<hr><p>@*param* `self` SelectorType ― Reference to the selector widget</p>
 
+---@alias SelectorEventHandler_added
+---|fun(self: SelectorType, toggle: toggle) Called when a new toggle item is added to the selector via **selector.updatedItems(...)**<hr><p>@*param* `self` SelectorType ― Reference to the selector widget</p><p>@*param* `toggle` toggle ― Reference to the toggle widget added to the selector</p>
+
 ---@alias SelectorEventHandler_any
 ---|fun(self: SelectorType, ...: any) Called when a custom event is invoked<hr><p>@*param* `self` SelectorType ― Reference to the widget</p><p>@*param* `...` any — Any leftover arguments</p>
 
@@ -1052,6 +1055,9 @@
 
 ---@alias MultiselectorEventHandler_updated
 ---|fun(self: MultiselectorType) Called when an "updated" event is invoked after **selector.updatedItems(...)** was called<hr><p>@*param* `self` MultiselectorType ― Reference to the selector widget</p>
+
+---@alias MultiselectorEventHandler_added
+---|fun(self: MultiselectorType, toggle: toggle) Called when a new toggle item is added to the selector via **selector.updatedItems(...)**<hr><p>@*param* `self` MultiselectorType ― Reference to the selector widget</p><p>@*param* `toggle` toggle ― Reference to the toggle widget added to the selector</p>
 
 ---@alias MultiselectorEventHandler_min
 ---|fun(self: MultiselectorType, limited: boolean, below: boolean) Called when a "min" event is invoked after a lower limit update occurs<hr><p>@*param* `self` MultiselectorType ― Reference to the selector widget</p><p>@*param* `limited` boolean ― True, if the number of selected items is equal to lower than the specified lower limit</p><p>@*param* `below` boolean ― True, if the number of selected items is below the specified lower limit</p>

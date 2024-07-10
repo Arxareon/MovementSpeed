@@ -1038,7 +1038,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| Utilities
 
-		--Go deeper to fully map out recoverable keys
+		---Go deeper to fully map out recoverable keys
+		---@param ttc table
+		---@param rck string
 		local function goDeeper(ttc, rck)
 			if type(ttc) ~= "table" then return end
 
@@ -1769,7 +1771,11 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	---@param type? string Unique custom hyperlink type key used to identify the specific handler function | ***Default:*** "-"
 	---@param handler fun(...) Function to be called with the list of content data strings carried by the hyperlink returned one by one when clicking on a hyperlink text created via ***WidgetToolbox*.CustomHyperlink(...)**
 	function wt.SetHyperlinkHandler(addon, type, handler)
-		--Call the handler function if it has been registered
+
+		---Call the handler function if it has been registered
+		---@param addonID string
+		---@param handlerID string
+		---@param payload string
 		local function callHandler(addonID, handlerID, payload)
 			local handlerFunction = wt.FindValueByKey(wt.FindValueByKey(hyperlinkHandlers, addonID), handlerID)
 
@@ -2906,6 +2912,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		--Submenu mouseover utility
 		local function checkSubmenus()
 			for i = 1, #menu.submenus do if menu.submenus[i]:IsMouseOver() then return true end end
+
 			return false
 		end
 
@@ -3135,6 +3142,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		--Item mouseover utility
 		local function checkItems()
 			for i = 1, #submenu.items do if submenu.items[i]:IsMouseOver() then return true end end
+
 			return false
 		end
 
@@ -4642,6 +4650,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 			updated = function() callListeners(selector, listeners, "updated") end,
 
+			added = function(toggle) callListeners(selector, listeners, "added", toggle) end,
+
 			---@param event string Custom event tag
 			---@param ... any
 			_ = function(event, ...) callListeners(selector, listeners, event, ...) end
@@ -4669,6 +4679,10 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			---@param callIndex? integer Set when to call **listener** in the execution order | ***Default:*** *placed at the end of the current list*
 			updated = function(listener, callIndex) addListener(listeners, "updated", listener, callIndex) end,
 
+			---@param listener SelectorEventHandler_added Handler function to set
+			---@param callIndex? integer Set when to call **listener** in the execution order | ***Default:*** *placed at the end of the current list*
+			added = function(listener, callIndex) addListener(listeners, "added", listener, callIndex) end,
+
 			---@param event string Custom event tag
 			---@param listener SelectorEventHandler_any Handler function to set
 			---@param callIndex? integer Set when to call **listener** in the execution order | ***Default:*** *placed at the end of the current list*
@@ -4679,14 +4693,18 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		---Register, update or set up a new toggle widget item
 		---***
-		---@param item toggle|selectorToggle Parameters of a selector item to update or create a toggle at the specified **index** with, or an already existing toggle to use
+		---@param item toggle|selectorToggle
 		---@param index integer
-		local function setToggle(item, index)
+		---@param silent? boolean ***Default:*** false
+		local function setToggle(item, index, silent)
 			if type(item) ~= "table" then return end
+
+			local new = false
 
 			if item.isType and item.isType("Toggle") then
 				--| Register the already defined toggle widget
 
+				new = true
 				selector.toggles[index] = item
 			elseif #inactive > 0 then
 				--| Reenable an inactive toggle widget
@@ -4696,12 +4714,15 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			else
 				--| Create a new toggle widget
 
+				new = true
 				selector.toggles[index] = wt.CreateToggle({ listeners = { toggled = { { handler = function (_, state, user)
-					if type(t.items[selector.toggles[index].index].onSelect) == "function" and user and state then t.items[selector.toggles[index].index].onSelect() end
-				end, }, }, }, })
+					if state and user and type(t.items[selector.toggles[index].index].onSelect) == "function" then t.items[selector.toggles[index].index].onSelect() end
+				end, }, }, },  })
 			end
 
 			selector.toggles[index].index = index
+
+			if new and not silent then selector.invoke.added(selector.toggles[index]) end
 		end
 
 		---Update the list of items currently set for the selector widget, updating its parameters and toggle widgets
@@ -4709,27 +4730,25 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		--- - ***Note:*** The currently selected item may not be the same after item were removed. In that case, the new item at the same index will be selected instead. If one or more items from the last indexes were removed, the new last item at the reduced count index will be selected. Make sure to use **selector.setSelected(...)** to correct the selection if needed!
 		---***
 		---@param items (selectorItem|toggle|selectorToggle)[] Table containing subtables with data used to update the toggle widgets, or already existing toggle widgets
-		---@param silent? boolean If false, invoke "updated" events for the selector and all its toggle items and call registered listeners | ***Default:*** false
+		---@param silent? boolean If false, invoke "updated" or "added" events and call registered listeners | ***Default:*** false
 		function selector.updateItems(items, silent)
 			t.items = items
 
-			wt.Dump(items, nil, nil, 2)
-
 			--Update the toggle widgets
 			for i = 1, #items do
-				setToggle(items[i], i)
+				setToggle(items[i], i, silent)
 
-				if not silent then selector.toggles[i].invoke._("updated", true) end
+				if not silent then selector.toggles[i].invoke._("activated", true) end
 			end
 
 			--Deactivate extra toggle widgets
 			while #items < #selector.toggles do
 				selector.toggles[#selector.toggles].setState(false)
 
+				if not silent then selector.toggles[#selector.toggles].invoke._("activated", false) end
+
 				table.insert(inactive, selector.toggles[#selector.toggles])
 				table.remove(selector.toggles, #selector.toggles)
-
-				if not silent then selector.toggles[#selector.toggles].invoke._("updated", false) end
 			end
 
 			if not silent then selector.invoke.updated() end
@@ -5219,6 +5238,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 			updated = function() callListeners(selector, listeners, "updated") end,
 
+			added = function(toggle) callListeners(selector, listeners, "added", toggle) end,
+
 			---@param count integer
 			min = function(count) callListeners(selector, listeners, "min", count <= t.limits.min, count < t.limits.min) end,
 
@@ -5252,6 +5273,10 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			---@param callIndex? integer Set when to call **listener** in the execution order | ***Default:*** *placed at the end of the current list*
 			updated = function(listener, callIndex) addListener(listeners, "updated", listener, callIndex) end,
 
+			---@param listener SelectorEventHandler_added Handler function to set
+			---@param callIndex? integer Set when to call **listener** in the execution order | ***Default:*** *placed at the end of the current list*
+			added = function(listener, callIndex) addListener(listeners, "added", listener, callIndex) end,
+
 			---@param listener MultiselectorEventHandler_min Handler function to set
 			---@param callIndex? integer Set when to call **listener** in the execution order | ***Default:*** *placed at the end of the current list*
 			min = function(listener, callIndex) addListener(listeners, "min", listener, callIndex) end,
@@ -5270,14 +5295,18 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		---Register, update or set up a new toggle widget item
 		---***
-		---@param item toggle|selectorToggle Parameters of a selector item to update or create a toggle at the specified **index** with, or an already existing toggle to use
+		---@param item toggle|selectorToggle
 		---@param index integer
-		local function setToggle(item, index)
+		---@param silent? boolean ***Default:*** false
+		local function setToggle(item, index, silent)
 			if type(item) ~= "table" then return end
+
+			local new = false
 
 			if item.isType and item.isType("Toggle") then
 				--| Register the already defined toggle widget
 
+				new = true
 				selector.toggles[index] = item
 			elseif #inactive > 0 then
 				--| Reenable an inactive toggle widget
@@ -5287,12 +5316,15 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			else
 				--| Create a new toggle widget
 
+				new = true
 				selector.toggles[index] = wt.CreateToggle({ listeners = { toggled = { { handler = function (_, state, user)
 					if type(t.items[selector.toggles[index].index].onSelect) == "function" and user and state then t.items[selector.toggles[index].index].onSelect() end
 				end, }, }, }, })
 			end
 
 			selector.toggles[index].index = index
+
+			if new and not silent then selector.invoke.added(selector.toggles[index]) end
 		end
 
 		---Update the list of items currently set for the selector widget, updating its parameters and toggle widgets
@@ -5300,25 +5332,25 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		--- - ***Note:*** The currently selected item may not be the same after item were removed. In that case, the new item at the same index will be selected instead. If one or more items from the last indexes were removed, the new last item at the reduced count index will be selected. Make sure to use **selector.setSelected(...)** to correct the selection if needed!
 		---***
 		---@param items (selectorItem|toggle|selectorToggle)[] Table containing subtables with data used to update the toggle widgets, or already existing toggle widgets
-		---@param silent? boolean If false, invoke "updated" events for the selector and all its toggle items and call registered listeners | ***Default:*** false
+		---@param silent? boolean If false, invoke "updated" or "added" events and call registered listeners | ***Default:*** false
 		function selector.updateItems(items, silent)
 			t.items = items
 
 			--Update the toggle widgets
 			for i = 1, #items do
-				setToggle(items[i], i)
+				setToggle(items[i], i, silent)
 
-				if not silent then selector.toggles[i].invoke._("updated", true) end
+				if not silent then selector.toggles[i].invoke._("activated", true) end
 			end
 
 			--Deactivate extra toggle widgets
 			while #items < #selector.toggles do
 				selector.toggles[#selector.toggles].setState(nil, nil, silent)
 
+				if not silent then selector.toggles[#selector.toggles].invoke._("activated", false) end
+
 				table.insert(inactive, selector.toggles[#selector.toggles])
 				table.remove(selector.toggles, #selector.toggles)
-
-				if not silent then selector.toggles[#selector.toggles].invoke._("updated", false) end
 			end
 
 			if not silent then selector.invoke.updated() end
@@ -5413,7 +5445,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			value = type(selections) == "table" and selections or {}
 
 			--Update toggle states
-			for i = 1, #selector.toggles do selector.toggles[i].setState(i == value, user, silent) end
+			for i = 1, #selector.toggles do selector.toggles[i].setState(value[i], user, silent) end
 
 			if user and t.instantSave ~= false then selector.saveData(nil, silent) end
 
@@ -5580,7 +5612,6 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		--| Radio button items
 
 		---Set up or create new radio button item
-		---***
 		---@param item selectorToggle|selectorRadioButton
 		---@param active boolean
 		local function setRadioButton(item, active)
@@ -5628,12 +5659,18 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			setRadioButton(selector.toggles[i], true)
 
 			--Handle item updates
-			selector.toggles[i].setListener._("updated", function(self, active) setRadioButton(self, active) end, i)
+			selector.toggles[i].setListener._("activated", function(self, active) setRadioButton(self, active) end)
 		end
 
 		--Handle item list updates
-		if selector.setListener.updated then
+		if selector.setListener.updated and selector.setListener.added then
 			selector.setListener.updated(function() selector.frame:SetHeight(math.ceil((#selector.toggles) / t.columns) * 16 + (t.label ~= false and 14 or 0)) end, 1)
+			selector.setListener.added(function (_, toggle)
+				setRadioButton(toggle, true)
+
+				--Handle item updates
+				toggle.setListener._("activated", function(self, active) setRadioButton(self, active) end)
+			end)
 		end
 
 		--[ Events ]
@@ -5714,7 +5751,6 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		end
 
 		---Set up or create new checkbox item
-		---***
 		---@param item selectorToggle|selectorCheckbox
 		---@param active boolean
 		local function setCheckbox(item, active)
@@ -5733,7 +5769,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 						offset = { x = selector.label and item.index == 1 and -4 or 0, y = selector.label and item.index == 1 and -2 or 0}
 					},
 					size = { w = (t.width and t.columns == 1) and t.width or 160, h = 16 },
-					events = { OnClick = function() selector.setSelected(selector.getSelected(), true) end, },
+					events = { OnClick = function() wt.Dump(selector.getSelected()) selector.setSelected(selector.getSelected(), true) end, },
 					listeners = { enabled = { { handler = function(self, state)
 						if self.label then self.label:SetFontObject(state and "GameFontHighlightSmall" or "GameFontDisableSmall") end
 					end, callIndex = 1 }, }, },
@@ -5770,11 +5806,17 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			setCheckbox(selector.toggles[i], true)
 
 			--Handle item updates
-			selector.toggles[i].setListener._("updated", function(self, active) setCheckbox(self, active) end, i)
+			selector.toggles[i].setListener._("activated", function(self, active) setCheckbox(self, active) end)
 		end
 
 		--Handle item list updates
 		selector.setListener.updated(function() selector.frame:SetHeight(math.ceil((#selector.toggles) / t.columns) * 16 + (t.label ~= false and 14 or 0)) end, 1)
+		selector.setListener.added(function (_, toggle)
+			setCheckbox(toggle, true)
+
+			--Handle item updates
+			toggle.setListener._("activated", function(self, active) setCheckbox(self, active) end)
+		end)
 
 		--[ Events ]
 
@@ -5841,9 +5883,6 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		--[ Dropdown List ]
 
 		local open = false
-		t.listeners = t.listeners or {}
-		t.listeners.updated = t.listeners.updated or {}
-		table.insert(t.listeners.updated, { handler = function() selector.list:SetHeight(#t.items * 16 + 12) end, callIndex = 1 })
 
 		selector.list = wt.CreatePanel({
 			parent = selector.dropdown,
@@ -6179,8 +6218,13 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--Handle widget updates
 		selector.toggle.setListener.trigger(function() selector.toggleMenu() end)
-		selector.setListener.selected(function() selector.setText() end, 1)
+		selector.setListener.selected(function()
+			selector.setText()
+
+			if t.autoClose then selector.toggleMenu(false) end
+		end, 1)
 		selector.setListener._("open", function(state) if not state then PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_OFF) end end)
+		selector.setListener.updated(function(self) self.list:SetHeight(#self.toggles * 16 + 12) end, 1)
 
 		--| Tooltip
 
@@ -6192,6 +6236,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| State
 
+		---Update the widget UI based on its enabled state
+		---@param _ dropdownSelector
+		---@param state boolean
 		local function updateState(_, state)
 			if selector.label then selector.label:SetFontObject(state and "GameFontNormal" or "GameFontDisable") end
 
@@ -6204,6 +6251,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 			selector.list:Hide()
 		end
+
+		selector.setListener.enabled(updateState, 1)
 
 		--[ Initialization ]
 
@@ -7539,6 +7588,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		local scriptEvent = false
 
 		---Update the widget UI based on the number value
+		---***
 		---@param _ numeric
 		---@param number number
 		---@param user? boolean ***Default:*** false
@@ -8078,6 +8128,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		--| UX
 
 		---Update the widget UI based on the color value
+		---***
 		---@param r? number ***Range:*** (0, 1) | ***Default:*** 1
 		---@param g? number ***Range:*** (0, 1) | ***Default:*** 1
 		---@param b? number ***Range:*** (0, 1) | ***Default:*** 1
@@ -8577,6 +8628,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				--| Utilities
 
 				---Find a profile by its display title and return its index
+				---***
 				---@param title string
 				---@param first? boolean ***Default:*** true
 				---@return integer|nil
@@ -8647,8 +8699,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				end
 
 				---Activate the specified profile
-				---***
-				---@param index integer Index of the profile to activate
+				---@param index integer
 				---@return number|nil
 				local function activateProfile(index)
 					if type(index) ~= "number" then return end
