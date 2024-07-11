@@ -1551,7 +1551,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				if rules[i].frame.isType("Toggle") then if rules[i].evaluate then state = rules[i].evaluate(rules[i].frame.getState()) else state = rules[i].frame.getState() end
 				elseif rules[i].frame.isType("Selector") then state = rules[i].evaluate(rules[i].frame.getSelected())
 				elseif rules[i].frame.isType("Multiselector") then state = rules[i].evaluate(rules[i].frame.getSelected())
-				elseif rules[i].frame.isType("SpecialSelector") then state = rules[i].evaluate(rules[i].frame.getSelected())
+				elseif rules[i].frame.isType("SpecialSelector") then state = rules[i].evaluate(rules[i].frame.getSelections())
 				elseif rules[i].frame.isType("Textbox") then state = rules[i].evaluate(rules[i].frame.getText())
 				elseif rules[i].frame.isType("Numeric") then state = rules[i].evaluate(rules[i].frame.getNumber())
 				end
@@ -5241,10 +5241,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			added = function(toggle) callListeners(selector, listeners, "added", toggle) end,
 
 			---@param count integer
-			min = function(count) callListeners(selector, listeners, "min", count <= t.limits.min, count < t.limits.min) end,
-
-			---@param count integer
-			max = function(count) callListeners(selector, listeners, "max", count >= t.limits.max, count > t.limits.max) end,
+			limited = function(count) callListeners(selector, listeners, "limited", count <= t.limits.min, count < t.limits.min) end,
 
 			---@param event string Custom event tag
 			---@param ... any
@@ -5277,13 +5274,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			---@param callIndex? integer Set when to call **listener** in the execution order | ***Default:*** *placed at the end of the current list*
 			added = function(listener, callIndex) addListener(listeners, "added", listener, callIndex) end,
 
-			---@param listener MultiselectorEventHandler_min Handler function to set
+			---@param listener MultiselectorEventHandler_limited Handler function to set
 			---@param callIndex? integer Set when to call **listener** in the execution order | ***Default:*** *placed at the end of the current list*
-			min = function(listener, callIndex) addListener(listeners, "min", listener, callIndex) end,
-
-			---@param listener MultiselectorEventHandler_max Handler function to set
-			---@param callIndex? integer Set when to call **listener** in the execution order | ***Default:*** *placed at the end of the current list*
-			max = function(listener, callIndex) addListener(listeners, "max", listener, callIndex) end,
+			limited = function(listener, callIndex) addListener(listeners, "limited", listener, callIndex) end,
 
 			---@param event string Custom event tag
 			---@param listener SelectorEventHandler_any Handler function to set
@@ -5367,7 +5360,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				value = value > #items and #items or value
 			end
 
-			selector.setSelected(value, silent)
+			selector.setSelections(value, silent)
 		end
 
 		--| Options data management
@@ -5380,7 +5373,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			handleChanges = handleChanges ~= false
 
 			if type(t.getData) == "function" then
-				selector.setSelected(t.getData(), handleChanges)
+				selector.setSelections(t.getData(), handleChanges)
 
 				if not silent then selector.invoke.loaded(true) end
 			else
@@ -5433,15 +5426,15 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		---***
 		---@return boolean|nil[] selections List of indexed item states
 		--- - **[*index*]** boolean? — If true, the item at this index is currently selected | ***Default:*** false
-		function selector.getSelected() return value end
+		function selector.getSelections() return value end
 
 		---Set the specified items as selected
 		---***
 		---@param selections? boolean|nil[]  List of indexed item states | ***Default:*** nil *(no selection)*
 		--- - **[*index*]** boolean? — If true, set the item at this index as selected | ***Default:*** false
 		---@param user? boolean If true, mark the change as being initiated via a user interaction and call change handlers | ***Default:*** false
-		---@param silent? boolean If false, invoke "selected", "min" & "max events and call registered listeners | ***Default:*** false
-		function selector.setSelected(selections, user, silent)
+		---@param silent? boolean If false, invoke "selected" and "limited" events and call registered listeners | ***Default:*** false
+		function selector.setSelections(selections, user, silent)
 			value = type(selections) == "table" and selections or {}
 
 			--Update toggle states
@@ -5458,8 +5451,39 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 				for _, v in pairs(value) do if v then count = count + 1 end end
 
-				selector.invoke.min(count)
-				selector.invoke.max(count)
+				selector.invoke.limited(count)
+			end
+
+			--Handle changes
+			if user and t.optionsKey and type(t.onChange) == "table" then for i = 1, #t.onChange do optionsTable.changeHandlers[t.optionsKey][t.onChange[i]]() end end
+		end
+
+		---Set the specified item as selected
+		---***
+		---@param index integer Index of the item | ***Range:*** (1, #selector.toggles)
+		---@param selected? boolean If true, set the item at this index as selected | ***Default:*** false
+		---@param user? boolean If true, mark the change as being initiated via a user interaction and call change handlers | ***Default:*** false
+		---@param silent? boolean If false, invoke "selected" and "limited" events and call registered listeners | ***Default:*** false
+		function selector.setSelected(index, selected, user, silent)
+			if not selector.toggles[index] then return end
+
+			value[index] = selected == true
+
+			--Update toggle state
+			selector.toggles[index].setState(selected, user, silent)
+
+			if user and t.instantSave ~= false then selector.saveData(nil, silent) end
+
+			if not silent then
+				selector.invoke.selected(user == true)
+
+				--| Check limits
+
+				local count = 0
+
+				for _, v in pairs(value) do if v then count = count + 1 end end
+
+				selector.invoke.limited(count)
 			end
 
 			--Handle changes
@@ -5502,7 +5526,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		if t.dependencies then wt.AddDependencies(t.dependencies, selector.setEnabled) end
 
 		--Set starting value
-		selector.setSelected(value, false, true)
+		selector.setSelections(value, false, true)
 
 		return selector
 	end
@@ -5632,7 +5656,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					size = { w = (t.width and t.columns == 1) and t.width or nil, },
 					clearable = t.clearable,
 					events = { OnClick = function(_, _, button)
-						if button == "LeftButton" then selector.setSelected(selector.toggles[item.index].index, true)
+						if button == "LeftButton" then selector.setSelected(item.index, true)
 						elseif t.clearable and button == "RightButton" and not selector.getSelected() then selector.setSelected(nil, true) end
 					end, },
 				}, item)
@@ -5769,7 +5793,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 						offset = { x = selector.label and item.index == 1 and -4 or 0, y = selector.label and item.index == 1 and -2 or 0}
 					},
 					size = { w = (t.width and t.columns == 1) and t.width or 160, h = 16 },
-					events = { OnClick = function() wt.Dump(selector.getSelected()) selector.setSelected(selector.getSelected(), true) end, },
+					events = { OnClick = function(self) selector.setSelected(item.index, self:GetChecked(), true) end, },
 					listeners = { enabled = { { handler = function(self, state)
 						if self.label then self.label:SetFontObject(state and "GameFontHighlightSmall" or "GameFontDisableSmall") end
 					end, callIndex = 1 }, }, },
@@ -5781,8 +5805,11 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				end
 
 				--Handle limit updates
-				selector.setListener.min(function(_, limited) setLock(item, item.getState() and limited) end, item.index)
-				selector.setListener.max(function(_, limited) setLock(item, not item.getState() and limited) end, item.index)
+				selector.setListener.limited(function(_, min, max)
+					local state = item.getState()
+
+					setLock(item, (min and state) or (max and not state))
+				end, item.index)
 			elseif active then
 				--Update label
 				if item.label then item.label:SetText(t.items[item.index].title) end

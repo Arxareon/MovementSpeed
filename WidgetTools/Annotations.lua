@@ -1011,8 +1011,7 @@
 
 ---@alias MultiselectorEventTag
 ---|SelectorEventTag
----|"min"
----|"max"
+---|"limited"
 
 ---@alias DropdownSelectorEventTag
 ---|SelectorEventTag
@@ -1059,11 +1058,8 @@
 ---@alias MultiselectorEventHandler_added
 ---|fun(self: MultiselectorType, toggle: toggle) Called when a new toggle item is added to the selector via **selector.updatedItems(...)**<hr><p>@*param* `self` MultiselectorType ― Reference to the selector widget</p><p>@*param* `toggle` toggle ― Reference to the toggle widget added to the selector</p>
 
----@alias MultiselectorEventHandler_min
----|fun(self: MultiselectorType, limited: boolean, below: boolean) Called when a "min" event is invoked after a lower limit update occurs<hr><p>@*param* `self` MultiselectorType ― Reference to the selector widget</p><p>@*param* `limited` boolean ― True, if the number of selected items is equal to lower than the specified lower limit</p><p>@*param* `below` boolean ― True, if the number of selected items is below the specified lower limit</p>
-
----@alias MultiselectorEventHandler_max
----|fun(self: MultiselectorType, limited: boolean, over: boolean) Called when a "max" event is invoked after an upper limit update occurs<hr><p>@*param* `self` MultiselectorType ― Reference to the selector widget</p><p>@*param* `limited` boolean ― True, if the number of selected items is equal to higher than the specified upper limit</p><p>@*param* `over` boolean ― True, if the number of selected items is over the specified upper limit</p>
+---@alias MultiselectorEventHandler_limited
+---|fun(self: MultiselectorType, min: boolean, max: boolean, passed: boolean) Called when a "limited" event is invoked after a limit update occurs<hr><p>@*param* `self` MultiselectorType ― Reference to the selector widget</p><p>@*param* `min` boolean ― True, if the number of selected items is equal to lower than the specified lower limit</p><p>@*param* `max` boolean ― True, if the number of selected items is equal to higher than the specified upper limit</p><p>@*param* `passed` boolean ― True, if the number of selected items is below or over the specified lower or upper limit</p>
 
 ---@alias MultiselectorEventHandler_any
 ---|fun(self: MultiselectorType, ...: any) Called when a custom event is invoked<hr><p>@*param* `self` MultiselectorType ― Reference to the widget</p><p>@*param* `...` any — Any leftover arguments</p>
@@ -1138,11 +1134,8 @@
 ---@class multiselectorEventListener_updated : eventHandlerIndex
 ---@field handler MultiselectorEventHandler_updated Handler function to register for call
 
----@class multiselectorEventListener_min : eventHandlerIndex
----@field handler MultiselectorEventHandler_min Handler function to register for call
-
----@class multiselectorEventListener_max : eventHandlerIndex
----@field handler MultiselectorEventHandler_max Handler function to register for call
+---@class multiselectorEventListener_limited : eventHandlerIndex
+---@field handler MultiselectorEventHandler_limited Handler function to register for call
 
 ---@class multiselectorEventListener_any : eventTag, eventHandlerIndex
 ---@field handler MultiselectorEventHandler_any Handler function to register for call
@@ -1176,8 +1169,7 @@
 ---@field saved? multiselectorEventListener_saved[] List of functions to call in order when an "saved" event is invoked after the data of this widget has been saved to storage
 ---@field selected? multiselectorEventListener_selected[] List of functions to call in order when an "selected" event is invoked after **selector.setSelected(...)** was called or an option was clicked or cleared
 ---@field updated? multiselectorEventListener_updated[] List of functions to call in order when an "updated" events are invoked after **selector.updatedItems(...)** was called
----@field min? multiselectorEventListener_min[] List of functions to call in order when a "min" event is invoked after a lower limit update occurs
----@field max? multiselectorEventListener_max[] List of functions to call in order when a "max" event is invoked after an upper limit update occurs
+---@field min? multiselectorEventListener_limited[] List of functions to call in order when a "limited" event is invoked after a lower limit update occurs
 ---@field [string]? multiselectorEventListener_any[] List of functions to call in order when a custom event is invoked
 
 ---@class specialSelectorEventListeners
