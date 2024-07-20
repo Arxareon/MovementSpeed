@@ -1327,25 +1327,27 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				frame:HookScript("OnEvent", function(_, event, key, down) if event == "MODIFIER_STATE_CHANGED" and key:find(t.modifier) then
 					if down > 0 then SetCursor("Interface/Cursor/ui-cursor-move.crosshair") else SetCursor(nil) end
 				end end)
-			end
-		end
+				end
 
-		for i = 1, #t.triggers do
-			t.triggers[i]:EnableMouse(movable)
+			for i = 1, #t.triggers do
+				t.triggers[i]:EnableMouse(true)
 
-			if movable then
 				t.triggers[i]:HookScript("OnEnter", function()
 					if not t.cursor or not frame:IsMovable() then return end
 
-					if not modifier or modifier() then SetCursor("Interface/Cursor/ui-cursor-move.crosshair") else frame:RegisterEvent("MODIFIER_STATE_CHANGED") end
+					if not modifier then SetCursor("Interface/Cursor/ui-cursor-move.crosshair") else
+						if modifier() then SetCursor("Interface/Cursor/ui-cursor-move.crosshair") end
+
+						frame:RegisterEvent("MODIFIER_STATE_CHANGED")
+					end
 				end)
 
 				t.triggers[i]:HookScript("OnLeave", function()
 					if not t.cursor or not frame:IsMovable() then return end
 
-					if modifier and not hadEvent then frame:UnregisterEvent("MODIFIER_STATE_CHANGED") end
-
 					SetCursor(nil)
+
+					if modifier and not hadEvent then frame:UnregisterEvent("MODIFIER_STATE_CHANGED") end
 				end)
 
 				t.triggers[i]:HookScript("OnMouseDown", function()
@@ -1410,7 +1412,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					if t.triggers[i]:HasScript("OnUpdate") then t.triggers[i]:SetScript("OnUpdate", nil) end
 				end)
 			end
-		end
+		else for i = 1, #t.triggers do t.triggers[i]:EnableMouse(false) end end
 	end
 
 	---Set the visibility of a frame based on the value provided
@@ -9264,7 +9266,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	---@param t positionOptionsCreationData Parameters are to be provided in this table
 	---***
 	---@return positionPanel|nil table Components of the options panel wrapped in a table
-	function wt.CreatePositionOptions(addon, t)
+	function wt. CreatePositionOptions(addon, t)
 		if not addon or not IsAddOnLoaded(addon) then return end
 
 		--[ Wrapper Table ]

@@ -475,7 +475,9 @@ local function CreateUpdateOptions(panel, optionsKey)
 		title = ns.strings.options.speedDisplay.update.frequency.label,
 		tooltip = { lines = { { text = ns.strings.options.speedDisplay.update.frequency.tooltip, }, } },
 		arrange = { newRow = false, },
-		value = { min = 0.05, max = 1, increment = 0.05 },
+		min = 0.05,
+		max = 1,
+		increment = 0.05,
 		altStep = 0.2,
 		events = { OnValueChanged = function(_, value)  end, },
 		dependencies = {
@@ -515,7 +517,9 @@ local function CreateSpeedValueOptions(panel, optionsKey)
 		title = ns.strings.options.speedValue.fractionals.label,
 		tooltip = { lines = { { text = ns.strings.options.speedValue.fractionals.tooltip, }, } },
 		arrange = { newRow = false, },
-		value = { min = 0, max = 4, increment = 1 },
+		min = 0,
+		max = 4,
+		increment = 1,
 		dependencies = { { frame = options.playerSpeed.visibility.hidden, evaluate = function(state) return not state end }, },
 		optionsKey = optionsKey,
 		getData = function() return MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.value.fractionals end,
@@ -590,18 +594,20 @@ local function CreateFontOptions(panel, optionsKey)
 		default = GetFontID(ns.profileDefault.playerSpeed.font.family)
 	})
 	--Update the font of the dropdown items
-	if options.playerSpeed.font.family.frame then for i = 1, #options.playerSpeed.font.family.widgets do if options.playerSpeed.font.family.widgets[i].label then
-		local _, size, flags = options.playerSpeed.font.family.widgets[i].label:GetFont()
-		options.playerSpeed.font.family.widgets[i].label:SetFont(ns.fonts[i].path, size, flags)
+	if options.playerSpeed.font.family.frame then for i = 1, #options.playerSpeed.font.family.toggles do if options.playerSpeed.font.family.toggles[i].label then
+		local _, size, flags = options.playerSpeed.font.family.toggles[i].label:GetFont()
+		options.playerSpeed.font.family.toggles[i].label:SetFont(ns.fonts[i].path, size, flags)
 	end end end
 
 	options.playerSpeed.font.size = wt.CreateNumericSlider({
 		parent = panel,
 		name = "Size",
 		title = ns.strings.options.speedDisplay.font.size.label,
-		tooltip = { lines = { { text = ns.strings.options.speedDisplay.font.size.tooltip .. "\n\n" .. ns.strings.misc.default .. ": " .. ns.profileDefault.playerSpeed.font.size, }, } },
+		tooltip = { lines = { { text = ns.strings.options.speedDisplay.font.size.tooltip, }, } },
 		arrange = { newRow = false, },
-		value = { min = 8, max = 64, increment = 1 },
+		min = 8,
+		max = 64,
+		increment = 1,
 		altStep = 3,
 		dependencies = { { frame = options.playerSpeed.visibility.hidden, evaluate = function(state) return not state end }, },
 		optionsKey = optionsKey,
@@ -773,9 +779,9 @@ local function CreateSpeedDisplayOptionsPage()
 							data = {
 								position = {
 									anchor = "TOP",
-									relativeTo = MinimapBackdrop,
+									relativeTo = Minimap,
 									relativePoint = "BOTTOM",
-									offset = { y = -2 }
+									offset = { x = 2, y = -14 }
 								},
 								keepInBounds = true,
 								layer = {
@@ -800,10 +806,10 @@ local function CreateSpeedDisplayOptionsPage()
 						getData = function() return MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.customPreset end,
 						defaultsTable = ns.profileDefault.customPreset,
 						onSave = function() print(addonChat .. wt.Color(ns.strings.chat.save.response:gsub(
-							"#CUSTOM", wt.Color(options.playerSpeed.position.presetList[1].title, ns.colors.green[2])
+							"#CUSTOM", wt.Color(ns.strings.misc.custom, ns.colors.green[2])
 						), ns.colors.yellow[2])) end,
 						onReset = function() print(addonChat .. wt.Color(ns.strings.chat.reset.response:gsub(
-							"#CUSTOM", wt.Color(options.playerSpeed.position.presetList[1].title, ns.colors.green[2])
+							"#CUSTOM", wt.Color(ns.strings.misc.custom, ns.colors.green[2])
 						), ns.colors.yellow[2])) end
 					}
 				},
@@ -915,7 +921,9 @@ local function CreateTargetSpeedValueOptions(panel)
 		title = ns.strings.options.speedValue.fractionals.label,
 		tooltip = { lines = { { text = ns.strings.options.speedValue.fractionals.tooltip, }, } },
 		arrange = { newRow = false, },
-		value = { min = 0, max = 4, increment = 1 },
+		min = 0,
+		max = 4,
+		increment = 1,
 		dependencies = { { frame = options.targetSpeed.enabled, }, },
 		optionsKey = ns.name .. "TargetSpeed",
 		getData = function() return MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.targetSpeed.value.fractionals end,
@@ -1052,6 +1060,7 @@ local commandManager = wt.RegisterChatCommands(ns.name, { ns.chat.keyword }, {
 				if j + 1 <= #options.playerSpeed.position.presetList then
 					list = list .. "    " .. wt.Color(j + 1, ns.colors.green[2]) .. wt.Color(" - " .. options.playerSpeed.position.presetList[j + 1].name, ns.colors.yellow[2])
 				end
+
 				print(list)
 			end
 		end,
@@ -1168,9 +1177,9 @@ local function _CreateContextMenu(parent)
 	-- 	events = { OnClick = function() options.targetSpeed.page.open() end, },
 	-- })
 	-- wt.AddContextButton(optionsMenu, contextMenu, {
-	-- 	title = ns.strings.options.advanced.title,
-	-- 	tooltip = { lines = { { text = ns.strings.options.advanced.description:gsub("#ADDON", addonTitle), }, } },
-	-- 	events = { OnClick = function() options.advanced.page.open() end, },
+	-- 	title = wt.GetStrings("dataManagement").title,
+	-- 	tooltip = { lines = { { text = wt.GetStrings("dataManagement").description:gsub("#ADDON", addonTitle), }, } },
+	-- 	events = { OnClick = function() options.dataManagement.page.open() end, },
 	-- })
 
 	--Presets submenu
@@ -1223,6 +1232,7 @@ frames.main = wt.CreateBaseFrame({
 	onEvent = {
 		ADDON_LOADED = function(self, addon)
 			if addon ~= ns.name then return end
+
 			self:UnregisterEvent("ADDON_LOADED")
 
 			--[ Data ]
@@ -1285,8 +1295,8 @@ frames.main = wt.CreateBaseFrame({
 					options.travelSpeed.page.load(true)
 					options.targetSpeed.page.load(true)
 					options.dataManagement.page.load(true)
-				else print(addonChat .. wt.Color(ns.strings.options.advanced.backup.error, ns.colors.yellow[2])) end end,
-				onImportAllProfiles = function(success) if not success then print(addonChat .. wt.Color(ns.strings.options.advanced.backup.error, ns.colors.yellow[2])) end end,
+				else print(addonChat .. wt.Color(wt.GetStrings("backup").error, ns.colors.yellow[2])) end end,
+				onImportAllProfiles = function(success) if not success then print(addonChat .. wt.GetStrings("backup").error, ns.colors.yellow[2]) end end,
 				valueChecker = CheckValidity,
 				onRecovery = GetRecoveryMap
 			})
@@ -1313,7 +1323,7 @@ frames.main = wt.CreateBaseFrame({
 			CreateContextMenu()
 			wt.SetPosition(frames.playerSpeed.display, wt.AddMissing({ relativePoint = MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.position.anchor, }, MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.position))
 			wt.ConvertToAbsolutePosition(frames.playerSpeed.display)
-			SetDisplayValues("playerSpeed", MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data)
+			SetDisplayValues(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data)
 		end,
 		PLAYER_ENTERING_WORLD = function(self)
 			self:UnregisterEvent("PLAYER_ENTERING_WORLD")

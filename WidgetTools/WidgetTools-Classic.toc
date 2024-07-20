@@ -1,4 +1,4 @@
-## Interface: 11502
+## Interface: 11503
 ## Title: Widget Tools |TInterface/AddOns/WidgetTools/Textures/Logo.tga:0|t
 ## Notes: Responsible for doing the heavy lifting for dependant addons in the background.
 ## IconTexture: Interface/AddOns/WidgetTools/Textures/Logo.tga

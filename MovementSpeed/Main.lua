@@ -996,17 +996,17 @@ local function CreateSpeedDisplayOptionsPage(display)
 
 						--Notification
 						print(addonChat .. wt.Color(ns.strings.chat.preset.response:gsub(
-							"#PRESET", wt.Color(ns.strings.presets[1], ns.colors.green[2])
+							"#PRESET", wt.Color(options[display].position.presetList[i].title, ns.colors.green[2])
 						), ns.colors.yellow[2]))
 					end,
 					custom = {
 						getData = function() return MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.customPreset end,
 						defaultsTable = ns.profileDefault.customPreset,
 						onSave = function() print(addonChat .. wt.Color(ns.strings.chat.save.response:gsub(
-							"#CUSTOM", wt.Color(ns.strings.presets[1], ns.colors.green[2])
+							"#CUSTOM", wt.Color(ns.strings.misc.custom, ns.colors.green[2])
 						), ns.colors.yellow[2])) end,
 						onReset = function() print(addonChat .. wt.Color(ns.strings.chat.reset.response:gsub(
-							"#CUSTOM", wt.Color(ns.strings.presets[1], ns.colors.green[2])
+							"#CUSTOM", wt.Color(ns.strings.misc.custom, ns.colors.green[2])
 						), ns.colors.yellow[2])) end
 					}
 				},
