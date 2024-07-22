@@ -323,7 +323,7 @@ local english = {
 				},
 				frequency = {
 					label = "Update Frequency",
-					tooltip = "Set how many times the speed value should be updated every second.",
+					tooltip = "Set the time in seconds to wait before speed value is updated again.",
 				},
 			},
 			font = {
@@ -629,7 +629,7 @@ ns.profileDefault = {
 		},
 		update = {
 			throttle = false,
-			frequency = 0.15,
+			frequency = 0.1,
 		},
 		value = {
 			units = { true, false, false },
@@ -669,7 +669,7 @@ ns.profileDefault = {
 		},
 		update = {
 			throttle = true,
-			frequency = 0.15,
+			frequency = 0.1,
 		},
 		value = {
 			units = { true, false, false },
