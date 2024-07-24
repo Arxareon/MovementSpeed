@@ -87,9 +87,14 @@ ns.changelog = {
 		"Under the hood improvements.",
 	},
 	{
-		"#V_Version 2.0_# #H_(2/21/2024)_#",
-		"#C_Changes:_#",
-		"Significant under the hood improvements.",
+		"#V_Version 2.0_# #H_(7/24/2024)_#",
+		"#N_New:_#",
+		"Added Cataclysm Classic 4.4.0, vanilla Classic 1.15.3 & The War Within 11.0.0 support.",
+		"A new Lite mode has been introduced. When enabled, no settings managed by Widget Tools will be loaded for addons built with Widget Tools saving resources in the process. Disable to access addon settings again.",
+		"An option to enable positioning visual aids for addons built with Widget Tools have been added.",
+		"Added an option for developers to make the Frame Attributes window (TableAttributeDisplay Frame) wider.",
+		"#H_#C_Changes_# & #F_Fixes_#:_#",
+		"Significant under the hood improvements & fixes.",
 		"#H_If you encounter any issues, do not hesitate to report them! Try including when & how they occur, and which other addons are you using to give me the best chance of being able to reproduce & fix them. Try proving any LUA script error messages and if you know how, taint logs as well (when relevant). Thanks a lot for helping!_#",
 	},
 }

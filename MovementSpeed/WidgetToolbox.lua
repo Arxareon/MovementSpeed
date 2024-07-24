@@ -4695,31 +4695,30 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		---Register, update or set up a new toggle widget item
 		---***
-		---@param item toggle|selectorToggle
 		---@param index integer
 		---@param silent? boolean ***Default:*** false
-		local function setToggle(item, index, silent)
-			if type(item) ~= "table" then return end
-
+		local function setToggle(index, silent)
 			local new = false
 
-			if item.isType and item.isType("Toggle") then
+			if t.items[index].isType and t.items[index].isType("Toggle") then
 				--| Register the already defined toggle widget
 
 				new = true
-				selector.toggles[index] = item
-			elseif #inactive > 0 then
-				--| Reenable an inactive toggle widget
+				selector.toggles[index] = t.items[index]
+			elseif index > #selector.toggles then
+				if #inactive > 0 then
+					--| Reenable an inactive toggle widget
 
-				selector.toggles[index] = inactive[#inactive]
-				table.remove(inactive, #inactive)
-			else
-				--| Create a new toggle widget
+					selector.toggles[index] = inactive[#inactive]
+					table.remove(inactive, #inactive)
+				else
+					--| Create a new toggle widget
 
-				new = true
-				selector.toggles[index] = wt.CreateToggle({ listeners = { toggled = { { handler = function (_, state, user)
-					if state and user and type(t.items[selector.toggles[index].index].onSelect) == "function" then t.items[selector.toggles[index].index].onSelect() end
-				end, }, }, },  })
+					new = true
+					selector.toggles[index] = wt.CreateToggle({ listeners = { toggled = { { handler = function (_, state, user)
+						if state and user and type(t.items[selector.toggles[index].index].onSelect) == "function" then t.items[selector.toggles[index].index].onSelect() end
+					end, }, }, },  })
+				end
 			end
 
 			selector.toggles[index].index = index
@@ -4738,7 +4737,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 			--Update the toggle widgets
 			for i = 1, #items do
-				setToggle(items[i], i, silent)
+				setToggle(i, silent)
 
 				if not silent then selector.toggles[i].invoke._("activated", true) end
 			end
@@ -4874,7 +4873,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		end end end end
 
 		--Register starting items
-		for i = 1, #t.items do setToggle(t.items[i], i) end
+		for i = 1, #t.items do setToggle(i) end
 
 		--Register to options data management
 		if t.optionsKey then wt.AddToOptionsTable(selector, t.optionsKey, t.onChange) end
