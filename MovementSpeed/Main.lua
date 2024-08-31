@@ -213,29 +213,6 @@ end
 
 --[ Speed Update ]
 
---Update the current Player Speed values accessible through **speed**
-local function UpdatePlayerSpeed()
-	local dragonriding, _, flightSpeed = C_PlayerInfo.GetGlidingInfo()
-	speed.playerSpeed.yards = dragonriding and flightSpeed or GetUnitSpeed(UnitInVehicle("player") and "vehicle" or "player")
-	speed.playerSpeed.coords.x, speed.playerSpeed.coords.y = speed.playerSpeed.yards / (map.size.w / 100), speed.playerSpeed.yards / (map.size.h / 100)
-end
-
---Updates the current Travel Speed since the last sample accessible through **speed**
-local function UpdateTravelSpeed()
-	local time = GetTime()
-	local delta = time - lastTime
-	local currentPosition = map.id and C_Map.GetPlayerMapPosition(map.id, "player") or nil
-
-	if (pastPosition and currentPosition and not IsInInstance() and not C_Garrison.IsOnGarrisonMap()) then
-		speed.travelSpeed.coords.x, speed.travelSpeed.coords.y = (currentPosition.x - pastPosition.x) * map.size.w, (currentPosition.y - pastPosition.y) * map.size.h
-		speed.travelSpeed.yards = math.sqrt(speed.travelSpeed.coords.x ^ 2 + speed.travelSpeed.coords.y ^ 2) / (delta > 0.01 and delta or 1)
-		speed.travelSpeed.coords.x, speed.travelSpeed.coords.y = math.abs(speed.travelSpeed.coords.x), math.abs(speed.travelSpeed.coords.y)
-	else speed.travelSpeed.yards = 0 end
-
-	pastPosition = currentPosition
-	lastTime = time
-end
-
 ---Format the specified speed value based on the DB specifications
 ---@param type "playerSpeed"|"travelSpeed"|"targetSpeed"
 ---@return string
@@ -261,6 +238,49 @@ local function FormatSpeedValue(type)
 	):gsub(
 		"#Y", wt.FormatThousands(speed[type].coords.y, f, true, not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[type].value.zeros)
 	)
+end
+
+--Update the current Player Speed values accessible through **speed**
+local function UpdatePlayerSpeed()
+	local dragonriding, _, flightSpeed = C_PlayerInfo.GetGlidingInfo()
+	speed.playerSpeed.yards = dragonriding and flightSpeed or GetUnitSpeed(UnitInVehicle("player") and "vehicle" or "player")
+	speed.playerSpeed.coords.x, speed.playerSpeed.coords.y = speed.playerSpeed.yards / (map.size.w / 100), speed.playerSpeed.yards / (map.size.h / 100)
+
+	--Hide when stationery
+	if speed.playerSpeed.yards == 0 and MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.visibility.autoHide then
+		frames.playerSpeed.display:Hide()
+
+		return
+	else frames.playerSpeed.display:Show() end
+
+	--Update the display text
+	frames.playerSpeed.text:SetText(" " .. FormatSpeedValue("playerSpeed"))
+end
+
+--Updates the current Travel Speed since the last sample accessible through **speed**
+local function UpdateTravelSpeed()
+	local time = GetTime()
+	local delta = time - lastTime
+	local currentPosition = map.id and C_Map.GetPlayerMapPosition(map.id, "player") or nil
+
+	if (pastPosition and currentPosition and not IsInInstance() and not C_Garrison.IsOnGarrisonMap()) then
+		speed.travelSpeed.coords.x, speed.travelSpeed.coords.y = (currentPosition.x - pastPosition.x) * map.size.w, (currentPosition.y - pastPosition.y) * map.size.h
+		speed.travelSpeed.yards = math.sqrt(speed.travelSpeed.coords.x ^ 2 + speed.travelSpeed.coords.y ^ 2) / (delta > 0.01 and delta or 1)
+		speed.travelSpeed.coords.x, speed.travelSpeed.coords.y = math.abs(speed.travelSpeed.coords.x), math.abs(speed.travelSpeed.coords.y)
+	else speed.travelSpeed.yards = 0 end
+
+	pastPosition = currentPosition
+	lastTime = time
+
+	--Hide when stationery
+	if speed.travelSpeed.yards == 0 and MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.travelSpeed.visibility.autoHide then
+		frames.travelSpeed.display:Hide()
+
+		return
+	else frames.travelSpeed.display:Show() end
+
+	--Update the display text
+	frames.travelSpeed.text:SetText(" " .. FormatSpeedValue("travelSpeed"))
 end
 
 ---Refresh the specified speed text template string to be filled with speed values when displaying it
@@ -434,6 +454,13 @@ end
 ---Start updating the speed display
 ---@param display "playerSpeed"|"travelSpeed"
 local function StartSpeedDisplayUpdates(display)
+	local updater = display == "playerSpeed" and UpdatePlayerSpeed or UpdateTravelSpeed
+
+	--Update the speed values at start
+	updater()
+
+	--| Repeated updates
+
 	frames[display].updater:SetScript("OnUpdate", function(_, deltaTime)
 		--Throttle the update
 		if MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].update.throttle then
@@ -443,18 +470,8 @@ local function StartSpeedDisplayUpdates(display)
 			else timeSinceSpeedUpdate[display] = 0 end
 		end
 
-		--Update speed values
-		(display == "playerSpeed" and UpdatePlayerSpeed or UpdateTravelSpeed)(deltaTime)
-
-		--Hide when stationery
-		if speed[display].yards == 0 and MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].visibility.autoHide then
-			frames[display].display:Hide()
-
-			return
-		else frames[display].display:Show() end
-
-		--Update the display text
-		frames[display].text:SetText(" " .. FormatSpeedValue(display))
+		--Update the speed values
+		updater()
 	end)
 end
 
@@ -1039,6 +1056,8 @@ local function CreateSpeedDisplayOptionsPage(display)
 
 						--Notification
 						print(addonChat .. wt.Color(ns.strings.chat.preset.response:gsub(
+							"#TYPE", ns.strings.options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].title
+						):gsub(
 							"#PRESET", wt.Color(options[display].position.presetList[i].title, ns.colors.green[2])
 						), ns.colors.yellow[2]))
 					end,
@@ -1046,6 +1065,8 @@ local function CreateSpeedDisplayOptionsPage(display)
 						getData = function() return MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.customPreset end,
 						defaultsTable = ns.profileDefault.customPreset,
 						onSave = function() print(addonChat .. wt.Color(ns.strings.chat.save.response:gsub(
+							"#TYPE", ns.strings.options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].title
+						):gsub(
 							"#CUSTOM", wt.Color(ns.strings.misc.custom, ns.colors.green[2])
 						), ns.colors.yellow[2])) end,
 						onReset = function() print(addonChat .. wt.Color(ns.strings.chat.reset.response:gsub(
@@ -1054,9 +1075,13 @@ local function CreateSpeedDisplayOptionsPage(display)
 					}
 				},
 				setMovable = { events = {
-					onStop = function() print(addonChat .. wt.Color(ns.strings.chat.position.save, ns.colors.yellow[2])) end,
+					onStop = function() print(addonChat .. wt.Color(ns.strings.chat.position.save:gsub(
+						"#TYPE", ns.strings.options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].title
+					), ns.colors.yellow[2])) end,
 					onCancel = function()
-						print(addonChat .. wt.Color(ns.strings.chat.position.cancel, ns.colors.yellow[1]))
+						print(addonChat .. wt.Color(ns.strings.chat.position.cancel:gsub(
+							"#TYPE", ns.strings.options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].title
+						), ns.colors.yellow[1]))
 						print(wt.Color(ns.strings.chat.position.error, ns.colors.yellow[2]))
 					end,
 				}, },
@@ -1308,15 +1333,13 @@ end
 --[ Chat Utilities ]
 
 ---Print visibility info
----@param load boolean | ***Default:*** false
-local function PrintStatus(load)
-	if load == true and not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].visibility.statusNotice then return end
-
-	print(addonChat .. wt.Color(frames.main:IsVisible() and (
-		not frames[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].display:IsVisible() and ns.strings.chat.status.notVisible or ns.strings.chat.status.visible
-	) or ns.strings.chat.status.hidden, ns.colors.yellow[1]):gsub(
+---@param display "playerSpeed"|"travelSpeed"
+local function PrintStatus(display)
+	print(addonChat .. wt.Color((
+		frames.main:IsVisible() and (not frames[display].display:IsVisible() and ns.strings.chat.status.notVisible or ns.strings.chat.status.visible) or ns.strings.chat.status.hidden):gsub("#TYPE", ns.strings.options[display].title), ns.colors.yellow[1]
+	):gsub(
 		"#AUTO", wt.Color(ns.strings.chat.status.auto:gsub(
-			"#STATE", wt.Color(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].visibility.autoHide and ns.strings.misc.enabled or ns.strings.misc.disabled, ns.colors.green[2])
+			"#STATE", wt.Color(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].visibility.autoHide and ns.strings.misc.enabled or ns.strings.misc.disabled, ns.colors.green[2])
 		), ns.colors.yellow[2])
 	))
 end
@@ -1324,7 +1347,8 @@ end
 --Print help info
 local function PrintInfo()
 	print(wt.Color(ns.strings.chat.help.thanks:gsub("#ADDON", wt.Color(addonTitle, ns.colors.green[1])), ns.colors.yellow[1]))
-	PrintStatus()
+	PrintStatus("playerSpeed")
+	PrintStatus("travelSpeed")
 	print(wt.Color(ns.strings.chat.help.hint:gsub("#HELP_COMMAND", wt.Color("/" .. ns.chat.keyword .. " " .. ns.chat.commands.help, ns.colors.green[2])), ns.colors.yellow[2]))
 	print(wt.Color(ns.strings.chat.help.move:gsub("#ADDON", addonTitle), ns.colors.yellow[2]))
 end
@@ -1364,16 +1388,18 @@ local commandManager = wt.RegisterChatCommands(ns.name, { ns.chat.keyword }, {
 			print(wt.Color(ns.strings.chat.preset.error:gsub("#INDEX", wt.Color(ns.chat.commands.preset .. " " .. 1, ns.colors.green[2])), ns.colors.yellow[2]))
 			print(wt.Color(ns.strings.chat.preset.list, ns.colors.green[2]))
 			for j = 1, #options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].position.presetList, 2 do
-				local list = "    " .. wt.Color(j, ns.colors.green[2]) .. wt.Color(" - " .. options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].position.presetList[j].name, ns.colors.yellow[2])
+				local list = "    " .. wt.Color(j, ns.colors.green[2]) .. wt.Color(" - " .. options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].position.presetList[j].title, ns.colors.yellow[2])
 
 				if j + 1 <= #options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].position.presetList then
-					list = list .. "    " .. wt.Color(j + 1, ns.colors.green[2]) .. wt.Color(" - " .. options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].position.presetList[j + 1].name, ns.colors.yellow[2])
+					list = list .. "    " .. wt.Color(j + 1, ns.colors.green[2]) .. wt.Color(" - " .. options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].position.presetList[j + 1].title, ns.colors.yellow[2])
 				end
 
 				print(list)
 			end
 		end,
 		onHelp = function() PrintCommand(ns.chat.commands.preset, ns.strings.chat.preset.description:gsub(
+			"#TYPE", ns.strings.options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].title
+		):gsub(
 			"#INDEX", wt.Color(ns.chat.commands.preset .. " " .. 1, ns.colors.green[2])
 		)) end
 	},
@@ -1381,6 +1407,8 @@ local commandManager = wt.RegisterChatCommands(ns.name, { ns.chat.keyword }, {
 		command = ns.chat.commands.save,
 		handler = function() options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].position.saveCustomPreset() end,
 		onHelp = function() PrintCommand(ns.chat.commands.save, ns.strings.chat.save.description:gsub(
+			"#TYPE", ns.strings.options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].title
+		):gsub(
 			"#CUSTOM", wt.Color(options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].position.presetList[1].title, ns.colors.green[2])
 		)) end
 	},
@@ -1399,9 +1427,13 @@ local commandManager = wt.RegisterChatCommands(ns.name, { ns.chat.keyword }, {
 			return true
 		end,
 		onSuccess = function()
-			print(addonChat .. wt.Color(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].visibility.hidden and ns.strings.chat.toggle.hiding or ns.strings.chat.toggle.unhiding, ns.colors.yellow[2]))
+			print(addonChat .. wt.Color((MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].visibility.hidden and ns.strings.chat.toggle.hiding or ns.strings.chat.toggle.unhiding):gsub(
+				"#TYPE", ns.strings.options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].title
+			), ns.colors.yellow[2]))
 		end,
 		onHelp = function() PrintCommand(ns.chat.commands.toggle, ns.strings.chat.toggle.description:gsub(
+			"#TYPE", ns.strings.options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].title
+		):gsub(
 			"#HIDDEN", wt.Color(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].visibility.hidden and ns.strings.chat.toggle.hidden or ns.strings.chat.toggle.notHidden, ns.colors.green[2])
 		)) end
 	},
@@ -1413,9 +1445,13 @@ local commandManager = wt.RegisterChatCommands(ns.name, { ns.chat.keyword }, {
 			return true
 		end,
 		onSuccess = function() print(addonChat .. wt.Color(ns.strings.chat.auto.response:gsub(
+			"#TYPE", ns.strings.options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].title
+		):gsub(
 			"#STATE", wt.Color(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].visibility.autoHide and ns.strings.misc.enabled or ns.strings.misc.disabled, ns.colors.green[2])
 		), ns.colors.yellow[2])) end,
 		onHelp = function() PrintCommand(ns.chat.commands.auto, ns.strings.chat.auto.description:gsub(
+			"#TYPE", ns.strings.options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].title
+		):gsub(
 			"#STATE", wt.Color(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].visibility.autoHide and ns.strings.misc.enabled or ns.strings.misc.disabled, ns.colors.green[2])
 		)) end
 	},
@@ -1440,6 +1476,20 @@ local commandManager = wt.RegisterChatCommands(ns.name, { ns.chat.keyword }, {
 			"#SIZE", wt.Color(ns.chat.commands.size .. " " .. ns.profileDefault[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].font.size, ns.colors.green[2])
 		)) end
 	},
+	{
+		command = ns.chat.commands.swap,
+		handler = function()
+			MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay = MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay == "playerSpeed" and "travelSpeed" or "playerSpeed"
+
+			return true
+		end,
+		onSuccess = function() print(addonChat .. wt.Color(ns.strings.chat.swap.response:gsub(
+			"#ACTIVE", wt.Color(ns.strings.options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].title, ns.colors.green[2])
+		), ns.colors.yellow[2])) end,
+		onHelp = function() PrintCommand(ns.chat.commands.swap, ns.strings.chat.swap.description:gsub(
+			"#ACTIVE", wt.Color(ns.strings.options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].title, ns.colors.green[2])
+		)) end
+	}, --ADD profile management chat commands
 	{
 		command = ns.chat.commands.defaults,
 		handler = function() StaticPopup_Show(resetDefaultsPopup) end,
@@ -1611,9 +1661,6 @@ frames.main = wt.CreateBaseFrame({
 		PLAYER_ENTERING_WORLD = function(self)
 			self:UnregisterEvent("PLAYER_ENTERING_WORLD")
 
-			--Visibility notice
-			if not self:IsVisible() or not frames[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].display:IsVisible() then PrintStatus(true) end
-
 			--Start speed updates
 			UpdateMapInfo()
 			UpdateSpeedText("playerSpeed", MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.value.units, MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.font.valueColoring)
@@ -1622,6 +1669,14 @@ frames.main = wt.CreateBaseFrame({
 			if not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.visibility.hidden then StartSpeedDisplayUpdates("playerSpeed") end
 			if not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.travelSpeed.visibility.hidden then StartSpeedDisplayUpdates("travelSpeed") end
 			if MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.targetSpeed.enabled then EnableTargetSpeedUpdates() end
+
+			--Visibility notice
+			if not frames.playerSpeed.display:IsVisible() and MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.visibility.statusNotice then
+				PrintStatus("playerSpeed")
+			end
+			if not frames.travelSpeed.display:IsVisible() and MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.travelSpeed.visibility.statusNotice then
+				PrintStatus("travelSpeed")
+			end
 		end,
 		ZONE_CHANGED_NEW_AREA = function() UpdateMapInfo() end,
 		PET_BATTLE_OPENING_START = function(self) self:Hide() end,

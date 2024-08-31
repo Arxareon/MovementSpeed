@@ -2981,11 +2981,10 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		---Open the Settings window to this category page
 		--- - ***Note:*** No category page will be opened if **WidgetToolsDB.lite** is true.
-		--- - ***Note:*** Only parent categories will be opened since the new Settings UI has been introduced. *Let's hope Blizzard fixes this soon™!*
 		function page.open()
 			if WidgetToolsDB.lite or not page.category then return end --ADD: tip about lite mode, how to disable it
 
-			Settings.OpenToCategory(page.category:GetID()) --WATCH: Add support when they add support for opening to subcategories
+			Settings.OpenToCategory(page.category:GetID())
 		end
 
 		--| Batch options data management
@@ -3864,6 +3863,156 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 	--| GUI
 
+	---Create a default Blizzard checkbox GUI frame with enhanced widget functionality
+	---***
+	---@param t? checkboxCreationData Parameters are to be provided in this table
+	---@param widget? toggle Reference to an already existing toggle to set up as a checkbox instead of creating a new base widget
+	---***
+	---@return checkbox|toggle toggle References to the new [CheckButton](https://warcraft.wiki.gg/wiki/UIOBJECT_CheckButton), its holder [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame), utility functions and more wrapped in a table
+	function wt.CreateCheckbox(t, widget)
+		t = t or {}
+
+		---@class checkbox: toggle
+		---@field label? FontString
+		local toggle = widget and widget.isType and widget.isType("Toggle") and widget or wt.CreateToggle(t)
+
+		if WidgetToolsDB.lite and t.lite ~= false then return toggle end
+
+		--[ Frame Setup ]
+
+		local name = (t.append ~= false and t.parent and t.parent~= UIParent and t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "Toggle")
+
+		toggle.frame = wt.CreateFrame("Frame", name, t.parent)
+		toggle.button = wt.CreateFrame("CheckButton", name .. "Checkbox", toggle.frame, "SettingsCheckboxTemplate")
+
+		--| Position & dimensions
+
+		t.size = t.size or {}
+		t.size.h = t.size.h or toggle.button:GetHeight()
+		t.size.w = t.label == false and t.size.h * (30 / 29) or t.size.w or 190
+
+		if t.arrange then toggle.frame.arrangementInfo = t.arrange else wt.SetPosition(toggle.frame, t.position) end
+		toggle.button:SetPoint("LEFT")
+		wt.SetPosition(toggle.button.HoverBackground, {
+			anchor = "LEFT",
+			offset = { x = -2, },
+		})
+
+		toggle.frame:SetSize(t.size.w, t.size.h)
+		toggle.button:SetSize(t.size.h * (30 / 29), t.size.h)
+		toggle.button.HoverBackground:SetSize(t.size.w + 2, t.size.h)
+
+		--| Visibility
+
+		wt.SetVisibility(toggle.frame, t.visible ~= false)
+
+		if t.frameStrata then toggle.frame:SetFrameStrata(t.frameStrata) end
+		if t.frameLevel then toggle.frame:SetFrameLevel(t.frameLevel) end
+		if t.keepOnTop then toggle.frame:SetToplevel(t.keepOnTop) end
+
+		--| Label
+
+		local title = t.title or t.name or "Toggle"
+
+		toggle.label = wt.AddTitle({
+			parent = toggle.frame,
+			title = t.label ~= false and {
+				offset = { x = t.size.h * (30 / 29) + 6, },
+				text = title,
+				anchor = "LEFT",
+			} or nil,
+		})
+
+		--| Texture
+
+		toggle.button:GetPushedTexture():SetVertexColor(.6, .6, .6, 1)
+
+		--[ Events ]
+
+		--Register script event handlers
+		if t.events then for key, value in pairs(t.events) do
+			if key == "attribute" then toggle.button:HookScript("OnAttributeChanged", function(_, attribute, ...) if attribute == value.name then value.handler(...) end end)
+			elseif key == "OnClick" then toggle.button:SetScript("OnClick", function(self, button, down) value(self, self:GetChecked(), button, down) end)
+			else toggle.button:HookScript(key, value) end
+		end end
+
+		--| UX
+
+		---Update the widget UI based on the toggle state
+		---@param _ toggle
+		---@param state boolean
+		local function updateToggleState(_, state) toggle.button:SetChecked(state) end
+
+		--Handle widget updates
+		toggle.setListener.toggled(updateToggleState, 1)
+
+		toggle.button:HookScript("OnClick", function(self)
+			local state = self:GetChecked()
+
+			PlaySound(state and SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON or SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_OFF)
+
+			toggle.setState(state, true)
+		end)
+
+		--Linked mouse interactions
+		toggle.frame:HookScript("OnEnter", function() if toggle.button:IsEnabled() then
+			toggle.button.HoverBackground:Show()
+			if IsMouseButtonDown("LeftButton") then toggle.button:SetButtonState("PUSHED") end
+		end end)
+		toggle.frame:HookScript("OnLeave", function() if toggle.button:IsEnabled() then
+			toggle.button.HoverBackground:Hide()
+			toggle.button:SetButtonState("NORMAL")
+		end end)
+		toggle.frame:HookScript("OnMouseDown", function(_, button) if toggle.button:IsEnabled() and button == "LeftButton" or (button == "RightButton") then
+			toggle.button:SetButtonState("PUSHED")
+		end end)
+		toggle.frame:HookScript("OnMouseUp", function(_, button, isInside) if toggle.button:IsEnabled() then
+			toggle.button:SetButtonState("NORMAL")
+
+			if isInside and button == "LeftButton" then toggle.button:Click(button) end
+		end end)
+
+		--| Tooltip
+
+		if t.tooltip then wt.AddTooltip(toggle.button, {
+			title = t.tooltip.title or t.title or t.name or "Toggle",
+			lines = t.default ~= nil and table.insert(t.tooltip.lines, {
+				text = ns.toolboxStrings.default .. (t.default and VIDEO_OPTIONS_ENABLED or VIDEO_OPTIONS_DISABLED)
+			}) or t.tooltip.lines,
+			anchor = "ANCHOR_NONE",
+			position = {
+				anchor = "BOTTOMLEFT",
+				relativeTo = toggle.button,
+				relativePoint = "TOPRIGHT",
+			},
+		}, { triggers = { toggle.frame, }, }) end
+
+		--| State
+
+		---Update the widget UI based on its enabled state
+		---@param _ toggle
+		---@param state boolean
+		local function updateState(_, state)
+			toggle.button:SetEnabled(state)
+			toggle.button:EnableMouse(state)
+
+			if toggle.label then toggle.label:SetFontObject(state and "GameFontNormal" or "GameFontDisable") end
+		end
+
+		--Handle widget updates
+		toggle.setListener.enabled(updateState, 1)
+
+		--[ Initialization ]
+
+		--Set starting toggle state
+		updateToggleState(nil, toggle.getState())
+
+		--Set up starting state
+		updateState(nil, toggle.isEnabled())
+
+		return toggle
+	end
+
 	---Set the parameters of a GUI toggle widget frame
 	---@param toggle checkbox|radioButton
 	---@param t checkboxCreationData
@@ -3931,17 +4080,16 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		updateToggleState(nil, toggle.getState())
 	end
 
-	---Create a default Blizzard checkbox GUI frame with enhanced widget functionality
+	---Create a classic Blizzard checkbox GUI frame with enhanced widget functionality
 	---***
 	---@param t? checkboxCreationData Parameters are to be provided in this table
 	---@param widget? toggle Reference to an already existing toggle to set up as a checkbox instead of creating a new base widget
 	---***
 	---@return checkbox|toggle toggle References to the new [CheckButton](https://warcraft.wiki.gg/wiki/UIOBJECT_CheckButton), its holder [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame), utility functions and more wrapped in a table
-	function wt.CreateCheckbox(t, widget)
+	function wt.CreateClassicCheckbox(t, widget)
 		t = t or {}
 
-		---@class checkbox: toggle
-		---@field label? FontString
+		---@type checkbox
 		local toggle = widget and widget.isType and widget.isType("Toggle") and widget or wt.CreateToggle(t)
 
 		if WidgetToolsDB.lite and t.lite ~= false then return toggle end
@@ -5313,7 +5461,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	---@param t? specialRadioSelectorCreationData Parameters are to be provided in this table
 	---@param widget? selector Reference to an already existing special selector widget to set up as a special selector frame instead of creating a new base widget
 	---***
-	---@return specialSelector selector References to the new [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame), an array of its child [CheckButton](https://warcraft.wiki.gg/wiki/UIOBJECT_CheckButton) widget items, utility functions and more wrapped in a table
+	---@return specialSelector|specialRadioSelector selector References to the new [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame), an array of its child [CheckButton](https://warcraft.wiki.gg/wiki/UIOBJECT_CheckButton) widget items, utility functions and more wrapped in a table
 	function wt.CreateSpecialRadioSelector(itemset, t, widget)
 		t = t or {}
 		t.labels = false
@@ -5374,7 +5522,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			if active and not item.frame then
 				local sameRow = (item.index - 1) % t.columns > 0
 
-				wt.CreateCheckbox({
+				wt.CreateClassicCheckbox({
 					parent = selector.frame,
 					name = findName(name, item.index),
 					title = t.items[item.index].title,
@@ -8757,7 +8905,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			positioningVisualAids.frame = positioningVisualAids.frame or wt.CreateBaseFrame({
 				name = "WidgetToolsPositioningVisualAids",
 				position = { anchor = "CENTER", },
-				size = { w = UIParent:GetWidth() - 14, h = UIParent:GetHeight() - 14 },
+				size = { w = GetScreenWidth() / C_CVar.GetCVar("uiScale") - 14, h = GetScreenHeight() / C_CVar.GetCVar("uiScale") - 14 },
 				visible = false,
 				frameStrata = "BACKGROUND",
 				initialize = function(container)

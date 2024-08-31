@@ -410,10 +410,15 @@ local english = {
 		"Left of #TYPE display",
 	},
 	chat = {
+		position = {
+			save = "The #TYPE display position was saved.",
+			cancel = "The repositioning of the #TYPE display was cancelled.",
+			error = "Hold SHIFT until the mouse button is released to save the position.",
+		},
 		status = {
-			visible = "The speed display is visible (#AUTO).",
-			notVisible = "The speed display is not visible (#AUTO).",
-			hidden = "The speed display is hidden (#AUTO).",
+			visible = "The #TYPE display is visible (#AUTO).",
+			notVisible = "The #TYPE display is not visible (#AUTO).",
+			hidden = "The #TYPE display is hidden (#AUTO).",
 			auto = "auto-hide: #STATE",
 		},
 		help = {
@@ -426,36 +431,40 @@ local english = {
 			description = "open the #ADDON options",
 		},
 		preset = {
-			description = "apply a speed display preset (e.g. #INDEX)",
-			response = "The #PRESET speed display preset was applied.",
+			description = "apply a #TYPE display preset (e.g. #INDEX)",
+			response = "The #PRESET #TYPE display preset was applied.",
 			unchanged = "The preset could not be applied, no changes were made.",
 			error = "Please enter a valid preset index (e.g. #INDEX).",
 			list = "The following presets are available:",
 		},
 		save = {
-			description = "save this speed display setup as the #CUSTOM preset",
-			response = "The current speed display position and visibility was saved to the #CUSTOM preset.",
+			description = "save this #TYPE display setup as the #CUSTOM preset",
+			response = "The current #TYPE display position and visibility was saved to the #CUSTOM preset.",
 		},
 		reset = {
 			description = "reset the #CUSTOM preset to its default state",
 			response = "The #CUSTOM preset has been reset to the default preset.",
 		},
 		toggle = {
-			description = "show or hide the speed display (#HIDDEN)",
-			hiding = "The speed display has been hidden.",
-			unhiding = "The speed display has been made visible.",
+			description = "show or hide the #TYPE display (#HIDDEN)",
+			hiding = "The #TYPE display has been hidden.",
+			unhiding = "The #TYPE display has been made visible.",
 			hidden = "hidden",
 			notHidden = "not hidden",
 		},
 		auto = {
-			description = "hide the speed display while stationary (#STATE)",
-			response = "The speed display automatic hide was set to #STATE.",
+			description = "hide the #TYPE display while stationary (#STATE)",
+			response = "The #TYPE display automatic hide was set to #STATE.",
 		},
 		size = {
 			description = "change the font size (e.g. #SIZE)",
 			response = "The font size was set to #VALUE.",
 			unchanged = "The font size was not changed.",
 			error = "Please enter a valid number value (e.g. #SIZE).",
+		},
+		swap = {
+			description = "swap display set by chat commands (current: #ACTIVE)",
+			response = "The display affected by chat commands has been changed to the #ACTIVE display.",
 		},
 		profile = {
 			description = "activate a settings profile",
@@ -467,11 +476,6 @@ local english = {
 		defaults = {
 			description = "restore the active profile to defaults",
 			response = "The active #PROFILE settings profiles has been reset to defaults.",
-		},
-		position = {
-			save = "The speed display position was saved.",
-			cancel = "The repositioning of the speed display was cancelled.",
-			error = "Hold SHIFT until the mouse button is released to save the position.",
 		},
 	},
 	targetSpeed = "Speed: #SPEED",
@@ -555,6 +559,8 @@ ns.chat = {
 		toggle = "toggle",
 		auto = "auto",
 		size = "size",
+		swap = "swap",
+		profile = "profile",
 		defaults = "defaults",
 	}
 }
