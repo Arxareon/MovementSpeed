@@ -241,7 +241,7 @@ ns.changelog = {
 	{
 		"#V_Version 3.0_# #H_(7/24/2024)_#",
 		"#N_New:_#",
-		"Added Cataclysm Classic 4.4.0, vanilla Classic 1.15.3 & The War Within 11.0.0 support.",
+		"Added Cataclysm Classic 4.4.0, vanilla Classic 1.15.3 & The War Within 11.0.2 support.",
 		"A separate independently customizable Travel Speed display has been added (not available in Classic clients).",
 		"Added Dragonriding speed support for the Player Speed display.",
 		"Added settings Profiles to be able to have different setups for different characters: settings profiles are shared on account but profiles can be chosen and applied on a per character basis.",

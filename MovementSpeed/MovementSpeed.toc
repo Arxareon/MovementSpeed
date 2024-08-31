@@ -1,4 +1,4 @@
-## Interface: 110000 #Fallback to the Mainline version
+## Interface: 110002 #Fallback to the Mainline version
 ## Title: Movement Speed
 ## Notes: View the movement speed of anyone in customizable displays and tooltips with fast updates.
 ## IconTexture: Interface/AddOns/MovementSpeed/Textures/Logo.tga

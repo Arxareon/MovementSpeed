@@ -22,7 +22,7 @@ function WidgetTools.RegisterToolbox(addon, version, toolbox)
 	if not addon or not version or (not registry.toolbox[version] and not toolbox) then return nil end
 
 	--Register the addon
-	if IsAddOnLoaded(addon) then
+	if C_AddOns.IsAddOnLoaded(addon) then
 		registry.addons[version] = registry.addons[version] or {}
 		table.insert(registry.addons[version], addon)
 	else return nil end
@@ -54,7 +54,7 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 	local wt = ns.WidgetToolbox
 
 	--Addon title
-	local addonTitle = wt.Clear(select(2, GetAddOnInfo(ns.name))):gsub("^%s*(.-)%s*$", "%1")
+	local addonTitle = wt.Clear(select(2, C_AddOns.GetAddOnInfo(ns.name))):gsub("^%s*(.-)%s*$", "%1")
 
 	--[ Data ]
 
@@ -224,12 +224,12 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 					size = { h = 32 },
 					initialize = function(toolboxPanel, width)
 						--List reliant addons
-						for i = 1, #v do if IsAddOnLoaded(v[i]) then
+						for i = 1, #v do if C_AddOns.IsAddOnLoaded(v[i]) then
 							wt.CreatePanel({
 								parent = toolboxPanel,
 								name = v[i],
-								title = GetAddOnMetadata(v[i], "Title"),
-								description = GetAddOnMetadata(v[i], "Notes") or "…",
+								title = C_AddOns.GetAddOnMetadata(v[i], "Title"),
+								description = C_AddOns.GetAddOnMetadata(v[i], "Notes") or "…",
 								arrange = {},
 								size = { w = width - 40, h = 48 },
 								background = { color = { r = 0.1, g = 0.1, b = 0.1, a = 0.6 } },
@@ -242,7 +242,7 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 											offset = { x = -16, }
 										},
 										size = { w = 42, h = 42 },
-										path = GetAddOnMetadata(v[i], "IconTexture") or ns.textures.missing,
+										path = C_AddOns.GetAddOnMetadata(v[i], "IconTexture") or ns.textures.missing,
 									})
 
 									--Update title & description
@@ -261,10 +261,10 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 
 									local function toggleAddon(state)
 										if state then
-											EnableAddOn(v[i])
+											C_AddOns.EnableAddOn(v[i])
 											addonPanel:SetAlpha(1)
 										else
-											DisableAddOn(v[i])
+											C_AddOns.DisableAddOn(v[i])
 											addonPanel:SetAlpha(0.5)
 										end
 									end
@@ -283,7 +283,7 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 										size = { w = 80, h = 20 },
 										events = { OnClick = function(_, state) toggleAddon(state) end, },
 										optionsKey = ns.name .. "Addons",
-										getData = function() return GetAddOnEnableState(nil, v[i]) > 0 end,
+										getData = function() return C_AddOns.GetAddOnEnableState(v[i]) > 0 end,
 										saveData = function(state) toggleAddon(state) end,
 										listeners = { saved = { { handler = function(_, state) if not state then wt.CreateReloadNotice() end end, }, }, },
 										instantSave = false,
@@ -302,7 +302,7 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 											relativePoint = "BOTTOMRIGHT",
 											offset = { x = 8, y = 9 }
 										},
-										text = ns.strings.about.version:gsub("#VERSION", WrapTextInColorCode(GetAddOnMetadata(v[i], "Version") or "?", "FFFFFFFF")),
+										text = ns.strings.about.version:gsub("#VERSION", WrapTextInColorCode(C_AddOns.GetAddOnMetadata(v[i], "Version") or "?", "FFFFFFFF")),
 										font = "GameFontNormalSmall",
 										justify = { h = "LEFT", },
 									})
@@ -317,11 +317,11 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 										},
 										text = ns.strings.about.date:gsub(
 											"#DATE", WrapTextInColorCode(ns.strings.date:gsub(
-												"#DAY", GetAddOnMetadata(v[i], "X-Day") or "?"
+												"#DAY", C_AddOns.GetAddOnMetadata(v[i], "X-Day") or "?"
 											):gsub(
-												"#MONTH", GetAddOnMetadata(v[i], "X-Month") or "?"
+												"#MONTH", C_AddOns.GetAddOnMetadata(v[i], "X-Month") or "?"
 											):gsub(
-												"#YEAR", GetAddOnMetadata(v[i], "X-Year") or "?"
+												"#YEAR", C_AddOns.GetAddOnMetadata(v[i], "X-Year") or "?"
 											), "FFFFFFFF")
 										),
 										font = "GameFontNormalSmall",
@@ -336,7 +336,7 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 											relativePoint = "TOPRIGHT",
 											offset = { x = 10, }
 										},
-										text = ns.strings.about.author:gsub("#AUTHOR", WrapTextInColorCode(GetAddOnMetadata(v[i], "Author") or "?", "FFFFFFFF")),
+										text = ns.strings.about.author:gsub("#AUTHOR", WrapTextInColorCode(C_AddOns.GetAddOnMetadata(v[i], "Author") or "?", "FFFFFFFF")),
 										font = "GameFontNormalSmall",
 										justify = { h = "LEFT", },
 									})
@@ -349,7 +349,7 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 											relativePoint = "TOPRIGHT",
 											offset = { x = 10, }
 										},
-										text = ns.strings.about.license:gsub("#LICENSE", WrapTextInColorCode(GetAddOnMetadata(v[i], "X-License") or "?", "FFFFFFFF")),
+										text = ns.strings.about.license:gsub("#LICENSE", WrapTextInColorCode(C_AddOns.GetAddOnMetadata(v[i], "X-License") or "?", "FFFFFFFF")),
 										font = "GameFontNormalSmall",
 										justify = { h = "LEFT", },
 									})
@@ -423,18 +423,18 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 			color = ns.colors.grey[1],
 		} end
 	}, { lines = {
-		{ text = ns.strings.about.version:gsub("#VERSION", WrapTextInColorCode(GetAddOnMetadata(ns.name, "Version") or "?", "FFFFFFFF")), },
+		{ text = ns.strings.about.version:gsub("#VERSION", WrapTextInColorCode(C_AddOns.GetAddOnMetadata(ns.name, "Version") or "?", "FFFFFFFF")), },
 		{ text = ns.strings.about.date:gsub(
 			"#DATE", WrapTextInColorCode(ns.strings.date:gsub(
-				"#DAY", GetAddOnMetadata(ns.name, "X-Day") or "?"
+				"#DAY", C_AddOns.GetAddOnMetadata(ns.name, "X-Day") or "?"
 			):gsub(
-				"#MONTH", GetAddOnMetadata(ns.name, "X-Month") or "?"
+				"#MONTH", C_AddOns.GetAddOnMetadata(ns.name, "X-Month") or "?"
 			):gsub(
-				"#YEAR", GetAddOnMetadata(ns.name, "X-Year") or "?"
+				"#YEAR", C_AddOns.GetAddOnMetadata(ns.name, "X-Year") or "?"
 			), "FFFFFFFF")
 		), },
-		{ text = ns.strings.about.author:gsub("#AUTHOR", WrapTextInColorCode(GetAddOnMetadata(ns.name, "Author") or "?", "FFFFFFFF")), },
-		{ text = ns.strings.about.license:gsub("#LICENSE", WrapTextInColorCode(GetAddOnMetadata(ns.name, "X-License") or "?", "FFFFFFFF")), },
+		{ text = ns.strings.about.author:gsub("#AUTHOR", WrapTextInColorCode(C_AddOns.GetAddOnMetadata(ns.name, "Author") or "?", "FFFFFFFF")), },
+		{ text = ns.strings.about.license:gsub("#LICENSE", WrapTextInColorCode(C_AddOns.GetAddOnMetadata(ns.name, "X-License") or "?", "FFFFFFFF")), },
 		{
 			text = "\n" .. (WidgetToolsDB.lite and ns.strings.compartment.lite or ns.strings.compartment.open),
 			font = GameFontNormalTiny,

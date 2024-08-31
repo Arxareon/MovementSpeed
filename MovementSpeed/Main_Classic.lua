@@ -7,7 +7,7 @@ local ns = select(2, ...)
 local wt = ns.WidgetToolbox
 
 --Addon title
-local addonTitle = wt.Clear(select(2, GetAddOnInfo(ns.name))):gsub("^%s*(.-)%s*$", "%1")
+local addonTitle = wt.Clear(select(2, C_AddOns.GetAddOnInfo(ns.name))):gsub("^%s*(.-)%s*$", "%1")
 local addonChat = wt.Color(addonTitle .. ":", ns.colors.green[1]) .. " "
 
 --Custom Tooltip

@@ -574,9 +574,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 	---Return a position table used by WidgetTools assembled from the provided values which are returned by [Region:GetPoint(...)](https://warcraft.wiki.gg/wiki/API_Region_GetPoint)
 	---***
-	---@param anchor? AnchorPoint Base anchor point | ***Default:*** "TOPLEFT"
+	---@param anchor? FramePoint Base anchor point | ***Default:*** "TOPLEFT"
 	---@param relativeTo? Frame Relative to this Frame or Region
-	---@param relativePoint? AnchorPoint Relative anchor point
+	---@param relativePoint? FramePoint Relative anchor point
 	---@param offsetX? number | ***Default:*** 0
 	---@param offsetY? number | ***Default:*** 0
 	---***
@@ -595,12 +595,12 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	---***
 	---@param t? positionData Table containing parameters to call [Region:SetPoint(...)](https://warcraft.wiki.gg/wiki/API_ScriptRegionResizing_SetPoint) with
 	---***
-	---@return AnchorPoint anchor ***Default:*** "TOPLEFT"
+	---@return FramePoint anchor ***Default:*** "TOPLEFT"
 	--- - ***Note:*** Default to "TOPLEFT" when an invalid input is provided.
 	---@return AnyFrameObject|nil relativeTo ***Default:*** "nil" *(anchor relative to screen dimensions)*
 	--- - ***Note:*** When omitting the value by providing nil, instead of the string "nil", anchoring will use the parent region (if possible, otherwise the default behavior of anchoring relative to the screen dimensions will be used).
 	--- - ***Note:*** Default to nil when an invalid frame name is provided.
-	---@return AnchorPoint? relativePoint
+	---@return FramePoint? relativePoint
 	---@return number|nil offsetX ***Default:*** 0
 	---@return number|nil offsetY ***Default:*** 0
 	---<hr><p></p>
@@ -1116,7 +1116,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	---@param type? `T`|FrameType|"nil" ***Default:*** nil *(create no frame)*
 	---@param name? string Unique global name to set for the new frame | ***Default:*** nil *(anonymous frame)*
 	---@param parent? Frame? Reference to the frame to set as the parent of the new frame | ***Default:*** nil *(parentless frame)*
-	---@param template? `Tp`|TemplateType Comma-separated list of [FrameXML templates](https://warcraft.wiki.gg/wiki/Virtual_XML_template) to set up the frame with
+	---@param template? `Tp`|Template Comma-separated list of [FrameXML templates](https://warcraft.wiki.gg/wiki/Virtual_XML_template) to set up the frame with
 	---@param id? number Custom ID to set for the new frame
 	--- - ***Note:*** Can be set via [Frame:SetID](https://warcraft.wiki.gg/wiki/API_Frame_SetID) any time.
 	---@return T|Tp|nil frame
@@ -1892,19 +1892,12 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		highlight = wt.PackColor(NORMAL_FONT_COLOR:GetRGBA()),
 		disabled = wt.PackColor(GRAY_FONT_COLOR:GetRGB()),
 		warning = wt.PackColor(RED_FONT_COLOR:GetRGB()),
-		context = {
-			bg = { r = 0.05, g = 0.05, b = 0.075, a = 0.825 },
-			normal = { r = 0.25, g = 0.25, b = 0.3, a = 0.5 },
-			highlight = { r = 0.8, g = 0.8, b = 0.3, a = 0.5 },
-			click = { r = 0.6, g = 0.6, b = 0.2, a = 0.5 },
-		},
 	}
 
 	--Textures
 	local textures = {
 		alphaBG = "Interface/AddOns/" .. ns.name .. "/Textures/AlphaBG.tga",
 		gradientBG = "Interface/AddOns/" .. ns.name .. "/Textures/GradientBG.tga",
-		contextBG = "Interface/AddOns/" .. ns.name .. "/Textures/ContextBG.tga",
 	}
 
 
@@ -2051,13 +2044,13 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	---@param tooltip? addonCompartmentTooltipData List of text lines to be added to the tooltip of the addon compartment button displayed when mousing over it
 	--- - ***Note:*** Both `AddonCompartmentFuncOnEnter` and `AddonCompartmentFuncOnLeave` must be set in the specified **addon**'s TOC file to enable this functionality, defining the names of the global functions to be overloaded.
 	function wt.SetUpAddonCompartment(addon, calls, tooltip)
-		if not addon or not IsAddOnLoaded(addon) then return end
+		if not addon or not C_AddOns.IsAddOnLoaded(addon) then return end
 
 		calls = calls or {}
 
-		local onClickName = GetAddOnMetadata(addon, "AddonCompartmentFunc")
-		local onEnterName = GetAddOnMetadata(addon, "AddonCompartmentFuncOnEnter")
-		local onLeaveName = GetAddOnMetadata(addon, "AddonCompartmentFuncOnLeave")
+		local onClickName = C_AddOns.GetAddOnMetadata(addon, "AddonCompartmentFunc")
+		local onEnterName = C_AddOns.GetAddOnMetadata(addon, "AddonCompartmentFuncOnEnter")
+		local onLeaveName = C_AddOns.GetAddOnMetadata(addon, "AddonCompartmentFuncOnLeave")
 
 		if onClickName and calls.onClick then _G[onClickName] = calls.onClick end
 
@@ -2066,7 +2059,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				customTooltip = customTooltip or wt.CreateGameTooltip(ns.name .. toolboxVersion)
 				tooltip.tooltip = customTooltip
 			end
-			tooltip.title = tooltip.title or GetAddOnMetadata(addon, "Title")
+			tooltip.title = tooltip.title or C_AddOns.GetAddOnMetadata(addon, "Title")
 
 			_G[onEnterName] = function(addon, frame)
 				--Set tooltipData property
@@ -2473,40 +2466,6 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		return title, description
 	end
 
-	---Add a title & description to a container frame
-	---***
-	---@param contextMenu Frame Reference to the context menu to add this label to
-	---@param t contextLabelData Parameters are to be provided in this table
-	---@return FontString|nil label
-	function wt.AddContextLabel(contextMenu, t)
-		if not contextMenu then return end
-
-		local contextHeight = contextMenu:GetHeight()
-
-		local label = wt.CreateText({
-			parent = contextMenu,
-			name = "Title",
-			position = {
-				anchor = "CENTER",
-				relativeTo = contextMenu,
-				relativePoint = "TOP",
-				offset = { y = -contextHeight + 2 }
-			},
-			width = contextMenu:GetWidth() - 20,
-			layer = "ARTWORK",
-			text = t.text,
-			font = t.font or "GameFontNormalSmall",
-			color = t.color,
-			justify = { h = t.justify or "LEFT", },
-		})
-
-		--Add to the context menu
-		table.insert(contextMenu.items, label)
-		contextMenu:SetHeight(contextHeight + 16)
-
-		return label
-	end
-
 	--[ Texture ]
 
 	---Create a [Texture](https://warcraft.wiki.gg/wiki/UIOBJECT_Texture) image [TextureBase](https://warcraft.wiki.gg/wiki/UIOBJECT_TextureBase) object
@@ -2849,357 +2808,128 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 	--[ Context Menu ]
 
-	---Create an empty context menu frame
+	---Create a Blizzard context menu
 	---***
 	---@param t? contextMenuCreationData Parameters are to be provided in this table
 	---***
-	---@return contextMenu|nil menu Reference to the new [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame) overloaded with custom fields and utility functions
-	---***
-	---***Custom Attributes • [OnAttributeChanged](https://warcraft.wiki.gg/wiki/UIHANDLER_OnAttributeChanged) Events:***
-	--- - **"open"** — Invoked when the context menu is opened or closed<hr><p>@*param* `self` Frame ― Reference to the context menu frame</p><p>@*param* `attribute` string ― Unique attribute key used to identify which OnAttributeChanged event to handle</p><p>@*param* `state` boolean ― True if the context menu is open, false if not</p><hr><p>***Example:*** Add a script handler as listener:</p><p></p>
-	--- 	```
-	--- 	contextMenu:HookScript("OnAttributeChanged", function(self, attribute, state)
-	--- 		if attribute ~= "open" then return end
-	--- 		--Do something
-	--- 	end)
-	--- 	```
+	---@return contextMenu|nil menu Table containing a reference to the root description of the context menu
 	function wt.CreateContextMenu(t)
 		t = t or {}
 
 		if not t.parent then return end
 
-		--[ Frame Setup ]
+		--[ Menu Setup ]
 
-		local name = (t.append ~= false and t.parent and t.parent~= UIParent and t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "ContextMenu")
+		---@class contextMenu
+		---@field rootDescription rootDescription Container of menu elements (such as titles, widgets, dividers or other frames)
+		local menu = {}
 
-		---@class contextMenu : Frame
-		---@field items table List of references to the content items added to this context menu<ul><li>***Example:*** Register an existing list item with `table.insert(contextMenu.items, item)`.</li></ul>
-		---@field submenus table List of submenu frame references folding out of this context menu<ul><li>***Example:*** Add an existing submenu to the list with `table.insert(contextMenu.submenus, submenu)`.</li></ul>
-		local menu = CreateFrame("Frame", name, t.parent, BackdropTemplateMixin and "BackdropTemplate")
+		t.parent:HookScript("OnMouseUp", function() MenuUtil.CreateContextMenu(t.parent, function(_, rootDescription)
+			menu.rootDescription = rootDescription
 
-		menu.items = {}
-		menu.submenus = {}
-
-		--| Position & dimensions
-
-		menu:SetClampedToScreen(true)
-		if t.cursor == false then wt.SetPosition(menu, t.position) end
-
-		menu:SetSize(t.width or 140, 20)
-
-		--| Visibility
-
-		menu:SetFrameStrata("DIALOG")
-
-		--| Backdrop
-
-		wt.SetBackdrop(menu, {
-			background = {
-				texture = {
-					size = 5,
-					insets = { l = 4, r = 4, t = 4, b = 4 },
-				},
-				color = colors.context.bg
-			},
-			border = {
-				texture = { width = 16, },
-				color = { r = 1, g = 1, b = 1 }
-			}
-		})
-
-		--[ Toggle ]
-
-		local enabled = t.disabled ~= true
-
-		--Submenu mouseover utility
-		local function checkSubmenus()
-			for i = 1, #menu.submenus do if menu.submenus[i]:IsMouseOver() then return true end end
-
-			return false
-		end
-
-		--Base state
-		menu:Hide()
-		-- menu:SetAttributeNoHandler("open", false)
-
-		--Invoke events
-		menu:HookScript("OnShow", function() menu:SetAttribute("open", true) end)
-		menu:HookScript("OnHide", function() menu:SetAttribute("open", false) end)
-
-		--Pass global events to handlers
-		menu:SetScript("OnEvent", function(self, event, ...) return self[event] and self[event](self, ...) end)
-
-		--| Open
-
-		t.parent:HookScript("OnMouseUp", function(_, button, isInside)
-			if not enabled then return end
-
-			if button == "RightButton" and isInside then
-				menu:RegisterEvent("GLOBAL_MOUSE_DOWN")
-
-				--Open the menu
-				menu:Show()
-				PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
-
-				--Position
-				if t.cursor ~= false then
-					local x, y = GetCursorPosition()
-					local s = UIParent:GetEffectiveScale()
-					menu:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", x / s, y / s)
-				end
-			end
-		end)
-
-		--| Close
-
-		function menu:GLOBAL_MOUSE_DOWN(button)
-			if button == "LeftButton" or button == "RightButton" and not t.parent:IsMouseOver() and not menu:IsMouseOver() then
-				menu:UnregisterEvent("GLOBAL_MOUSE_DOWN")
-				menu:RegisterEvent("GLOBAL_MOUSE_UP")
-			end
-		end
-
-		function menu:GLOBAL_MOUSE_UP(button)
-			if (button == "LeftButton" or button == "RightButton") and not t.parent:IsMouseOver() and not menu:IsMouseOver() and not checkSubmenus() then
-				menu:UnregisterEvent("GLOBAL_MOUSE_UP")
-
-				--Close the menu
-				menu:Hide()
-				PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_OFF)
-			end
-		end
-
-		--[ Getters & Setters ]
-
-		---Check if the context menu is active
-		---@return boolean
-		function menu.isEnabled() return enabled end
-
-		---Activate or deactivate the context menu
-		---***
-		---@param state? boolean Activate it if true, deactivate if not | ***Default:*** true
-		function menu.setEnabled(state)
-			enabled = state ~= false
-
-			if not enabled then
-				menu:UnregisterEvent("GLOBAL_MOUSE_DOWN")
-				menu:UnregisterEvent("GLOBAL_MOUSE_UP")
-
-				--Close the menu
-				menu:Hide()
-				PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_OFF)
-			end
-
-			--Invoke an event
-			menu.frame:SetAttribute("enabled", state)
-		end
+			--Adding items
+			if type(t.initialize) == "function" then t.initialize(rootDescription) end
+		end) end)
 
 		return menu
 	end
 
-	---Create an empty submenu as an item for an existing context menu
+	---Create a submenu item for an already existing Blizzard context menu
 	---***
-	---@param contextMenu contextMenu Reference to the context menu to add this submenu to
+	---@param menu contextMenu Reference to the parent menu to add the new submenu to
 	---@param t? contextSubmenuCreationData Parameters are to be provided in this table
 	---***
-	---@return contextSubmenu submenu Reference to the new [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame) overloaded with custom fields and utility functions
-	---@return Button toggle Reference to the toggle button list item of the submenu (placed in its parent context menu)
-	---***
-	---***Custom Attributes • [OnAttributeChanged](https://warcraft.wiki.gg/wiki/UIHANDLER_OnAttributeChanged) Events:***
-	--- - **"open"** ― Invoked when the context menu is opened or closed<hr><p>@*param* `self` Frame ― Reference to the context menu frame</p><p>@*param* `attribute` string ― Unique attribute key used to identify which OnAttributeChanged event to handle</p><p>@*param* `state` boolean ― True if the context menu is open, false if not</p><hr><p>***Example:*** Add a script handler as listener:</p><p></p>
-	--- 	```
-	--- 	submenu:HookScript("OnAttributeChanged", function(self, attribute, state)
-	--- 		if attribute ~= "open" then return end
-	--- 		--Do something
-	--- 	end)
-	--- 	```
-	function wt.AddContextSubmenu(contextMenu, t)
+	---@return contextMenu|nil menu Table containing a reference to the root description of the context menu
+	function wt.CreateSubmenu(menu, t)
+		if not menu then return end
+
 		t = t or {}
 
-		--[ Toggle Item ]
+		--[ Menu Setup ]
 
-		local defaultName = "Item" .. #contextMenu.items + 1
-		local name = (t.append ~= false and contextMenu:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or defaultName)
+		---@type contextMenu
+		local submenu = { rootDescription = menu:CreateButton(t.title or "Submenu") }
 
-		local toggle = CreateFrame("Button", name, contextMenu, BackdropTemplateMixin and "BackdropTemplate")
+		--Adding items
+		if type(t.initialize) == "function" then t.initialize(submenu.rootDescription) end
 
-		--Add to the context menu
-		table.insert(contextMenu.items, toggle)
-
-		--Increase the context menu height
-		local contextHeight = contextMenu:GetHeight()
-		contextMenu:SetHeight(contextHeight + 20)
-
-		--| Position & dimensions
-
-		toggle:SetPoint("TOP", contextMenu, "TOP", 0, -contextHeight + 10)
-
-		toggle:SetSize(contextMenu:GetWidth() - 20, 20)
-
-		--| Label
-
-		local title = t.title or t.name or defaultName
-
-		wt.CreateText({
-			parent = toggle,
-			name = "Label",
-			position = { anchor = "CENTER", },
-			width = toggle:GetWidth(),
-			text = title,
-			font = t.font or "GameFontHighlightSmall",
-			justify = { h = t.justify or t.leftSide and "RIGHT" or "LEFT", },
-		})
-
-		--| Textures
-
-		--Arrow
-		wt.CreateText({
-			parent = toggle,
-			name = "Arrow",
-			position = {
-				anchor = (t.leftSide or t.justify == "RIGHT") and "LEFT" or "RIGHT",
-				offset = { x = (t.leftSide or t.justify == "RIGHT") and 2 or -2, }
-			},
-			width = 10,
-			text = (t.leftSide or t.justify == "RIGHT") and "◄" or "►",
-			font = t.font or "ChatFontSmall",
-		})
-
-		--Background highlight
-		wt.CreateTexture({
-			parent = toggle,
-			name = "Highlight",
-			position = { anchor = "CENTER" },
-			size = { w = toggle:GetWidth() + 4, h = toggle:GetHeight() - 2 },
-			path = textures.contextBG,
-			layer = "BACKGROUND",
-			color = colors.context.normal
-		}, {
-			OnEnter = { rule = function() return { color = IsMouseButtonDown() and colors.context.click or colors.context.highlight } end },
-			OnLeave = {},
-			OnHide = {},
-			OnMouseDown = { rule = function() return { color = colors.context.click } end },
-			OnMouseUp = { rule = function(self) return self:IsMouseOver() and { color = colors.context.highlight } or {} end },
-		})
-
-		--| UX
-
-		--Tooltip
-		if t.tooltip then
-			--Create a trigger to show the tooltip when the button is disabled
-			toggle.hoverTarget = wt.CreateFrame("Frame", name .. "HoverTarget", toggle)
-			toggle.hoverTarget:SetPoint("TOPLEFT")
-			toggle.hoverTarget:SetSize(toggle:GetSize())
-			toggle.hoverTarget:Hide()
-
-			--Set the tooltip
-			wt.AddTooltip(toggle, {
-				title = t.tooltip.title or title,
-				lines = t.tooltip.lines,
-				anchor = "ANCHOR_TOPLEFT",
-				offset = { x = 20, },
-			}, { triggers = { toggle.hoverTarget, }, })
-		end
-
-		--[ Flyout Menu ]
-
-		---@class contextSubmenu : contextMenu
-		local submenu = CreateFrame("Frame", name .. "Menu", contextMenu, BackdropTemplateMixin and "BackdropTemplate")
-
-		submenu.items = {}
-		submenu.submenus = {}
-
-		--Add to the context menu
-		table.insert(contextMenu.submenus, submenu)
-
-		--| Position & dimensions
-
-		submenu:SetClampedToScreen(true)
-		submenu:SetPoint((t.leftSide or t.justify == "RIGHT") and "TOPRIGHT" or "TOPLEFT", toggle, (t.leftSide or t.justify == "RIGHT") and "TOPLEFT" or "TOPRIGHT", 0, 10)
-		submenu:SetSize(t.width or 140, 20)
-
-		--| Visibility
-
-		submenu:SetFrameStrata("DIALOG")
-		submenu:SetFrameLevel(contextMenu:GetFrameLevel() + 1)
-
-		--| Backdrop
-
-		wt.SetBackdrop(submenu, {
-			background = {
-				texture = {
-					size = 5,
-					insets = { l = 4, r = 4, t = 4, b = 4 },
-				},
-				color = colors.context.bg
-			},
-			border = {
-				texture = { width = 16, },
-				color = { r = 1, g = 1, b = 1 }
-			}
-		})
-
-		--[ Toggle ]
-
-		--Item mouseover utility
-		local function checkItems()
-			for i = 1, #submenu.items do if submenu.items[i]:IsMouseOver() then return true end end
-
-			return false
-		end
-
-		--Fold out and open the context submenu
-		function submenu.open()
-			for i = 1, #contextMenu.submenus do contextMenu.submenus[i].close() end
-			submenu:Show()
-
-			--Invoke an event
-			submenu:SetAttribute("open", true)
-		end
-
-		--Fold in and close the context submenu
-		function submenu.close()
-			submenu:Hide()
-
-			--Invoke an event
-			submenu:SetAttribute("open", false)
-		end
-
-		--Base state
-		submenu:Hide()
-		-- submenu:SetAttributeNoHandler("open", false)
-
-		if t.hover ~= false then toggle:HookScript("OnEnter", function() submenu.open() end) else toggle:HookScript("OnClick", function() if not submenu:IsVisible() then
-			submenu.open()
-			PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
-		else
-			submenu.close()
-			PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_OFF)
-		end end) end
-
-		submenu:HookScript("OnLeave", function() if not checkItems() then submenu.close() end end)
-
-		contextMenu:HookScript("OnHide", function() submenu.close() end)
-
-		return submenu, toggle
+		return submenu
 	end
 
-	---Create a classic context menu frame as a child of a frame
+	---Create a textline item for an already existing Blizzard context menu
 	---***
-	---@param t classicContextMenuCreationData Parameters are to be provided in this table
-	---@return Frame|nil contextMenu
-	function wt.CreateClassicContextMenu(t)
-		if not t.parent or not t.menu then return end
-		--Create the context menu frame
-		local name = (t.append ~= false and t.parent and t.parent~= UIParent and t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "ContextMenu")
-		local contextMenu = CreateFrame("Frame", name, t.parent, "UIDropDownMenuTemplate")
-		--Dimensions
-		UIDropDownMenu_SetWidth(contextMenu, t.width or 115)
-		--Right-click event
-		t.parent:HookScript("OnMouseUp", function(_, button, isInside)
-			if button == "RightButton" and isInside then EasyMenu(t.menu, contextMenu, t.anchor or "cursor", (t.offset or {}).x or 0, (t.offset or {}).y or 0, "MENU") end
-		end)
-		return contextMenu
+	---@param menu contextMenu Reference to the parent menu to add the new item to
+	---@param t? menuTextlineCreationData Parameters are to be provided in this table
+	---***
+	---@return menuDivider|nil textline Reference to the context textline UI object
+	function wt.CreateMenuTextline(menu, t)
+		if not menu then return end
+
+		t = t or {}
+
+		--[ Item Setup ]
+
+		---@class menuDivider
+		local textline = t.queue ~= true and menu:CreateTitle(t.text or "Title") or menu:QueueTitle(t.text or "Title")
+
+		return textline
+	end
+
+	---Create a divider item for an already existing Blizzard context menu
+	---***
+	---@param menu contextMenu Reference to the parent menu to add the new item to
+	---@param t? queuedMenuItem Parameters are to be provided in this table
+	---***
+	---@return menuDivider|nil divider Reference to the context divider UI object
+	function wt.CreateMenuDivider(menu, t)
+		if not menu then return end
+
+		t = t or {}
+
+		--[ Item Setup ]
+
+		---@class menuDivider
+		local divider = t.queue ~= true and menu:CreateDivider() or menu:QueueDivider()
+
+		return divider
+	end
+
+	---Create a spacer item for an already existing Blizzard context menu
+	---***
+	---@param menu contextMenu Reference to the parent menu to add the new item to
+	---@param t? queuedMenuItem Parameters are to be provided in this table
+	---***
+	---@return menuSpacer|nil spacer Reference to the context spacer UI object
+	function wt.CreateMenuSpacer(menu, t)
+		if not menu then return end
+
+		t = t or {}
+
+		--[ Item Setup ]
+
+		---@class menuSpacer
+		local spacer = t.queue ~= true and menu:CreateSpacer() or menu:QueueSpacer()
+
+		return spacer
+	end
+
+	---Create a button item for an already existing Blizzard context menu
+	---***
+	---@param menu contextMenu Reference to the parent menu to add the new item to
+	---@param t? menuButtonCreationData Parameters are to be provided in this table
+	---***
+	---@return menuButton|nil button Reference to the context button UI object
+	function wt.CreateMenuButton(menu, t)
+		if not menu then return end
+
+		t = t or {}
+
+		--[ Frame Setup ]
+
+		---@class menuButton
+		local button = menu:CreateButton(t.title or "Button", t.action)
+
+		return button
 	end
 
 	--[ Settings Pages ]
@@ -3211,7 +2941,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	---***
 	---@return settingsPage|nil page Table containing references to the options canvas [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame), category page and utility functions
 	function wt.CreateSettingsPage(addon, t)
-		if not addon or not IsAddOnLoaded(addon) then return end
+		if not addon or not C_AddOns.IsAddOnLoaded(addon) then return end
 
 		t = t or {}
 		local width, height = 0, 0
@@ -3325,7 +3055,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 			--| Title & description
 
-			local title = t.title or wt.Clear(GetAddOnMetadata(addon, "title")):gsub("^%s*(.-)%s*$", "%1")
+			local title = t.title or wt.Clear(C_AddOns.GetAddOnMetadata(addon, "title")):gsub("^%s*(.-)%s*$", "%1")
 
 			--Title & description
 			page.title, page.description = wt.AddTitle({
@@ -3345,7 +3075,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 			--| Icon texture
 
-			local icon = t.icon or GetAddOnMetadata(addon, "IconTexture")
+			local icon = t.icon or C_AddOns.GetAddOnMetadata(addon, "IconTexture")
 
 			if icon then page.icon = wt.CreateTexture({
 				parent = page.canvas,
@@ -3469,7 +3199,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	---***
 	---@return optionsCategory|nil category Table containing references to settings pages and utility functions or nil if the specified **parent** was invalid
 	function wt.CreateSettingsCategory(addon, parent, pages, t)
-		if not addon or not IsAddOnLoaded(addon) or type(parent) ~= "table" and not parent.category then return end
+		if not addon or not C_AddOns.IsAddOnLoaded(addon) or type(parent) ~= "table" and not parent.category then return end
 
 		t = t or {}
 
@@ -3910,144 +3640,6 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		--| Shared setup
 
 		setUpButtonFrame(button, t, name, title, true)
-
-		return button
-	end
-
-	---Create a button widget as a child of a context menu frame
-	---***
-	---@param contextMenu contextMenu|contextSubmenu Reference to the context menu to add this button to
-	---@param mainContextMenu? contextMenu Reference to the root context menu to hide after clicking the button | ***Default:*** **contextMenu**
-	---@param t? contextButtonCreationData Parameters are to be provided in this table
-	---***
-	---@return contextButton contextButton Reference to the new [Button](https://warcraft.wiki.gg/wiki/UIOBJECT_Button) overloaded with custom fields and utility functions
-	function wt.AddContextButton(contextMenu, mainContextMenu, t)
-		mainContextMenu = mainContextMenu or contextMenu
-		t = t or {}
-
-		--[ Frame Setup ]
-
-		local defaultName = "Item" .. #contextMenu.items + 1
-		local name = (t.append ~= false and contextMenu:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or defaultName)
-
-		---@class contextButton : Button
-		---@field hoverTarget Frame
-		local button = CreateFrame("Button", name, contextMenu, BackdropTemplateMixin and "BackdropTemplate")
-
-		--| Register
-
-		--Add to the context menu
-		table.insert(contextMenu.items, button)
-
-		--Increase the context menu height
-		local contextHeight = contextMenu:GetHeight()
-		contextMenu:SetHeight(contextHeight + 20)
-
-		--| Position & dimensions
-
-		button:SetPoint("TOP", contextMenu, "TOP", 0, -contextHeight + 10)
-
-		button:SetSize(contextMenu:GetWidth() - 20, 20)
-
-		--| Label
-
-		local title = t.title or t.name or defaultName
-		t.font = t.font or {}
-		local useHighlight = t.font.highlight ~= nil
-		t.font.normal = t.font.normal or "GameFontHighlightSmall"
-		t.font.highlight = t.font.highlight or "GameFontHighlightSmall"
-		t.font.disabled = t.font.disabled or "GameFontDisableSmall"
-
-		button.label = wt.CreateText({
-			parent = button,
-			name = "Label",
-			position = { anchor = "CENTER", },
-			width = button:GetWidth(),
-			text = title,
-			font = t.font.normal,
-			justify = { h = t.justify or "LEFT", },
-		})
-
-		--| Textures
-
-		--Background highlight
-		wt.CreateTexture({
-			parent = button,
-			name = "Highlight",
-			position = { anchor = "CENTER" },
-			size = { w = button:GetWidth() + 4, h = button:GetHeight() - 2 },
-			path = textures.contextBG,
-			color = colors.context.normal
-		}, {
-			OnEnter = { rule = function() return { color = IsMouseButtonDown() and colors.context.click or colors.context.highlight } end },
-			OnLeave = {},
-			OnHide = {},
-			OnMouseDown = { rule = function(self) return self:IsEnabled() and { color = colors.context.click } or {} end },
-			OnMouseUp = { rule = function(self) return self:IsEnabled() and self:IsMouseOver() and { color = colors.context.highlight } or {} end },
-		})
-
-		--[ Getters & Setters ]
-
-		---Enable or disable the widget based on the specified value
-		---***
-		---@param state boolean Enable the input if true, disable if not
-		function button.setEnabled(state)
-			button:SetEnabled(state)
-
-			if state then
-				if useHighlight and button:IsMouseOver() then button.label:SetFontObject(t.font.highlight) else button.label:SetFontObject(t.font.normal) end
-				if button.hoverTarget then button.hoverTarget:Hide() end
-			else
-				button.label:SetFontObject(t.font.disabled)
-				if button.hoverTarget then button.hoverTarget:Show() end
-			end
-
-			--Invoke an event
-			button:SetAttribute("enabled", state)
-		end
-
-		--[ Events ]
-
-		--Register script event handlers
-		if t.events then for key, value in pairs(t.events) do
-			if key == "attribute" then button:HookScript("OnAttributeChanged", function(_, attribute, ...) if attribute == value.name then value.handler(...) end end)
-			else button:HookScript(key, value) end
-		end end
-
-		--| UX
-
-		button:HookScript("OnClick", function()
-			PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
-
-			--Close the root menu
-			mainContextMenu:Hide()
-		end)
-
-		if useHighlight then
-			button:HookScript("OnEnter", function() button.label:SetFontObject(t.font.highlight) end)
-			button:HookScript("OnLeave", function() button.label:SetFontObject(t.font.normal) end)
-		end
-
-		--Tooltip
-		if t.tooltip then
-			--Create a trigger to show the tooltip when the button is disabled
-			button.hoverTarget = CreateFrame("Frame", name .. "HoverTarget", button)
-			button.hoverTarget:SetPoint("TOPLEFT")
-			button.hoverTarget:SetSize(button:GetSize())
-			button.hoverTarget:Hide()
-
-			--Set the tooltip
-			wt.AddTooltip(button, {
-				title = t.tooltip.title or title,
-				lines = t.tooltip.lines,
-				anchor = "ANCHOR_TOPLEFT",
-				offset = { x = 20, },
-			}, { triggers = { button.hoverTarget, }, })
-		end
-
-		--State & dependencies
-		if t.disabled then button.setEnabled(false) end
-		if t.dependencies then wt.AddDependencies(t.dependencies, button.setEnabled) end
 
 		return button
 	end
@@ -5000,12 +4592,12 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		---Convert an index to a corresponding value (based on the specified **itemset**)
 		---@param index integer
-		---@return AnchorPoint|JustifyH|JustifyV|FrameStrata|nil value
+		---@return FramePoint|JustifyHorizontal|JustifyVertical|FrameStrata|nil value
 		---<hr><p></p>
 		function selector.toValue(index) return itemsets[itemset][index] and itemsets[itemset][index].value or nil end
 
 		---Convert an specific value to a corresponding index (based on the specified **itemset**)
-		---@param value AnchorPoint|JustifyH|JustifyV|FrameStrata
+		---@param value FramePoint|JustifyHorizontal|JustifyVertical|FrameStrata
 		---***
 		---@return integer|nil index
 		---<hr><p></p>
@@ -5048,7 +4640,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		end
 
 		---Get the currently stored data via **t.getData()**
-		---@return AnchorPoint|JustifyH|JustifyV|FrameStrata|nil
+		---@return FramePoint|JustifyHorizontal|JustifyVertical|FrameStrata|nil
 		function selector.getData() return t.getData and t.getData() end
 
 		---Save the provided data to storage via **t.saveData(...)** then load it to the widget via **t.loadData()**
@@ -5075,12 +4667,12 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		function selector.resetData(handleChanges, silent) if t.default then selector.setData({ value = t.default }, handleChanges, silent) end end
 
 		---Returns the value of the currently selected item or nil if there is no selection
-		---@return AnchorPoint|JustifyH|JustifyV|FrameStrata|nil
+		---@return FramePoint|JustifyHorizontal|JustifyVertical|FrameStrata|nil
 		function selector.getSelected() return value end
 
 		---Set the specified item as selected
 		---***
-		---@param selected? integer|AnchorPoint|JustifyH|JustifyV|FrameStrata The index or the value of the item to be set as selected ***Default:*** nil *(no selection)*
+		---@param selected? integer|FramePoint|JustifyHorizontal|JustifyVertical|FrameStrata The index or the value of the item to be set as selected ***Default:*** nil *(no selection)*
 		---@param user? boolean If true, mark the change as being initiated via a user interaction and call change handlers | ***Default:*** false
 		---@param silent? boolean If false, invoke a "selected" event and call registered listeners | ***Default:*** false
 		function selector.setSelected(selected, user, silent)
@@ -6289,122 +5881,6 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--Set up starting selection
 		selector.setText(t.defaultText)
-
-		return selector
-	end
-
-	---Create a default Blizzard dropdown GUI frame to pick one out of multiple options with enhanced widget functionality
-	---***
-	---@param t? dropdownSelectorCreationData Parameters are to be provided in this table
-	---@param widget? selector Reference to an already existing selector to set up as a radio selector instead of creating a new base widget
-	---***
-	---@return classicDropdownSelector|selector selector  References to the new [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame), an array of its child [CheckButton](https://warcraft.wiki.gg/wiki/UIOBJECT_CheckButton) widget items, a toggle [Button](https://warcraft.wiki.gg/wiki/UIOBJECT_Button), utility functions and more wrapped in a table
-	function wt.CreateClassicDropdown(t, widget)
-		t = t or {}
-
-		---@class classicDropdownSelector : selector
-		local selector = widget and widget.isType and widget.isType("Selector") and widget or wt.CreateSelector(t)
-
-		if WidgetToolsDB.lite and t.lite ~= false then return selector end
-
-		--[ Frame Setup ]
-
-		local name = (t.append ~= false and t.parent and t.parent~= UIParent and t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "Dropdown")
-
-		selector.frame = CreateFrame("Frame", name, t.parent, "UIDropDownMenuTemplate")
-
-		--| Position & dimensions
-
-		t.position = t.position or {}
-		t.position.offset = t.position.offset or {}
-		t.position.offset.y = (t.position.offset.y or 0) + (t.title ~= false and -16 or 0)
-
-		wt.SetPosition(selector.frame, t.position)
-
-		UIDropDownMenu_SetWidth(selector.frame, t.width or 115)
-
-		--| Visibility
-
-		wt.SetVisibility(selector.frame, t.visible ~= false)
-
-		if t.frameStrata then selector.frame:SetFrameStrata(t.frameStrata) end
-		if t.frameLevel then selector.frame:SetFrameLevel(t.frameLevel) end
-		if t.keepOnTop then selector.frame:SetToplevel(t.keepOnTop) end
-
-		--| Label
-
-		local title = t.title or t.name or "Dropdown"
-
-		local label = wt.AddTitle({
-			parent = selector.frame,
-			title = t.label ~= false and {
-				offset = { x = 22, y = 16 },
-				text = title,
-			} or nil,
-		})
-
-		--[ Events ]
-
-		--| UX
-
-		---Update the widget UI based on the selection
-		---@param _ selector
-		---@param selected? integer
-		local function updateSelection(_, selected)
-			UIDropDownMenu_SetSelectedValue(selector.frame, selected)
-			UIDropDownMenu_SetText(selector.frame, (t.items[selected] or {}).title or t.text or "")
-		end
-
-		--Handle widget updates
-		selector.setListener.selected(updateSelection, 1)
-
-		--| Tooltip
-
-		if t.tooltip then wt.AddTooltip(selector.frame, {
-			title = t.tooltip.title or title,
-			lines = t.default and table.insert(t.tooltip.lines, { text = ns.toolboxStrings.default .. (t.items[t.default].title or tostring(t.default)) }) or t.tooltip.lines,
-			anchor = "ANCHOR_RIGHT",
-		}) end
-
-		--| State
-
-		---Update the widget UI based on its enabled state
-		---@param _ selector
-		---@param state boolean
-		local function updateState(_, state)
-			if state then
-				UIDropDownMenu_EnableDropDown(selector.frame)
-
-				if label then label:SetFontObject("GameFontNormal") end
-			else
-				UIDropDownMenu_DisableDropDown(selector.frame)
-
-				if label then label:SetFontObject("GameFontDisable") end
-			end
-		end
-
-		--Handle widget updates
-		selector.setListener.enabled(updateState, 1)
-
-		--[ Initialization ]
-
-		UIDropDownMenu_Initialize(selector.frame, function()
-			for i = 1, #t.items do
-				local info = UIDropDownMenu_CreateInfo()
-
-				info.text = t.items[i].title
-				info.value = i
-				info.func = function(self) selector.setSelected(self.value, true) end
-
-				UIDropDownMenu_AddButton(info)
-			end
-		end)
-
-		--Set up starting selection
-		updateSelection(nil, selector.getSelected())
-
-		--Set up starting state
-		updateState(nil, selector.isEnabled())
 
 		return selector
 	end
@@ -8223,30 +7699,30 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	---***
 	---@return settingsPage|nil aboutPage Table containing references to the options canvas [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame), category page and utility functions
 	function wt.CreateAboutPage(addon, t)
-		if not addon or not IsAddOnLoaded(addon) then return end
+		if not addon or not C_AddOns.IsAddOnLoaded(addon) then return end
 
 		t = t or {}
 		local data = {
-			version = GetAddOnMetadata(addon, "Version"),
-			day = GetAddOnMetadata(addon, "X-Day"),
-			month = GetAddOnMetadata(addon, "X-Month"),
-			year = GetAddOnMetadata(addon, "X-Year"),
-			author = GetAddOnMetadata(addon, "Author"),
-			license = GetAddOnMetadata(addon, "X-License"),
-			curse = GetAddOnMetadata(addon, "X-CurseForge"),
-			wago = GetAddOnMetadata(addon, "X-Wago"),
-			repo = GetAddOnMetadata(addon, "X-Repository"),
-			issues = GetAddOnMetadata(addon, "X-Issues"),
-			sponsors = GetAddOnMetadata(addon, "X-Sponsors"),
-			topSponsors = GetAddOnMetadata(addon, "X-TopSponsors"),
+			version = C_AddOns.GetAddOnMetadata(addon, "Version"),
+			day = C_AddOns.GetAddOnMetadata(addon, "X-Day"),
+			month = C_AddOns.GetAddOnMetadata(addon, "X-Month"),
+			year = C_AddOns.GetAddOnMetadata(addon, "X-Year"),
+			author = C_AddOns.GetAddOnMetadata(addon, "Author"),
+			license = C_AddOns.GetAddOnMetadata(addon, "X-License"),
+			curse = C_AddOns.GetAddOnMetadata(addon, "X-CurseForge"),
+			wago = C_AddOns.GetAddOnMetadata(addon, "X-Wago"),
+			repo = C_AddOns.GetAddOnMetadata(addon, "X-Repository"),
+			issues = C_AddOns.GetAddOnMetadata(addon, "X-Issues"),
+			sponsors = C_AddOns.GetAddOnMetadata(addon, "X-Sponsors"),
+			topSponsors = C_AddOns.GetAddOnMetadata(addon, "X-TopSponsors"),
 		}
 
 		--[ Settings Page ]
 
 		return wt.CreateSettingsPage(addon, not WidgetToolsDB.lite and next(data) and {
 			register = t.register,
-			name = t.name or GetAddOnMetadata(addon, "Title"),
-			description = t.description or GetAddOnMetadata(addon, "Notes"),
+			name = t.name or C_AddOns.GetAddOnMetadata(addon, "Title"),
+			description = t.description or C_AddOns.GetAddOnMetadata(addon, "Notes"),
 			static = t.static ~= false,
 			initialize = function(canvas)
 
@@ -8256,7 +7732,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					parent = canvas,
 					name = "About",
 					title = ns.toolboxStrings.about.title,
-					description = ns.toolboxStrings.about.description:gsub("#ADDON", GetAddOnMetadata(addon, "Title")),
+					description = ns.toolboxStrings.about.description:gsub("#ADDON", C_AddOns.GetAddOnMetadata(addon, "Title")),
 					arrange = {},
 					size = { h = 258 },
 					initialize = function(panel)
@@ -8493,7 +7969,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 										parent = canvas,
 										name = addon .. "Changelog",
 										append = false,
-										title = ns.toolboxStrings.about.fullChangelog.label:gsub("#ADDON", GetAddOnMetadata(addon, "Title")),
+										title = ns.toolboxStrings.about.fullChangelog.label:gsub("#ADDON", C_AddOns.GetAddOnMetadata(addon, "Title")),
 										position = { anchor = "BOTTOMRIGHT", },
 										keepInBounds = true,
 										size = { w = 678, h = 610 },
@@ -8504,7 +7980,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 											wt.CreateMultilineEditbox({
 												parent = windowPanel,
 												name = "FullChangelog",
-												title = ns.toolboxStrings.about.fullChangelog.label:gsub("#ADDON", GetAddOnMetadata(addon, "Title")),
+												title = ns.toolboxStrings.about.fullChangelog.label:gsub("#ADDON", C_AddOns.GetAddOnMetadata(addon, "Title")),
 												label = false,
 												tooltip = { lines = { { text = ns.toolboxStrings.about.fullChangelog.tooltip, }, } },
 												arrange = {},
@@ -8605,9 +8081,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	---***
 	---@return dataManagementPage|nil profilesPage Table containing references to the settings page, options widgets grouped in subtables and utility functions by category, or, if required parameters are missing, no settings page will be created and the returned value will be nil
 	function wt.CreateDataManagementPage(addon, t)
-		if not addon or not IsAddOnLoaded(addon) or not t.accountData or not t.characterData or not t.settingsData or not t.defaultsTable then return end
+		if not addon or not C_AddOns.IsAddOnLoaded(addon) or not t.accountData or not t.characterData or not t.settingsData or not t.defaultsTable then return end
 
-		local addonTitle = GetAddOnMetadata(addon, "Title")
+		local addonTitle = C_AddOns.GetAddOnMetadata(addon, "Title")
 
 		--[ Wrapper Table ]
 
@@ -9266,7 +8742,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	---***
 	---@return positionPanel|nil table Components of the options panel wrapped in a table
 	function wt. CreatePositionOptions(addon, t)
-		if not addon or not IsAddOnLoaded(addon) then return end
+		if not addon or not C_AddOns.IsAddOnLoaded(addon) then return end
 
 		--[ Wrapper Table ]
 

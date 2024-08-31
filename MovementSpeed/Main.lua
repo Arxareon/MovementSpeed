@@ -7,7 +7,7 @@ local ns = select(2, ...)
 local wt = ns.WidgetToolbox
 
 --Addon title
-local addonTitle = wt.Clear(select(2, GetAddOnInfo(ns.name))):gsub("^%s*(.-)%s*$", "%1")
+local addonTitle = wt.Clear(select(2, C_AddOns.GetAddOnInfo(ns.name))):gsub("^%s*(.-)%s*$", "%1")
 local addonChat = wt.Color(addonTitle .. ":", ns.colors.green[1]) .. " "
 
 --Custom Tooltip
@@ -529,6 +529,7 @@ end
 
 --Create the widgets
 local function CreateVisibilityOptions(panel, display, optionsKey)
+	---@type toggle|checkbox
 	options[display].visibility.hidden = wt.CreateCheckbox({
 		parent = panel,
 		name = "Hidden",
@@ -545,6 +546,7 @@ local function CreateVisibilityOptions(panel, display, optionsKey)
 		default = ns.profileDefault[display].visibility.hidden
 	})
 
+	---@type toggle|checkbox
 	options[display].visibility.autoHide = wt.CreateCheckbox({
 		parent = panel,
 		name = "AutoHide",
@@ -558,6 +560,7 @@ local function CreateVisibilityOptions(panel, display, optionsKey)
 		default = ns.profileDefault[display].visibility.autoHide
 	})
 
+	---@type toggle|checkbox
 	options[display].visibility.status = wt.CreateCheckbox({
 		parent = panel,
 		name = "StatusNotice",
@@ -571,6 +574,7 @@ local function CreateVisibilityOptions(panel, display, optionsKey)
 	})
 end
 local function CreateUpdateOptions(panel, display, optionsKey)
+	---@type toggle|checkbox
 	options[display].update.throttle = wt.CreateCheckbox({
 		parent = panel,
 		name = "Throttle",
@@ -588,6 +592,7 @@ local function CreateUpdateOptions(panel, display, optionsKey)
 		default = ns.profileDefault[display].update.throttle
 	})
 
+	---@type numeric|numericSlider
 	options[display].update.frequency = wt.CreateNumericSlider({
 		parent = panel,
 		name = "Frequency",
@@ -611,6 +616,7 @@ local function CreateUpdateOptions(panel, display, optionsKey)
 	})
 end
 local function CreateSpeedValueOptions(panel, display, optionsKey)
+	---@type checkboxSelector|multiselector
 	options[display].value.units = wt.CreateCheckboxSelector({
 		parent = panel,
 		name = "Units",
@@ -630,6 +636,7 @@ local function CreateSpeedValueOptions(panel, display, optionsKey)
 		default = ns.profileDefault[display].value.units
 	})
 
+	---@type numeric|numericSlider
 	options[display].value.fractionals = wt.CreateNumericSlider({
 		parent = panel,
 		name = "Fractionals",
@@ -647,6 +654,7 @@ local function CreateSpeedValueOptions(panel, display, optionsKey)
 		default = ns.profileDefault[display].value.fractionals
 	})
 
+	---@type toggle|checkbox
 	options[display].value.zeros = wt.CreateCheckbox({
 		parent = panel,
 		name = "Zeros",
@@ -680,6 +688,7 @@ local function CreateFontOptions(panel, display, optionsKey)
 			} or nil),
 		}
 	end
+	---@type selector|dropdownSelector
 	options[display].font.family = wt.CreateDropdownSelector({
 		parent = panel,
 		name = "Family",
@@ -719,6 +728,7 @@ local function CreateFontOptions(panel, display, optionsKey)
 		options[display].font.family.toggles[i].label:SetFont(ns.fonts[i].path, size, flags)
 	end end end
 
+	---@type numeric|numericSlider
 	options[display].font.size = wt.CreateNumericSlider({
 		parent = panel,
 		name = "Size",
@@ -740,6 +750,7 @@ local function CreateFontOptions(panel, display, optionsKey)
 		default = ns.profileDefault[display].font.size
 	})
 
+	---@type specialSelector|specialRadioSelector
 	options[display].font.alignment = wt.CreateSpecialRadioSelector("justifyH", {
 		parent = panel,
 		name = "Alignment",
@@ -758,6 +769,7 @@ local function CreateFontOptions(panel, display, optionsKey)
 		default = ns.profileDefault[display].font.alignment
 	})
 
+	---@type toggle|checkbox
 	options[display].font.valueColoring = wt.CreateCheckbox({
 		parent = panel,
 		name = "ValueColoring",
@@ -779,6 +791,7 @@ local function CreateFontOptions(panel, display, optionsKey)
 		default = ns.profileDefault[display].font.valueColoring
 	})
 
+	---@type colorPicker|colorPickerFrame
 	options[display].font.color = wt.CreateColorPickerFrame({
 		parent = panel,
 		name = "Color",
@@ -797,6 +810,7 @@ local function CreateFontOptions(panel, display, optionsKey)
 	})
 end
 local function CreateBackgroundOptions(panel, display, optionsKey)
+	---@type toggle|checkbox
 	options[display].background.visible = wt.CreateCheckbox({
 		parent = panel,
 		name = "Visible",
@@ -811,6 +825,7 @@ local function CreateBackgroundOptions(panel, display, optionsKey)
 		default = ns.profileDefault[display].background.visible
 	})
 
+	---@type colorPicker|colorPickerFrame
 	options[display].background.colors.bg = wt.CreateColorPickerFrame({
 		parent = panel,
 		name = "Color",
@@ -828,6 +843,7 @@ local function CreateBackgroundOptions(panel, display, optionsKey)
 		default = ns.profileDefault[display].background.colors.bg
 	})
 
+	---@type colorPicker|colorPickerFrame
 	options[display].background.colors.border = wt.CreateColorPickerFrame({
 		parent = panel,
 		name = "BorderColor",
@@ -876,6 +892,7 @@ local function CreateSpeedDisplayOptionsPage(display)
 		},
 	}
 
+	---@type settingsPage|nil
 	options[display].page = wt.CreateSettingsPage(ns.name, {
 		name = displayName,
 		title = ns.strings.options.speedDisplay.title:gsub("#TYPE", ns.strings.options[display].title),
@@ -922,6 +939,7 @@ local function CreateSpeedDisplayOptionsPage(display)
 
 			--[ Position ]
 
+			---@type positionPanel|nil
 			options[display].position = wt.CreatePositionOptions(ns.name, {
 				canvas = canvas,
 				frame = frames[display].display,
@@ -1432,119 +1450,53 @@ local commandManager = wt.RegisterChatCommands(ns.name, { ns.chat.keyword }, {
 
 --[[ INITIALIZATION ]]
 
---Set up the speed display context menu
-local function _CreateContextMenu(parent)
-	local contextMenu = wt.CreateContextMenu({ parent = parent, })
-
-	--[ Items ]
-
-	wt.AddContextLabel(contextMenu, { text = addonTitle, })
-
-	--Options submenu
-	-- local optionsMenu = wt.AddContextSubmenu(contextMenu, { --WATCH: Restore the submenu and the buttons once opening settings subcategories programmatically is once again supported in Dragonflight
-	-- 	title = ns.strings.misc.options,
-	-- })
-
-	-- wt.AddContextButton(optionsMenu, contextMenu, {
-	wt.AddContextButton(contextMenu, contextMenu, {
-		-- title = ns.strings.options.main.name,
-		title = ns.strings.misc.options,
-		tooltip = { lines = { { text = ns.strings.options.main.description:gsub("#ADDON", addonTitle), }, } },
-		events = { OnClick = function() options.main.page.open() end, },
-	})
-	-- wt.AddContextButton(optionsMenu, contextMenu, {
-	-- 	title = ns.strings.options.speedDisplay.title:gsub("#TYPE", ns.strings.options.playerSpeed.title),
-	-- 	tooltip = { lines = { { text = ns.strings.options.playerSpeed.description:gsub("#ADDON", addonTitle), }, } },
-	-- 	events = { OnClick = function() options.playerSpeed.page.open() end, },
-	-- })
-	-- wt.AddContextButton(optionsMenu, contextMenu, {
-	-- 	title = ns.strings.options.travelSpeed.title,
-	-- 	tooltip = { lines = { { text = ns.strings.options.travelSpeed.description:gsub("#ADDON", addonTitle), }, } },
-	-- 	events = { OnClick = function() options.travelSpeed.page.open() end, },
-	-- })
-	-- wt.AddContextButton(optionsMenu, contextMenu, {
-	-- 	title = ns.strings.options.targetSpeed.title,
-	-- 	tooltip = { lines = { { text = ns.strings.options.targetSpeed.description:gsub("#ADDON", addonTitle), }, } },
-	-- 	events = { OnClick = function() options.targetSpeed.page.open() end, },
-	-- })
-	-- wt.AddContextButton(optionsMenu, contextMenu, {
-	-- 	title = wt.GetStrings("dataManagement").title,
-	-- 	tooltip = { lines = { { text = wt.GetStrings("dataManagement").description:gsub("#ADDON", addonTitle), }, } },
-	-- 	events = { OnClick = function() options.dataManagement.page.open() end, },
-	-- })
-
-	--Presets submenu
-	local presetsMenu = wt.AddContextSubmenu(contextMenu, {
-		title = ns.strings.options.speedDisplay.position.presets.label,
-		tooltip = { lines = { { text = ns.strings.options.speedDisplay.position.presets.tooltip, }, } },
-	})
-	for i = 1, #options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].position.presetList do wt.AddContextButton(presetsMenu, contextMenu, {
-		title = options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].position.presetList[i].title,
-		events = { OnClick = function() commandManager.handleCommand(ns.chat.commands.preset, i) end, },
-	}) end
-end --TODO: Reinstate after fix or delete
+---Set up the speed display context menu
+---@param display "playerSpeed"|"travelSpeed"
 local function CreateContextMenu(display)
-	local menu = {
-		{
-			text = addonTitle,
-			isTitle = true,
-			notCheckable = true,
-		},
-		{
-			text = ns.strings.misc.options,
-			func = function() options.main.page.open() end,
-			notCheckable = true,
-		},
-		-- { --TODO reinstate after fix
-		-- 	text = ns.strings.misc.options,
-		-- 	hasArrow = true,
-		-- 	menuList = {
-		-- 		{
-		-- 			text = wt.GetStrings("about").title,
-		-- 			func = function() options.main.page.open() end,
-		-- 			notCheckable = true,
-		-- 		},
-		-- 		{
-		-- 			text = ns.strings.options.playerSpeed.title,
-		-- 			func = function() options.playerSpeed.page.open() end,
-		-- 			notCheckable = true,
-		-- 		},
-		-- 		{
-		-- 			text = ns.strings.options.travelSpeed.title,
-		-- 			func = function() options.travelSpeed.page.open() end,
-		-- 			notCheckable = true,
-		-- 		},
-		-- 		{
-		-- 			text = ns.strings.options.targetSpeed.title,
-		-- 			func = function() options.targetSpeed.page.open() end,
-		-- 			notCheckable = true,
-		-- 		},
-		-- 		{
-		-- 			text = wt.GetStrings("dataManagement").title,
-		-- 			func = function() options.dataManagement.page.open() end,
-		-- 			notCheckable = true,
-		-- 		},
-		-- 	},
-		-- 	notCheckable = true,
-		-- },
-		{
-			text = wt.GetStrings("apply").label,
-			hasArrow = true,
-			menuList = {},
-			notCheckable = true,
-		},
-	}
-
-	--Insert presets
-	for i = 1, #options[display].position.presetList do table.insert(menu[3].menuList, {
-		text = options[display].position.presetList[i].title,
-		func = function() options[display].position.applyPreset(i) end,
-		notCheckable = true,
-	}) end
-
-	wt.CreateClassicContextMenu({
+	wt.CreateContextMenu({
 		parent = frames[display].display,
-		menu = menu
+		initialize = function(menu)
+			wt.CreateMenuTextline(menu, { text = addonTitle, })
+			wt.CreateSubmenu(menu, {
+				title = ns.strings.misc.options,
+				initialize = function(optionsMenu)
+					wt.CreateMenuButton(optionsMenu, {
+						title = ns.strings.options.main.name,
+						tooltip = { lines = { { text = ns.strings.options.playerSpeed.description:gsub("#ADDON", addonTitle), }, } },
+						action = function() options.main.page.open() end,
+					})
+					wt.CreateMenuButton(optionsMenu, {
+						title = ns.strings.options.speedDisplay.title:gsub("#TYPE", ns.strings.options.playerSpeed.title),
+						tooltip = { lines = { { text = ns.strings.options.playerSpeed.description:gsub("#ADDON", addonTitle), }, } },
+						action = function() options.playerSpeed.page.open() end,
+					})
+					wt.CreateMenuButton(optionsMenu, {
+						title = ns.strings.options.speedDisplay.title:gsub("#TYPE", ns.strings.options.travelSpeed.title),
+						tooltip = { lines = { { text = ns.strings.options.travelSpeed.description:gsub("#ADDON", addonTitle), }, } },
+						action = function() options.travelSpeed.page.open() end,
+					})
+					wt.CreateMenuButton(optionsMenu, {
+						title = ns.strings.options.targetSpeed.title,
+						tooltip = { lines = { { text = ns.strings.options.targetSpeed.description:gsub("#ADDON", addonTitle), }, } },
+						action = function() options.targetSpeed.page.open() end,
+					})
+					wt.CreateMenuButton(optionsMenu, {
+						title = wt.GetStrings("dataManagement").title,
+						tooltip = { lines = { { text = wt.GetStrings("dataManagement").description:gsub("#ADDON", addonTitle), }, } },
+						action = function() options.dataManagement.page.open() end,
+					})
+				end
+			})
+			wt.CreateSubmenu(menu, {
+				title = wt.GetStrings("apply").label,
+				initialize = function(presetsMenu)
+					for i = 1, #options[display].position.presetList do wt.CreateMenuButton(presetsMenu, {
+						title = options[display].position.presetList[i].title,
+						action = function() options[display].position.applyPreset(i) end,
+					}) end
+				end
+			})
+		end
 	})
 end
 
@@ -1707,7 +1659,7 @@ frames.main = wt.CreateBaseFrame({
 					flipColors = true
 				})
 
-				--Text
+				--Speed text
 				frames.playerSpeed.text = wt.CreateText({
 					parent = display,
 					layer = "OVERLAY",
@@ -1741,7 +1693,7 @@ frames.main = wt.CreateBaseFrame({
 					flipColors = true
 				})
 
-				--Text
+				--Speed text
 				frames.travelSpeed.text = wt.CreateText({
 					parent = display,
 					layer = "OVERLAY",

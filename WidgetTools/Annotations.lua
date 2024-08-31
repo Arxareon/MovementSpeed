@@ -152,6 +152,9 @@
 
 --[[ UI OBJECT ]]
 
+---@class childObject
+---@field parent AnyFrameObject Reference to the frame to set as the parent
+
 ---@class optionalChildObject
 ---@field parent? AnyFrameObject Reference to the frame to set as the parent
 
@@ -175,16 +178,16 @@
 ---@field y? number Vertical offset value | ***Default:*** 0
 
 ---@class positionData_base
----@field anchor? AnchorPoint ***Default:*** "TOPLEFT"
+---@field anchor? FramePoint ***Default:*** "TOPLEFT"
 ---@field relativeTo? AnyFrameObject|string Frame reference or name, or "nil" to anchor relative to screen dimensions | ***Default:*** "nil"<ul><li>***Note:*** When omitting the value by providing nil, instead of the string "nil", anchoring will use the parent region (if possible, otherwise the default behavior of anchoring relative to the screen dimensions will be used).</li><li>***Note:*** Default to "nil" when an invalid frame name is provided.</li></ul>
----@field relativePoint? AnchorPoint ***Default:*** **anchor**
+---@field relativePoint? FramePoint ***Default:*** **anchor**
 
 ---@class positionData : positionData_base
 ---@field offset? offsetData
 
 ---@class pointData
 ---@field relativeTo AnyFrameObject
----@field relativePoint AnchorPoint
+---@field relativePoint FramePoint
 ---@field offset? offsetData
 
 ---@class positionableObject
@@ -399,7 +402,7 @@
 ---[ Title & Description ]
 
 ---@class titleData
----@field anchor? AnchorPoint ***Default:*** "TOPLEFT"
+---@field anchor? FramePoint ***Default:*** "TOPLEFT"
 ---@field offset? offsetData The offset from the anchor point relative to the specified frame
 ---@field width? number ***Default:*** *width of the parent frame*
 ---@field text string Text to be shown as the main title of the frame
@@ -419,12 +422,6 @@
 ---@field parent AnyFrameObject The frame panel to add the title & description to
 ---@field title? titleData
 ---@field description? descriptionData
-
----@class contextLabelData
----@field text string Text to be shown as the main title of the frame
----@field font? string Name of the [Font](https://wowpedia.fandom.com/wiki/UIOBJECT_Font) object to be used for the [FontString](https://wowpedia.fandom.com/wiki/UIOBJECT_FontString) | ***Default:*** "GameFontNormalSmall"<ul><li>***Note:*** A new font object (or a modified copy of an existing one) can be created via ***WidgetToolbox*.CreateFont(...)** (even within this table definition).</li></ul>
----@field color? colorData Apply the specified color to the title (overriding **t.font**)
----@field justify? string Set the horizontal alignment of the text: "LEFT"|"RIGHT"|"CENTER" (overriding **t.font**) | ***Default:*** "LEFT"
 
 ---@class titledObject_base
 ---@field title? string Text to be displayed as the title | ***Default:*** **t.name**
@@ -623,7 +620,7 @@
 ---@field y? number Vertical offset value | ***Default:*** -80
 
 ---@class reloadFramePositionData : positionData_base
----@field anchor? AnchorPoint ***Default:*** "TOPRIGHT"
+---@field anchor? FramePoint ***Default:*** "TOPRIGHT"
 ---@field offset? offsetData
 
 ---@class reloadFrameData
@@ -640,7 +637,7 @@
 
 --[[ CONTAINERS ]]
 
---| Frame
+--[ Frame ]
 
 ---@class frameCreationData : positionableScreenObject, visibleObject_base, initializableContainer
 ---@field parent? AnyFrameObject Reference to the frame to set as the parent of the new frame | ***Default:*** nil *(parentless frame)*<ul><li>***Note:*** You may use [Region:SetParent(...)](https://wowpedia.fandom.com/wiki/API_ScriptRegion_SetParent) to set the parent frame later.</li></ul>
@@ -651,7 +648,7 @@
 ---@field events? table<ScriptFrame, fun(...: any)|attributeEventData> Table of key, value pairs of the names of script event handlers to be set for the frame and the functions to assign as event handlers called when they trigger<ul><li>***Note:*** "[OnEvent](https://wowpedia.fandom.com/wiki/UIHANDLER_OnEvent)" handlers specified here will not be set. Handler functions for specific global events should be specified in the **t.onEvent** table.</li></ul>
 ---@field onEvent? table<WowEvent, fun(self: Frame, ...: any)> Table of key, value pairs that holds global event tags & their corresponding event handlers to be registered for the frame<ul><li>***Note:*** You may want to include [Frame:UnregisterEvent(...)](https://wowpedia.fandom.com/wiki/API_Frame_UnregisterEvent) to prevent the handler function to be executed again.</li><li>***Example:*** "[ADDON_LOADED](https://wowpedia.fandom.com/wiki/ADDON_LOADED)" is fired repeatedly after each addon. To call the handler only after one specified addon is loaded, you may check the parameter the handler is called with. It's a good idea to unregister the event to prevent repeated calling for every other addon after the specified one has been loaded already.<pre>```function(self, addon)```<br>&#9;```if addon ~= "AddonNameSpace" then return end --Replace "AddonNameSpace" with the namespace of the specific addon to watch```<br>&#9;```self:UnregisterEvent("ADDON_LOADED")```<br>&#9;```--Do something```<br>```end```</pre></li></ul>
 
---| ScrollFrame
+--[ ScrollFrame ]
 
 ---@class sizeData_scroll
 ---@field w? number Horizontal size of the scrollable child frame | ***Default:*** **t.size.width** - 16
@@ -665,7 +662,9 @@
 ---@field size? sizeData_parentDefault ***Default:*** **t.parent** and *size of the parent frame* or *no size*
 ---@field scrollSize? sizeData_scroll ***Default:*** *size of the parent frame*
 
---| Panel
+--[ Panel ]
+
+--| Parameters
 
 ---@class sizeData_panel
 ---@field w? number Width | ***Default:*** **t.parent** and *width of the parent frame* - 32 or 0
@@ -713,6 +712,8 @@
 ---@class arrangementData_panel
 ---@field parameters? arrangementParameters_panel Set of parameters to arrange the frames by: spacing, direction & resizing
 
+--| Constructors
+
 ---@class panelCreationData : labeledChildObject, describableObject, positionableScreenObject, arrangeableObject, visibleObject_base, backdropData, initializableContainer, liteObject
 ---@field name? string Unique string used to set the frame name | ***Default:*** "Panel"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
 ---@field size? sizeData_panel
@@ -721,38 +722,31 @@
 ---@field events? table<ScriptFrame, fun(...: any)|attributeEventData> Table of key, value pairs of the names of script event handlers to be set for the panel and the functions to assign as event handlers called when they trigger
 ---@field initialize? fun(container?: panel, width: number, height: number) This function will be called while setting up the container frame to perform specific tasks like creating content child frames right away<hr><p>@*param* `container`? panel ― Reference to the frame to be set as the parent for child objects created during initialization (nil if **WidgetToolsDB.lite** is true)</p><p>@*param* `width` number The current width of the container frame (0 if **WidgetToolsDB.lite** is true)</p><p>@*param* `height` number The current height of the container frame (0 if **WidgetToolsDB.lite** is true)</p>
 
---| Context Menu
+--[ Context Menu ]
 
----@class togglableObject_contextMenu
----@field disabled? boolean If true, deactivate the context menu during initialization | ***Default:*** false<ul><<li>***Note:*** Dependency rule evaluations may re-enable the widget.</li></ul>
----@field dependencies? dependencyRule[] Automatically activate or deactivate the context menu based on the set of rules described in subtables
+---@class rootDescription
 
----@class contextMenuCreationData : namedChildObject, togglableObject_contextMenu
----@field name? string Unique string used to set the frame name | ***Default:*** "ContextMenu"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
----@field position? positionData Parameters to call [Region:SetPoint(...)](https://wowpedia.fandom.com/wiki/API_ScriptRegionResizing_SetPoint) with | ***Default:*** "TOPLEFT" if **t.cursor** is false
----@field cursor? boolean Open the context menu at the current cursor position instead of the specified frame position | ***Default:*** true
----@field width? number ***Default:*** 140
+--| Parameters
 
----@class contextMenuItem : namedChildObject
----@field name? string Unique string to append this to the name of **contextMenu** when setting the name | ***Default:*** "Item" *followed by the the increment of the last index of* **contextMenu.items**<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
+---@class queuedMenuItem
+---@field queue? boolean If true, the item will only appear when additional items are added to the menu | ***Default:*** false
 
----@class contextItemLabelJustify
----@field justify? string Set the horizontal alignment of the label: "LEFT"|"RIGHT"|"CENTER" (overriding **t.font**) | ***Default:*** "LEFT"
+--| Constructors
 
----@class contextSubmenuCreationData : contextMenuItem, contextItemLabelJustify
----@field title? string Text to be shown on the label on the toggle item representing the submenu in the **contextMenu** list | ***Default:*** **t.name**
----@field tooltip? widgetTooltipTextData List of text lines to be added to the tooltip of the toggle button acting as the trigger item for the submenu displayed when mousing over the frame
----@field width? number ***Default:*** 140
----@field hover? boolean If true, open the submenu when its trigger item is being hovered, or if false, open only when it's clicked instead | ***Default:*** true
----@field font? string Name of the [Font](https://wowpedia.fandom.com/wiki/UIOBJECT_Font) object to be used for label of the submenu toggle button | ***Default:*** "GameFontHighlightSmall"<ul><li>***Note:*** A new font object (or a modified copy of an existing one) can be created via ***WidgetToolbox*.CreateFont(...)** (even within this table definition).</li></ul>
----@field leftSide? boolean Open the submenu on the left instead of the right | ***Default:*** true if **t.justify** is "RIGHT"
+---@class contextMenuCreationData_base
+---@field initialize? fun(menu: rootDescription) This function will be called while setting up the container frame to perform specific tasks like creating content child frames right away<hr><p>@*param* `menu` rootDescription ― Reference to the container of menu elements (such as titles, widgets, dividers or other frames) to for menu items to be added to during initialization</p>
 
----@class classicContextMenuCreationData : namedChildObject
----@field name? string Unique string used to set the frame name | ***Default:*** "ContextMenu"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
----@field anchor? string|Region The current cursor position or a region or frame reference | ***Default:*** "cursor"
----@field offset? offsetData
----@field width? number ***Default:*** 115
----@field menu table[] Table of nested subtables for the context menu items containing their attributes<ul><li>***Note:*** See the [full list of attributes](https://www.townlong-yak.com/framexml/5.4.7/UIDropDownMenu.lua#139) that can be set for menu items.<ul><li>***Examples:***<ul><li>**text** string — Text to be displayed on the button within the context menu</li><li>**isTitle**? boolean — Set the item as a title instead of a clickable button | ***Default:*** false (*not title*)</li><li>**disabled**? number — Disable the button if set to 1 | ***Range:*** (nil, 1) | ***Default:*** nil or 1 if **t.isTitle** == true</li><li>**checked**? boolean — Whether the button is currently checked or not | ***Default:*** false (*not checked*)</li><li>**notCheckable**? number — Make the item a simple button instead of a checkbox if set to 1 | ***Range:*** (nil, 1) | ***Default:*** nil</li><li>**func** function — The function to be called the button is clicked</li><li>**hasArrow** boolean — Show the arrow to open the submenu specified in t.menuList</li><li>**menuList** table — A table of subtables containing submenu items</li></ul></li></ul></li></ul>
+---@class contextMenuCreationData : childObject, contextMenuCreationData_base
+
+---@class contextSubmenuCreationData : contextMenuCreationData_base
+---@field title? string Text to be shown on the on the opener button item representing the submenu within the parent menu | ***Default:*** "Submenu"
+
+---@class menuTextlineCreationData : queuedMenuItem
+---@field text? string Text to be shown on the textline item within the parent menu | ***Default:*** "Title"
+
+---@class menuButtonCreationData
+---@field title? string Text to be shown on the button item within the parent menu | ***Default:*** "Button"
+---@field action? fun(...: any) Function to call when the button is clicked in the menu<hr><p>@*param* `...` any</p>
 
 
 --[[ SETTINGS ]]
@@ -898,8 +892,6 @@
 ---@field font? labelFontOptions List of the [Font](https://wowpedia.fandom.com/wiki/UIOBJECT_Font) object names to be used for the label | ***Default:*** *normal sized default Blizzard UI fonts*<ul><li>***Note:*** A new font object (or a modified copy of an existing one) can be created via ***WidgetToolbox*.CreateFont(...)** (even within this table definition).</li></ul>
 
 ---@class customButtonCreationData : simpleButtonCreationData, customizableObject
-
----@class contextButtonCreationData : contextMenuItem, titledObject_base, tooltipDescribableObject, contextItemLabelJustify, buttonScriptEvents, togglableObject
 ---@field font? labelFontOptions_small Table of the [Font](https://wowpedia.fandom.com/wiki/UIOBJECT_Font) object names to be used for the label | ***Default:*** *small default Blizzard UI fonts*<ul><li>***Note:*** A new font object (or a modified copy of an existing one) can be created via ***WidgetToolbox*.CreateFont(...)** (even within this table definition).</li></ul>
 
 --[ Toggle ]
@@ -989,7 +981,6 @@
 ---|selector
 ---|radioSelector
 ---|dropdownSelector
----|classicDropdownSelector
 
 ---@alias MultiselectorType
 ---|multiselector
@@ -1074,7 +1065,7 @@
 ---|fun(self: SpecialSelectorType, success: boolean) Called when an "saved" event is invoked after the data of this widget has been saved to storage<hr><p>@*param* `self` SelectorType ― Reference to the selector widget</p><p>@*param* `success` boolean ― True if data was committed successfully via **t.saveData(...)**</p>
 
 ---@alias SpecialSelectorEventHandler_selected
----|fun(self: SpecialSelectorType, selected?: AnchorPoint|JustifyH|JustifyV|FrameStrata, user: boolean) Called when an "selected" event is invoked after **selector.setSelected(...)** was called or an option was clicked or cleared<hr><p>@*param* `self` SelectorType ― Reference to the selector widget</p><p>@*param* `selected` AnchorPoint|JustifyH|JustifyV|FrameStrata ― The currently selected value</p><p>@*param* `user` boolean ― True if the event was invoked by an action taken by the user</p>
+---|fun(self: SpecialSelectorType, selected?: FramePoint|JustifyHorizontal|JustifyVertical|FrameStrata, user: boolean) Called when an "selected" event is invoked after **selector.setSelected(...)** was called or an option was clicked or cleared<hr><p>@*param* `self` SelectorType ― Reference to the selector widget</p><p>@*param* `selected` AnchorPoint|JustifyH|JustifyV|FrameStrata ― The currently selected value</p><p>@*param* `user` boolean ― True if the event was invoked by an action taken by the user</p>
 
 ---@alias SpecialSelectorEventHandler_any
 ---|fun(self: SpecialSelectorType, ...: any) Called when a custom event is invoked<hr><p>@*param* `self` SpecialSelectorType ― Reference to the widget</p><p>@*param* `...` any — Any leftover arguments</p>
@@ -1088,13 +1079,13 @@
 ---@field selections? boolean[] List of current item states in order | ***Default:*** nil *(no selected items)*<ul><li>**[*index*]** boolean? — Whether this item should be set as selected or not | ***Default:*** false</li></ul>
 
 ---@class wrappedSpecialData
----@field value? integer|AnchorPoint|JustifyH|JustifyV|FrameStrata ***Default:*** nil *(no selection)*
+---@field value? integer|FramePoint|JustifyHorizontal|JustifyVertical|FrameStrata ***Default:*** nil *(no selection)*
 
 --| Parameters
 
 ---@class selectorItem
 ---@field title? string Text to be shown on the right of the item to represent the item within the selector frame (if **t.labels** is true)
----@field tooltip? itemTooltipTextData List of text lines to be added to the tooltip of the item displayed when mousing over the frame<ul><li>***Note:*** Item tooltips are not available for classic dropdowns.</li></ul>
+---@field tooltip? itemTooltipTextData List of text lines to be added to the tooltip of the item displayed when mousing over the frame
 ---@field onSelect? function The function to be called when the item is selected by the user
 
 ---@class limitValues
@@ -1190,11 +1181,11 @@
 ---@field default? integer Default value of the widget
 
 ---@class specialSelectorCreationData : togglableObject, optionsWidget
----@field selected? integer|AnchorPoint|JustifyH|JustifyV|FrameStrata The item to be set as selected during initialization | ***Default:*** nil *(no selection)*
+---@field selected? integer|FramePoint|JustifyHorizontal|JustifyVertical|FrameStrata The item to be set as selected during initialization | ***Default:*** nil *(no selection)*
 ---@field listeners? specialSelectorEventListeners Table of key, value pairs of custom widget event tags and functions to assign as event handlers to call on trigger
----@field getData? fun(): value: integer|AnchorPoint|JustifyH|JustifyV|FrameStrata|nil Called to (if needed, modify and) load the widget data from storage<hr><p>@*return* `value` integer|AnchorPoint|JustifyH|JustifyV|FrameStrata|nil — The index or the value of the item to be set as selected ***Default:*** nil *(no selection)*</p>
----@field saveData? fun(value?: AnchorPoint|JustifyH|JustifyV|FrameStrata) Called to (if needed, modify and) save the widget data to storage<hr><p>@*param* `value`? AnchorPoint|JustifyH|JustifyV|FrameStrata</p>
----@field default? integer|AnchorPoint|JustifyH|JustifyV|FrameStrata Default value of the widget
+---@field getData? fun(): value: integer|FramePoint|JustifyHorizontal|JustifyVertical|FrameStrata|nil Called to (if needed, modify and) load the widget data from storage<hr><p>@*return* `value` integer|AnchorPoint|JustifyH|JustifyV|FrameStrata|nil — The index or the value of the item to be set as selected ***Default:*** nil *(no selection)*</p>
+---@field saveData? fun(value?: FramePoint|JustifyHorizontal|JustifyVertical|FrameStrata) Called to (if needed, modify and) save the widget data to storage<hr><p>@*param* `value`? AnchorPoint|JustifyH|JustifyV|FrameStrata</p>
+---@field default? integer|FramePoint|JustifyHorizontal|JustifyVertical|FrameStrata Default value of the widget
 
 ---@class multiselectorCreationData : togglableObject, optionsWidget
 ---@field items? (selectorItem|toggle)[] Table containing subtables with data used to create item widgets, or already existing toggles

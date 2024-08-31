@@ -89,7 +89,7 @@ ns.changelog = {
 	{
 		"#V_Version 2.0_# #H_(7/24/2024)_#",
 		"#N_New:_#",
-		"Added Cataclysm Classic 4.4.0, vanilla Classic 1.15.3 & The War Within 11.0.0 support.",
+		"Added Cataclysm Classic 4.4.0, vanilla Classic 1.15.3 & The War Within 11.0.2 support.",
 		"A new Lite mode has been introduced. When enabled, no settings managed by Widget Tools will be loaded for addons built with Widget Tools saving resources in the process. Disable to access addon settings again.",
 		"An option to enable positioning visual aids for addons built with Widget Tools have been added.",
 		"Added an option for developers to make the Frame Attributes window (TableAttributeDisplay Frame) wider.",
