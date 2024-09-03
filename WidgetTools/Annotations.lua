@@ -271,7 +271,7 @@
 
 --[[ COLOR ]]
 
----@class rgbData
+---@class rgbData_base
 ---@field r number Red | ***Range:*** (0, 1)
 ---@field g number Green | ***Range:*** (0, 1)
 ---@field b number Blue | ***Range:*** (0, 1)
@@ -281,12 +281,12 @@
 ---@field g? number Green | ***Range:*** (0, 1) | ***Default:*** 1
 ---@field b? number Blue | ***Range:*** (0, 1) | ***Default:*** 1
 
----@class alpha
+---@class alpha_opaqueDefault
 ---@field a? number Opacity | ***Range:*** (0, 1) | ***Default:*** 1
 
----@class colorData : rgbData, alpha
+---@class colorData : rgbData_base, alpha_opaqueDefault
 
----@class optionalColorData : rgbData, alpha
+---@class optionalColorData : rgbData_base, alpha_opaqueDefault
 
 ---@class colorData_whiteDefault : colorData
 ---@field r? number Red | ***Range:*** (0, 1) | ***Default:*** 1
@@ -528,7 +528,7 @@
 ---@class tooltipLineData
 ---@field text string Text to be displayed in the line
 ---@field font? string|FontObject The FontObject to set for this line | ***Default:*** GameTooltipTextSmall
----@field color? rgbData Table containing the RGB values to color this line with | ***Default:*** HIGHLIGHT_FONT_COLOR (white)
+---@field color? rgbData_base Table containing the RGB values to color this line with | ***Default:*** HIGHLIGHT_FONT_COLOR (white)
 ---@field wrap? boolean Allow the text in this line to be wrapped | ***Default:*** true
 
 ---@class tooltipTextData
@@ -959,11 +959,11 @@
 --| Constructors
 
 ---@class toggleCreationData : togglableObject, optionsWidget
----@field state? boolean The starting state of the widget to set during initialization
 ---@field listeners? toggleEventListeners Table of key, value pairs of custom widget event tags and functions to assign as event handlers to call on trigger
 ---@field getData? fun(): state: boolean|nil Called to (if needed, modify and) load the widget data from storage<hr><p>@*return* `state` boolean|nil | ***Default:*** false</p>
 ---@field saveData? fun(state: boolean) Called to (if needed, modify and) save the widget data to storage<hr><p>@*param* `state` boolean</p>
----@field default? boolean Default value of the widget
+---@field value? boolean The starting state of the widget to set during initialization | ***Default:*** **t.getData()** or **t.default** if invalid
+---@field default? boolean Default value of the widget | ***Default:*** false
 
 ---@class checkboxCreationData : toggleCreationData, labeledChildObject, tooltipDescribableObject, arrangeableObject, positionableObject, visibleObject_base, liteObject
 ---@field name? string Unique string used to set the frame name | ***Default:*** "Toggle"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
@@ -982,10 +982,6 @@
 ---|radioSelector
 ---|dropdownSelector
 
----@alias MultiselectorType
----|multiselector
----|checkboxSelector
-
 ---@alias SpecialSelectorType
 ---|selector
 ---|specialSelector
@@ -995,6 +991,10 @@
 ---|"loaded"
 ---|"selected"
 ---|string
+
+---@alias MultiselectorType
+---|multiselector
+---|checkboxSelector
 
 ---@alias SelectorEventTag
 ---|SpecialSelectorEventTag
@@ -1031,30 +1031,6 @@
 ---@alias SelectorEventHandler_any
 ---|fun(self: SelectorType, ...: any) Called when a custom event is invoked<hr><p>@*param* `self` SelectorType ― Reference to the widget</p><p>@*param* `...` any — Any leftover arguments</p>
 
----@alias MultiselectorEventHandler_enabled
----|fun(self: MultiselectorType, state: boolean) Called when an "enabled" event is invoked after **selector.setEnabled(...)** was called<hr><p>@*param* `self` MultiselectorType ― Reference to the selector widget</p><p>@*param* `state` boolean ― True if the widget is enabled</p>
-
----@alias MultiselectorEventHandler_loaded
----|fun(self: MultiselectorType, success: boolean) Called when an "loaded" event is invoked after the data of this widget has been loaded from storage<hr><p>@*param* `self` MultiselectorType ― Reference to the selector widget</p><p>@*param* `success` boolean ― True if data was returned by **t.getData()** and it was loaded to the widget</p>
-
----@alias MultiselectorEventHandler_saved
----|fun(self: MultiselectorType, success: boolean) Called when an "saved" event is invoked after the data of this widget has been saved to storage<hr><p>@*param* `self` MultiselectorType ― Reference to the selector widget</p><p>@*param* `success` boolean ― True if data was committed successfully via **t.saveData(...)**</p>
-
----@alias MultiselectorEventHandler_selected
----|fun(self: MultiselectorType, selections?: boolean[], user: boolean) Called when an "selected" event is invoked after **selector.setSelected(...)** was called or an option was clicked or cleared<hr><p>@*param* `self` MultiselectorType ― Reference to the selector widget</p><p>@*param* `selections` boolean[] ― Indexed list of the current item states<ul><li>**[*index*]** boolean? — Whether this item is currently selected or not | ***Default:*** false</li></ul></p><p>@*param* `user` boolean ― True if the event was invoked by an action taken by the user</p>
-
----@alias MultiselectorEventHandler_updated
----|fun(self: MultiselectorType) Called when an "updated" event is invoked after **selector.updatedItems(...)** was called<hr><p>@*param* `self` MultiselectorType ― Reference to the selector widget</p>
-
----@alias MultiselectorEventHandler_added
----|fun(self: MultiselectorType, toggle: toggle) Called when a new toggle item is added to the selector via **selector.updatedItems(...)**<hr><p>@*param* `self` MultiselectorType ― Reference to the selector widget</p><p>@*param* `toggle` toggle ― Reference to the toggle widget added to the selector</p>
-
----@alias MultiselectorEventHandler_limited
----|fun(self: MultiselectorType, min: boolean, max: boolean, passed: boolean) Called when a "limited" event is invoked after a limit update occurs<hr><p>@*param* `self` MultiselectorType ― Reference to the selector widget</p><p>@*param* `min` boolean ― True, if the number of selected items is equal to lower than the specified lower limit</p><p>@*param* `max` boolean ― True, if the number of selected items is equal to higher than the specified upper limit</p><p>@*param* `passed` boolean ― True, if the number of selected items is below or over the specified lower or upper limit</p>
-
----@alias MultiselectorEventHandler_any
----|fun(self: MultiselectorType, ...: any) Called when a custom event is invoked<hr><p>@*param* `self` MultiselectorType ― Reference to the widget</p><p>@*param* `...` any — Any leftover arguments</p>
-
 ---@alias SpecialSelectorEventHandler_enabled
 ---|fun(self: SpecialSelectorType, state: boolean) Called when an "enabled" event is invoked after **selector.setEnabled(...)** was called<hr><p>@*param* `self` SelectorType ― Reference to the selector widget</p><p>@*param* `state` boolean ― True if the widget is enabled</p>
 
@@ -1070,16 +1046,40 @@
 ---@alias SpecialSelectorEventHandler_any
 ---|fun(self: SpecialSelectorType, ...: any) Called when a custom event is invoked<hr><p>@*param* `self` SpecialSelectorType ― Reference to the widget</p><p>@*param* `...` any — Any leftover arguments</p>
 
+---@alias MultiselectorEventHandler_enabled
+---|fun(self: MultiselectorType, state: boolean) Called when an "enabled" event is invoked after **selector.setEnabled(...)** was called<hr><p>@*param* `self` MultiselectorType ― Reference to the selector widget</p><p>@*param* `state` boolean ― True if the widget is enabled</p>
+
+---@alias MultiselectorEventHandler_loaded
+---|fun(self: MultiselectorType, success: boolean) Called when an "loaded" event is invoked after the data of this widget has been loaded from storage<hr><p>@*param* `self` MultiselectorType ― Reference to the selector widget</p><p>@*param* `success` boolean ― True if data was returned by **t.getData()** and it was loaded to the widget</p>
+
+---@alias MultiselectorEventHandler_saved
+---|fun(self: MultiselectorType, success: boolean) Called when an "saved" event is invoked after the data of this widget has been saved to storage<hr><p>@*param* `self` MultiselectorType ― Reference to the selector widget</p><p>@*param* `success` boolean ― True if data was committed successfully via **t.saveData(...)**</p>
+
+---@alias MultiselectorEventHandler_selected
+---|fun(self: MultiselectorType, selections: boolean[], user: boolean) Called when an "selected" event is invoked after **selector.setSelected(...)** was called or an option was clicked or cleared<hr><p>@*param* `self` MultiselectorType ― Reference to the selector widget</p><p>@*param* `selections` boolean[] ― Indexed list of the current item states</p><p>@*param* `user` boolean ― True if the event was invoked by an action taken by the user</p>
+
+---@alias MultiselectorEventHandler_updated
+---|fun(self: MultiselectorType) Called when an "updated" event is invoked after **selector.updatedItems(...)** was called<hr><p>@*param* `self` MultiselectorType ― Reference to the selector widget</p>
+
+---@alias MultiselectorEventHandler_added
+---|fun(self: MultiselectorType, toggle: toggle) Called when a new toggle item is added to the selector via **selector.updatedItems(...)**<hr><p>@*param* `self` MultiselectorType ― Reference to the selector widget</p><p>@*param* `toggle` toggle ― Reference to the toggle widget added to the selector</p>
+
+---@alias MultiselectorEventHandler_limited
+---|fun(self: MultiselectorType, min: boolean, max: boolean, passed: boolean) Called when a "limited" event is invoked after a limit update occurs<hr><p>@*param* `self` MultiselectorType ― Reference to the selector widget</p><p>@*param* `min` boolean ― True, if the number of selected items is equal to lower than the specified lower limit</p><p>@*param* `max` boolean ― True, if the number of selected items is equal to higher than the specified upper limit</p><p>@*param* `passed` boolean ― True, if the number of selected items is below or over the specified lower or upper limit</p>
+
+---@alias MultiselectorEventHandler_any
+---|fun(self: MultiselectorType, ...: any) Called when a custom event is invoked<hr><p>@*param* `self` MultiselectorType ― Reference to the widget</p><p>@*param* `...` any — Any leftover arguments</p>
+
 --| Data value types
 
 ---@class wrappedIntegerValue
 ---@field index? integer ***Default:*** nil *(no selection)*
 
----@class wrappedBooleanArrayData
----@field selections? boolean[] List of current item states in order | ***Default:*** nil *(no selected items)*<ul><li>**[*index*]** boolean? — Whether this item should be set as selected or not | ***Default:*** false</li></ul>
-
 ---@class wrappedSpecialData
 ---@field value? integer|FramePoint|JustifyHorizontal|JustifyVertical|FrameStrata ***Default:*** nil *(no selection)*
+
+---@class wrappedBooleanArrayData
+---@field selections? boolean[] Indexed list of current item states in order | ***Default:*** false[] *(no selected items)*
 
 --| Parameters
 
@@ -1109,27 +1109,6 @@
 
 ---@class selectorEventListener_any : eventTag, eventHandlerIndex
 ---@field handler SelectorEventHandler_any Handler function to register for call
-
----@class multiselectorEventListener_enabled : eventHandlerIndex
----@field handler MultiselectorEventHandler_enabled Handler function to register for call
-
----@class multiselectorEventListener_loaded : eventHandlerIndex
----@field handler MultiselectorEventHandler_loaded Handler function to register for call
-
----@class multiselectorEventListener_saved : eventHandlerIndex
----@field handler MultiselectorEventHandler_saved Handler function to register for call
-
----@class multiselectorEventListener_selected : eventHandlerIndex
----@field handler MultiselectorEventHandler_selected Handler function to register for call
-
----@class multiselectorEventListener_updated : eventHandlerIndex
----@field handler MultiselectorEventHandler_updated Handler function to register for call
-
----@class multiselectorEventListener_limited : eventHandlerIndex
----@field handler MultiselectorEventHandler_limited Handler function to register for call
-
----@class multiselectorEventListener_any : eventTag, eventHandlerIndex
----@field handler MultiselectorEventHandler_any Handler function to register for call
 
 ---@class specialSelectorEventListener_enabled : eventHandlerIndex
 ---@field handler SpecialSelectorEventHandler_enabled Handler function to register for call
@@ -1170,44 +1149,70 @@
 ---@field selected? specialSelectorEventListener_selected[] List of functions to call in order when an "selected" event is invoked after **selector.setSelected(...)** was called or an option was clicked or cleared
 ---@field [string]? specialSelectorEventListener_any[] List of functions to call in order when a custom event is invoked
 
+---@class multiselectorEventListener_enabled : eventHandlerIndex
+---@field handler MultiselectorEventHandler_enabled Handler function to register for call
+
+---@class multiselectorEventListener_loaded : eventHandlerIndex
+---@field handler MultiselectorEventHandler_loaded Handler function to register for call
+
+---@class multiselectorEventListener_saved : eventHandlerIndex
+---@field handler MultiselectorEventHandler_saved Handler function to register for call
+
+---@class multiselectorEventListener_selected : eventHandlerIndex
+---@field handler MultiselectorEventHandler_selected Handler function to register for call
+
+---@class multiselectorEventListener_updated : eventHandlerIndex
+---@field handler MultiselectorEventHandler_updated Handler function to register for call
+
+---@class multiselectorEventListener_limited : eventHandlerIndex
+---@field handler MultiselectorEventHandler_limited Handler function to register for call
+
+---@class multiselectorEventListener_any : eventTag, eventHandlerIndex
+---@field handler MultiselectorEventHandler_any Handler function to register for call
+
 --| Constructors
 
----@class selectorCreationData : togglableObject, optionsWidget
+---@class selectorCreationData_base
+---@field clearable? boolean If true, the value of the selector input should be clearable and allowed to be set to nil | ***Default:*** false
+
+---@class selectorCreationData : togglableObject, optionsWidget, selectorCreationData_base
 ---@field items? (selectorItem|toggle)[] Table containing subtables with data used to create item widgets, or already existing toggles
----@field selected? integer The index of the item to be set as selected during initialization | ***Default:*** nil *(no selection)*
 ---@field listeners? selectorEventListeners Table of key, value pairs of custom widget event tags and functions to assign as event handlers to call on trigger
 ---@field getData? fun(): selected: integer|nil Called to (if needed, modify and) load the widget data from storage<hr><p>@*return* `selected` integer|nil | ***Default:*** nil *(no selection)*</p>
 ---@field saveData? fun(selected?: integer) Called to (if needed, modify and) save the widget data to storage<hr><p>@*param* `selected`? integer</p>
----@field default? integer Default value of the widget
+---@field value? integer The index of the item to be set as selected during initialization | ***Default:*** **t.getData()** or **t.default** if invalid or 1 if **t.clearable** is false
+---@field default? integer Default value of the widget | ***Default:*** 1 or nil *(no selection)* if **t.clearable** is true
 
----@class specialSelectorCreationData : togglableObject, optionsWidget
----@field selected? integer|FramePoint|JustifyHorizontal|JustifyVertical|FrameStrata The item to be set as selected during initialization | ***Default:*** nil *(no selection)*
+---@class specialSelectorCreationData : togglableObject, optionsWidget, selectorCreationData_base
 ---@field listeners? specialSelectorEventListeners Table of key, value pairs of custom widget event tags and functions to assign as event handlers to call on trigger
 ---@field getData? fun(): value: integer|FramePoint|JustifyHorizontal|JustifyVertical|FrameStrata|nil Called to (if needed, modify and) load the widget data from storage<hr><p>@*return* `value` integer|AnchorPoint|JustifyH|JustifyV|FrameStrata|nil — The index or the value of the item to be set as selected ***Default:*** nil *(no selection)*</p>
 ---@field saveData? fun(value?: FramePoint|JustifyHorizontal|JustifyVertical|FrameStrata) Called to (if needed, modify and) save the widget data to storage<hr><p>@*param* `value`? AnchorPoint|JustifyH|JustifyV|FrameStrata</p>
----@field default? integer|FramePoint|JustifyHorizontal|JustifyVertical|FrameStrata Default value of the widget
+---@field value? integer|FramePoint|JustifyHorizontal|JustifyVertical|FrameStrata The item to be set as selected during initialization | ***Default:*** **t.getData()** or **t.default** if invalid or *option 1* if **t.clearable** is false
+---@field default? integer|FramePoint|JustifyHorizontal|JustifyVertical|FrameStrata Default value of the widget | ***Default:*** *option 1* or nil *(no selection)* if **t.clearable** is true
 
 ---@class multiselectorCreationData : togglableObject, optionsWidget
 ---@field items? (selectorItem|toggle)[] Table containing subtables with data used to create item widgets, or already existing toggles
 ---@field limits? limitValues Parameters to specify the limits of the number of selectable items
----@field selections? boolean[] Ordered list of item states to set during initialization | ***Default:*** nil *(no selected items)*<ul><li>**[*index*]** boolean? — If true, this item will be set as selected | ***Default:*** false</li></ul>
 ---@field listeners? multiselectorEventListeners Table of key, value pairs of custom widget event tags and functions to assign as event handlers to call on trigger
----@field getData? fun(): selections: boolean[]|nil Called to (if needed, modify and) load the widget data from storage<hr><p>@*return* `selections` boolean[]|nil | ***Default:*** nil *(no selection)*</p>
+---@field getData? fun(): selections: boolean[]|nil Called to (if needed, modify and) load the widget data from storage<hr><p>@*return* `selections` boolean[]|nil | ***Default:*** false[] *(no selected items)*</p>
 ---@field saveData? fun(selections?: boolean[]) Called to (if needed, modify and) save the widget data to storage<hr><p>@*param* `selections`? boolean[]</p>
----@field default? boolean[] Default value of the widget
+---@field value? boolean[] Ordered list of item states to set during initialization | ***Default:*** **t.getData()** or **t.default** if invalid
+---@field default? boolean[] Default value of the widget | ***Default:*** false[] *(no selected items)*
 
 ---@class selectorFrameCreationData : labeledChildObject, tooltipDescribableObject, arrangeableObject, positionableObject, visibleObject_base, liteObject
 ---@field name? string Unique string used to set the frame name | ***Default:*** "Selector"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
----@field clearable? boolean Whether the selector input should be clearable by right clicking on its radio buttons or not (the functionality of **setSelected** called with nil to clear the input will not be affected) | ***Default:*** false
 ---@field events? table<ScriptFrame, fun(...: any)|attributeEventData> Table of key, value pairs of the names of script event handlers to be set for the selector frame and the functions to assign as event handlers called when they trigger
 
----@class radioSelectorCreationData : selectorCreationData, selectorFrameCreationData
+---@class radioSelectorCreationData_base
+---@field clearable? boolean If true, the selector input should be clearable by right clicking on its radio buttons, setting the selected value to nil | ***Default:*** false
+
+---@class radioSelectorCreationData : selectorCreationData, selectorFrameCreationData, radioSelectorCreationData_base
 ---@field width? number The height is dynamically set to fit all items (and the title if set), the width may be specified | ***Default:*** *dynamically set to fit all columns of items* or **t.label** and 160 or 0 *(whichever is greater)*<ul><li>***Note:*** The width of each individual item will be set to **t.width** if **t.columns** is 1 and **t.width** is specified.</li></ul>
 ---@field items? (selectorItem|selectorRadioButton)[] Table containing subtables with data used to create item widgets, or already existing radio buttons
 ---@field columns? integer Arrange the newly created widget items in a grid with the specified number of columns instead of a vertical list | ***Default:*** 1
 ---@field labels? boolean Whether or not to add the labels to the right of each newly created widget item | ***Default:*** true
 
----@class specialRadioSelectorCreationData : specialSelectorCreationData, selectorFrameCreationData
+---@class specialRadioSelectorCreationData : specialSelectorCreationData, selectorFrameCreationData, radioSelectorCreationData_base
 
 ---@class checkboxSelectorCreationData : multiselectorCreationData, selectorFrameCreationData
 ---@field width? number The height is dynamically set to fit all items (and the title if set), the width may be specified | ***Default:*** *dynamically set to fit all columns of items* or **t.label** and 160 or 0 *(whichever is greater)*<ul><li>***Note:*** The width of each individual item will be set to **t.width** if **t.columns** is 1 and **t.width** is specified.</li></ul>
@@ -1287,12 +1292,12 @@
 --| Constructors
 
 ---@class textboxCreationData : togglableObject, optionsWidget
----@field text? string The starting text to be set during initialization
 ---@field color? colorData Apply the specified color to all text in the editbox (overriding all font objects set in **t.font**)
 ---@field listeners? textboxEventListeners Table of key, value pairs of custom widget event tags and functions to assign as event handlers to call on trigger
----@field getData? fun(): text: string|nil Called to (if needed, modify and) load the widget data from storage<hr><p>@*return* `text` string|nil | ***Default:*** ""</p>
+---@field getData? fun(): text: string|nil Called to (if needed, modify and) load the widget data from storage<hr><p>@*return* `text` string|nil | ***Default:*** "" *(empty string)*</p>
 ---@field saveData? fun(text: string) Called to (if needed, modify and) save the widget data to storage<hr><p>@*param* `text` string</p>
----@field default? string Default value of the widget
+---@field value? string The starting text to be set during initialization | ***Default:*** **t.getData()** or **t.default** if invalid
+---@field default? string Default value of the widget | ***Default:*** "" *(empty string)*
 
 ---@class editboxCreationData : textboxCreationData, labeledChildObject, tooltipDescribableObject, arrangeableObject, positionableObject, visibleObject_base, liteObject
 ---@field name? string Unique string used to set the frame name | ***Default:*** "Text Box"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
@@ -1322,12 +1327,12 @@
 ---@field name? string Unique string used to set the frame name | ***Default:*** "Copy Box"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
 ---@field size? sizeData_editbox
 ---@field layer? DrawLayer
----@field text string The copyable text to be shown
 ---@field font? string Name of the [Font](https://wowpedia.fandom.com/wiki/UIOBJECT_Font) object to be used for the [FontString](https://wowpedia.fandom.com/wiki/UIOBJECT_FontString) | ***Default:*** "GameFontNormal"<ul><li>***Note:*** A new font object (or a modified copy of an existing one) can be created via ***WidgetToolbox*.CreateFont(...)** (even within this table definition).</li></ul>
 ---@field color? colorData Apply the specified color to the text (overriding **t.font**)
 ---@field justify? string Set the horizontal alignment of the label: "LEFT"|"RIGHT"|"CENTER" (overriding **t.font**) | ***Default:*** "LEFT"
 ---@field flipOnMouse? boolean Hide/Reveal the editbox on mouseover instead of after a click | ***Default:*** false
 ---@field colorOnMouse? colorData If set, change the color of the text on mouseover to the specified color (if **t.flipOnMouse** is false) | ***Default:*** *no color change*
+---@field value string The copyable text to be shown
 
 --[ Numeric ]
 
@@ -1398,20 +1403,20 @@
 ---@field max? numericEventListener_max[] List of functions to call in order when a "max" event is invoked after **numeric.setMax(...)** was called
 ---@field [string]? numericEventListener_any[] List of functions to call in order when a custom event is invoked
 
---| Constructor
+--| Constructors
 
 ---@class numericCreationData : togglableObject, optionsWidget
----@field number? number The starting value of the widget to set during initialization
 ---@field fractional? integer If the value is fractional, display this many decimal digits | ***Default:*** *the most amount of digits present in the fractional part of* **t.min**, **t.max** *or* **t.increment**
 ---@field min? number Lower numeric value limit | ***Range:*** (any, **t.max**) | ***Default:*** 0
 ---@field max? number Upper numeric value limit | ***Range:*** (**t.min**, any) | ***Default:*** 100
----@field increment? number Size of value increment | ***Range:*** (> 0) | ***Default:*** *the value can be freely changed (within range)*
----@field step? number Add/subtract this much when calling **numeric.increase(...)** or **numeric.decrease(...)** | ***Default:*** **t.increment** or (t.max - t.min) / 10
+---@field increment? number Size of value increment | ***Range:*** (> 0) | ***Default:*** *the value can be freely changed within range*
+---@field step? number Add/subtract this much when calling **numeric.increase(...)** or **numeric.decrease(...)** | ***Default:*** 10% of range (**t.min**, **t.max**)
 ---@field altStep? number If set, add/subtract this much when calling **numeric.increase(...)** or **numeric.decrease(...)** with **alt** == true | ***Default:*** *no alternative step value*
 ---@field listeners? numericEventListeners Table of key, value pairs of custom widget event tags and functions to assign as event handlers to call on trigger
 ---@field getData? fun(): value: number|nil Called to (if needed, modify and) load the widget data from storage<hr><p>@*return* `value` number|nil | ***Default:*** **t.min**</p>
 ---@field saveData? fun(value: number) Called to (if needed, modify and) save the widget data to storage<hr><p>@*param* `value` number</p>
----@field default? number Default value of the widget
+---@field value? number The starting value of the widget to set during initialization | ***Default:*** **t.getData()** or **t.default** if invalid
+---@field default? number Default value of the widget | ***Default:*** **t.min**
 
 ---@class numericSliderCreationData : numericCreationData, labeledChildObject, tooltipDescribableObject, arrangeableObject, positionableObject, widgetWidthValue, visibleObject_base, liteObject
 ---@field name? string Unique string used to set the frame name | ***Default:*** "Slider"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
@@ -1473,15 +1478,15 @@
 ---@field colored? colorPickerEventListener_colored[] List of functions to call in order when a "colored" event is invoked after **colorPicker.setColor(...)** was called
 ---@field [string]? colorPickerEventListener_any[] List of functions to call in order when a custom event is invoked
 
---| Constructor
+--| Constructors
 
 ---@class colorPickerCreationData : togglableObject, optionsWidget
----@field color? colorData_whiteDefault Values to use as the starting color set during initialization | ***Default:*** **t.getData()**<ul><li>***Note:*** If the alpha start value was not set, configure the color picker to handle RBG values exclusively instead of the full RGBA.</li></ul>
 ---@field listeners? colorPickerEventListeners Table of key, value pairs of custom widget event tags and functions to assign as event handlers to call on trigger
 ---@field onCancel? function The function to be called when the color change is cancelled (after calling **t.onColorUpdate**)
 ---@field getData? fun(): color: optionalColorData|nil Called to (if needed, modify and) load the widget data from storage<hr><p>@*return* `color` optionalColorData|nil | ***Default:*** { r = 1, g = 1, b = 1, a = 1 } *(white)*</p>
 ---@field saveData? fun(color: colorData) Called to (if needed, modify and) save the widget data to storage<hr><p>@*param* `color` colorData</p>
----@field default? colorData Default value of the widget
+---@field value? colorData_whiteDefault Values to use as the starting color set during initialization | ***Default:*** **t.getData()** or **t.default** if invalid<ul><li>***Note:*** If the alpha start value was not set, configure the color picker to handle RBG values exclusively instead of the full RGBA.</li></ul>
+---@field default? colorData Default value of the widget | ***Default:*** { r = 1, g = 1, b = 1, a = 1 } *(white)*
 
 ---@class colorPickerFrameCreationData : colorPickerCreationData, labeledChildObject, tooltipDescribableObject, arrangeableObject, positionableObject, visibleObject_base, liteObject
 ---@field name? string Unique string used to set the frame name | ***Default:*** "Color Picker"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>

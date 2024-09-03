@@ -1512,12 +1512,12 @@ local function CreateContextMenu(display)
 				initialize = function(optionsMenu)
 					wt.CreateMenuButton(optionsMenu, {
 						title = ns.strings.options.main.name,
-						tooltip = { lines = { { text = ns.strings.options.playerSpeed.description:gsub("#ADDON", addonTitle), }, } },
+						tooltip = { lines = { { text = ns.strings.options.main.description:gsub("#ADDON", addonTitle), }, } },
 						action = function() options.main.page.open() end,
 					})
 					wt.CreateMenuButton(optionsMenu, {
 						title = ns.strings.options.speedDisplay.title:gsub("#TYPE", ns.strings.options.playerSpeed.title),
-						tooltip = { lines = { { text = ns.strings.options.playerSpeed.description:gsub("#ADDON", addonTitle), }, } },
+						tooltip = { lines = { { text = ns.strings.options.playerSpeed.description, }, } },
 						action = function() options.playerSpeed.page.open() end,
 					})
 					wt.CreateMenuButton(optionsMenu, {

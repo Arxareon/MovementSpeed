@@ -186,11 +186,6 @@ end
 
 --[ Speed Update ]
 
---Update the current Player Speed values accessible through **speed**
-local function UpdatePlayerSpeed()
-	speed.playerSpeed.yards = GetUnitSpeed(UnitInVehicle("player") and "vehicle" or "player")
-end
-
 ---Format the specified speed value based on the DB specifications
 ---@param type "playerSpeed"|"targetSpeed"
 ---@return string
@@ -204,6 +199,22 @@ local function FormatSpeedValue(type)
 	):gsub(
 		"#YARDS", wt.FormatThousands(speed[type].yards, MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[type].value.fractionals, true, not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[type].value.zeros)
 	)
+end
+
+--Update the current Player Speed values accessible through **speed**
+local function UpdatePlayerSpeed()
+	local dragonriding, _, flightSpeed = C_PlayerInfo.GetGlidingInfo()
+	speed.playerSpeed.yards = dragonriding and flightSpeed or GetUnitSpeed(UnitInVehicle("player") and "vehicle" or "player")
+
+	--Hide when stationery
+	if speed.playerSpeed.yards == 0 and MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.visibility.autoHide then
+		frames.playerSpeed.display:Hide()
+
+		return
+	else frames.playerSpeed.display:Show() end
+
+	--Update the display text
+	frames.playerSpeed.text:SetText(" " .. FormatSpeedValue("playerSpeed"))
 end
 
 ---Refresh the specified speed text template string to be filled with speed values when displaying it
@@ -331,8 +342,14 @@ local function GetSpeedDisplayTooltipLines()
 end
 
 ---Start updating the speed display
-local function StartSpeedDisplayUpdates()
-	frames.playerSpeed.updater:SetScript("OnUpdate", function(_, deltaTime)
+---@param display "playerSpeed"|"travelSpeed"
+local function StartSpeedDisplayUpdates(display)
+	--Update the speed values at start
+		UpdatePlayerSpeed()
+
+	--| Repeated updates
+
+	frames[display].updater:SetScript("OnUpdate", function(_, deltaTime)
 		--Throttle the update
 		if MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.update.throttle then
 			timeSinceSpeedUpdate.playerSpeed = timeSinceSpeedUpdate.playerSpeed + deltaTime
@@ -341,18 +358,8 @@ local function StartSpeedDisplayUpdates()
 			else timeSinceSpeedUpdate.playerSpeed = 0 end
 		end
 
-		--Update speed values
+		--Update the speed values
 		UpdatePlayerSpeed()
-
-		--Hide when stationery
-		if speed.playerSpeed.yards == 0 and MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.visibility.autoHide then
-			frames.playerSpeed.display:Hide()
-
-			return
-		else frames.playerSpeed.display:Show() end
-
-		--Update the display text
-		frames.playerSpeed.text:SetText(" " .. FormatSpeedValue("playerSpeed"))
 	end)
 end
 
@@ -393,6 +400,7 @@ local function EnableTargetSpeedUpdates()
 					--Update the speed line
 					line:SetText(GetTargetSpeedText())
 					lineAdded = true
+
 					break
 				end end
 			end
@@ -817,6 +825,8 @@ local function CreateSpeedDisplayOptionsPage()
 
 						--Notification
 						print(addonChat .. wt.Color(ns.strings.chat.preset.response:gsub(
+							"#TYPE", ns.strings.options.playerSpeed.title
+						):gsub(
 							"#PRESET", wt.Color(options.playerSpeed.position.presetList[i].title, ns.colors.green[2])
 						), ns.colors.yellow[2]))
 					end,
@@ -824,6 +834,8 @@ local function CreateSpeedDisplayOptionsPage()
 						getData = function() return MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.customPreset end,
 						defaultsTable = ns.profileDefault.customPreset,
 						onSave = function() print(addonChat .. wt.Color(ns.strings.chat.save.response:gsub(
+							"#TYPE", ns.strings.options.playerSpeed.title
+						):gsub(
 							"#CUSTOM", wt.Color(ns.strings.misc.custom, ns.colors.green[2])
 						), ns.colors.yellow[2])) end,
 						onReset = function() print(addonChat .. wt.Color(ns.strings.chat.reset.response:gsub(
@@ -832,9 +844,13 @@ local function CreateSpeedDisplayOptionsPage()
 					}
 				},
 				setMovable = { events = {
-					onStop = function() print(addonChat .. wt.Color(ns.strings.chat.position.save, ns.colors.yellow[2])) end,
+					onStop = function() print(addonChat .. wt.Color(ns.strings.chat.position.save:gsub(
+						"#TYPE", ns.strings.options.playerSpeed.title
+					), ns.colors.yellow[2])) end,
 					onCancel = function()
-						print(addonChat .. wt.Color(ns.strings.chat.position.cancel, ns.colors.yellow[1]))
+						print(addonChat .. wt.Color(ns.strings.chat.position.cancel:gsub(
+							"#TYPE", ns.strings.options.playerSpeed.title
+						), ns.colors.yellow[1]))
 						print(wt.Color(ns.strings.chat.position.error, ns.colors.yellow[2]))
 					end,
 				}, },
@@ -1017,14 +1033,11 @@ end
 
 --[ Chat Utilities ]
 
----Print visibility info
----@param load boolean | ***Default:*** false
-local function PrintStatus(load)
-	if load == true and not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.visibility.statusNotice then return end
-
-	print(addonChat .. wt.Color(frames.main:IsVisible() and (
-		not frames.playerSpeed.display:IsVisible() and ns.strings.chat.status.notVisible or ns.strings.chat.status.visible
-	) or ns.strings.chat.status.hidden, ns.colors.yellow[1]):gsub(
+--Print visibility info
+local function PrintStatus()
+	print(addonChat .. wt.Color((
+		frames.main:IsVisible() and (not frames.playerSpeed.display:IsVisible() and ns.strings.chat.status.notVisible or ns.strings.chat.status.visible) or ns.strings.chat.status.hidden):gsub("#TYPE", ns.strings.options.playerSpeed.title), ns.colors.yellow[1]
+	):gsub(
 		"#AUTO", wt.Color(ns.strings.chat.status.auto:gsub(
 			"#STATE", wt.Color(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.visibility.autoHide and ns.strings.misc.enabled or ns.strings.misc.disabled, ns.colors.green[2])
 		), ns.colors.yellow[2])
@@ -1074,15 +1087,17 @@ local commandManager = wt.RegisterChatCommands(ns.name, { ns.chat.keyword }, {
 			print(wt.Color(ns.strings.chat.preset.error:gsub("#INDEX", wt.Color(ns.chat.commands.preset .. " " .. 1, ns.colors.green[2])), ns.colors.yellow[2]))
 			print(wt.Color(ns.strings.chat.preset.list, ns.colors.green[2]))
 			for j = 1, #options.playerSpeed.position.presetList, 2 do
-				local list = "    " .. wt.Color(j, ns.colors.green[2]) .. wt.Color(" - " .. options.playerSpeed.position.presetList[j].name, ns.colors.yellow[2])
+				local list = "    " .. wt.Color(j, ns.colors.green[2]) .. wt.Color(" - " .. options.playerSpeed.position.presetList[j].title, ns.colors.yellow[2])
 				if j + 1 <= #options.playerSpeed.position.presetList then
-					list = list .. "    " .. wt.Color(j + 1, ns.colors.green[2]) .. wt.Color(" - " .. options.playerSpeed.position.presetList[j + 1].name, ns.colors.yellow[2])
+					list = list .. "    " .. wt.Color(j + 1, ns.colors.green[2]) .. wt.Color(" - " .. options.playerSpeed.position.presetList[j + 1].title, ns.colors.yellow[2])
 				end
 
 				print(list)
 			end
 		end,
 		onHelp = function() PrintCommand(ns.chat.commands.preset, ns.strings.chat.preset.description:gsub(
+			"#TYPE", ns.strings.options.playerSpeed.title
+		):gsub(
 			"#INDEX", wt.Color(ns.chat.commands.preset .. " " .. 1, ns.colors.green[2])
 		)) end
 	},
@@ -1090,6 +1105,8 @@ local commandManager = wt.RegisterChatCommands(ns.name, { ns.chat.keyword }, {
 		command = ns.chat.commands.save,
 		handler = function() options.playerSpeed.position.saveCustomPreset() end,
 		onHelp = function() PrintCommand(ns.chat.commands.save, ns.strings.chat.save.description:gsub(
+			"#TYPE", ns.strings.options.playerSpeed.title
+		):gsub(
 			"#CUSTOM", wt.Color(options.playerSpeed.position.presetList[1].title, ns.colors.green[2])
 		)) end
 	},
@@ -1108,9 +1125,13 @@ local commandManager = wt.RegisterChatCommands(ns.name, { ns.chat.keyword }, {
 			return true
 		end,
 		onSuccess = function()
-			print(addonChat .. wt.Color(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.visibility.hidden and ns.strings.chat.toggle.hiding or ns.strings.chat.toggle.unhiding, ns.colors.yellow[2]))
+			print(addonChat .. wt.Color((MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.visibility.hidden and ns.strings.chat.toggle.hiding or ns.strings.chat.toggle.unhiding):gsub(
+				"#TYPE", ns.strings.options.playerSpeed.title
+			), ns.colors.yellow[2]))
 		end,
 		onHelp = function() PrintCommand(ns.chat.commands.toggle, ns.strings.chat.toggle.description:gsub(
+			"#TYPE", ns.strings.options.playerSpeed.title
+		):gsub(
 			"#HIDDEN", wt.Color(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.visibility.hidden and ns.strings.chat.toggle.hidden or ns.strings.chat.toggle.notHidden, ns.colors.green[2])
 		)) end
 	},
@@ -1122,9 +1143,13 @@ local commandManager = wt.RegisterChatCommands(ns.name, { ns.chat.keyword }, {
 			return true
 		end,
 		onSuccess = function() print(addonChat .. wt.Color(ns.strings.chat.auto.response:gsub(
+			"#TYPE", ns.strings.options.playerSpeed.title
+		):gsub(
 			"#STATE", wt.Color(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.visibility.autoHide and ns.strings.misc.enabled or ns.strings.misc.disabled, ns.colors.green[2])
 		), ns.colors.yellow[2])) end,
 		onHelp = function() PrintCommand(ns.chat.commands.auto, ns.strings.chat.auto.description:gsub(
+			"#TYPE", ns.strings.options.playerSpeed.title
+		):gsub(
 			"#STATE", wt.Color(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.visibility.autoHide and ns.strings.misc.enabled or ns.strings.misc.disabled, ns.colors.green[2])
 		)) end
 	},
@@ -1148,7 +1173,7 @@ local commandManager = wt.RegisterChatCommands(ns.name, { ns.chat.keyword }, {
 		onHelp = function() PrintCommand(ns.chat.commands.size, ns.strings.chat.size.description:gsub(
 			"#SIZE", wt.Color(ns.chat.commands.size .. " " .. ns.profileDefault.playerSpeed.font.size, ns.colors.green[2])
 		)) end
-	},
+	}, --ADD profile management chat commands
 	{
 		command = ns.chat.commands.defaults,
 		handler = function() StaticPopup_Show(resetDefaultsPopup) end,
@@ -1160,86 +1185,51 @@ local commandManager = wt.RegisterChatCommands(ns.name, { ns.chat.keyword }, {
 --[[ INITIALIZATION ]]
 
 --Set up the speed display context menu
-local function _CreateContextMenu(parent)
-	local contextMenu = wt.CreateContextMenu({ parent = parent, })
-
-	--[ Items ]
-
-	wt.AddContextLabel(contextMenu, { text = addonTitle, })
-
-	--Options submenu
-	-- local optionsMenu = wt.AddContextSubmenu(contextMenu, { --WATCH: Restore the submenu and the buttons once opening settings subcategories programmatically is once again supported in Dragonflight
-	-- 	title = ns.strings.misc.options,
-	-- })
-
-	-- wt.AddContextButton(optionsMenu, contextMenu, {
-	wt.AddContextButton(contextMenu, contextMenu, {
-		-- title = ns.strings.options.main.name,
-		title = ns.strings.misc.options,
-		tooltip = { lines = { { text = ns.strings.options.main.description:gsub("#ADDON", addonTitle), }, } },
-		events = { OnClick = function() options.main.page.open() end, },
-	})
-	-- wt.AddContextButton(optionsMenu, contextMenu, {
-	-- 	title = ns.strings.options.speedDisplay.title:gsub("#TYPE", ns.strings.options.playerSpeed.title),
-	-- 	tooltip = { lines = { { text = ns.strings.options.playerSpeed.description:gsub("#ADDON", addonTitle), }, } },
-	-- 	events = { OnClick = function() options.playerSpeed.page.open() end, },
-	-- })
-	-- wt.AddContextButton(optionsMenu, contextMenu, {
-	-- 	title = ns.strings.options.travelSpeed.title,
-	-- 	tooltip = { lines = { { text = ns.strings.options.travelSpeed.description:gsub("#ADDON", addonTitle), }, } },
-	-- 	events = { OnClick = function() options.travelSpeed.page.open() end, },
-	-- })
-	-- wt.AddContextButton(optionsMenu, contextMenu, {
-	-- 	title = ns.strings.options.targetSpeed.title,
-	-- 	tooltip = { lines = { { text = ns.strings.options.targetSpeed.description:gsub("#ADDON", addonTitle), }, } },
-	-- 	events = { OnClick = function() options.targetSpeed.page.open() end, },
-	-- })
-	-- wt.AddContextButton(optionsMenu, contextMenu, {
-	-- 	title = wt.GetStrings("dataManagement").title,
-	-- 	tooltip = { lines = { { text = wt.GetStrings("dataManagement").description:gsub("#ADDON", addonTitle), }, } },
-	-- 	events = { OnClick = function() options.dataManagement.page.open() end, },
-	-- })
-
-	--Presets submenu
-	local presetsMenu = wt.AddContextSubmenu(contextMenu, {
-		title = ns.strings.options.speedDisplay.position.presets.label,
-		tooltip = { lines = { { text = ns.strings.options.speedDisplay.position.presets.tooltip, }, } },
-	})
-	for i = 1, #options.playerSpeed.position.presetList do wt.AddContextButton(presetsMenu, contextMenu, {
-		title = options.playerSpeed.position.presetList[i].title,
-		events = { OnClick = function() commandManager.handleCommand(ns.chat.commands.preset, i) end, },
-	}) end
-end --TODO: Reinstate after fix or delete
 local function CreateContextMenu()
-	local menu = {
-		{
-			text = addonTitle,
-			isTitle = true,
-			notCheckable = true,
-		},
-		{
-			text = ns.strings.misc.options,
-			func = function() options.main.page.open() end,
-			notCheckable = true,
-		},
-		{
-			text = wt.GetStrings("apply").label,
-			hasArrow = true,
-			menuList = {},
-			notCheckable = true,
-		},
-	}
-
-	--Insert presets
-	for i = 1, #options.playerSpeed.position.presetList do table.insert(menu[3].menuList, {
-		text = options.playerSpeed.position.presetList[i].title,
-		func = function() options.playerSpeed.position.applyPreset(i) end,
-		notCheckable = true,
-	}) end
-
-	wt.CreateClassicContextMenu({
+	wt.CreateContextMenu({
 		parent = frames.playerSpeed.display,
-		menu = menu
+		initialize = function(menu)
+			wt.CreateMenuTextline(menu, { text = addonTitle, })
+			wt.CreateSubmenu(menu, {
+				title = ns.strings.misc.options,
+				initialize = function(optionsMenu)
+					wt.CreateMenuButton(optionsMenu, {
+						title = ns.strings.options.main.name,
+						tooltip = { lines = { { text = ns.strings.options.main.description:gsub("#ADDON", addonTitle), }, } },
+						action = function() options.main.page.open() end,
+					})
+					wt.CreateMenuButton(optionsMenu, {
+						title = ns.strings.options.speedDisplay.title:gsub("#TYPE", ns.strings.options.playerSpeed.title),
+						tooltip = { lines = { { text = ns.strings.options.playerSpeed.description, }, } },
+						action = function() options.playerSpeed.page.open() end,
+					})
+					wt.CreateMenuButton(optionsMenu, {
+						title = ns.strings.options.speedDisplay.title:gsub("#TYPE", ns.strings.options.travelSpeed.title),
+						tooltip = { lines = { { text = ns.strings.options.travelSpeed.description:gsub("#ADDON", addonTitle), }, } },
+						action = function() options.travelSpeed.page.open() end,
+					})
+					wt.CreateMenuButton(optionsMenu, {
+						title = ns.strings.options.targetSpeed.title,
+						tooltip = { lines = { { text = ns.strings.options.targetSpeed.description:gsub("#ADDON", addonTitle), }, } },
+						action = function() options.targetSpeed.page.open() end,
+					})
+					wt.CreateMenuButton(optionsMenu, {
+						title = wt.GetStrings("dataManagement").title,
+						tooltip = { lines = { { text = wt.GetStrings("dataManagement").description:gsub("#ADDON", addonTitle), }, } },
+						action = function() options.dataManagement.page.open() end,
+					})
+				end
+			})
+			wt.CreateSubmenu(menu, {
+				title = wt.GetStrings("apply").label,
+				initialize = function(presetsMenu)
+					for i = 1, #options.playerSpeed.position.presetList do wt.CreateMenuButton(presetsMenu, {
+						title = options.playerSpeed.position.presetList[i].title,
+						action = function() options.playerSpeed.position.applyPreset(i) end,
+					}) end
+				end
+			})
+		end
 	})
 end
 
@@ -1346,15 +1336,15 @@ frames.main = wt.CreateBaseFrame({
 		PLAYER_ENTERING_WORLD = function(self)
 			self:UnregisterEvent("PLAYER_ENTERING_WORLD")
 
-			--Visibility notice
-			if not self:IsVisible() or not frames.playerSpeed.display:IsVisible() then PrintStatus(true) end
-
 			--Start speed updates
 			UpdateSpeedText("playerSpeed", MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.value.units, MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.font.valueColoring)
 			UpdateSpeedText("targetSpeed", MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.targetSpeed.value.units, true)
 			if not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.visibility.hidden then StartSpeedDisplayUpdates("playerSpeed") end
 			if not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.travelSpeed.visibility.hidden then StartSpeedDisplayUpdates("travelSpeed") end
 			if MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.targetSpeed.enabled then EnableTargetSpeedUpdates() end
+
+			--Visibility notice
+			if not frames.playerSpeed.display:IsVisible() and MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.visibility.statusNotice then PrintStatus() end
 		end,
 	},
 	events = {
@@ -1389,7 +1379,7 @@ frames.main = wt.CreateBaseFrame({
 					flipColors = true
 				})
 
-				--Text
+				--Speed text
 				frames.playerSpeed.text = wt.CreateText({
 					parent = display,
 					layer = "OVERLAY",

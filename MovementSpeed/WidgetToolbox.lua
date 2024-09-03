@@ -2212,13 +2212,13 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					label = t.title ~= nil,
 					tooltip = { title = ns.toolboxStrings.popupInput.title, lines = { { text = ns.toolboxStrings.popupInput.tooltip }, } },
 					size = { w = panel:GetWidth() - 24, },
-					text = t.text,
 					focusOnShow = true,
 					events = {
 						OnEnterPressed = accept,
 						OnEscapePressed = cancel,
 					},
 					arrange = {},
+					value = t.text,
 				})
 
 				--[ Buttons ]
@@ -2824,12 +2824,16 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		---@field rootDescription rootDescription Container of menu elements (such as titles, widgets, dividers or other frames)
 		local menu = {}
 
-		t.parent:HookScript("OnMouseUp", function() MenuUtil.CreateContextMenu(t.parent, function(_, rootDescription)
-			menu.rootDescription = rootDescription
+		t.parent:HookScript("OnMouseUp", function(_, button, isInside)
+			if not isInside or button ~= "RightButton" then return end
 
-			--Adding items
-			if type(t.initialize) == "function" then t.initialize(rootDescription) end
-		end) end)
+			MenuUtil.CreateContextMenu(t.parent, function(_, rootDescription)
+				menu.rootDescription = rootDescription
+
+				--Adding items
+				if type(t.initialize) == "function" then t.initialize(rootDescription) end
+			end)
+		end)
 
 		return menu
 	end
@@ -3662,10 +3666,11 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| Data
 
-		local value = t.state
-		if value == nil then value = t.default end
-		if value == nil and type(t.getData) == "function" then value = t.getData() end
-		local snapshot
+		local default = t.default == true
+		local value = t.value
+		if type(value) ~= "boolean" and type(t.getData) == "function" then value = t.getData() end
+		if type(value) ~= "boolean" then value = default end
+		local snapshot = value
 
 		--| State
 
@@ -3740,9 +3745,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| Options data management
 
-		---Load the data from storage to the widget via **t.getData()**
+		---Read the data from storage via **t.getData()** then verify and load it to the widget
 		---***
-		---@param handleChanges? boolean If true, call the specified onChange handlers | ***Default:*** true
+		---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
 		---@param silent? boolean If false, invoke a "loaded" event and call registered listeners | ***Default:*** false
 		function toggle.loadData(handleChanges, silent)
 			handleChanges = handleChanges ~= false
@@ -3759,7 +3764,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			end
 		end
 
-		---Save the provided data or the current value of the widget to storage via **t.saveData(...)**
+		---Verify and save the provided data or the current value of the widget to storage via **t.saveData(...)**
 		---***
 		---@param state? boolean Data to be saved | ***Default:*** *the currently set value of the widget*
 		---@param silent? boolean If false, invoke a "saved" event and call registered listeners | ***Default:*** false
@@ -3767,7 +3772,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			if t.saveData then
 				if state == nil then state = value end
 
-				t.saveData(state)
+				t.saveData(state == true)
 
 				if not silent then toggle.invoke.saved(true) end
 			elseif not silent then toggle.invoke.saved(false) end
@@ -3777,10 +3782,10 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		---@return boolean|nil
 		function toggle.getData() return t.getData and t.getData() end
 
-		---Save the provided data to storage via **t.saveData(...)** then load it to the widget via **t.loadData()**
+		---Verify and save the provided data to storage via **t.saveData(...)** then load it to the widget via **t.loadData()**
 		---***
 		---@param state? boolean Data to be saved | ***Default:*** *the currently set value of the widget*
-		---@param handleChanges? boolean If true, call the specified onChange handlers | ***Default:*** true
+		---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
 		---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** false
 		function toggle.setData(state, handleChanges, silent)
 			toggle.saveData(state, silent)
@@ -3791,20 +3796,20 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		function toggle.snapshotData() snapshot = toggle.getData() end
 
 		---Set and load the stored data managed by the widget to the last saved data snapshot set via **toggle.snapshotData()**
-		---@param handleChanges? boolean If true, call the specified onChange handlers | ***Default:*** true
+		---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
 		---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** false
-		function toggle.revertData(handleChanges, silent) if snapshot ~= nil then toggle.setData(snapshot, handleChanges, silent) end end
+		function toggle.revertData(handleChanges, silent) toggle.setData(snapshot, handleChanges, silent) end
 
-		---Set and load the stored data managed by the widget to the specified default value of **t.default**
-		---@param handleChanges? boolean If true, call the specified onChange handlers | ***Default:*** true
+		---Set and load the stored data managed by the widget to the default value specified via **t.default** at construction
+		---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
 		---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** false
-		function toggle.resetData(handleChanges, silent) if t.default ~= nil then toggle.setData(t.default, handleChanges, silent) end end
+		function toggle.resetData(handleChanges, silent) toggle.setData(default, handleChanges, silent) end
 
 		---Returns the current toggle state of the widget
 		---@return boolean
 		function toggle.getState() return value end
 
-		---Set the toggle state of the widget
+		---Verify and set the toggle value of the widget to the provided state
 		---***
 		---@param state? boolean ***Default:*** false
 		---@param user? boolean If true, mark the change as being initiated via a user interaction and call change handlers | ***Default:*** false
@@ -4345,8 +4350,20 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| Data
 
-		local value = t.selected or t.default or type(t.getData) == "function" and t.getData() or nil
-		local snapshot
+		local default = 1
+
+		---Data verification utility
+		---@param v any
+		---@return integer|nil
+		local function verify(v)
+			v = type(v) == "number" and Clamp(math.floor(v), 1, #selector.toggles) or nil
+
+			return v and v or not t.clearable and default or nil
+		end
+
+		default = verify(t.default)
+		local value = verify(t.value or type(t.getData) == "function" and t.getData() or nil)
+		local snapshot = value
 
 		--| State
 
@@ -4494,21 +4511,14 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 			if not silent then selector.invoke.updated() end
 
-			--| Update selection
-
-			if not t.clearable then
-				value = value or #items
-				value = value > #items and #items or value
-			end
-
 			selector.setSelected(value)
 		end
 
 		--| Options data management
 
-		---Load the data from storage to the widget via **t.getData()**
+		---Read the data from storage via **t.getData()** then verify and load it to the widget
 		---***
-		---@param handleChanges? boolean If true, call the specified onChange handlers | ***Default:*** true
+		---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
 		---@param silent? boolean If false, invoke a "loaded" event and call registered listeners | ***Default:*** false
 		function selector.loadData(handleChanges, silent)
 			handleChanges = handleChanges ~= false
@@ -4524,13 +4534,13 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			end
 		end
 
-		---Save the provided data or the current value of the widget to storage via **t.saveData(...)**
+		---Verify and save the provided data or the current value of the widget to storage via **t.saveData(...)**
 		---***
 		---@param data? wrappedIntegerValue If set, save the value wrapped in this table | ***Default:*** *the currently set value of the widget*
 		---@param silent? boolean If false, invoke a "loaded" event and call registered listeners | ***Default:*** false
 		function selector.saveData(data, silent)
 			if t.saveData then
-				t.saveData(type(data) == "table" and data.index or value)
+				t.saveData(type(data) == "table" and verify(data.index) or value)
 
 				if not silent then selector.invoke.saved(true) end
 			elseif not silent then selector.invoke.saved(false) end
@@ -4540,10 +4550,10 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		---@return integer|nil
 		function selector.getData() return t.getData and t.getData() end
 
-		---Save the provided data to storage via **t.saveData(...)** then load it to the widget via **t.loadData()**
+		---Verify and save the provided data to storage via **t.saveData(...)** then load it to the widget via **t.loadData()**
 		---***
 		---@param data? wrappedIntegerValue If set, save the value wrapped in this table | ***Default:*** *the currently set value of the widget*
-		---@param handleChanges? boolean If true, call the specified onChange handlers | ***Default:*** true
+		---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
 		---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** false
 		function selector.setData(data, handleChanges, silent)
 			selector.saveData(data, silent)
@@ -4554,26 +4564,26 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		function selector.snapshotData() snapshot = { index = selector.getData() } end
 
 		---Set and load the stored data managed by the widget to the last saved data snapshot set via **selector.snapshotData()**
-		---@param handleChanges? boolean If true, call the specified onChange handlers | ***Default:*** true
+		---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
 		---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** false
-		function selector.revertData(handleChanges, silent) if snapshot then selector.setData(snapshot, handleChanges, silent) end end
+		function selector.revertData(handleChanges, silent) selector.setData(snapshot, handleChanges, silent) end
 
-		---Set and load the stored data managed by the widget to the specified default value of **t.default**
-		---@param handleChanges? boolean If true, call the specified onChange handlers | ***Default:*** true
+		---Set and load the stored data managed by the widget to the default value specified via **t.default** at construction
+		---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
 		---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** false
-		function selector.resetData(handleChanges, silent) if t.default then selector.setData({ index = t.default }, handleChanges, silent) end end
+		function selector.resetData(handleChanges, silent) selector.setData({ index = default }, handleChanges, silent) end
 
 		---Returns the index of the currently selected item or nil if there is no selection
 		---@return integer|nil index
 		function selector.getSelected() return value end
 
-		---Set the specified item as selected
+		---Verify and set the specified item as selected
 		---***
 		---@param index? integer ***Default:*** nil *(no selection)*
 		---@param user? boolean If true, mark the change as being initiated via a user interaction and call change handlers | ***Default:*** false
 		---@param silent? boolean If false, invoke a "selected" event and call registered listeners | ***Default:*** false
 		function selector.setSelected(index, user, silent)
-			value = type(index) == "number" and Clamp(math.floor(index), 1, #selector.toggles) or nil
+			value = verify(index)
 
 			--Update toggle states
 			for i = 1, #selector.toggles do selector.toggles[i].setState(i == value, user, silent) end
@@ -4662,8 +4672,23 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| Data
 
-		local value = t.selected or t.default or type(t.getData) == "function" and t.getData() or nil
-		local snapshot
+		local default = itemsets[itemset][1].value
+
+		---Data verification utility
+		---@param v any
+		---@return FramePoint|JustifyHorizontal|JustifyVertical|FrameStrata|nil
+		---@return integer|nil
+		local function verify(v)
+			local index = type(v) == "number" and Clamp(math.floor(v), 1, #selector.toggles) or v
+			if type(v) == "string" then for i = 1, #itemsets[itemset] do if itemsets[itemset][i].value == v then index = i break end end end
+			v = itemsets[itemset][index]
+
+			return type(v) == "table" and v.value or not t.clearable and default or nil, index
+		end
+
+		default, t.default = verify(t.default)
+		local value = verify(t.value or type(t.getData) == "function" and t.getData() or nil)
+		local snapshot = value
 
 		--| State
 
@@ -4736,30 +4761,11 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			_ = function(event, listener, callIndex) addListener(listeners, event, listener, callIndex) end
 		}
 
-		--| Value
-
-		---Convert an index to a corresponding value (based on the specified **itemset**)
-		---@param index integer
-		---@return FramePoint|JustifyHorizontal|JustifyVertical|FrameStrata|nil value
-		---<hr><p></p>
-		function selector.toValue(index) return itemsets[itemset][index] and itemsets[itemset][index].value or nil end
-
-		---Convert an specific value to a corresponding index (based on the specified **itemset**)
-		---@param value FramePoint|JustifyHorizontal|JustifyVertical|FrameStrata
-		---***
-		---@return integer|nil index
-		---<hr><p></p>
-		function selector.toIndex(value)
-			for i = 1, #itemsets[itemset] do if itemsets[itemset][i].value == value then return i end end
-
-			return nil
-		end
-
 		--| Options data management
 
-		---Load the data from storage to the widget via **t.getData()**
+		---Read the data from storage via **t.getData()** then verify and load it to the widget
 		---***
-		---@param handleChanges? boolean If true, call the specified onChange handlers | ***Default:*** true
+		---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
 		---@param silent? boolean If false, invoke a "loaded" event and call registered listeners | ***Default:*** false
 		function selector.loadData(handleChanges, silent)
 			handleChanges = handleChanges ~= false
@@ -4775,13 +4781,13 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			end
 		end
 
-		---Save the provided data or the current value of the widget to storage via **t.saveData(...)**
+		---Verify and save the provided data or the current value of the widget to storage via **t.saveData(...)**
 		---***
 		---@param data? wrappedSpecialData If set, save the value wrapped in this table | ***Default:*** *the currently set value of the widget*
 		---@param silent? boolean If false, invoke a "loaded" event and call registered listeners | ***Default:*** false
 		function selector.saveData(data, silent)
 			if t.saveData then
-				t.saveData(type(data) == "table" and wt.FindKeyByValue(itemsets[itemset], data.value) and data.value or value)
+				t.saveData(type(data) == "table" and verify(data.value) or value)
 
 				if not silent then selector.invoke.saved(true) end
 			elseif not silent then selector.invoke.saved(false) end
@@ -4791,10 +4797,10 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		---@return FramePoint|JustifyHorizontal|JustifyVertical|FrameStrata|nil
 		function selector.getData() return t.getData and t.getData() end
 
-		---Save the provided data to storage via **t.saveData(...)** then load it to the widget via **t.loadData()**
+		---Verify and save the provided data to storage via **t.saveData(...)** then load it to the widget via **t.loadData()**
 		---***
 		---@param data? wrappedSpecialData If set, save the value wrapped in this table | ***Default:*** *the currently set value of the widget*
-		---@param handleChanges? boolean If true, call the specified onChange handlers | ***Default:*** true
+		---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
 		---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** false
 		function selector.setData(data, handleChanges, silent)
 			selector.saveData(data, silent)
@@ -4802,17 +4808,17 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		end
 
 		--Set a data snapshot so any changes made to the widget and/or the stored data can be reverted to this value via **selector.revertData()**
-		function selector.snapshotData() snapshot = { index = selector.getData() } end
+		function selector.snapshotData() snapshot = { value = selector.getData() } end
 
 		---Set and load the stored data managed by the widget to the last saved data snapshot set via **selector.snapshotData()**
-		---@param handleChanges? boolean If true, call the specified onChange handlers | ***Default:*** true
+		---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
 		---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** false
-		function selector.revertData(handleChanges, silent) if snapshot then selector.setData(snapshot, handleChanges, silent) end end
+		function selector.revertData(handleChanges, silent) selector.setData(snapshot, handleChanges, silent) end
 
-		---Set and load the stored data managed by the widget to the specified default value of **t.default**
-		---@param handleChanges? boolean If true, call the specified onChange handlers | ***Default:*** true
+		---Set and load the stored data managed by the widget to the default value specified via **t.default** at construction
+		---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
 		---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** false
-		function selector.resetData(handleChanges, silent) if t.default then selector.setData({ value = t.default }, handleChanges, silent) end end
+		function selector.resetData(handleChanges, silent) selector.setData({ value = default }, handleChanges, silent) end
 
 		---Returns the value of the currently selected item or nil if there is no selection
 		---@return FramePoint|JustifyHorizontal|JustifyVertical|FrameStrata|nil
@@ -4824,10 +4830,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		---@param user? boolean If true, mark the change as being initiated via a user interaction and call change handlers | ***Default:*** false
 		---@param silent? boolean If false, invoke a "selected" event and call registered listeners | ***Default:*** false
 		function selector.setSelected(selected, user, silent)
-			if selected then
-				selected = min(type(selected) == "string" and selector.toIndex(selected:upper()) or type(selected) == "number" and math.floor(selected) or 0, #selector.toggles)
-			end
-			value = selector.toValue(selected)
+			value, selected = verify(selected)
 
 			--Update toggle states
 			for i = 1, #selector.toggles do selector.toggles[i].setState(i == selected, user, silent) end
@@ -4860,8 +4863,6 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		end
 
 		--[ Initialization ]
-
-		if t.default then t.default = type(t.default) == "string" and selector.toIndex(t.default) or t.default end
 
 		--Register event handlers
 		if type(t.listeners) == "table" then for k, v in pairs(t.listeners) do if type(v) == "table" then for i = 1, #v do
@@ -4932,8 +4933,19 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| Data
 
-		local value = type(t.selections) == "table" and t.selections or type(t.default) == "table" and t.default or type(t.getData) == "function" and wt.Clone(t.getData()) or {}
-		local snapshot
+		local default = {}
+		for i = 1, #t.items do default[i] = false end
+
+		---Data verification utility
+		---@param v any
+		---@return boolean[]|nil
+		local function verify(v)
+			return wt.AddMissing(wt.RemoveEmpty(type(v) == "table" and wt.Clone(v) or {}, function(_, itemValue) return type(itemValue) == "boolean" end), default)
+		end
+
+		default = verify(t.default)
+		local value = verify(t.value or type(t.getData) == "function" and t.getData() or nil)
+		local snapshot = wt.Clone(value)
 
 		--| State
 
@@ -5089,26 +5101,18 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 			if not silent then selector.invoke.updated() end
 
-			--| Update limits
-
+			--Update limits
 			if t.limits.min > #t.items then t.limits.min = #t.items end
 			if t.limits.max > #t.items then t.limits.max = #t.items end
-
-			--| Update selection
-
-			if not t.clearable then
-				value = value or #items
-				value = value > #items and #items or value
-			end
 
 			selector.setSelections(value, silent)
 		end
 
 		--| Options data management
 
-		---Load the data from storage to the widget via **t.getData()**
+		---Read the data from storage via **t.getData()** then verify and load it to the widget
 		---***
-		---@param handleChanges? boolean If true, call the specified onChange handlers | ***Default:*** true
+		---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
 		---@param silent? boolean If false, invoke a "loaded" event and call registered listeners | ***Default:*** false
 		function selector.loadData(handleChanges, silent)
 			handleChanges = handleChanges ~= false
@@ -5124,13 +5128,13 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			end
 		end
 
-		---Save the provided data or the current value of the widget to storage via **t.saveData(...)**
+		---Verify and save the provided data or the current value of the widget to storage via **t.saveData(...)**
 		---***
 		---@param data? wrappedBooleanArrayData If set, save the value wrapped in this table | ***Default:*** *the currently set value of the widget*
 		---@param silent? boolean If false, invoke a "loaded" event and call registered listeners | ***Default:*** false
 		function selector.saveData(data, silent)
 			if t.saveData then
-				t.saveData(type(data) == "table" and data.selections or value)
+				t.saveData(type(data) == "table" and verify(data.selections) or value)
 
 				if not silent then selector.invoke.saved(true) end
 			elseif not silent then selector.invoke.saved(false) end
@@ -5140,10 +5144,10 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		---@return boolean[]|nil
 		function selector.getData() return t.getData and t.getData() end
 
-		---Save the provided data to storage via **t.saveData(...)** then load it to the widget via **t.loadData()**
+		---Verify and save the provided data to storage via **t.saveData(...)** then load it to the widget via **t.loadData()**
 		---***
 		---@param data? wrappedBooleanArrayData If set, save the value wrapped in this table | ***Default:*** *the currently set value of the widget*
-		---@param handleChanges? boolean If true, call the specified onChange handlers | ***Default:*** true
+		---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
 		---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** false
 		function selector.setData(data, handleChanges, silent)
 			selector.saveData(data, silent)
@@ -5151,32 +5155,30 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		end
 
 		--Set a data snapshot so any changes made to the widget and/or the stored data can be reverted to this value via **selector.revertData()**
-		function selector.snapshotData() snapshot = { index = selector.getData() } end
+		function selector.snapshotData() snapshot = { selections = selector.getData() } end
 
 		---Set and load the stored data managed by the widget to the last saved data snapshot set via **selector.snapshotData()**
-		---@param handleChanges? boolean If true, call the specified onChange handlers | ***Default:*** true
+		---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
 		---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** false
-		function selector.revertData(handleChanges, silent) if snapshot then selector.setData(snapshot, handleChanges, silent) end end
+		function selector.revertData(handleChanges, silent) selector.setData(snapshot, handleChanges, silent) end
 
-		---Set and load the stored data managed by the widget to the specified default value of **t.default**
-		---@param handleChanges? boolean If true, call the specified onChange handlers | ***Default:*** true
+		---Set and load the stored data managed by the widget to the default value specified via **t.default** at construction
+		---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
 		---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** false
-		function selector.resetData(handleChanges, silent) if t.default then selector.setData({ selections = t.default }, handleChanges, silent) end end
+		function selector.resetData(handleChanges, silent) selector.setData({ selections = wt.Clone(default) }, handleChanges, silent) end
 
 		---Returns the list of all items and their current states
 		---***
-		---@return boolean|nil[] selections List of indexed item states
-		--- - **[*index*]** boolean? — If true, the item at this index is currently selected | ***Default:*** false
+		---@return boolean[] selections Indexed list of item states
 		function selector.getSelections() return value end
 
 		---Set the specified items as selected
 		---***
-		---@param selections? boolean|nil[]  List of indexed item states | ***Default:*** nil *(no selection)*
-		--- - **[*index*]** boolean? — If true, set the item at this index as selected | ***Default:*** false
+		---@param selections? boolean[]|nil  Indexed list of item states | ***Default:*** false[] *(no selected items)*
 		---@param user? boolean If true, mark the change as being initiated via a user interaction and call change handlers | ***Default:*** false
 		---@param silent? boolean If false, invoke "selected" and "limited" events and call registered listeners | ***Default:*** false
 		function selector.setSelections(selections, user, silent)
-			value = type(selections) == "table" and selections or {}
+			value = verify(selections)
 
 			--Update toggle states
 			for i = 1, #selector.toggles do selector.toggles[i].setState(value[i], user, silent) end
@@ -5287,8 +5289,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	end
 
 	---Set the parameters of a GUI selector widget frame
-	---@param selector selector|multiselector
-	---@param t selectorCreationData|multiselectorCreationData
+	---@param selector radioSelector|checkboxSelector
+	---@param t radioSelectorCreationData|checkboxSelectorCreationData
 	---@param name string
 	---@param title string
 	local function setUpSelectorFrame(selector, t, name, title)
@@ -6052,8 +6054,10 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| Data
 
-		local value = type(t.text) == "string" and t.text or type(t.default) == "string" and t.default or type(t.getData) == "function" and t.getData() or nil
-		local snapshot
+		local default = type(t.default) == "string" and t.default or ""
+		local value = type(t.value) == "string" and t.value or type(t.getData) == "function" and t.getData() or nil
+		value = type(value) == "string" and value or default
+		local snapshot = value
 
 		--| State
 
@@ -6128,9 +6132,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| Options data management
 
-		---Load the data from storage to the widget via **t.getData()**
+		---Read the data from storage via **t.getData()** then verify and load it to the widget
 		---***
-		---@param handleChanges? boolean If true, call the specified onChange handlers | ***Default:*** true
+		---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
 		---@param silent? boolean If false, invoke a "loaded" event and call registered listeners | ***Default:*** false
 		function textbox.loadData(handleChanges, silent)
 			handleChanges = handleChanges ~= false
@@ -6147,7 +6151,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			end
 		end
 
-		---Save the provided data or the current value of the widget to storage via **t.saveData(...)**
+		---Verify and save the provided data or the current value of the widget to storage via **t.saveData(...)**
 		---***
 		---@param text? string Data to be saved | ***Default:*** *the currently set value of the widget*
 		---@param silent? boolean If false, invoke a "saved" event and call registered listeners | ***Default:*** false
@@ -6163,10 +6167,10 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		---@return string|nil
 		function textbox.getData() return t.getData and t.getData() end
 
-		---Save the provided data to storage via **t.saveData(...)** then load it to the widget via **t.loadData()**
+		---Verify and save the provided data to storage via **t.saveData(...)** then load it to the widget via **t.loadData()**
 		---***
 		---@param text? string Data to be saved | ***Default:*** *the currently set value of the widget*
-		---@param handleChanges? boolean If true, call the specified onChange handlers | ***Default:*** true
+		---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
 		---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** false
 		function textbox.setData(text, handleChanges, silent)
 			textbox.saveData(text, silent)
@@ -6177,14 +6181,14 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		function textbox.snapshotData() snapshot = textbox.getData() end
 
 		---Set and load the stored data managed by the widget to the last saved data snapshot set via **textbox.snapshotData()**
-		---@param handleChanges? boolean If true, call the specified onChange handlers | ***Default:*** true
+		---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
 		---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** false
-		function textbox.revertData(handleChanges, silent) if snapshot ~= nil then textbox.setData(snapshot, handleChanges, silent) end end
+		function textbox.revertData(handleChanges, silent) textbox.setData(snapshot, handleChanges, silent) end
 
-		---Set and load the stored data managed by the widget to the specified default value of **t.default**
-		---@param handleChanges? boolean If true, call the specified onChange handlers | ***Default:*** true
+		---Set and load the stored data managed by the widget to the default value specified via **t.default** at construction
+		---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
 		---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** false
-		function textbox.resetData(handleChanges, silent) if t.default ~= nil then textbox.setData(t.default, handleChanges, silent) end end
+		function textbox.resetData(handleChanges, silent) textbox.setData(default, handleChanges, silent) end
 
 		---Returns the current text value of the widget
 		---@return string
@@ -6597,7 +6601,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	---@return copybox copybox References to the new [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame), its child widgets & their custom values, utility functions and more wrapped in a table
 	function wt.CreateCopybox(t)
 		t = t or {}
-		t.text = t.text or ""
+		t.value = t.value or ""
 
 		--[ Wrapper Table ]
 
@@ -6661,7 +6665,6 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				tooltip = { lines = { { text = ns.toolboxStrings.copyBox, }, } },
 				position = { anchor = "BOTTOMLEFT", },
 				size = t.size,
-				text = t.text,
 				font = t.font,
 				color = t.color,
 				justify = { h = t.justify, },
@@ -6669,18 +6672,18 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					OnTextChanged = function(self, _, user)
 						if not user then return end
 
-						self:SetText(wt.Color(t.text, t.colorOnMouse))
+						self:SetText(wt.Color(t.value, t.colorOnMouse))
 						self:SetCursorPosition(0)
 						self:HighlightText()
 					end,
 					OnEnter = function(self)
-						self:SetText(wt.Color(t.text, t.colorOnMouse))
+						self:SetText(wt.Color(t.value, t.colorOnMouse))
 						self:SetCursorPosition(0)
 						self:HighlightText()
 						self:SetFocus()
 					end,
 					OnLeave = function(self)
-						self:SetText(wt.Color(t.text, t.color))
+						self:SetText(wt.Color(t.value, t.color))
 						self:SetCursorPosition(0)
 						self:ClearHighlightText()
 						self:ClearFocus()
@@ -6690,6 +6693,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 						self:HighlightText()
 					end,
 				},
+				value = t.value,
 			})
 		end
 
@@ -6718,8 +6722,18 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		local limitMin = t.min or 0
 		local limitMax = t.max or 100
 		t.step = t.step or t.increment or ((limitMin - limitMax) / 10)
-		local value = t.number or t.default or type(t.getData) == "function" and t.getData() or 0
-		local snapshot
+		local default = limitMin
+
+		---Data verification utility
+		---@param v any
+		---@return number|nil
+		local function verify(v)
+			return Clamp(type(v) == "number" and v or default, limitMin, limitMax)
+		end
+
+		default = verify(t.default)
+		local value = verify(t.value or type(t.getData) == "function" and t.getData() or nil)
+		local snapshot = value
 
 		--| State
 
@@ -6806,9 +6820,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| Options data management
 
-		---Load the data from storage to the widget via **t.getData()**
+		---Read the data from storage via **t.getData()** then verify and load it to the widget
 		---***
-		---@param handleChanges? boolean If true, call the specified onChange handlers | ***Default:*** true
+		---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
 		---@param silent? boolean If false, invoke a "loaded" event and call registered listeners | ***Default:*** false
 		function numeric.loadData(handleChanges, silent)
 			handleChanges = handleChanges ~= false
@@ -6825,13 +6839,13 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			end
 		end
 
-		---Save the provided data or the current value of the widget to storage via **t.saveData(...)**
+		---Verify and save the provided data or the current value of the widget to storage via **t.saveData(...)**
 		---***
 		---@param number? number Data to be saved | ***Default:*** *the currently set value of the widget*
 		---@param silent? boolean If false, invoke a "saved" event and call registered listeners | ***Default:*** false
 		function numeric.saveData(number, silent)
 			if t.saveData then
-				t.saveData(type(number) == "number" and min(max(limitMin, number), limitMax) or value)
+				t.saveData(number and verify(number) or value)
 
 				if not silent then numeric.invoke.saved(true) end
 			elseif not silent then numeric.invoke.saved(false) end
@@ -6841,10 +6855,10 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		---@return number|nil
 		function numeric.getData() return t.getData and t.getData() end
 
-		---Save the provided data to storage via **t.saveData(...)** then load it to the widget via **t.loadData()**
+		---Verify and save the provided data to storage via **t.saveData(...)** then load it to the widget via **t.loadData()**
 		---***
 		---@param number? number Data to be saved | ***Default:*** *the currently set value of the widget*
-		---@param handleChanges? boolean If true, call the specified onChange handlers | ***Default:*** true
+		---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
 		---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** false
 		function numeric.setData(number, handleChanges, silent)
 			numeric.saveData(number, silent)
@@ -6855,14 +6869,14 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		function numeric.snapshotData() snapshot = numeric.getData() end
 
 		---Set and load the stored data managed by the widget to the last saved data snapshot set via **numeric.snapshotData()**
-		---@param handleChanges? boolean If true, call the specified onChange handlers | ***Default:*** true
+		---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
 		---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** false
-		function numeric.revertData(handleChanges, silent) if snapshot then numeric.setData(snapshot, handleChanges, silent) end end
+		function numeric.revertData(handleChanges, silent) numeric.setData(snapshot, handleChanges, silent) end
 
-		---Set and load the stored data managed by the widget to the specified default value of **t.default**
-		---@param handleChanges? boolean If true, call the specified onChange handlers | ***Default:*** true
+		---Set and load the stored data managed by the widget to the default value specified via **t.default** at construction
+		---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
 		---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** false
-		function numeric.resetData(handleChanges, silent) if t.default then numeric.setData(t.default, handleChanges, silent) end end
+		function numeric.resetData(handleChanges, silent) numeric.setData(default, handleChanges, silent) end
 
 		---Returns the current value of the widget
 		---@return number
@@ -6870,9 +6884,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		---Set the value of the widget
 		---***
-		---@param number? number A valid number value within the specified **t.increment**, **t.increment** range | ***Default:*** **t.increment**
+		---@param number? number A valid number value within the specified **t.min**, **t.max** range | ***Default:*** **t.min**
 		function numeric.setNumber(number, user, silent)
-			value = type(number) == "number" and min(max(limitMin, number), limitMax) or value
+			value = verify(number)
 
 			if not silent then numeric.invoke.changed(user == true) end
 
@@ -7050,7 +7064,6 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					relativePoint = "BOTTOM",
 				},
 				size = { w = 64, },
-				text = tostring(numeric.getNumber()):gsub(matchPattern, replacePattern),
 				font = {
 					normal = "GameFontHighlightSmall",
 					disabled = "GameFontDisableSmall",
@@ -7084,6 +7097,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					end,
 					OnEscapePressed = function(self) self.setText(tostring(wt.Round(numeric.slider:GetValue(), decimals)):gsub(matchPattern, replacePattern)) end,
 				},
+				value = tostring(numeric.getNumber()):gsub(matchPattern, replacePattern),
 			})
 
 			--Handle widget updates
@@ -7333,8 +7347,10 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| Data
 
-		local value = type(t.color) == "table" and t.color or type(t.default) == "table" and t.default or type(t.getData) == "function" and wt.Clone(t.getData()) or {}
-		local snapshot
+		local default = wt.PackColor(wt.UnpackColor(t.default))
+		local value = t.value or type(t.getData) == "function" and t.getData() or nil
+		value = wt.PackColor(wt.UnpackColor(value))
+		local snapshot = value
 
 		--| State
 
@@ -7409,9 +7425,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| Options data management
 
-		---Load the data from storage to the widget via **t.getData()**
+		---Read the data from storage via **t.getData()** then verify and load it to the widget
 		---***
-		---@param handleChanges? boolean If true, call the specified onChange handlers | ***Default:*** true
+		---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
 		---@param silent? boolean If false, invoke a "loaded" event and call registered listeners | ***Default:*** false
 		function colorPicker.loadData(handleChanges, silent)
 			handleChanges = handleChanges ~= false
@@ -7428,7 +7444,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			end
 		end
 
-		---Save the provided data or the current value of the widget to storage via **t.saveData(...)**
+		---Verify and save the provided data or the current value of the widget to storage via **t.saveData(...)**
 		---***
 		---@param color? colorData Data to be saved | ***Default:*** *the currently set value of the widget*
 		---@param silent? boolean If false, invoke a "saved" event and call registered listeners | ***Default:*** false
@@ -7444,10 +7460,10 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		---@return colorData|nil
 		function colorPicker.getData() return t.getData and t.getData() end
 
-		---Save the provided data to storage via **t.saveData(...)** then load it to the widget via **t.loadData()**
+		---Verify and save the provided data to storage via **t.saveData(...)** then load it to the widget via **t.loadData()**
 		---***
 		---@param color? colorData Data to be saved | ***Default:*** *the currently set value of the widget*
-		---@param handleChanges? boolean If true, call the specified onChange handlers | ***Default:*** true
+		---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
 		---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** false
 		function colorPicker.setData(color, handleChanges, silent)
 			colorPicker.saveData(color, silent)
@@ -7455,17 +7471,17 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		end
 
 		--Set a data snapshot so any changes made to the widget and/or the stored data can be reverted to this value via **colorPicker.revertData()**
-		function colorPicker.snapshotData() snapshot = colorPicker.getData() end
+		function colorPicker.snapshotData() snapshot = wt.Clone(colorPicker.getData()) end
 
 		---Set and load the stored data managed by the widget to the last saved data snapshot set via **colorPicker.snapshotData()**
-		---@param handleChanges? boolean If true, call the specified onChange handlers | ***Default:*** true
+		---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
 		---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** false
-		function colorPicker.revertData(handleChanges, silent) if snapshot then colorPicker.setData(snapshot, handleChanges, silent) end end
+		function colorPicker.revertData(handleChanges, silent) colorPicker.setData(snapshot, handleChanges, silent) end
 
-		---Set and load the stored data managed by the widget to the specified default value of **t.default**
-		---@param handleChanges? boolean If true, call the specified onChange handlers | ***Default:*** true
+		---Set and load the stored data managed by the widget to the default value specified via **t.default** at construction
+		---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
 		---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** false
-		function colorPicker.resetData(handleChanges, silent) if t.default then colorPicker.setData(t.default, handleChanges, silent) end end
+		function colorPicker.resetData(handleChanges, silent) colorPicker.setData(default, handleChanges, silent) end
 
 		---Returns the currently set color values
 		---***
@@ -7647,7 +7663,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			colorPicker.hexBox.editbox:SetAlpha(opacity)
 		end
 
-		if not t.color and t.getData then t.color = wt.Clone(t.getData()) else t.color = {} end
+		if not t.value and t.getData then t.value = wt.Clone(t.getData()) else t.value = {} end
 
 		if not colorPicker.button.frame then wt.CreateCustomButton({
 			parent = colorPicker.frame,
@@ -7655,7 +7671,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			label = false,
 			tooltip = {
 				title = ns.toolboxStrings.color.picker.label,
-				lines = { { text = ns.toolboxStrings.color.picker.tooltip:gsub("#ALPHA", t.color.a and ns.toolboxStrings.color.picker.alpha or ""), }, }
+				lines = { { text = ns.toolboxStrings.color.picker.tooltip:gsub("#ALPHA", t.value.a and ns.toolboxStrings.color.picker.alpha or ""), }, }
 			},
 			position = { offset = { y = -14 } },
 			size = { w = 34, h = 22 },
@@ -7665,7 +7681,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 						size = 5,
 						insets = { l = 2.5, r = 2.5, t = 2.5, b = 2.5 },
 					},
-					color = { r = t.color.r or 1, g = t.color.g or 1, b = t.color.b or 1, a = t.color.a or 1 }
+					color = { r = t.value.r or 1, g = t.value.g or 1, b = t.value.b or 1, a = t.value.a or 1 }
 				},
 				border = {
 					texture = { width = 11, },
@@ -7728,7 +7744,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			title = ns.toolboxStrings.color.hex.label,
 			label = false,
 			tooltip = { lines = { {
-				text = ns.toolboxStrings.color.hex.tooltip .. "\n\n" .. ns.toolboxStrings.example .. ": #2266BB" .. (t.color.a and "AA" or ""),
+				text = ns.toolboxStrings.color.hex.tooltip .. "\n\n" .. ns.toolboxStrings.example .. ": #2266BB" .. (t.value.a and "AA" or ""),
 			}, } },
 			position = {
 				relativeTo = colorPicker.button.frame,
@@ -7740,7 +7756,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				normal = "GameFontWhiteSmall",
 				disabled = "GameFontDisableSmall",
 			},
-			charLimit = 7 + (t.color.a and 2 or 0),
+			charLimit = 7 + (t.value.a and 2 or 0),
 			backdrop = {
 				background = {
 					texture = {
@@ -8025,7 +8041,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 								title = ns.toolboxStrings.about.curseForge,
 								position = position,
 								size = { w = 190, },
-								text = data.curse,
+								value = data.curse,
 							})
 
 							position.relativeTo = curse.frame
@@ -8041,7 +8057,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 								title = ns.toolboxStrings.about.wago,
 								position = position,
 								size = { w = 190, },
-								text = data.wago,
+								value = data.wago,
 							})
 
 							position.relativeTo = wago.frame
@@ -8057,7 +8073,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 								title = ns.toolboxStrings.about.repository,
 								position = position,
 								size = { w = 190, },
-								text = data.repo,
+								value = data.repo,
 							})
 
 							position.relativeTo = repo.frame
@@ -8072,7 +8088,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 							title = ns.toolboxStrings.about.issues,
 							position = position,
 							size = { w = 190, },
-							text = data.issues,
+							value = data.issues,
 						}) end
 
 						--[ Changelog ]
@@ -8086,9 +8102,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 							tooltip = { lines = { { text = ns.toolboxStrings.about.changelog.tooltip:gsub("#VERSION", WrapTextInColorCode(data.version, "FFFFFFFF")), }, } },
 							arrange = {},
 							size = { w = panel:GetWidth() - 225, h = panel:GetHeight() - 42 },
-							text = wt.FormatChangelog(t.changelog, true),
 							font = { normal = "GameFontDisableSmall", },
 							color = ns.colors.grey[2],
+							value = wt.FormatChangelog(t.changelog, true),
 							readOnly = true,
 						})
 
@@ -8133,9 +8149,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 												tooltip = { lines = { { text = ns.toolboxStrings.about.fullChangelog.tooltip, }, } },
 												arrange = {},
 												size = { w = windowPanel:GetWidth() - 32, h = windowPanel:GetHeight() - 88 },
-												text = wt.FormatChangelog(t.changelog),
 												font = { normal = "GameFontDisable", },
 												color = ns.colors.grey[2],
+												value = wt.FormatChangelog(t.changelog),
 												readOnly = true,
 												scrollSpeed = 0.2,
 											})
