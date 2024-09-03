@@ -203,8 +203,7 @@ end
 
 --Update the current Player Speed values accessible through **speed**
 local function UpdatePlayerSpeed()
-	local dragonriding, _, flightSpeed = C_PlayerInfo.GetGlidingInfo()
-	speed.playerSpeed.yards = dragonriding and flightSpeed or GetUnitSpeed(UnitInVehicle("player") and "vehicle" or "player")
+	speed.playerSpeed.yards = GetUnitSpeed(_G[UnitInVehicle] and UnitInVehicle("player") and "vehicle" or "player")
 
 	--Hide when stationery
 	if speed.playerSpeed.yards == 0 and MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.visibility.autoHide then
@@ -341,15 +340,14 @@ local function GetSpeedDisplayTooltipLines()
 	}
 end
 
----Start updating the speed display
----@param display "playerSpeed"|"travelSpeed"
-local function StartSpeedDisplayUpdates(display)
+--Start updating the speed display
+local function StartSpeedDisplayUpdates()
 	--Update the speed values at start
 		UpdatePlayerSpeed()
 
 	--| Repeated updates
 
-	frames[display].updater:SetScript("OnUpdate", function(_, deltaTime)
+	frames.playerSpeed.updater:SetScript("OnUpdate", function(_, deltaTime)
 		--Throttle the update
 		if MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.update.throttle then
 			timeSinceSpeedUpdate.playerSpeed = timeSinceSpeedUpdate.playerSpeed + deltaTime
@@ -363,7 +361,7 @@ local function StartSpeedDisplayUpdates(display)
 	end)
 end
 
----Stop updating the speed display
+--Stop updating the speed display
 local function StopSpeedDisplayUpdates()
 	frames.playerSpeed.updater:SetScript("OnUpdate", nil)
 	if frames.playerSpeed.updater.ticker then frames.playerSpeed.updater.ticker:Cancel() end
@@ -1186,51 +1184,61 @@ local commandManager = wt.RegisterChatCommands(ns.name, { ns.chat.keyword }, {
 
 --Set up the speed display context menu
 local function CreateContextMenu()
-	wt.CreateContextMenu({
-		parent = frames.playerSpeed.display,
-		initialize = function(menu)
-			wt.CreateMenuTextline(menu, { text = addonTitle, })
-			wt.CreateSubmenu(menu, {
-				title = ns.strings.misc.options,
-				initialize = function(optionsMenu)
-					wt.CreateMenuButton(optionsMenu, {
-						title = ns.strings.options.main.name,
-						tooltip = { lines = { { text = ns.strings.options.main.description:gsub("#ADDON", addonTitle), }, } },
-						action = function() options.main.page.open() end,
-					})
-					wt.CreateMenuButton(optionsMenu, {
-						title = ns.strings.options.speedDisplay.title:gsub("#TYPE", ns.strings.options.playerSpeed.title),
-						tooltip = { lines = { { text = ns.strings.options.playerSpeed.description, }, } },
-						action = function() options.playerSpeed.page.open() end,
-					})
-					wt.CreateMenuButton(optionsMenu, {
-						title = ns.strings.options.speedDisplay.title:gsub("#TYPE", ns.strings.options.travelSpeed.title),
-						tooltip = { lines = { { text = ns.strings.options.travelSpeed.description:gsub("#ADDON", addonTitle), }, } },
-						action = function() options.travelSpeed.page.open() end,
-					})
-					wt.CreateMenuButton(optionsMenu, {
-						title = ns.strings.options.targetSpeed.title,
-						tooltip = { lines = { { text = ns.strings.options.targetSpeed.description:gsub("#ADDON", addonTitle), }, } },
-						action = function() options.targetSpeed.page.open() end,
-					})
-					wt.CreateMenuButton(optionsMenu, {
-						title = wt.GetStrings("dataManagement").title,
-						tooltip = { lines = { { text = wt.GetStrings("dataManagement").description:gsub("#ADDON", addonTitle), }, } },
-						action = function() options.dataManagement.page.open() end,
-					})
-				end
-			})
-			wt.CreateSubmenu(menu, {
-				title = wt.GetStrings("apply").label,
-				initialize = function(presetsMenu)
-					for i = 1, #options.playerSpeed.position.presetList do wt.CreateMenuButton(presetsMenu, {
-						title = options.playerSpeed.position.presetList[i].title,
-						action = function() options.playerSpeed.position.applyPreset(i) end,
-					}) end
-				end
-			})
-		end
-	})
+	local menu = {
+		{
+			text = addonTitle,
+			isTitle = true,
+			notCheckable = true,
+		},
+		{
+			text = ns.strings.misc.options,
+			hasArrow = true,
+			menuList = {
+				{
+					text = ns.strings.options.main.name,
+					func = function() options.main.page.open() end,
+					notCheckable = true,
+				},
+				-- {
+				-- 	text = ns.strings.options.speedDisplay.title:gsub("#TYPE", ns.strings.options.playerSpeed.title),
+				-- 	func = function() options.playerSpeed.page.open() end,
+				-- 	notCheckable = true,
+				-- },
+				-- {
+				-- 	text = ns.strings.options.targetSpeed.title,
+				-- 	func = function() options.targetSpeed.page.open() end,
+				-- 	notCheckable = true,
+				-- },
+				-- {
+				-- 	text = wt.GetStrings("dataManagement").title,
+				-- 	func = function() options.dataManagement.page.open() end,
+				-- 	notCheckable = true,
+				-- },
+			},
+			notCheckable = true,
+		},
+		{
+			text = wt.GetStrings("apply").label,
+			hasArrow = true,
+			menuList = {},
+			notCheckable = true,
+		},
+	}
+
+	--Insert presets
+	for i = 1, #options.playerSpeed.position.presetList do table.insert(menu[3].menuList, {
+		text = options.playerSpeed.position.presetList[i].title,
+		func = function() options.playerSpeed.position.applyPreset(i) end,
+		notCheckable = true,
+	}) end
+
+	--Create the context menu frame
+	local contextMenu = CreateFrame("Frame", frames.playerSpeed.display:GetName() .. "ContextMenu", frames.playerSpeed.display, "UIDropDownMenuTemplate")
+
+	--Right-click event
+	frames.playerSpeed.display:HookScript("OnMouseUp", function(_, button, isInside)
+		if button == "RightButton" and isInside then EasyMenu(menu, contextMenu, "cursor", 0, 0, "MENU") end
+	end)
 end
 
 --Create main addon frame & display
