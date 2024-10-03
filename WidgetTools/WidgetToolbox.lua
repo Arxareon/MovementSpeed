@@ -115,6 +115,10 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			warning = "Are you sure you want to reset the settings on page #PAGE, or all settings in the whole #CATEGORY category to defaults?\n\n#DISMISS",
 			warningSingle = "Are you sure you want to reset the settings on page #PAGE to defaults?\n\n#DISMISS",
 		},
+		value = {
+			revert = "Revert Change",
+			restore = "Restore Default",
+		},
 		points = {
 			left = "Left",
 			right = "Right",
@@ -341,7 +345,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| Add extra strings
 
-		ns.toolboxStrings.default = "\n" .. WrapTextInColorCode(DEFAULT, "FF66FF66") .. ": "
+		ns.toolboxStrings.default = "\n" .. WrapTextInColorCode(DEFAULT .. ": ", "FF66FF66")
 	end
 
 	loadLocale()
@@ -2219,6 +2223,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					},
 					arrange = {},
 					value = t.text,
+					utilityMenu = false,
 				})
 
 				--[ Buttons ]
@@ -2810,40 +2815,53 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 	---Create a Blizzard context menu
 	---***
-	---@param t? contextMenuCreationData Parameters are to be provided in this table
+	---@param t contextMenuCreationData Parameters are to be provided in this table
 	---***
 	---@return contextMenu|nil menu Table containing a reference to the root description of the context menu
 	function wt.CreateContextMenu(t)
 		t = t or {}
 
-		if not t.parent then return end
+		if not wt.IsFrame(t.parent) then t.parent = UIParent end
 
 		--[ Menu Setup ]
 
 		---@class contextMenu
+		---@field open function Call to open the context menu at will
 		---@field rootDescription rootDescription Container of menu elements (such as titles, widgets, dividers or other frames)
 		local menu = {}
 
-		t.parent:HookScript("OnMouseUp", function(_, button, isInside)
-			if not isInside or button ~= "RightButton" then return end
+		--| Utilities
+
+		menu.open = function()
+			if type(t.condition) == "function" and not t.condition() then return end
 
 			MenuUtil.CreateContextMenu(t.parent, function(_, rootDescription)
 				menu.rootDescription = rootDescription
 
 				--Adding items
 				if type(t.initialize) == "function" then t.initialize(rootDescription) end
-			end)
-		end)
+			end
+		) end
+
+		--| Trigger events
+
+		if t.rightClickMenu ~= false or t.leftClickMenu then t.parent:HookScript("OnMouseUp", function(_, button, isInside)
+			if not isInside or (t.rightClickMenu ~= false and button ~= "RightButton") or (t.leftClickMenu and button ~= "LeftButton") then return end
+
+			menu.open()
+		end) end
+
+		if t.hoverMenu then t.parent:HookScript("OnEnter", menu.open) end
 
 		return menu
 	end
 
 	---Create a submenu item for an already existing Blizzard context menu
 	---***
-	---@param menu contextMenu Reference to the parent menu to add the new submenu to
-	---@param t? contextSubmenuCreationData Parameters are to be provided in this table
+	---@param menu contextMenu|contextSubmenu Reference to the parent menu to add the new submenu to
+	---@param t contextSubmenuCreationData Parameters are to be provided in this table
 	---***
-	---@return contextMenu|nil menu Table containing a reference to the root description of the context menu
+	---@return contextSubmenu|nil menu Table containing a reference to the root description of the context menu
 	function wt.CreateSubmenu(menu, t)
 		if not menu then return end
 
@@ -2851,7 +2869,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--[ Menu Setup ]
 
-		---@type contextMenu
+		---@class contextSubmenu
+		---@field rootDescription rootDescription Container of menu elements (such as titles, widgets, dividers or other frames)
 		local submenu = { rootDescription = menu:CreateButton(t.title or "Submenu") }
 
 		--Adding items
@@ -2862,7 +2881,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 	---Create a textline item for an already existing Blizzard context menu
 	---***
-	---@param menu contextMenu Reference to the parent menu to add the new item to
+	---@param menu contextMenu|contextSubmenu Reference to the parent menu to add the new item to
 	---@param t? menuTextlineCreationData Parameters are to be provided in this table
 	---***
 	---@return menuDivider|nil textline Reference to the context textline UI object
@@ -2881,7 +2900,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 	---Create a divider item for an already existing Blizzard context menu
 	---***
-	---@param menu contextMenu Reference to the parent menu to add the new item to
+	---@param menu contextMenu|contextSubmenu Reference to the parent menu to add the new item to
 	---@param t? queuedMenuItem Parameters are to be provided in this table
 	---***
 	---@return menuDivider|nil divider Reference to the context divider UI object
@@ -2900,7 +2919,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 	---Create a spacer item for an already existing Blizzard context menu
 	---***
-	---@param menu contextMenu Reference to the parent menu to add the new item to
+	---@param menu contextMenu|contextSubmenu Reference to the parent menu to add the new item to
 	---@param t? queuedMenuItem Parameters are to be provided in this table
 	---***
 	---@return menuSpacer|nil spacer Reference to the context spacer UI object
@@ -2919,7 +2938,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 	---Create a button item for an already existing Blizzard context menu
 	---***
-	---@param menu contextMenu Reference to the parent menu to add the new item to
+	---@param menu contextMenu|contextSubmenu Reference to the parent menu to add the new item to
 	---@param t? menuButtonCreationData Parameters are to be provided in this table
 	---***
 	---@return menuButton|nil button Reference to the context button UI object
@@ -3769,7 +3788,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		---@param state? boolean Data to be saved | ***Default:*** *the currently set value of the widget*
 		---@param silent? boolean If false, invoke a "saved" event and call registered listeners | ***Default:*** false
 		function toggle.saveData(state, silent)
-			if t.saveData then
+			if type(t.saveData) == "function" then
 				if state == nil then state = value end
 
 				t.saveData(state == true)
@@ -3780,7 +3799,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		---Get the currently stored data via **t.getData()**
 		---@return boolean|nil
-		function toggle.getData() return t.getData and t.getData() end
+		function toggle.getData() return type(t.getData) == "function" and t.getData() end
 
 		---Verify and save the provided data to storage via **t.saveData(...)** then load it to the widget via **t.loadData()**
 		---***
@@ -3980,10 +3999,10 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		--| Tooltip
 
 		if t.tooltip then wt.AddTooltip(toggle.button, {
-			title = t.tooltip.title or t.title or t.name or "Toggle",
-			lines = t.default ~= nil and table.insert(t.tooltip.lines, {
-				text = ns.toolboxStrings.default .. (t.default and VIDEO_OPTIONS_ENABLED or VIDEO_OPTIONS_DISABLED)
-			}) or t.tooltip.lines,
+			title = t.tooltip.title or title,
+			lines = t.default ~= nil and table.insert(t.tooltip.lines, { text = ns.toolboxStrings.default .. WrapTextInColorCode(
+				(t.default and VIDEO_OPTIONS_ENABLED or VIDEO_OPTIONS_DISABLED):lower(), t.default and "FFAAAAFF" or "FFFFAA66"
+			) }) or t.tooltip.lines,
 			anchor = "ANCHOR_NONE",
 			position = {
 				anchor = "BOTTOMLEFT",
@@ -3991,6 +4010,18 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				relativePoint = "TOPRIGHT",
 			},
 		}, { triggers = { toggle.frame, }, }) end
+
+		--| Utility menu
+
+		if t.utilityMenu ~= false then
+			local menu = wt.CreateContextMenu({ parent = toggle.frame, initialize = function(menu)
+				wt.CreateMenuTextline(menu, { text = title })
+				wt.CreateMenuButton(menu, { title = ns.toolboxStrings.value.revert, action = function() toggle.revertData() end })
+				if t.default ~= nil then wt.CreateMenuButton(menu, { title = ns.toolboxStrings.value.restore, action = function() toggle.resetData() end }) end
+			end, condition = toggle.isEnabled })
+
+			toggle.button:HookScript("OnMouseUp", function(_, button, isInside) if toggle.isEnabled() and isInside and button == "RightButton" then menu.open() end end)
+		end
 
 		--| State
 
@@ -4021,7 +4052,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	---Set the parameters of a GUI toggle widget frame
 	---@param toggle checkbox|radioButton
 	---@param t checkboxCreationData
-	local function setUpToggleFrame(toggle, t)
+	---@param title string
+	local function setUpToggleFrame(toggle, t, title)
 
 		--[ Frame Setup ]
 
@@ -4067,10 +4099,10 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		--| Tooltip
 
 		if t.tooltip then wt.AddTooltip(toggle.frame, {
-			title = t.tooltip.title or t.title or t.name or "Toggle",
-			lines = t.default ~= nil and table.insert(t.tooltip.lines, {
-				text = ns.toolboxStrings.default .. (t.default and VIDEO_OPTIONS_ENABLED or VIDEO_OPTIONS_DISABLED)
-			}) or t.tooltip.lines,
+			title = t.tooltip.title or title,
+			lines = t.default ~= nil and table.insert(t.tooltip.lines, { text = ns.toolboxStrings.default .. WrapTextInColorCode(
+				(t.default and VIDEO_OPTIONS_ENABLED or VIDEO_OPTIONS_DISABLED):lower(), t.default and "FFAAAAFF" or "FFFFAA66"
+			) }) or t.tooltip.lines,
 			anchor = "ANCHOR_NONE",
 			position = {
 				anchor = "BOTTOMLEFT",
@@ -4078,6 +4110,18 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				relativePoint = "TOPRIGHT",
 			},
 		}, { triggers = { toggle.button, }, }) end
+
+		--| Utility menu
+
+		if t.utilityMenu ~= false then
+			local menu = wt.CreateContextMenu({ parent = toggle.frame, initialize = function(menu)
+				wt.CreateMenuTextline(menu, { text = title })
+				wt.CreateMenuButton(menu, { title = ns.toolboxStrings.value.revert, action = function() toggle.revertData() end })
+				if t.default ~= nil then wt.CreateMenuButton(menu, { title = ns.toolboxStrings.value.restore, action = function() toggle.resetData() end }) end
+			end, condition = toggle.isEnabled })
+
+			toggle.button:HookScript("OnMouseUp", function(_, button, isInside) if toggle.isEnabled() and isInside and button == "RightButton" then menu.open() end end)
+		end
 
 		--[ Initialization ]
 
@@ -4128,7 +4172,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		t.size.h = t.size.h or 26
 		t.size.w = t.label == false and t.size.h or t.size.w or 180
 
-		setUpToggleFrame(toggle, t)
+		setUpToggleFrame(toggle, t, title)
 
 		--[ Events ]
 
@@ -4226,7 +4270,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		t.size.h = t.size.h or 16
 		t.size.w = t.label == false and t.size.h or t.size.w or 160
 
-		setUpToggleFrame(toggle, t)
+		setUpToggleFrame(toggle, t, title)
 
 		--[ Events ]
 
@@ -4539,7 +4583,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		---@param data? wrappedIntegerValue If set, save the value wrapped in this table | ***Default:*** *the currently set value of the widget*
 		---@param silent? boolean If false, invoke a "loaded" event and call registered listeners | ***Default:*** false
 		function selector.saveData(data, silent)
-			if t.saveData then
+			if type(t.saveData) == "function" then
 				t.saveData(type(data) == "table" and verify(data.index) or value)
 
 				if not silent then selector.invoke.saved(true) end
@@ -4548,7 +4592,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		---Get the currently stored data via **t.getData()**
 		---@return integer|nil
-		function selector.getData() return t.getData and t.getData() end
+		function selector.getData() return type(t.getData) == "function" and t.getData() end
 
 		---Verify and save the provided data to storage via **t.saveData(...)** then load it to the widget via **t.loadData()**
 		---***
@@ -4786,7 +4830,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		---@param data? wrappedSpecialData If set, save the value wrapped in this table | ***Default:*** *the currently set value of the widget*
 		---@param silent? boolean If false, invoke a "loaded" event and call registered listeners | ***Default:*** false
 		function selector.saveData(data, silent)
-			if t.saveData then
+			if type(t.saveData) == "function" then
 				t.saveData(type(data) == "table" and verify(data.value) or value)
 
 				if not silent then selector.invoke.saved(true) end
@@ -4795,7 +4839,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		---Get the currently stored data via **t.getData()**
 		---@return FramePoint|JustifyHorizontal|JustifyVertical|FrameStrata|nil
-		function selector.getData() return t.getData and t.getData() end
+		function selector.getData() return type(t.getData) == "function" and t.getData() end
 
 		---Verify and save the provided data to storage via **t.saveData(...)** then load it to the widget via **t.loadData()**
 		---***
@@ -5133,7 +5177,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		---@param data? wrappedBooleanArrayData If set, save the value wrapped in this table | ***Default:*** *the currently set value of the widget*
 		---@param silent? boolean If false, invoke a "loaded" event and call registered listeners | ***Default:*** false
 		function selector.saveData(data, silent)
-			if t.saveData then
+			if type(t.saveData) == "function" then
 				t.saveData(type(data) == "table" and verify(data.selections) or value)
 
 				if not silent then selector.invoke.saved(true) end
@@ -5142,7 +5186,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		---Get the currently stored data via **t.getData()**
 		---@return boolean[]|nil
-		function selector.getData() return t.getData and t.getData() end
+		function selector.getData() return type(t.getData) == "function" and t.getData() end
 
 		---Verify and save the provided data to storage via **t.saveData(...)** then load it to the widget via **t.loadData()**
 		---***
@@ -5402,6 +5446,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 						if button == "LeftButton" then selector.setSelected(item.index, true)
 						elseif t.clearable and button == "RightButton" and not selector.getSelected() then selector.setSelected(nil, true) end
 					end, },
+					utilityMenu = false,
 				}, item)
 			elseif active then
 				--Update label
@@ -5446,9 +5491,19 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		if t.tooltip then wt.AddTooltip(selector.frame, {
 			title = t.tooltip.title or title,
-			lines = t.default and table.insert(t.tooltip.lines, { text = ns.toolboxStrings.default .. (t.items[t.default].title or tostring(t.default)) }) or t.tooltip.lines,
+			lines = t.default and table.insert(t.tooltip.lines, {
+				text = ns.toolboxStrings.default .. WrapTextInColorCode(t.items[t.default].title or tostring(t.default), "FFFFFFFF")
+			}) or t.tooltip.lines,
 			anchor = "ANCHOR_RIGHT",
 		}) end
+
+		--| Utility menu
+
+		if t.utilityMenu ~= false then wt.CreateContextMenu({ parent = selector.frame, initialize = function(menu)
+			wt.CreateMenuTextline(menu, { text = title })
+			wt.CreateMenuButton(menu, { title = ns.toolboxStrings.value.revert, action = function() selector.revertData() end })
+			if t.default then wt.CreateMenuButton(menu, { title = ns.toolboxStrings.value.restore, action = function() selector.resetData() end }) end
+		end, condition = selector.isEnabled }) end
 
 		return selector
 	end
@@ -5540,6 +5595,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					listeners = { enabled = { { handler = function(self, state)
 						if self.label then self.label:SetFontObject(state and "GameFontHighlightSmall" or "GameFontDisableSmall") end
 					end, callIndex = 1 }, }, },
+					utilityMenu = false,
 				}, item)
 
 				if item.label then
@@ -5592,11 +5648,27 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| Tooltip
 
+		local defaultValue = ns.toolboxStrings.default
+
+		for i = 1, #t.default do
+			defaultValue = defaultValue .. "\n" .. WrapTextInColorCode(t.items[i].title, "FFFFFFFF") .. WrapTextInColorCode(": ", "FF999999") .. WrapTextInColorCode(
+				(t.default[i] and VIDEO_OPTIONS_ENABLED or VIDEO_OPTIONS_DISABLED):lower(), t.default[i] and "FFAAAAFF" or "FFFFAA66"
+			)
+		end
+
 		if t.tooltip then wt.AddTooltip(selector.frame, {
 			title = t.tooltip.title or title,
-			lines = t.default and table.insert(t.tooltip.lines, { text = ns.toolboxStrings.default .. wt.TableToString(t.default) }) or t.tooltip.lines,
+			lines = t.default and table.insert(t.tooltip.lines, { text = defaultValue }) or t.tooltip.lines,
 			anchor = "ANCHOR_RIGHT",
 		}) end
+
+		--| Utility menu
+
+		if t.utilityMenu ~= false then wt.CreateContextMenu({ parent = selector.frame, initialize = function(menu)
+			wt.CreateMenuTextline(menu, { text = title })
+			wt.CreateMenuButton(menu, { title = ns.toolboxStrings.value.revert, action = function() selector.revertData() end })
+			if t.default then wt.CreateMenuButton(menu, { title = ns.toolboxStrings.value.restore, action = function() selector.resetData() end }) end
+		end, condition = selector.isEnabled }) end
 
 		return selector
 	end
@@ -6000,9 +6072,19 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		if t.tooltip then wt.AddTooltip(selector.dropdown, {
 			title = t.tooltip.title or title,
-			lines = t.default and table.insert(t.tooltip.lines, { text = ns.toolboxStrings.default .. (t.items[t.default].title or tostring(t.default)) }) or t.tooltip.lines,
+			lines = t.default and table.insert(t.tooltip.lines, {
+				text = ns.toolboxStrings.default .. WrapTextInColorCode(t.items[t.default].title or tostring(t.default), "FFFFFFFF")
+			}) or t.tooltip.lines,
 			anchor = "ANCHOR_RIGHT",
 		}) end
+
+		--| Utility menu
+
+		if t.utilityMenu ~= false then wt.CreateContextMenu({ parent = selector.dropdown, initialize = function(menu)
+			wt.CreateMenuTextline(menu, { text = title })
+			wt.CreateMenuButton(menu, { title = ns.toolboxStrings.value.revert, action = function() selector.revertData() end })
+			if t.default then wt.CreateMenuButton(menu, { title = ns.toolboxStrings.value.restore, action = function() selector.resetData() end }) end
+		end, condition = selector.isEnabled }) end
 
 		--| State
 
@@ -6156,7 +6238,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		---@param text? string Data to be saved | ***Default:*** *the currently set value of the widget*
 		---@param silent? boolean If false, invoke a "saved" event and call registered listeners | ***Default:*** false
 		function textbox.saveData(text, silent)
-			if t.saveData then
+			if type(t.saveData) == "function" then
 				t.saveData(type(text) == "string" and text or value)
 
 				if not silent then textbox.invoke.saved(true) end
@@ -6165,7 +6247,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		---Get the currently stored data via **t.getData()**
 		---@return string|nil
-		function textbox.getData() return t.getData and t.getData() end
+		function textbox.getData() return type(t.getData) == "function" and t.getData() end
 
 		---Verify and save the provided data to storage via **t.saveData(...)** then load it to the widget via **t.loadData()**
 		---***
@@ -6388,9 +6470,17 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		if t.tooltip then wt.AddTooltip(textbox.editbox, {
 			title = t.tooltip.title or title,
-			lines = t.default and table.insert(t.tooltip.lines, { text = ns.toolboxStrings.default .. t.default }) or t.tooltip.lines,
+			lines = t.default and table.insert(t.tooltip.lines, { text = ns.toolboxStrings.default .. WrapTextInColorCode(t.default, "FF55DD55") }) or t.tooltip.lines,
 			anchor = "ANCHOR_RIGHT",
 		}) end
+
+		--| Utility menu
+
+		if t.utilityMenu ~= false then wt.CreateContextMenu({ parent = textbox.editbox, initialize = function(menu)
+			wt.CreateMenuTextline(menu, { text = title })
+			wt.CreateMenuButton(menu, { title = ns.toolboxStrings.value.revert, action = function() textbox.revertData() end })
+			if t.default then wt.CreateMenuButton(menu, { title = ns.toolboxStrings.value.restore, action = function() textbox.resetData() end }) end
+		end, condition = function() return textbox.isEnabled() and not t.readOnly end }) end
 	end
 
 	---Create a default single-line Blizzard editbox GUI frame with enhanced widget functionality
@@ -6587,9 +6677,17 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		if t.tooltip then wt.AddTooltip(textbox.scrollFrame, {
 			title = t.tooltip.title or title,
-			lines = t.default and table.insert(t.tooltip.lines, { text = ns.toolboxStrings.default .. t.default }) or t.tooltip.lines,
+			lines = t.default and table.insert(t.tooltip.lines, { text = ns.toolboxStrings.default .. WrapTextInColorCode(t.default, "FF55DD55") }) or t.tooltip.lines,
 			anchor = "ANCHOR_RIGHT",
 		}, { triggers = { textbox.frame, textbox.editbox }, }) end
+
+		--| Utility menu
+
+		if t.utilityMenu ~= false then wt.CreateContextMenu({ parent = textbox.frame, initialize = function(menu)
+			wt.CreateMenuTextline(menu, { text = title })
+			wt.CreateMenuButton(menu, { title = ns.toolboxStrings.value.revert, action = function() textbox.revertData() end })
+			if t.default then wt.CreateMenuButton(menu, { title = ns.toolboxStrings.value.restore, action = function() textbox.resetData() end }) end
+		end, condition = function() return textbox.isEnabled() and not t.readOnly end }) end
 
 		return textbox
 	end
@@ -6694,6 +6792,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					end,
 				},
 				value = t.value,
+				utilityMenu = false,
 			})
 		end
 
@@ -6844,7 +6943,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		---@param number? number Data to be saved | ***Default:*** *the currently set value of the widget*
 		---@param silent? boolean If false, invoke a "saved" event and call registered listeners | ***Default:*** false
 		function numeric.saveData(number, silent)
-			if t.saveData then
+			if type(t.saveData) == "function" then
 				t.saveData(number and verify(number) or value)
 
 				if not silent then numeric.invoke.saved(true) end
@@ -6853,7 +6952,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		---Get the currently stored data via **t.getData()**
 		---@return number|nil
-		function numeric.getData() return t.getData and t.getData() end
+		function numeric.getData() return type(t.getData) == "function" and t.getData() end
 
 		---Verify and save the provided data to storage via **t.saveData(...)** then load it to the widget via **t.loadData()**
 		---***
@@ -7098,6 +7197,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					OnEscapePressed = function(self) self.setText(tostring(wt.Round(numeric.slider:GetValue(), decimals)):gsub(matchPattern, replacePattern)) end,
 				},
 				value = tostring(numeric.getNumber()):gsub(matchPattern, replacePattern),
+				utilityMenu = false,
 			})
 
 			--Handle widget updates
@@ -7288,9 +7388,17 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		if t.tooltip then wt.AddTooltip(numeric.slider, {
 			title = t.tooltip.title or title,
-			lines = t.default and table.insert(t.tooltip.lines, { text = ns.toolboxStrings.default .. tostring(t.default) }) or t.tooltip.lines,
+			lines = t.default and table.insert(t.tooltip.lines, { text = ns.toolboxStrings.default .. WrapTextInColorCode(tostring(t.default), "FFDDDD55") }) or t.tooltip.lines,
 			anchor = "ANCHOR_RIGHT",
-		}) end
+		}, { triggers = { numeric.frame } }) end
+
+		--| Utility menu
+
+		if t.utilityMenu ~= false then wt.CreateContextMenu({ parent = numeric.frame, initialize = function(menu)
+			wt.CreateMenuTextline(menu, { text = title })
+			wt.CreateMenuButton(menu, { title = ns.toolboxStrings.value.revert, action = function() numeric.revertData() end })
+			if t.default then wt.CreateMenuButton(menu, { title = ns.toolboxStrings.value.restore, action = function() numeric.resetData() end }) end
+		end, condition = numeric.isEnabled }) end
 
 		--| State
 
@@ -7449,7 +7557,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		---@param color? colorData Data to be saved | ***Default:*** *the currently set value of the widget*
 		---@param silent? boolean If false, invoke a "saved" event and call registered listeners | ***Default:*** false
 		function colorPicker.saveData(color, silent)
-			if t.saveData then
+			if type(t.saveData) == "function" then
 				t.saveData(color and wt.PackColor(wt.UnpackColor(color)) or value)
 
 				if not silent then colorPicker.invoke.saved(true) end
@@ -7458,7 +7566,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		---Get the currently stored data via **t.getData()**
 		---@return colorData|nil
-		function colorPicker.getData() return t.getData and t.getData() end
+		function colorPicker.getData() return type(t.getData) == "function" and t.getData() end
 
 		---Verify and save the provided data to storage via **t.saveData(...)** then load it to the widget via **t.loadData()**
 		---***
@@ -7530,17 +7638,11 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				g = g,
 				b = b,
 				opacity = a,
-				previousValues = {
-					r = r,
-					g = g,
-					b = b,
-					opacity = a,
-				},
 				hasOpacity = true,
 				swatchFunc = colorUpdate,
 				opacityFunc = colorUpdate,
 				cancelFunc = function()
-					colorPicker.setColor(nil, true)
+					colorPicker.setColor(wt.PackColor(r, g, b, a), true)
 
 					if t.onCancel then t.onCancel() end
 				end
@@ -7744,7 +7846,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			title = ns.toolboxStrings.color.hex.label,
 			label = false,
 			tooltip = { lines = { {
-				text = ns.toolboxStrings.color.hex.tooltip .. "\n\n" .. ns.toolboxStrings.example .. ": #2266BB" .. (t.value.a and "AA" or ""),
+				text = ns.toolboxStrings.color.hex.tooltip .. "\n\n" .. WrapTextInColorCode(ns.toolboxStrings.example .. ": ", "FF66FF66") .. WrapTextInColorCode(
+					"#2266BB" .. (t.value.a and "AA" or ""), "FFFFFFFF"
+				),
 			}, } },
 			position = {
 				relativeTo = colorPicker.button.frame,
@@ -7779,6 +7883,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				OnEnterPressed = function(_, text) colorPicker.setColor(wt.PackColor(wt.HexToColor(text)), true) end,
 				OnEscapePressed = function(self) self.setText(wt.ColorToHex(colorPicker.getColor())) end,
 			},
+			utilityMenu = false,
 		})
 
 		--| RGBA textboxes
@@ -7820,9 +7925,19 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		if t.tooltip then wt.AddTooltip(colorPicker.frame, {
 			title = t.tooltip.title or title,
-			lines = t.default and table.insert(t.tooltip.lines, { text = ns.toolboxStrings.default .. wt.ColorToHex(wt.UnpackColor(t.default)) }) or t.tooltip.lines,
+			lines = t.default and table.insert(t.tooltip.lines, {
+				text = ns.toolboxStrings.default .. WrapTextInColorCode(wt.ColorToHex(wt.UnpackColor(t.default)), "FFFFFFFF")
+			}) or t.tooltip.lines,
 			anchor = "ANCHOR_RIGHT",
 		}) end
+
+		--| Utility menu
+
+		if t.utilityMenu ~= false then wt.CreateContextMenu({ parent = colorPicker.frame, initialize = function(menu)
+			wt.CreateMenuTextline(menu, { text = title })
+			wt.CreateMenuButton(menu, { title = ns.toolboxStrings.value.revert, action = function() colorPicker.revertData() end })
+			if t.default then wt.CreateMenuButton(menu, { title = ns.toolboxStrings.value.restore, action = function() colorPicker.resetData() end }) end
+		end, condition = function() return colorPicker.isEnabled() and not ColorPickerFrame:IsVisible() end }) end
 
 		--| State
 

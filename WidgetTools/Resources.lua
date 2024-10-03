@@ -160,7 +160,7 @@ local english = {
 		toolbox = "Toolbox (#VERSION)",
 	},
 	compartment = {
-		open = "Click to open the settings page.",
+		open = "Click to open specific settings.",
 		lite = "Lite mode is enabled. Click to disable.",
 	},
 	lite = {

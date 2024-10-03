@@ -591,6 +591,8 @@
 ---@class optionsWidget : changeHandlerList
 ---@field instantSave? boolean Immediately commit the data to storage whenever it's changed via the widget | ***Default:*** true<ul><li>***Note:*** Any unsaved data will be saved when ***WidgetToolbox*.SaveOptionsData(optionsKey)** is executed.</li></ul>
 
+---@class optionsFrame
+---@field utilityMenu? boolean If true, assign a context menu to the options widget frame to allow for quickly resetting changes or the default value | ***Default:*** true
 
 --[[ POPUP ]]
 
@@ -736,7 +738,12 @@
 ---@class contextMenuCreationData_base
 ---@field initialize? fun(menu: rootDescription) This function will be called while setting up the container frame to perform specific tasks like creating content child frames right away<hr><p>@*param* `menu` rootDescription ― Reference to the container of menu elements (such as titles, widgets, dividers or other frames) to for menu items to be added to during initialization</p>
 
----@class contextMenuCreationData : childObject, contextMenuCreationData_base
+---@class contextMenuCreationData : contextMenuCreationData_base
+---@field parent AnyFrameObject? Reference to the frame to set as the parent | ***Default:*** UIParent *(opened at cursor position)*
+---@field rightClickMenu? boolean If true, create and open the context menu via a right-click mouse click event on **parent** | ***Default:*** true
+---@field leftClickMenu? boolean If true, create and open the context menu via a left-click mouse click event on **parent** | ***Default:*** false
+---@field hoverMenu? boolean If true, create and open the context menu via a mouse hover event on **parent** | ***Default:*** false
+---@field condition? fun(): boolean Function to call and evaluate before creating and opening the menu: if the returned value is not true, don't open the menu
 
 ---@class contextSubmenuCreationData : contextMenuCreationData_base
 ---@field title? string Text to be shown on the on the opener button item representing the submenu within the parent menu | ***Default:*** "Submenu"
@@ -806,7 +813,7 @@
 ---@field description? string Text to be shown as the description below the title of the settings page | ***Default:*** *describing profiles & backup*
 ---@field accountData profileStorage|table Reference to the account-bound SavedVariables addon database where profile data is to be stored<ul><li>***Note:*** A subtable will be created under the key **profiles** if it doesn't already exist, any other keys will be removed (any possible old data will be recovered and incorporated into the active profile data).</li></ul>
 ---@field characterData table Reference to the character-specific SavedVariablesPerCharacter addon database where selected profiles are to be specified<ul><li>***Note:*** An integer value will be created under the key **activeProfile** if it doesn't already exist.</li></ul>
----@field settingsData table Reference to the SavedVariables or SavedVariablesPerCharacter table where settings specifications are to be stored and loaded from<ul><li>***Note:*** The following key, value pairs will are used for storing settings data within this table:<ul><li>**compactBackup** boolean — Whether to skip including additional white spaces to the backup string for more readability</li><li>**backupDataScope** boolean — Whether to include only the current profile or all profiles in the backup string</li></li></ul>
+---@field settingsData table Reference to the SavedVariables or SavedVariablesPerCharacter table where settings specifications are to be stored and loaded from<ul><li>***Note:*** The following key, value pairs will be used for storing settings data within this table:<ul><li>**compactBackup** boolean — Whether to skip including additional white spaces to the backup string for more readability</li></li></ul></ul>
 ---@field defaultsTable table A static table containing all default settings values to be cloned when creating a new profile
 ---@field onProfilesLoaded? function Called during profiles initialization after the active profile has been loaded and profiles data is validated (with **t.onImportAllProfiles(...)** also being called later when profiles data is imported via user interaction through the backup all profiles box)
 ---@field onProfileActivated? fun(index: integer) Called after a profile was activated<hr><p>@*param* `index` integer — The index of the profile that was activated</p>
@@ -965,7 +972,7 @@
 ---@field value? boolean The starting state of the widget to set during initialization | ***Default:*** **t.getData()** or **t.default** if invalid
 ---@field default? boolean Default value of the widget | ***Default:*** false
 
----@class checkboxCreationData : toggleCreationData, labeledChildObject, tooltipDescribableObject, arrangeableObject, positionableObject, visibleObject_base, liteObject
+---@class checkboxCreationData : toggleCreationData, labeledChildObject, tooltipDescribableObject, arrangeableObject, positionableObject, visibleObject_base, liteObject, optionsFrame
 ---@field name? string Unique string used to set the frame name | ***Default:*** "Toggle"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
 ---@field size? sizeData_checkbox
 ---@field events? table<ScriptButton, fun(self: checkbox, state: boolean, button?: string, down?: boolean)|fun(...: any)|attributeEventData> Table of key, value pairs of the names of script event handlers to be set for the checkbox and the functions to assign as event handlers called when they trigger<ul><li>***Note:*** "[OnClick](https://wowpedia.fandom.com/wiki/UIHANDLER_OnClick)" will be called with custom parameters:<hr><p>@*param* `self` AnyFrameObject ― Reference to the toggle frame</p><p>@*param* `state` boolean ― The checked state of the toggle frame</p><p>@*param* `button`? string — Which button caused the click | ***Default:*** "LeftButton"</p><p>@*param* `down`? boolean — Whether the event happened on button press (down) or release (up) | ***Default:*** false</p></li></ul>
@@ -1203,7 +1210,7 @@
 ---@field name? string Unique string used to set the frame name | ***Default:*** "Selector"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
 ---@field events? table<ScriptFrame, fun(...: any)|attributeEventData> Table of key, value pairs of the names of script event handlers to be set for the selector frame and the functions to assign as event handlers called when they trigger
 
----@class radioSelectorCreationData_base
+---@class radioSelectorCreationData_base : optionsFrame
 ---@field clearable? boolean If true, the selector input should be clearable by right clicking on its radio buttons, setting the selected value to nil | ***Default:*** false
 
 ---@class radioSelectorCreationData : selectorCreationData, selectorFrameCreationData, radioSelectorCreationData_base
@@ -1214,13 +1221,13 @@
 
 ---@class specialRadioSelectorCreationData : specialSelectorCreationData, selectorFrameCreationData, radioSelectorCreationData_base
 
----@class checkboxSelectorCreationData : multiselectorCreationData, selectorFrameCreationData
+---@class checkboxSelectorCreationData : multiselectorCreationData, selectorFrameCreationData, optionsFrame
 ---@field width? number The height is dynamically set to fit all items (and the title if set), the width may be specified | ***Default:*** *dynamically set to fit all columns of items* or **t.label** and 160 or 0 *(whichever is greater)*<ul><li>***Note:*** The width of each individual item will be set to **t.width** if **t.columns** is 1 and **t.width** is specified.</li></ul>
 ---@field items? (selectorItem|selectorCheckbox)[] Table containing subtables with data used to create item widgets, or already existing checkboxes
 ---@field labels? boolean Whether or not to add the labels to the right of each newly created widget item | ***Default:*** true
 ---@field columns? integer Arrange the newly created widget items in a grid with the specified number of columns instead of a vertical list | ***Default:*** 1
 
----@class dropdownSelectorCreationData : radioSelectorCreationData, widgetWidthValue
+---@class dropdownSelectorCreationData : radioSelectorCreationData, widgetWidthValue, optionsFrame
 ---@field name? string Unique string used to set the frame name | ***Default:*** "Dropdown"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
 ---@field text? string The default text to display on the dropdown when no item is selected | ***Default:*** ""
 ---@field autoClose? boolean Close the dropdown menu after an item is selected by the user | ***Default:*** true
@@ -1299,7 +1306,7 @@
 ---@field value? string The starting text to be set during initialization | ***Default:*** **t.getData()** or **t.default** if invalid
 ---@field default? string Default value of the widget | ***Default:*** "" *(empty string)*
 
----@class editboxCreationData : textboxCreationData, labeledChildObject, tooltipDescribableObject, arrangeableObject, positionableObject, visibleObject_base, liteObject
+---@class editboxCreationData : textboxCreationData, labeledChildObject, tooltipDescribableObject, arrangeableObject, positionableObject, visibleObject_base, liteObject, optionsFrame
 ---@field name? string Unique string used to set the frame name | ***Default:*** "Text Box"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
 ---@field size? sizeData_editbox
 ---@field insets? insetData Table containing padding values by which to offset the position of the text in the editbox
@@ -1418,7 +1425,7 @@
 ---@field value? number The starting value of the widget to set during initialization | ***Default:*** **t.getData()** or **t.default** if invalid
 ---@field default? number Default value of the widget | ***Default:*** **t.min**
 
----@class numericSliderCreationData : numericCreationData, labeledChildObject, tooltipDescribableObject, arrangeableObject, positionableObject, widgetWidthValue, visibleObject_base, liteObject
+---@class numericSliderCreationData : numericCreationData, labeledChildObject, tooltipDescribableObject, arrangeableObject, positionableObject, widgetWidthValue, visibleObject_base, liteObject, optionsFrame
 ---@field name? string Unique string used to set the frame name | ***Default:*** "Slider"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
 ---@field valueBox? boolean Whether or not should the slider have an [EditBox](https://wowpedia.fandom.com/wiki/UIOBJECT_EditBox) as a child to manually enter a precise value to move the slider to | ***Default:*** true
 ---@field sideButtons? boolean Whether or not to add increase/decrease buttons next to the slider to change the value by the increment set in **t.step** | ***Default:*** true
@@ -1488,7 +1495,7 @@
 ---@field value? colorData_whiteDefault Values to use as the starting color set during initialization | ***Default:*** **t.getData()** or **t.default** if invalid<ul><li>***Note:*** If the alpha start value was not set, configure the color picker to handle RBG values exclusively instead of the full RGBA.</li></ul>
 ---@field default? colorData Default value of the widget | ***Default:*** { r = 1, g = 1, b = 1, a = 1 } *(white)*
 
----@class colorPickerFrameCreationData : colorPickerCreationData, labeledChildObject, tooltipDescribableObject, arrangeableObject, positionableObject, visibleObject_base, liteObject
+---@class colorPickerFrameCreationData : colorPickerCreationData, labeledChildObject, tooltipDescribableObject, arrangeableObject, positionableObject, visibleObject_base, liteObject, optionsFrame
 ---@field name? string Unique string used to set the frame name | ***Default:*** "Color Picker"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
 ---@field width? number The height is defaulted to 36, the width may be specified | ***Default:*** 120
 ---@field events? table<ScriptFrame, fun(...: any)|attributeEventData> Table of key, value pairs of the names of script event handlers to be set for the color picker frame and the functions to assign as event handlers called when they trigger
@@ -1535,7 +1542,7 @@
 ---@field dependencies? dependencyRule[] Automatically disable or enable all widgets in the new panel based on the rules described in subtables
 ---@field getData fun(): table Return a reference to the table within a SavedVariables(PerCharacter) addon database where data is committed to when **t.frame** was successfully moved<ul><li>**position** table — Parameters to call [Region:SetPoint(...)](https://wowpedia.fandom.com/wiki/API_ScriptRegionResizing_SetPoint) with<ul><li>**anchor** [AnchorPoint](https://wowpedia.fandom.com/wiki/Anchors)</li><li>**relativeTo**? [Frame](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types)</li><li>**relativePoint**? [AnchorPoint](https://wowpedia.fandom.com/wiki/Anchors)</li><li>**offset** table<ul><li>**x** number</li><li>**y** number</li></ul></li></ul></li><li>**keepInBounds**? boolean — When set, add a toggle for a value used for **t.frame**:[SetClampedToScreen(...)](https://wowpedia.fandom.com/wiki/API_Frame_SetClampedToScreen)</li><li>**layer**? boolean — When set, add screen layer options<ul><li>**strata**? [FrameStrata](https://wowpedia.fandom.com/wiki/Frame_Strata) — Used for **t.frame**:[SetFrameStrata(...)](https://wowpedia.fandom.com/wiki/API_Frame_SetFrameStrata)</li><li>**keepOnTop**? boolean — When set, add a toggle for a value used for **t.frame**:[SetToplevel(...)](https://wowpedia.fandom.com/wiki/API_Frame_SetToplevel)</li></ul>
 ---@field defaultsTable table Reference to the table containing the default values<ul><li>***Note:*** The defaults table should contain values under matching keys to the values within *t.getData()*.</li></ul>
----@field settingsData table Reference to the SavedVariables or SavedVariablesPerCharacter table where settings specifications are to be stored and loaded from<ul><li>**absolutePosition** — Whether to manage the position of **t.frame** as absolute only, disabling relative position options and converting preset data when applied</li></ul>
+---@field settingsData table Reference to the SavedVariables or SavedVariablesPerCharacter table where settings specifications are to be stored and loaded from<ul><li>***Note:*** The following key, value pairs will be used for storing settings data within this table:<ul><li>**keepInPlace** — If true, don't move **frame** when changing the anchor, update the offset values instead.</li></li></ul></ul>
 ---@field onChangePosition? function Function to call after the value of **panel.position.anchor**, **panel.position.relativeTo**, **panel.position.relativePoint**, **panel.position.offset.x** or **panel.position.offset.y** was changed by the user or via options data management before the base onChange handler is called built-in to the functionality of the position options panel template updating the position of **t.frame**
 ---@field onChangeKeepInBounds? function Function to call after the value of **panel.position.keepInBounds** was changed by the user or via options data management before the base onChange handlers are called built-in to the functionality of the position options panel template updating **t.frame**
 ---@field onChangeStrata? function Function to call after the value of **panel.layer.strata** was changed by the user or via options data management before the base onChange handlers are called built-in to the functionality of the position options panel template updating **t.frame**

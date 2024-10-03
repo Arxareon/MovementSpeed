@@ -82,7 +82,7 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 	---@type checkbox
 	local liteToggle
 
-	wt.CreateSettingsPage(ns.name, {
+	local specificationsPage = wt.CreateSettingsPage(ns.name, {
 		register = mainPage,
 		name = "Specifications",
 		title = ns.strings.specifications.title,
@@ -204,7 +204,7 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 
 	--| Addons Page
 
-	wt.CreateSettingsPage(ns.name, {
+	local addonsPage = wt.CreateSettingsPage(ns.name, {
 		register = mainPage,
 		name = "Addons",
 		appendOptions = false,
@@ -285,7 +285,7 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 										optionsKey = ns.name .. "Addons",
 										getData = function() return C_AddOns.GetAddOnEnableState(v[i]) > 0 end,
 										saveData = function(state) toggleAddon(state) end,
-										listeners = { saved = { { handler = function(_, state) if not state then wt.CreateReloadNotice() end end, }, }, },
+										listeners = { saved = { { handler = function(self) if not self.getState() then wt.CreateReloadNotice() end end, }, }, },
 										instantSave = false,
 									})
 
@@ -382,7 +382,7 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 						for k, _ in wt.SortedPairs(WidgetToolbox) do toolboxes = toolboxes .. " • " .. k end
 
 						oldToolboxes = WrapTextInColorCode(ns.strings.addons.old.inUse:gsub(
-							"#TOOLBOXES",  WrapTextInColorCode(toolboxes:sub(5),  "FFFFFFFF")
+							"#TOOLBOXES",  WrapTextInColorCode(toolboxes:sub(5), "FFFFFFFF")
 						), wt.ColorToHex(NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b, 1, true, false))
 					end
 
@@ -406,7 +406,7 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 	local disableLitePopup
 
 	wt.SetUpAddonCompartment(ns.name, {
-		onClick = function()
+		onClick = function(addon, button, frame)
 			if WidgetToolsDB.lite then
 				disableLitePopup = disableLitePopup or wt.CreatePopupDialogueData(ns.name, "DISABLE_LITE_MODE", {
 					text = ns.strings.lite.warning:gsub("#ADDON", addonTitle),
@@ -415,7 +415,24 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 				})
 
 				StaticPopup_Show(disableLitePopup)
-			else mainPage.open() end
+			else wt.CreateContextMenu({
+				initialize = function(menu)
+					wt.CreateMenuTextline(menu, { text = addonTitle, })
+					wt.CreateMenuButton(menu, {
+						title = wt.GetStrings("about").title,
+						action = mainPage.open
+					})
+					wt.CreateMenuButton(menu, {
+						title = ns.strings.specifications.title,
+						action = specificationsPage.open
+					})
+					wt.CreateMenuButton(menu, {
+						title = ns.strings.addons.title,
+						action = addonsPage.open
+					})
+				end,
+				rightClickMenu = false,
+			}).open() end
 		end,
 		onEnter = function(_, frame) frame.tooltipData.lines[5] = {
 			text = "\n" .. (WidgetToolsDB.lite and ns.strings.compartment.lite or ns.strings.compartment.open),

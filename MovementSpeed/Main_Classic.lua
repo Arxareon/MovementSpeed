@@ -856,7 +856,7 @@ local function CreateSpeedDisplayOptionsPage()
 				optionsKey = optionsKeys[2],
 				getData = function() return MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed end,
 				defaultsTable = ns.profileDefault.playerSpeed,
-				settingsData = MovementSpeedCS,
+				settingsData = MovementSpeedCS.playerSpeed,
 			})
 
 			--[ Updates ]
@@ -1195,7 +1195,7 @@ local function CreateContextMenu()
 			hasArrow = true,
 			menuList = {
 				{
-					text = ns.strings.options.main.name,
+					text = wt.GetStrings("about").title,
 					func = function() options.main.page.open() end,
 					notCheckable = true,
 				},
@@ -1262,7 +1262,7 @@ frames.main = wt.CreateBaseFrame({
 			--Load cross-session data
 			MovementSpeedCS = wt.AddMissing(MovementSpeedCS or {}, {
 				compactBackup = true,
-				keepInPlace = true,
+				playerSpeed = { keepInPlace = true, },
 			})
 
 			--Initialize data management

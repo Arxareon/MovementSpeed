@@ -4,7 +4,7 @@
 ## IconTexture: Interface/AddOns/MovementSpeed/Textures/Logo.tga
 ## Version: 3.0
 ## X-Day: 3
-## X-Month: 9
+## X-Month: 10
 ## X-Year: 2024
 ## Author: Barnabas Nagy (Arxareon)
 ## X-Sponsors: Celierra

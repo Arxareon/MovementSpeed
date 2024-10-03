@@ -1089,7 +1089,7 @@ local function CreateSpeedDisplayOptionsPage(display)
 				optionsKey = optionsKeys[2],
 				getData = function() return MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display] end,
 				defaultsTable = ns.profileDefault[display],
-				settingsData = MovementSpeedCS,
+				settingsData = MovementSpeedCS[display],
 			})
 
 			wt.CreateSimpleButton(wt.AddMissing({
@@ -1503,51 +1503,42 @@ local commandManager = wt.RegisterChatCommands(ns.name, { ns.chat.keyword }, {
 ---Set up the speed display context menu
 ---@param display "playerSpeed"|"travelSpeed"
 local function CreateContextMenu(display)
-	wt.CreateContextMenu({
-		parent = frames[display].display,
-		initialize = function(menu)
-			wt.CreateMenuTextline(menu, { text = addonTitle, })
-			wt.CreateSubmenu(menu, {
-				title = ns.strings.misc.options,
-				initialize = function(optionsMenu)
-					wt.CreateMenuButton(optionsMenu, {
-						title = ns.strings.options.main.name,
-						tooltip = { lines = { { text = ns.strings.options.main.description:gsub("#ADDON", addonTitle), }, } },
-						action = function() options.main.page.open() end,
-					})
-					wt.CreateMenuButton(optionsMenu, {
-						title = ns.strings.options.speedDisplay.title:gsub("#TYPE", ns.strings.options.playerSpeed.title),
-						tooltip = { lines = { { text = ns.strings.options.playerSpeed.description, }, } },
-						action = function() options.playerSpeed.page.open() end,
-					})
-					wt.CreateMenuButton(optionsMenu, {
-						title = ns.strings.options.speedDisplay.title:gsub("#TYPE", ns.strings.options.travelSpeed.title),
-						tooltip = { lines = { { text = ns.strings.options.travelSpeed.description:gsub("#ADDON", addonTitle), }, } },
-						action = function() options.travelSpeed.page.open() end,
-					})
-					wt.CreateMenuButton(optionsMenu, {
-						title = ns.strings.options.targetSpeed.title,
-						tooltip = { lines = { { text = ns.strings.options.targetSpeed.description:gsub("#ADDON", addonTitle), }, } },
-						action = function() options.targetSpeed.page.open() end,
-					})
-					wt.CreateMenuButton(optionsMenu, {
-						title = wt.GetStrings("dataManagement").title,
-						tooltip = { lines = { { text = wt.GetStrings("dataManagement").description:gsub("#ADDON", addonTitle), }, } },
-						action = function() options.dataManagement.page.open() end,
-					})
-				end
+	wt.CreateContextMenu({ parent = frames[display].display, initialize = function(menu)
+		wt.CreateMenuTextline(menu, { text = addonTitle, })
+		wt.CreateSubmenu(menu, { title = ns.strings.misc.options, initialize = function(optionsMenu)
+			wt.CreateMenuButton(optionsMenu, {
+				title = wt.GetStrings("about").title,
+				tooltip = { lines = { { text = ns.strings.options.main.description:gsub("#ADDON", addonTitle), }, } },
+				action = function() options.main.page.open() end,
 			})
-			wt.CreateSubmenu(menu, {
-				title = wt.GetStrings("apply").label,
-				initialize = function(presetsMenu)
-					for i = 1, #options[display].position.presetList do wt.CreateMenuButton(presetsMenu, {
-						title = options[display].position.presetList[i].title,
-						action = function() options[display].position.applyPreset(i) end,
-					}) end
-				end
+			wt.CreateMenuButton(optionsMenu, {
+				title = ns.strings.options.speedDisplay.title:gsub("#TYPE", ns.strings.options.playerSpeed.title),
+				tooltip = { lines = { { text = ns.strings.options.playerSpeed.description, }, } },
+				action = function() options.playerSpeed.page.open() end,
 			})
-		end
-	})
+			wt.CreateMenuButton(optionsMenu, {
+				title = ns.strings.options.speedDisplay.title:gsub("#TYPE", ns.strings.options.travelSpeed.title),
+				tooltip = { lines = { { text = ns.strings.options.travelSpeed.description:gsub("#ADDON", addonTitle), }, } },
+				action = function() options.travelSpeed.page.open() end,
+			})
+			wt.CreateMenuButton(optionsMenu, {
+				title = ns.strings.options.targetSpeed.title,
+				tooltip = { lines = { { text = ns.strings.options.targetSpeed.description:gsub("#ADDON", addonTitle), }, } },
+				action = function() options.targetSpeed.page.open() end,
+			})
+			wt.CreateMenuButton(optionsMenu, {
+				title = wt.GetStrings("dataManagement").title,
+				tooltip = { lines = { { text = wt.GetStrings("dataManagement").description:gsub("#ADDON", addonTitle), }, } },
+				action = function() options.dataManagement.page.open() end,
+			})
+		end })
+		wt.CreateSubmenu(menu, { title = wt.GetStrings("apply").label, initialize = function(presetsMenu)
+			for i = 1, #options[display].position.presetList do wt.CreateMenuButton(presetsMenu, {
+				title = options[display].position.presetList[i].title,
+				action = function() options[display].position.applyPreset(i) end,
+			}) end
+		end })
+	end, })
 end
 
 --Create main addon frame & display
@@ -1571,7 +1562,8 @@ frames.main = wt.CreateBaseFrame({
 			--Load cross-session data
 			MovementSpeedCS = wt.AddMissing(MovementSpeedCS or {}, {
 				compactBackup = true,
-				keepInPlace = true,
+				playerSpeed = { keepInPlace = true, },
+				travelSpeed = { keepInPlace = true, },
 			})
 
 			--Initialize data management

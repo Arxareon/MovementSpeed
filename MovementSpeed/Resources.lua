@@ -239,7 +239,7 @@ ns.changelog = {
 		"Other small fixes, changes & improvements.",
 	},
 	{
-		"#V_Version 3.0_# #H_(7/24/2024)_#",
+		"#V_Version 3.0_# #H_(10/3/2024)_#",
 		"#N_New:_#",
 		"Added Cataclysm Classic 4.4.0, vanilla Classic 1.15.3 & The War Within 11.0.2 support.",
 		"A separate independently customizable Travel Speed display has been added (not available in Classic clients).",
@@ -264,7 +264,6 @@ ns.changelog = {
 local english = {
 	options = {
 		main = {
-			name = "About",
 			description = "Customize #ADDON to fit your needs. Type #KEYWORD for chat commands.",
 			shortcuts = {
 				title = "Shortcuts",
