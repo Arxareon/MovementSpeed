@@ -131,23 +131,13 @@
 ---|numeric
 ---|colorPicker
 
+
 --[[ TABLE MANAGEMENT ]]
 
 ---@class recoveryData
 ---@field saveTo table List of references to the tables to save the recovered piece of data to
 ---@field saveKey string|number Save the data under this kay within the specified recovery tables
 ---@field convertSave? fun(recovered: any): converted: any Function to convert or modify the recovered old data before it is saved
-
-
---[[ CHAT CONTROL ]]
-
----@class chatCommandData
----@field command string Name of the slash command word (no spaces) to recognize after the keyword (separated by a space character)
----@field handler? fun(...: string): result: boolean|nil, ...: any Function to be called when the specific command was recognized after being typed into chat<hr><p>@*param* `...` string ― Payload of the command typed, any words following the command name separated by spaces split and returned one by one</p><hr><p>@*return* `result`? boolean|nil ― Whether to call **[*value*].onSuccess** or **[*value*].onError** after the operation | ***Default:*** nil *(no response)*</p><p>@*return* `...` any ― Any leftover arguments will be passed to the result handler script</p>
----@field onSuccess? fun(...: any) Function to call after **commands[*value*].handler** returns with true to handle a successful result<hr><p>@*param* `...` any ― Any leftover arguments returned by the handler script will be passed over</p>
----@field onError? fun(...: any) Function to call after **commands[*value*].handler** returns with false to handle a failed result<hr><p>@*param* `...` any ― Any leftover arguments returned by the handler script will be passed over</p>
----@field help? boolean If true, when typed, trigger a call for each command to execute their **commands[*value*].onHelp** handlers | ***Default:*** false
----@field onHelp? function Function to handle the calls initiated by the specified help command(s)
 
 
 --[[ UI OBJECT ]]
@@ -350,6 +340,7 @@
 ---@field backdropUpdates? table<AnyScriptType, backdropUpdateRule> Table of key, value pairs containing the list of events to set listeners for assigned to **t.backdropUpdates[*key*].frame**, linking backdrop changes to it, modifying the specified parameters on trigger
 --- - ***Note:*** All update rules are additive, calling ***WidgetToolbox*.SetBackdrop(...)** multiple times with **t.backdropUpdates** specified *will not* override previously set update rules. The base **backdrop** values used for these old rules *will not* change by setting a new backdrop via ***WidgetToolbox*.SetBackdrop(...)** either!
 
+
 --[[ FONT & TEXT ]]
 
 ---@class justifyData
@@ -390,11 +381,19 @@
 ---@field wrap? boolean Whether or not to allow the text lines to wrap (overriding **t.font**) | ***Default:*** true
 
 ---@class labelFontOptions
+---@field normal? string Name of the font to be used when the widget is in its regular state | ***Default:*** "GameFontHighlight"
+---@field disabled? string Name of the font to be used when the widget is disabled | ***Default:*** "GameFontDisable"
+
+---@class labelFontOptions_highlight
 ---@field normal? string Name of the font to be used when the widget is in its regular state | ***Default:*** "GameFontNormal"
 ---@field highlight? string Name of the font to be used when the widget is being hovered | ***Default:*** "GameFontHighlight"
 ---@field disabled? string Name of the font to be used when the widget is disabled | ***Default:*** "GameFontDisable"
 
 ---@class labelFontOptions_small
+---@field normal? string Name of the font to be used when the widget is in its regular state | ***Default:*** "GameFontHighlightSmall"
+---@field disabled? string Name of the font to be used when the widget is disabled | ***Default:*** "GameFontDisableSmall"
+
+---@class labelFontOptions_small_highlight
 ---@field normal? string Name of the font to be used when the widget is in its regular state | ***Default:*** "GameFontNormalSmall"
 ---@field highlight? string Name of the font to be used when the widget is being hovered | ***Default:*** "GameFontHighlightSmall"
 ---@field disabled? string Name of the font to be used when the widget is disabled | ***Default:*** "GameFontDisableSmall"
@@ -523,6 +522,38 @@
 ---@field color? colorData Apply the specified color to the line
 
 
+--[[ CHAT CONTROL ]]
+
+---@alias chatCommandColorNames
+---|"title"
+---|"content"
+---|"command"
+---|"description"
+
+---@class chatCommandColors
+---@field title colorData Color for the addon title used for branding chat messages
+---@field content colorData Color for chat message contents appended after the title (used for success & error responses)
+---@field command colorData Used to color the registered chat commands when they are being listed
+---@field description colorData Used to color the description of registered chat commands when they are being listed
+
+---@class chatCommandData
+---@field command string Name of the slash command word (no spaces) to recognize after the keyword (separated by a space character)
+---@field description? string|fun(): string Note to append to the first specified keyword and **command** in this command's line in the list printed out via the help command(s)
+---@field handler? fun(manager: chatCommandManager, ...: string): result: boolean|nil, ...: any Function to be called when the specific command was recognized after being typed into chat<hr><p>@*param* `...` string ― Payload of the command typed, any words following the command name separated by spaces split and returned one by one</p><hr><p>@*return* `result`? boolean|nil ― Call **[*value*].onSuccess** if true or **[*value*].onError** if false (not nil) after the operation | ***Default:*** nil *(no response)*</p><p>@*return* `...` any ― Leftover arguments to be passed over to response handler scripts</p>
+---@field success? string|fun(...: any): string Response message (or a function returning the message string) to print out on success after **commands[*value*].handler** returns with true<p>@*param* `...` any ― Leftover arguments passed over by the handler script</p>
+---@field error? string|fun(...: any): string Response message (or a function returning the message string) to print out on error after **commands[*value*].handler** returns with false (not nil)<hr><p>@*param* `...` any ― Any leftover arguments passed over by the handler script</p>
+---@field onSuccess? fun(manager: chatCommandManager, ...: any) Function to call after **commands[*value*].handler** returns with true to handle a successful result (after **success** is printed)<hr><p>@*param* `manager` chatCommandManager ― Reference to this chat command manager</p><p>@*param* `...` any ― Any leftover arguments returned by the handler script will be passed over</p>
+---@field onError? fun(manager: chatCommandManager, ...: any) Function to call after **commands[*value*].handler** returns with false (not nil) to handle a failed result (after **error** is printed)<hr><p>@*param* `manager` chatCommandManager ― Reference to this chat command manager</p><p>@*param* `...` any ― Any leftover arguments returned by the handler script will be passed over</p>
+---@field hidden? boolean Skip printing this command when listing out chat commands on help | ***Default:*** false<ul><li>***Note:*** If **onHelp** is specified, it will still be called even if the command is hidden.</li></ul>
+---@field onHelp? function Function to call after a specified help command has been triggered or an invalid command is typed with the specified keywords
+
+---@class chatCommandManagerCreationData
+---@field commands chatCommandData[] Indexed table with the list of commands to register under the specified **keywords**
+---@field colors chatCommandColors Color palette used when printing out default-formatted chat messages
+---@field defaultHandler? fun(commandManager: chatCommandManager, command: string, ...: string) Default handler function to call when an unrecognized command is typed, executed before a help command is triggered, listing all registered commands<hr><p>@*param* `commandManager` commandManager ― Reference to the command manager</p><p>@*param* `command` string ― The unrecognized command typed after the keyword (separated by a space character)</p><p>@*param* `...` string Payload of the command typed, any words following the command name separated by spaces (split, returned unpacked)</p>
+---@field onWelcome? function Called when the welcome message with keyword hints is printed out
+
+
 --[[ TOOLTIP ]]
 
 ---@class tooltipLineData
@@ -565,6 +596,7 @@
 ---@class tooltipDescribableObject
 ---@field tooltip? widgetTooltipTextData List of text lines to be added to the tooltip of the widget displayed when mousing over the frame
 
+
 --[[ DEPENDENCIES ]]
 
 ---@class dependencyRule
@@ -572,7 +604,7 @@
 ---@field evaluate? fun(value?: any): evaluation: boolean Call this function to evaluate the current value of the specified frame, enabling the dependant widget when true, or disabling it when false is returned | ***Default:*** *no evaluation, only for checkboxes*<ul><li>***Note:*** **evaluate** must be defined if the [FrameType](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types) if **frame** is not "CheckButton".</li><li>***Overloads:***</li><ul><li>function(`value`: boolean) -> `evaluation`: boolean — If **frame** is recognized as a checkbox</li><li>function(`value`: string) -> `evaluation`: boolean — If **frame** is recognized as an editbox</li><li>function(`value`: number) -> `evaluation`: boolean — If **frame** is recognized as a slider</li><li>function(`value`: integer) -> `evaluation`: boolean — If **frame** is recognized as a dropdown or selector</li><li>function(`value`: boolean[]) -> `evaluation`: boolean — If **frame** is recognized as multiselector</li><li>function(`value`: AnchorPoint|JustifyH|JustifyV|FrameStrata) -> `evaluation`: boolean — If **frame** is recognized as a special selector</li><li>function(`value`: nil) -> `evaluation`: boolean — In any other case *(could be used to add a unique rule tied to unrecognized frame types)*</li></ul></ul>
 
 ---@class togglableObject
----@field disabled? boolean If true, set the state of this widget to be disabled during initialization | ***Default:*** false<ul><li>***Note:*** Dependency rule evaluations may re-enable the widget.</li></ul>
+---@field disabled? boolean If true, set the state of this widget to be disabled during initialization | ***Default:*** false<ul><li>***Note:*** Dependency rule evaluations may re-enable the widget after initialization.</li></ul>
 ---@field dependencies? dependencyRule[] Automatically enable or disable the widget based on the set of rules described in subtables
 
 
@@ -592,7 +624,9 @@
 ---@field instantSave? boolean Immediately commit the data to storage whenever it's changed via the widget | ***Default:*** true<ul><li>***Note:*** Any unsaved data will be saved when ***WidgetToolbox*.SaveOptionsData(optionsKey)** is executed.</li></ul>
 
 ---@class optionsFrame
+---@field showDefault? boolean If true, show the default value of the widget in its tooltip | ***Default:*** true
 ---@field utilityMenu? boolean If true, assign a context menu to the options widget frame to allow for quickly resetting changes or the default value | ***Default:*** true
+
 
 --[[ POPUP ]]
 
@@ -790,7 +824,7 @@
 ---@field onLoad? fun(user: boolean) Called after the data of the options widgets linked to this page has been loaded from storage<hr><p>@*param* `user` boolean — Marking whether the call is due to a user interaction or not</p>
 ---@field onSave? fun(user: boolean) Called after the data of the options widgets linked to this page has been committed to storage<hr><p>@*param* `user` boolean — Marking whether the call is due to a user interaction or not</p>
 ---@field onCancel? fun(user: boolean) Called after the changes are scrapped (for instance when the custom "Revert Changes" button is clicked)<hr><p>@*param* `user` boolean — Marking whether the call is due to a user interaction or not</p>
----@field onDefaults? fun(user: boolean) Called after options data handled by this settings page has been restored to default values (for example when the "Accept" or "These Settings" - affecting this settings category page only - is clicked in the dialogue opened by clicking on the "Restore Defaults" button)<hr><p>@*param* `user` boolean — Marking whether the call is due to a user interaction or not</p>
+---@field onDefault? fun(user: boolean, category: boolean) Called after options data handled by this settings page has been restored to default values (for example when the "Accept" or "These Settings" - affecting this settings category page only - is clicked in the dialogue opened by clicking on the "Restore Defaults" button)<hr><p>@*param* `user` boolean — Marking whether the call is due to a user interaction or not</p><p>@*param* `category` boolean — Marking whether the call is through **[*optionsCategory*].defaults(...)** or not (or example when "All Settings" have been clicked)</p>
 
 ---@class settingsPageCreationData : settingsPageCreationData_base, describableObject, settingsPageEvents, initializableContainer, liteObject
 ---@field append? boolean When setting the name of the settings category page, append **t.name** after **addon** | ***Default:*** true if **t.name** ~= nil
@@ -816,10 +850,10 @@
 ---@field settingsData table Reference to the SavedVariables or SavedVariablesPerCharacter table where settings specifications are to be stored and loaded from<ul><li>***Note:*** The following key, value pairs will be used for storing settings data within this table:<ul><li>**compactBackup** boolean — Whether to skip including additional white spaces to the backup string for more readability</li></li></ul></ul>
 ---@field defaultsTable table A static table containing all default settings values to be cloned when creating a new profile
 ---@field onProfilesLoaded? function Called during profiles initialization after the active profile has been loaded and profiles data is validated (with **t.onImportAllProfiles(...)** also being called later when profiles data is imported via user interaction through the backup all profiles box)
----@field onProfileActivated? fun(index: integer) Called after a profile was activated<hr><p>@*param* `index` integer — The index of the profile that was activated</p>
----@field onProfileCreated? fun(index: integer) Called after a new profile was created<hr><p>@*param* `index` integer — The index of the new profile</p>
+---@field onProfileActivated? fun(title: string, index: integer) Called after a profile was activated<hr><p>@*param* `title` string — The title of the profile</p><p>@*param* `index` integer — The index of the profile that was activated</p>
+---@field onProfileCreated? fun(title: string, index: integer) Called after a new profile was created<hr><p>@*param* `title` string — The title of the new profile</p><p>@*param* `index` integer — The index of the new profile</p>
 ---@field onProfileDeleted? fun(title: string, index: integer) Called after the active profile was deleted<hr><p>@*param* `title` string — The old title of the deleted profile</p><p>@*param* `index` integer — The old index of the deleted profile</p>
----@field onProfileReset? fun(index: integer) Called after the data of a profile was reset to defaults<hr><p>@*param* `index` integer — The index of the profile that was reset</p>
+---@field onProfileReset? fun(title: string, index: integer) Called after the data of a profile was reset to defaults<hr><p>@*param* `title` string — The title of the profile</p><p>@*param* `index` integer — The index of the profile that was reset</p>
 ---@field onImport? fun(success: boolean, data: table) Called after a settings backup string import has been performed by the user loading data for the currently active profile<hr><p>@*param* `success` boolean — Whether the imported string was successfully processed</p><p>@*param* `data` table — The table containing the imported backup data</p>
 ---@field onImportAllProfiles? fun(success: boolean, data: table) Called after a settings backup string import has been performed by the user loading data for all profiles<ul><li>***Note:*** *t.onProfilesLoaded will also be called if the import was successful.</li></ul><hr><p>@*param* `success` boolean — Whether the imported string was successfully processed</p><p>@*param* `data` table — The table containing the imported backup data</p>
 ---@field valueChecker? fun(k: number|string, v: any): boolean Helper function for validating values when checking profile data, returning true if the value is to be accepted as valid
@@ -896,10 +930,10 @@
 ---@field name? string Unique string used to set the frame name | ***Default:*** "Button"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
 ---@field titleOffset? offsetData Offset the position of the label of the button
 ---@field size? sizeData_button
----@field font? labelFontOptions List of the [Font](https://wowpedia.fandom.com/wiki/UIOBJECT_Font) object names to be used for the label | ***Default:*** *normal sized default Blizzard UI fonts*<ul><li>***Note:*** A new font object (or a modified copy of an existing one) can be created via ***WidgetToolbox*.CreateFont(...)** (even within this table definition).</li></ul>
+---@field font? labelFontOptions_highlight List of the [Font](https://wowpedia.fandom.com/wiki/UIOBJECT_Font) object names to be used for the label | ***Default:*** *normal sized default Blizzard UI fonts*<ul><li>***Note:*** A new font object (or a modified copy of an existing one) can be created via ***WidgetToolbox*.CreateFont(...)** (even within this table definition).</li></ul>
 
 ---@class customButtonCreationData : simpleButtonCreationData, customizableObject
----@field font? labelFontOptions_small Table of the [Font](https://wowpedia.fandom.com/wiki/UIOBJECT_Font) object names to be used for the label | ***Default:*** *small default Blizzard UI fonts*<ul><li>***Note:*** A new font object (or a modified copy of an existing one) can be created via ***WidgetToolbox*.CreateFont(...)** (even within this table definition).</li></ul>
+---@field font? labelFontOptions_small_highlight Table of the [Font](https://wowpedia.fandom.com/wiki/UIOBJECT_Font) object names to be used for the label | ***Default:*** *small default Blizzard UI fonts*<ul><li>***Note:*** A new font object (or a modified copy of an existing one) can be created via ***WidgetToolbox*.CreateFont(...)** (even within this table definition).</li></ul>
 
 --[ Toggle ]
 
@@ -975,6 +1009,7 @@
 ---@class checkboxCreationData : toggleCreationData, labeledChildObject, tooltipDescribableObject, arrangeableObject, positionableObject, visibleObject_base, liteObject, optionsFrame
 ---@field name? string Unique string used to set the frame name | ***Default:*** "Toggle"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
 ---@field size? sizeData_checkbox
+---@field font? labelFontOptions List of the [Font](https://wowpedia.fandom.com/wiki/UIOBJECT_Font) object names to be used for the label | ***Default:*** *normal sized default Blizzard UI fonts*<ul><li>***Note:*** A new font object (or a modified copy of an existing one) can be created via ***WidgetToolbox*.CreateFont(...)** (even within this table definition).</li></ul>
 ---@field events? table<ScriptButton, fun(self: checkbox, state: boolean, button?: string, down?: boolean)|fun(...: any)|attributeEventData> Table of key, value pairs of the names of script event handlers to be set for the checkbox and the functions to assign as event handlers called when they trigger<ul><li>***Note:*** "[OnClick](https://wowpedia.fandom.com/wiki/UIHANDLER_OnClick)" will be called with custom parameters:<hr><p>@*param* `self` AnyFrameObject ― Reference to the toggle frame</p><p>@*param* `state` boolean ― The checked state of the toggle frame</p><p>@*param* `button`? string — Which button caused the click | ***Default:*** "LeftButton"</p><p>@*param* `down`? boolean — Whether the event happened on button press (down) or release (up) | ***Default:*** false</p></li></ul>
 
 ---@class radioButtonCreationData : checkboxCreationData
@@ -1289,7 +1324,7 @@
 ---@field [string]? textboxEventListener_any[] List of functions to call in order when a custom event is invoked
 
 ---@class labelFontOptions_editbox
----@field normal? string Name of the font to be used when the widget is in its regular state | ***Default:*** "*default font based on the frame template*
+---@field normal? string Name of the font to be used when the widget is in its regular state | ***Default:*** *default font based on the frame template*
 ---@field disabled? string Name of the font to be used when the widget is disabled | ***Default:*** *default font based on the frame template*
 
 ---@class sizeData_editbox
@@ -1334,7 +1369,7 @@
 ---@field name? string Unique string used to set the frame name | ***Default:*** "Copy Box"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
 ---@field size? sizeData_editbox
 ---@field layer? DrawLayer
----@field font? string Name of the [Font](https://wowpedia.fandom.com/wiki/UIOBJECT_Font) object to be used for the [FontString](https://wowpedia.fandom.com/wiki/UIOBJECT_FontString) | ***Default:*** "GameFontNormal"<ul><li>***Note:*** A new font object (or a modified copy of an existing one) can be created via ***WidgetToolbox*.CreateFont(...)** (even within this table definition).</li></ul>
+---@field font? string Name of the [Font](https://wowpedia.fandom.com/wiki/UIOBJECT_Font) object to be used for the [FontString](https://wowpedia.fandom.com/wiki/UIOBJECT_FontString) | ***Default:*** "GameFontNormalSmall"<ul><li>***Note:*** A new font object (or a modified copy of an existing one) can be created via ***WidgetToolbox*.CreateFont(...)** (even within this table definition).</li></ul>
 ---@field color? colorData Apply the specified color to the text (overriding **t.font**)
 ---@field justify? string Set the horizontal alignment of the label: "LEFT"|"RIGHT"|"CENTER" (overriding **t.font**) | ***Default:*** "LEFT"
 ---@field flipOnMouse? boolean Hide/Reveal the editbox on mouseover instead of after a click | ***Default:*** false
@@ -1500,6 +1535,7 @@
 ---@field width? number The height is defaulted to 36, the width may be specified | ***Default:*** 120
 ---@field events? table<ScriptFrame, fun(...: any)|attributeEventData> Table of key, value pairs of the names of script event handlers to be set for the color picker frame and the functions to assign as event handlers called when they trigger
 
+
 --[[ POSITION OPTIONS ]]
 
 ---@class widgetLayerOptions
@@ -1522,8 +1558,8 @@
 ---@field index? integer Index of the custom preset modifiable by the user | ***Default:*** 1
 ---@field getData fun(): table Return a reference to the table within the SavedVariables(PerCharacter) addon database where the custom preset data is committed to when the custom preset is saved
 ---@field defaultsTable table Reference to the table containing the default custom preset values<ul><li>***Note:*** The defaults table should contain values under matching keys to the values within *t.presets.custom.getData()*.</li></ul>
----@field onSave? function Called when the accept button is pressed when saving the custom preset or by calling **saveCustomPreset** *(see below)*
----@field onReset? function Called when the accept button is pressed when resetting the custom preset or by calling **resetCustomPreset** *(see below)*
+---@field onSave? function Called after saving the custom preset
+---@field onReset? function Called after resetting the custom preset before it is applied
 
 ---@class presetItemList
 ---@field items presetItemData[] Table containing the dropdown items described within subtables

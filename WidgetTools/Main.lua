@@ -56,6 +56,9 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 	--Addon title
 	local addonTitle = wt.Clear(select(2, C_AddOns.GetAddOnInfo(ns.name))):gsub("^%s*(.-)%s*$", "%1")
 
+	---@type chatCommandManager
+	local chatCommands
+
 	--[ Data ]
 
 	--Loaded DB reference
@@ -97,27 +100,53 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 				description = ns.strings.specifications.general.description,
 				arrange = {},
 				initialize = function(panel)
+					local silentSave = false
+
 					local enableLitePopup = wt.CreatePopupDialogueData(ns.name, "ENABLE_LITE_MODE", {
-						text = ns.strings.specifications.general.lite.warning:gsub("#ADDON", addonTitle),
-						accept = ns.strings.specifications.general.lite.accept,
-						onAccept = function() liteToggle.setState(true) end,
+						text = ns.strings.lite.enable.warning:gsub("#ADDON", addonTitle),
+						accept = ns.strings.lite.enable.accept,
+						onAccept = function()
+							liteToggle.setState(true)
+							liteToggle.saveData(nil, silentSave)
+
+							chatCommands.print(ns.strings.chat.lite.response:gsub("#STATE", VIDEO_OPTIONS_ENABLED:lower()))
+						end,
+					})
+					local disableLitePopup = wt.CreatePopupDialogueData(ns.name, "DISABLE_LITE_MODE", {
+						text = ns.strings.lite.disable.warning:gsub("#ADDON", addonTitle),
+						accept = ns.strings.lite.disable.accept,
+						onAccept = function()
+							liteToggle.setState(false)
+							liteToggle.saveData(nil, silentSave)
+
+							chatCommands.print(ns.strings.chat.lite.response:gsub("#STATE", VIDEO_OPTIONS_DISABLED:lower()))
+						end,
 					})
 
 					liteToggle = wt.CreateCheckbox({
 						parent = panel,
 						name = "LiteMode",
 						title = ns.strings.specifications.general.lite.label,
-						tooltip = { lines = { { text = ns.strings.specifications.general.lite.tooltip, }, } },
+						tooltip = { lines = { { text = ns.strings.specifications.general.lite.tooltip:gsub("#COMMAND", WrapTextInColorCode("/wt lite", "FFFFFFFF")), }, } },
 						arrange = {},
-						events = { OnClick = function(_, state)
-							if state then StaticPopup_Show(enableLitePopup) end
-
-							liteToggle.setState(false)
-						end, },
 						optionsKey = ns.name .. "Specifications",
-						getData = function() return WidgetToolsDB.lite end,
+						getData = function() return  end,
 						saveData = function(state) WidgetToolsDB.lite = state end,
-						listeners = { saved = { { handler = function() if loaded.lite ~= WidgetToolsDB.lite then wt.CreateReloadNotice() end end, }, }, },
+						events = { OnClick = function() silentSave = true end, },
+						listeners = {
+							saved = { { handler = function()
+								silentSave = false
+
+								if loaded.lite ~= WidgetToolsDB.lite then wt.CreateReloadNotice() end end,
+							}, },
+							toggled = { { handler = function(_, state, user)
+								if not user then return end
+
+								if state then StaticPopup_Show(enableLitePopup) else StaticPopup_Show(disableLitePopup) end
+
+								liteToggle.setState(not state, false) --Wait for popup response
+							end }, },
+						},
 						instantSave = false,
 						default = false,
 					})
@@ -133,7 +162,8 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 						saveData = function(state) WidgetToolsDB.positioningAids = state end,
 						listeners = { saved = { { handler = function() if loaded.positioningAids ~= WidgetToolsDB.positioningAids then wt.CreateReloadNotice() end end, }, }, },
 						instantSave = false,
-						default = true,
+						default = not wt.classic, --TODO fix in Classic
+						disabled = wt.classic, --TODO fix in Classic
 					})
 				end,
 				arrangement = {}
@@ -401,21 +431,54 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 	})
 
 
+	--[[ CHAT CONTROL ]]
+
+	chatCommands = wt.RegisterChatCommands(ns.name, { ns.chat.keyword }, {
+		commands = {
+			{
+				command = ns.chat.commands.about,
+				description = ns.strings.chat.about.description,
+				handler = mainPage.open,
+			},
+			{
+				command = ns.chat.commands.lite,
+				description = ns.strings.chat.lite.description,
+				handler = function() liteToggle.setState(not WidgetToolsDB.lite, true) end,
+			},
+			{
+				command = ns.chat.commands.dump,
+				description = ns.strings.chat.dump.description,
+				handler = function() wt.Dump(WidgetToolsDB, "WidgetToolsDB") end,
+			},
+			{
+				command = ns.chat.commands.run,
+				description = ns.strings.chat.run.description:gsub("#EXAMPLE", wt.Color("/wt run Dump { 1, \"a\", true, { print, UIParent, { 2 } } }; \"T\"; _; 2", ns.colors.grey[2])),
+				handler = function(f, ...) return type(wt[f]) == "function", f, ... end,
+				success = ns.strings.chat.run.success,
+				error = ns.strings.chat.run.error,
+				onSuccess = function(f, ...)
+					local p = strsplittable(";", table.concat({ ... }, " "), nil)
+
+					for i = 1, #p do _, p[i] = pcall(loadstring("return " .. p[i])) end
+
+					wt[f](unpack(p))
+				end,
+			},
+		},
+		colors = {
+			title = ns.colors.gold[1],
+			content = ns.colors.gold[2],
+			command = { r = 1, g = 1, b = 1, },
+			description = ns.colors.grey[1]
+		},
+	})
+
+
 	--[[ ADDON COMPARTMENT ]]
 
-	local disableLitePopup
-
 	wt.SetUpAddonCompartment(ns.name, {
-		onClick = function(addon, button, frame)
-			if WidgetToolsDB.lite then
-				disableLitePopup = disableLitePopup or wt.CreatePopupDialogueData(ns.name, "DISABLE_LITE_MODE", {
-					text = ns.strings.lite.warning:gsub("#ADDON", addonTitle),
-					accept = ns.strings.lite.accept,
-					onAccept = function() liteToggle.setData(false, true) end,
-				})
-
-				StaticPopup_Show(disableLitePopup)
-			else wt.CreateContextMenu({
+		onClick = function()
+			if WidgetToolsDB.lite then liteToggle.setState(false, true) else wt.CreateContextMenu({
 				initialize = function(menu)
 					wt.CreateMenuTextline(menu, { text = addonTitle, })
 					wt.CreateMenuButton(menu, {

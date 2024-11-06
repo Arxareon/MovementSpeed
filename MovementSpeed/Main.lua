@@ -7,8 +7,7 @@ local ns = select(2, ...)
 local wt = ns.WidgetToolbox
 
 --Addon title
-local addonTitle = wt.Clear(select(2, C_AddOns.GetAddOnInfo(ns.name))):gsub("^%s*(.-)%s*$", "%1")
-local addonChat = wt.Color(addonTitle .. ":", ns.colors.green[1]) .. " "
+ns.title = wt.Clear(select(2, C_AddOns.GetAddOnInfo(ns.name))):gsub("^%s*(.-)%s*$", "%1")
 
 --Custom Tooltip
 ns.tooltip = wt.CreateGameTooltip(ns.name)
@@ -20,6 +19,10 @@ local frames = {
 	playerSpeed = {},
 	travelSpeed = {},
 }
+
+--Chat control
+---@type chatCommandManager
+local chatCommands
 
 --Options frames & utilities
 local options = {
@@ -551,7 +554,7 @@ local function CreateVisibilityOptions(panel, display, optionsKey)
 		parent = panel,
 		name = "Hidden",
 		title = ns.strings.options.speedDisplay.visibility.hidden.label,
-		tooltip = { lines = { { text = ns.strings.options.speedDisplay.visibility.hidden.tooltip:gsub("#ADDON", addonTitle), }, } },
+		tooltip = { lines = { { text = ns.strings.options.speedDisplay.visibility.hidden.tooltip:gsub("#ADDON", ns.title), }, } },
 		arrange = {},
 		optionsKey = optionsKey,
 		getData = function() return MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].visibility.hidden end,
@@ -791,7 +794,7 @@ local function CreateFontOptions(panel, display, optionsKey)
 		parent = panel,
 		name = "ValueColoring",
 		title = ns.strings.options.speedDisplay.font.valueColoring.label,
-		tooltip = { lines = { { text = ns.strings.options.speedDisplay.font.valueColoring.tooltip:gsub("#ADDON", addonTitle), }, } },
+		tooltip = { lines = { { text = ns.strings.options.speedDisplay.font.valueColoring.tooltip:gsub("#ADDON", ns.title), }, } },
 		arrange = {},
 		dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
 		optionsKey = optionsKey,
@@ -847,7 +850,7 @@ local function CreateBackgroundOptions(panel, display, optionsKey)
 		parent = panel,
 		name = "Color",
 		title = ns.strings.options.speedDisplay.background.colors.bg.label,
-		tooltip = { lines = { { text = ns.strings.options.speedDisplay.background.colors.bg.tooltip, }, } },
+		tooltip = {},
 		arrange = { newRow = false, },
 		dependencies = {
 			{ frame = options[display].visibility.hidden, evaluate = function(state) return not state end },
@@ -865,7 +868,7 @@ local function CreateBackgroundOptions(panel, display, optionsKey)
 		parent = panel,
 		name = "BorderColor",
 		title = ns.strings.options.speedDisplay.background.colors.border.label,
-		tooltip = { lines = { { text = ns.strings.options.speedDisplay.background.colors.border.tooltip, }, } },
+		tooltip = {},
 		arrange = { newRow = false, },
 		dependencies = {
 			{ frame = options[display].visibility.hidden, evaluate = function(state) return not state end },
@@ -913,18 +916,20 @@ local function CreateSpeedDisplayOptionsPage(display)
 	options[display].page = wt.CreateSettingsPage(ns.name, {
 		name = displayName,
 		title = ns.strings.options.speedDisplay.title:gsub("#TYPE", ns.strings.options[display].title),
-		description = ns.strings.options[display].description:gsub("#ADDON", addonTitle),
+		description = ns.strings.options[display].description:gsub("#ADDON", ns.title),
 		logo = ns.textures.logo,
 		scroll = { speed = 0.21 },
 		optionsKeys = optionsKeys,
 		storage = { { storageTable = MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display], defaultsTable = ns.profileDefault[display], }, },
-		onDefault = function()
-			options[display].position.resetCustomPreset()
+		onDefault = function(_, category)
+			chatCommands.print(ns.strings.chat.default.responseCategory:gsub(
+				"#CATEGORY", wt.Color(ns.strings.options.speedDisplay.title:gsub("#TYPE", ns.strings.options[display].title), ns.colors.yellow[2])
+			):gsub(
+				"#PROFILE", wt.Color(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].title, ns.colors.yellow[2])
+			))
 
-			--Notification
-			print(addonChat .. wt.Color(ns.strings.chat.defaults.response:gsub(
-				"#CATEGORY", wt.Color(ns.strings.options.speedDisplay.title:gsub("#TYPE", ns.strings.options[display].title), ns.colors.green[2])
-			), ns.colors.yellow[2]))
+			if not category or display == "playerSpeed" then options[display].position.resetCustomPreset() else options[display].position.applyPreset(1) end
+			if display == "travelSpeed" then options.travelSpeed.visibility.hidden.setState(true, true) end
 		end,
 		initialize = function(canvas)
 
@@ -934,7 +939,7 @@ local function CreateSpeedDisplayOptionsPage(display)
 				parent = canvas,
 				name = "Visibility",
 				title = ns.strings.options.speedDisplay.visibility.title,
-				description = ns.strings.options.speedDisplay.visibility.description:gsub("#ADDON", addonTitle),
+				description = ns.strings.options.speedDisplay.visibility.description:gsub("#ADDON", ns.title),
 				arrange = {},
 				initialize = function(panel)
 					CreateVisibilityOptions(panel, display, optionsKeys[1])
@@ -1054,34 +1059,37 @@ local function CreateSpeedDisplayOptionsPage(display)
 						--Make sure the speed display is visible
 						options[display].visibility.hidden.setData(false)
 
-						--Notification
-						print(addonChat .. wt.Color(ns.strings.chat.preset.response:gsub(
-							"#TYPE", ns.strings.options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].title
+						chatCommands.print(ns.strings.chat.preset.response:gsub(
+							"#PRESET", wt.Color(options[display].position.presetList[i].title, ns.colors.yellow[2])
 						):gsub(
-							"#PRESET", wt.Color(options[display].position.presetList[i].title, ns.colors.green[2])
-						), ns.colors.yellow[2]))
+							"#TYPE", ns.strings.options[display].title
+						))
 					end,
 					custom = {
 						getData = function() return MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.customPreset end,
 						defaultsTable = ns.profileDefault.customPreset,
-						onSave = function() print(addonChat .. wt.Color(ns.strings.chat.save.response:gsub(
-							"#TYPE", ns.strings.options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].title
-						):gsub(
-							"#CUSTOM", wt.Color(ns.strings.misc.custom, ns.colors.green[2])
-						), ns.colors.yellow[2])) end,
-						onReset = function() print(addonChat .. wt.Color(ns.strings.chat.reset.response:gsub(
-							"#CUSTOM", wt.Color(ns.strings.misc.custom, ns.colors.green[2])
-						), ns.colors.yellow[2])) end
+						onSave = function()
+							chatCommands.print(ns.strings.chat.save.response:gsub(
+								"#TYPE", ns.strings.options[display].title
+							):gsub(
+								"#CUSTOM", wt.Color(ns.strings.misc.custom, ns.colors.yellow[2])
+							))
+						end,
+						onReset = function()
+							chatCommands.print(ns.strings.chat.reset.response:gsub(
+								"#CUSTOM", wt.Color(ns.strings.misc.custom, ns.colors.yellow[2])
+							))
+						end
 					}
 				},
 				setMovable = { events = {
-					onStop = function() print(addonChat .. wt.Color(ns.strings.chat.position.save:gsub(
-						"#TYPE", ns.strings.options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].title
-					), ns.colors.yellow[2])) end,
+					onStop = function() chatCommands.print(ns.strings.chat.position.save:gsub(
+						"#TYPE", ns.strings.options[display].title
+					)) end,
 					onCancel = function()
-						print(addonChat .. wt.Color(ns.strings.chat.position.cancel:gsub(
-							"#TYPE", ns.strings.options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].title
-						), ns.colors.yellow[1]))
+						chatCommands.print(ns.strings.chat.position.cancel:gsub(
+							"#TYPE", ns.strings.options[display].title
+						))
 						print(wt.Color(ns.strings.chat.position.error, ns.colors.yellow[2]))
 					end,
 				}, },
@@ -1188,7 +1196,7 @@ local function CreateSpeedDisplayOptionsPage(display)
 				parent = canvas,
 				name = "Background",
 				title = ns.strings.options.speedDisplay.background.title,
-				description = ns.strings.options.speedDisplay.background.description:gsub("#ADDON", addonTitle),
+				description = ns.strings.options.speedDisplay.background.description:gsub("#ADDON", ns.title),
 				arrange = {},
 				initialize = function(panel)
 					CreateBackgroundOptions(panel, display, optionsKeys[6])
@@ -1222,7 +1230,7 @@ local function CreateTargetSpeedTooltipOptions(panel)
 		parent = panel,
 		name = "Enabled",
 		title = ns.strings.options.targetSpeed.mouseover.enabled.label,
-		tooltip = { lines = { { text = ns.strings.options.targetSpeed.mouseover.enabled.tooltip:gsub("#ADDON", addonTitle), }, } },
+		tooltip = { lines = { { text = ns.strings.options.targetSpeed.mouseover.enabled.tooltip:gsub("#ADDON", ns.title), }, } },
 		arrange = {},
 		optionsKey = ns.name .. "TargetSpeed",
 		getData = function() return MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.targetSpeed.enabled end,
@@ -1288,15 +1296,16 @@ local function CreateTargetSpeedOptionsPage()
 	options.targetSpeed.page = wt.CreateSettingsPage(ns.name, {
 		name = "TargetSpeed",
 		title = ns.strings.options.targetSpeed.title,
-		description = ns.strings.options.targetSpeed.description:gsub("#ADDON", addonTitle),
+		description = ns.strings.options.targetSpeed.description:gsub("#ADDON", ns.title),
 		logo = ns.textures.logo,
 		optionsKeys = { ns.name .. "TargetSpeed" },
 		storage = { { storageTable = MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.targetSpeed, defaultsTable = ns.profileDefault.targetSpeed, }, },
 		onDefault = function()
-			--Notification
-			print(addonChat .. wt.Color(ns.strings.chat.defaults.response:gsub(
-				"#CATEGORY", wt.Color(ns.strings.options.targetSpeed.title, ns.colors.green[2])
-			), ns.colors.yellow[2]))
+			chatCommands.print(ns.strings.chat.default.responseCategory:gsub(
+				"#CATEGORY", wt.Color(ns.strings.options.targetSpeed.title, ns.colors.yellow[2])
+			):gsub(
+				"#PROFILE", wt.Color(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].title, ns.colors.yellow[2])
+			))
 		end,
 		initialize = function(canvas)
 			--Panel: Tooltip integration
@@ -1335,167 +1344,12 @@ end
 ---Print visibility info
 ---@param display "playerSpeed"|"travelSpeed"
 local function PrintStatus(display)
-	print(addonChat .. wt.Color((
-		frames.main:IsVisible() and (not frames[display].display:IsVisible() and ns.strings.chat.status.notVisible or ns.strings.chat.status.visible) or ns.strings.chat.status.hidden):gsub("#TYPE", ns.strings.options[display].title), ns.colors.yellow[1]
-	):gsub(
-		"#AUTO", wt.Color(ns.strings.chat.status.auto:gsub(
-			"#STATE", wt.Color(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].visibility.autoHide and ns.strings.misc.enabled or ns.strings.misc.disabled, ns.colors.green[2])
-		), ns.colors.yellow[2])
-	))
+	print(wt.Color((frames.main:IsVisible() and (
+		not frames[display].display:IsVisible() and ns.strings.chat.status.notVisible or ns.strings.chat.status.visible
+	) or ns.strings.chat.status.hidden):gsub("#TYPE", ns.strings.options[display].title):gsub("#AUTO", ns.strings.chat.status.auto:gsub("#STATE", wt.Color(
+		MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].visibility.autoHide and ns.strings.misc.enabled or ns.strings.misc.disabled, ns.colors.yellow[1]
+	))), ns.colors.yellow[2]))
 end
-
---Print help info
-local function PrintInfo()
-	print(wt.Color(ns.strings.chat.help.thanks:gsub("#ADDON", wt.Color(addonTitle, ns.colors.green[1])), ns.colors.yellow[1]))
-	PrintStatus("playerSpeed")
-	PrintStatus("travelSpeed")
-	print(wt.Color(ns.strings.chat.help.hint:gsub("#HELP_COMMAND", wt.Color("/" .. ns.chat.keyword .. " " .. ns.chat.commands.help, ns.colors.green[2])), ns.colors.yellow[2]))
-	print(wt.Color(ns.strings.chat.help.move:gsub("#ADDON", addonTitle), ns.colors.yellow[2]))
-end
-
----Format and print a command description
----@param command string Command name
----@param description string Command description text
-local function PrintCommand(command, description)
-	print("    " .. wt.Color("/" .. ns.chat.keyword .. " " .. command, ns.colors.green[2])  .. wt.Color(" - " .. description, ns.colors.yellow[2]))
-end
-
---Reset to defaults confirmation
-local resetDefaultsPopup = wt.CreatePopupDialogueData(ns.name, "DEFAULT_OPTIONS", {
-	text = (wt.GetStrings("warning") or ""):gsub("#TITLE", wt.Clear(addonTitle)),
-	onAccept = function() options.dataManagement.resetProfile() end,
-})
-
---[ Commands ]
-
---Register handlers
-local commandManager = wt.RegisterChatCommands(ns.name, { ns.chat.keyword }, {
-	{
-		command = ns.chat.commands.help,
-		handler = function() print(wt.Color(addonTitle .. " ", ns.colors.green[1]) .. wt.Color(ns.strings.chat.help.list .. ":", ns.colors.yellow[1])) end,
-		help = true,
-	},
-	{
-		command = ns.chat.commands.options,
-		handler = function() options.main.page.open() end,
-		onHelp = function() PrintCommand(ns.chat.commands.options, ns.strings.chat.options.description:gsub("#ADDON", addonTitle)) end
-	},
-	{
-		command = ns.chat.commands.preset,
-		handler = function(parameter) return options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].position.applyPreset(tonumber(parameter)) end,
-		onError = function()
-			print(addonChat .. wt.Color(ns.strings.chat.preset.unchanged, ns.colors.yellow[1]))
-			print(wt.Color(ns.strings.chat.preset.error:gsub("#INDEX", wt.Color(ns.chat.commands.preset .. " " .. 1, ns.colors.green[2])), ns.colors.yellow[2]))
-			print(wt.Color(ns.strings.chat.preset.list, ns.colors.green[2]))
-			for j = 1, #options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].position.presetList, 2 do
-				local list = "    " .. wt.Color(j, ns.colors.green[2]) .. wt.Color(" - " .. options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].position.presetList[j].title, ns.colors.yellow[2])
-
-				if j + 1 <= #options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].position.presetList then
-					list = list .. "    " .. wt.Color(j + 1, ns.colors.green[2]) .. wt.Color(" - " .. options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].position.presetList[j + 1].title, ns.colors.yellow[2])
-				end
-
-				print(list)
-			end
-		end,
-		onHelp = function() PrintCommand(ns.chat.commands.preset, ns.strings.chat.preset.description:gsub(
-			"#TYPE", ns.strings.options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].title
-		):gsub(
-			"#INDEX", wt.Color(ns.chat.commands.preset .. " " .. 1, ns.colors.green[2])
-		)) end
-	},
-	{
-		command = ns.chat.commands.save,
-		handler = function() options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].position.saveCustomPreset() end,
-		onHelp = function() PrintCommand(ns.chat.commands.save, ns.strings.chat.save.description:gsub(
-			"#TYPE", ns.strings.options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].title
-		):gsub(
-			"#CUSTOM", wt.Color(options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].position.presetList[1].title, ns.colors.green[2])
-		)) end
-	},
-	{
-		command = ns.chat.commands.reset,
-		handler = function() options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].position.resetCustomPreset() end,
-		onHelp = function() PrintCommand(ns.chat.commands.reset, ns.strings.chat.reset.description:gsub(
-			"#CUSTOM", wt.Color(options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].position.presetList[1].title, ns.colors.green[2])
-		)) end
-	},
-	{
-		command = ns.chat.commands.toggle,
-		handler = function()
-			options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].visibility.hidden.setData(not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].visibility.hidden, true)
-
-			return true
-		end,
-		onSuccess = function()
-			print(addonChat .. wt.Color((MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].visibility.hidden and ns.strings.chat.toggle.hiding or ns.strings.chat.toggle.unhiding):gsub(
-				"#TYPE", ns.strings.options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].title
-			), ns.colors.yellow[2]))
-		end,
-		onHelp = function() PrintCommand(ns.chat.commands.toggle, ns.strings.chat.toggle.description:gsub(
-			"#TYPE", ns.strings.options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].title
-		):gsub(
-			"#HIDDEN", wt.Color(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].visibility.hidden and ns.strings.chat.toggle.hidden or ns.strings.chat.toggle.notHidden, ns.colors.green[2])
-		)) end
-	},
-	{
-		command = ns.chat.commands.auto,
-		handler = function()
-			options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].visibility.autoHide.setData(not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].visibility.autoHide, true)
-
-			return true
-		end,
-		onSuccess = function() print(addonChat .. wt.Color(ns.strings.chat.auto.response:gsub(
-			"#TYPE", ns.strings.options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].title
-		):gsub(
-			"#STATE", wt.Color(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].visibility.autoHide and ns.strings.misc.enabled or ns.strings.misc.disabled, ns.colors.green[2])
-		), ns.colors.yellow[2])) end,
-		onHelp = function() PrintCommand(ns.chat.commands.auto, ns.strings.chat.auto.description:gsub(
-			"#TYPE", ns.strings.options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].title
-		):gsub(
-			"#STATE", wt.Color(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].visibility.autoHide and ns.strings.misc.enabled or ns.strings.misc.disabled, ns.colors.green[2])
-		)) end
-	},
-	{
-		command = ns.chat.commands.size,
-		handler = function(parameter)
-			local size = tonumber(parameter)
-			if not size then return false end
-
-			options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].font.size.setData(size, true)
-
-			return true, size
-		end,
-		onSuccess = function(size) print(addonChat .. wt.Color(ns.strings.chat.size.response:gsub("#VALUE", wt.Color(size, ns.colors.green[2])), ns.colors.yellow[2])) end,
-		onError = function()
-			print(addonChat .. wt.Color(ns.strings.chat.size.unchanged, ns.colors.yellow[1]))
-			print(wt.Color(ns.strings.chat.size.error:gsub(
-				"#SIZE", wt.Color(ns.chat.commands.size .. " " .. ns.profileDefault[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].font.size, ns.colors.green[2])
-			), ns.colors.yellow[2]))
-		end,
-		onHelp = function() PrintCommand(ns.chat.commands.size, ns.strings.chat.size.description:gsub(
-			"#SIZE", wt.Color(ns.chat.commands.size .. " " .. ns.profileDefault[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].font.size, ns.colors.green[2])
-		)) end
-	},
-	{
-		command = ns.chat.commands.swap,
-		handler = function()
-			MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay = MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay == "playerSpeed" and "travelSpeed" or "playerSpeed"
-
-			return true
-		end,
-		onSuccess = function() print(addonChat .. wt.Color(ns.strings.chat.swap.response:gsub(
-			"#ACTIVE", wt.Color(ns.strings.options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].title, ns.colors.green[2])
-		), ns.colors.yellow[2])) end,
-		onHelp = function() PrintCommand(ns.chat.commands.swap, ns.strings.chat.swap.description:gsub(
-			"#ACTIVE", wt.Color(ns.strings.options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].title, ns.colors.green[2])
-		)) end
-	}, --ADD profile management chat commands
-	{
-		command = ns.chat.commands.defaults,
-		handler = function() StaticPopup_Show(resetDefaultsPopup) end,
-		onHelp = function() PrintCommand(ns.chat.commands.defaults, ns.strings.chat.defaults.description) end
-	},
-}, PrintInfo)
 
 
 --[[ INITIALIZATION ]]
@@ -1504,32 +1358,32 @@ local commandManager = wt.RegisterChatCommands(ns.name, { ns.chat.keyword }, {
 ---@param display "playerSpeed"|"travelSpeed"
 local function CreateContextMenu(display)
 	wt.CreateContextMenu({ parent = frames[display].display, initialize = function(menu)
-		wt.CreateMenuTextline(menu, { text = addonTitle, })
+		wt.CreateMenuTextline(menu, { text = ns.title, })
 		wt.CreateSubmenu(menu, { title = ns.strings.misc.options, initialize = function(optionsMenu)
 			wt.CreateMenuButton(optionsMenu, {
 				title = wt.GetStrings("about").title,
-				tooltip = { lines = { { text = ns.strings.options.main.description:gsub("#ADDON", addonTitle), }, } },
-				action = function() options.main.page.open() end,
+				tooltip = { lines = { { text = ns.strings.options.main.description:gsub("#ADDON", ns.title), }, } },
+				action = options.main.page.open,
 			})
 			wt.CreateMenuButton(optionsMenu, {
 				title = ns.strings.options.speedDisplay.title:gsub("#TYPE", ns.strings.options.playerSpeed.title),
 				tooltip = { lines = { { text = ns.strings.options.playerSpeed.description, }, } },
-				action = function() options.playerSpeed.page.open() end,
+				action = options.playerSpeed.page.open,
 			})
 			wt.CreateMenuButton(optionsMenu, {
 				title = ns.strings.options.speedDisplay.title:gsub("#TYPE", ns.strings.options.travelSpeed.title),
-				tooltip = { lines = { { text = ns.strings.options.travelSpeed.description:gsub("#ADDON", addonTitle), }, } },
-				action = function() options.travelSpeed.page.open() end,
+				tooltip = { lines = { { text = ns.strings.options.travelSpeed.description:gsub("#ADDON", ns.title), }, } },
+				action = options.travelSpeed.page.open,
 			})
 			wt.CreateMenuButton(optionsMenu, {
 				title = ns.strings.options.targetSpeed.title,
-				tooltip = { lines = { { text = ns.strings.options.targetSpeed.description:gsub("#ADDON", addonTitle), }, } },
-				action = function() options.targetSpeed.page.open() end,
+				tooltip = { lines = { { text = ns.strings.options.targetSpeed.description:gsub("#ADDON", ns.title), }, } },
+				action = options.targetSpeed.page.open,
 			})
 			wt.CreateMenuButton(optionsMenu, {
 				title = wt.GetStrings("dataManagement").title,
-				tooltip = { lines = { { text = wt.GetStrings("dataManagement").description:gsub("#ADDON", addonTitle), }, } },
-				action = function() options.dataManagement.page.open() end,
+				tooltip = { lines = { { text = wt.GetStrings("dataManagement").description:gsub("#ADDON", ns.title), }, } },
+				action = options.dataManagement.page.open,
 			})
 		end })
 		wt.CreateSubmenu(menu, { title = wt.GetStrings("apply").label, initialize = function(presetsMenu)
@@ -1568,64 +1422,39 @@ frames.main = wt.CreateBaseFrame({
 
 			--Initialize data management
 			options.dataManagement = wt.CreateDataManagementPage(ns.name, {
-				onDefault = function(_, all)
-					if all then return end
-
-					options.dataManagement.resetProfile()
-
-					--Notifications
-					print(addonChat .. wt.Color(ns.strings.chat.defaults.response:gsub(
-						"#CATEGORY", wt.Color(ns.strings.options.speedDisplay.title:gsub("#TYPE", ns.strings.options.playerSpeed.title), ns.colors.green[2])
-					), ns.colors.yellow[2]))
-					print(addonChat .. wt.Color(ns.strings.chat.defaults.response:gsub(
-						"#CATEGORY", wt.Color(ns.strings.options.speedDisplay.title:gsub("#TYPE", ns.strings.options.travelSpeed.title), ns.colors.green[2])
-					), ns.colors.yellow[2]))
-					print(addonChat .. wt.Color(ns.strings.chat.defaults.response:gsub(
-						"#CATEGORY", wt.Color(ns.strings.options.targetSpeed.title, ns.colors.green[2])
-					), ns.colors.yellow[2]))
-				end,
+				onDefault = function(_, category) if not category then options.dataManagement.resetProfile() end end,
 				accountData = MovementSpeedDB,
 				characterData = MovementSpeedDBC,
 				settingsData = MovementSpeedCS,
 				defaultsTable = ns.profileDefault,
-				onProfileActivated = function(index)
+				onProfileActivated = function(title)
 					--Update the interface options
 					options.playerSpeed.page.load(true)
 					options.travelSpeed.page.load(true)
 					options.targetSpeed.page.load(true)
 					options.dataManagement.page.load(true)
 
-					--Notification
-					print(addonChat .. wt.Color(ns.strings.chat.profile.response:gsub(
-						"#PROFILE", wt.Color(MovementSpeedDB.profiles[index].title, ns.colors.green[2])
-					), ns.colors.yellow[2]))
+					chatCommands.print(ns.strings.chat.profile.response:gsub("#PROFILE", wt.Color(title, ns.colors.yellow[2])))
 				end,
-				onProfileReset = function(index)
-					--Notification
-					print(addonChat .. wt.Color(ns.strings.chat.defaults.response:gsub(
-						"#PROFILE", wt.Color(MovementSpeedDB.profiles[index].title, ns.colors.green[2])
-					), ns.colors.yellow[2]))
-				end,
+				onProfileDeleted = function(title) chatCommands.print(ns.strings.chat.default.response:gsub("#PROFILE", wt.Color(title, ns.colors.yellow[2]))) end,
+				onProfileReset = function(title) chatCommands.print(ns.strings.chat.default.response:gsub("#PROFILE", wt.Color(title, ns.colors.yellow[2]))) end,
 				onImport = function(success) if success then
 					--Update the interface options
 					options.playerSpeed.page.load(true)
 					options.travelSpeed.page.load(true)
 					options.targetSpeed.page.load(true)
 					options.dataManagement.page.load(true)
-				else print(addonChat .. wt.Color(wt.GetStrings("backup").error, ns.colors.yellow[2])) end end,
-				onImportAllProfiles = function(success) if not success then print(addonChat .. wt.GetStrings("backup").error, ns.colors.yellow[2]) end end,
+				else chatCommands.print(wt.GetStrings("backup").error) end end,
+				onImportAllProfiles = function(success) if not success then chatCommands.print(wt.GetStrings("backup").error) end end,
 				valueChecker = CheckValidity,
 				onRecovery = GetRecoveryMap
 			})
-
-			--Welcome message
-			if firstLoad then PrintInfo() end
 
 			--[ Settings Setup ]
 
 			options.main.page = wt.CreateAboutPage(ns.name, {
 				name = "Main",
-				description = ns.strings.options.main.description:gsub("#ADDON", addonTitle),
+				description = ns.strings.options.main.description:gsub("#ADDON", ns.title),
 				changelog = ns.changelog
 			})
 
@@ -1635,6 +1464,192 @@ frames.main = wt.CreateBaseFrame({
 				CreateTargetSpeedOptionsPage(),
 				options.dataManagement.page
 			})
+
+			--[ Chat Control Setup ]
+
+			chatCommands = wt.RegisterChatCommands(ns.name, ns.chat.keywords, {
+				commands = {
+					{
+						command = ns.chat.commands.options,
+						description = ns.strings.chat.options.description:gsub("#ADDON", ns.title),
+						handler = options.main.page.open,
+					},
+					{
+						command = ns.chat.commands.preset,
+						description = function()
+							return ns.strings.chat.preset.description:gsub(
+								"#TYPE", ns.strings.options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].title
+							):gsub(
+								"#INDEX", wt.Color(ns.chat.commands.preset .. " " .. 1, ns.colors.green[2])
+							)
+						end,
+						handler = function(_, p) return options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].position.applyPreset(tonumber(p)) end,
+						error = ns.strings.chat.preset.unchanged .. "\n" .. wt.Color(ns.strings.chat.preset.error:gsub(
+							"#INDEX", wt.Color(ns.chat.commands.preset .. " " .. 1, ns.colors.green[2])
+						), ns.colors.yellow[2]),
+						onError = function()
+							print(wt.Color(ns.strings.chat.preset.list, ns.colors.yellow[1]))
+							for i = 1, #options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].position.presetList, 2 do
+								local list = "    " .. wt.Color(i, ns.colors.green[2]) .. wt.Color(" • " .. options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].position.presetList[i].title, ns.colors.yellow[2])
+
+								if i + 1 <= #options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].position.presetList then
+									list = list .. "    " .. wt.Color(i + 1, ns.colors.green[2]) .. wt.Color(" • " .. options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].position.presetList[i + 1].title, ns.colors.yellow[2])
+								end
+
+								print(list)
+							end
+						end,
+					},
+					{
+						command = ns.chat.commands.save,
+						description = function()
+							return ns.strings.chat.save.description:gsub(
+								"#TYPE", ns.strings.options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].title
+							):gsub(
+								"#CUSTOM", wt.Color(options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].position.presetList[1].title, ns.colors.yellow[1])
+							)
+						end,
+						handler = function() options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].position.saveCustomPreset() end,
+					},
+					{
+						command = ns.chat.commands.reset,
+						description = function()
+							return ns.strings.chat.reset.description:gsub(
+								"#TYPE", ns.strings.options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].title
+							):gsub(
+								"#CUSTOM", wt.Color(options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].position.presetList[1].title, ns.colors.yellow[1])
+							)
+						end,
+						handler = function() options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].position.resetCustomPreset() end,
+					},
+					{
+						command = ns.chat.commands.toggle,
+						description = function() return ns.strings.chat.toggle.description:gsub("#TYPE", ns.strings.options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].title):gsub(
+							"#HIDDEN", wt.Color(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].visibility.hidden and ns.strings.chat.toggle.hidden or ns.strings.chat.toggle.notHidden, ns.colors.yellow[1])
+						) end,
+						handler = function()
+							options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].visibility.hidden.setData(not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].visibility.hidden, true)
+
+							return true
+						end,
+						success = function() return (MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].visibility.hidden and ns.strings.chat.toggle.hiding or ns.strings.chat.toggle.unhiding):gsub(
+							"#TYPE", ns.strings.options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].title
+						) end,
+					},
+					{
+						command = ns.chat.commands.auto,
+						description = function() return ns.strings.chat.auto.description:gsub("#TYPE", ns.strings.options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].title):gsub(
+							"#STATE", wt.Color(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].visibility.autoHide and ns.strings.misc.enabled or ns.strings.misc.disabled, ns.colors.yellow[1])
+						) end,
+						handler = function()
+							options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].visibility.autoHide.setData(not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].visibility.autoHide, true)
+
+							return true
+						end,
+						success = function()
+							return ns.strings.chat.auto.response:gsub(
+								"#TYPE", ns.strings.options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].title
+							):gsub(
+								"#STATE", wt.Color(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].visibility.autoHide and ns.strings.misc.enabled or ns.strings.misc.disabled, ns.colors.yellow[2])
+							)
+						end,
+					},
+					{
+						command = ns.chat.commands.size,
+						description = function()
+							return ns.strings.chat.size.description:gsub(
+								"#TYPE", ns.strings.options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].title
+							):gsub(
+								"#SIZE", wt.Color(ns.chat.commands.size .. " " .. ns.profileDefault[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].font.size, ns.colors.green[2])
+							)
+						end,
+						handler = function(_, p)
+							local size = tonumber(p)
+
+							if not size then return false end
+
+							options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].font.size.setData(size, true)
+
+							return true, size
+						end,
+						success = function(size) return ns.strings.chat.size.response:gsub(
+							"#TYPE", ns.strings.options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].title
+						):gsub("#VALUE", wt.Color(size, ns.colors.yellow[2])) end,
+						error = function() return ns.strings.chat.size.unchanged:gsub(
+							"#TYPE", ns.strings.options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].title
+						) end,
+						onError = function() print("    " .. wt.Color(ns.strings.chat.size.error:gsub(
+							"#SIZE", wt.Color(ns.chat.commands.size .. " " .. ns.profileDefault[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].font.size, ns.colors.green[2])
+						), ns.colors.yellow[2])) end,
+					},
+					{
+						command = ns.chat.commands.swap,
+						description = function() return ns.strings.chat.swap.description:gsub(
+							"#ACTIVE", wt.Color(ns.strings.options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].title, ns.colors.yellow[1])
+						) end,
+						handler = function()
+							MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay = MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay == "playerSpeed" and "travelSpeed" or "playerSpeed"
+
+							return true
+						end,
+						success = function() return ns.strings.chat.swap.response:gsub(
+							"#ACTIVE", wt.Color(ns.strings.options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].title, ns.colors.yellow[2])
+						) end,
+					},
+					{
+						command = ns.chat.commands.profile,
+						description = ns.strings.chat.profile.description:gsub(
+							"#INDEX", wt.Color(ns.chat.commands.profile .. " " .. 1, ns.colors.green[2])
+						),
+						handler = function(_, p) return options.dataManagement.activateProfile(tonumber(p)) end,
+						error = ns.strings.chat.profile.unchanged .. "\n" .. wt.Color(ns.strings.chat.profile.error:gsub(
+							"#INDEX", wt.Color(ns.chat.commands.profile .. " " .. 1, ns.colors.green[2])
+						), ns.colors.yellow[2]),
+						onError = function()
+							print(wt.Color(ns.strings.chat.profile.list, ns.colors.yellow[1]))
+							for i = 1, #MovementSpeedDB.profiles, 4 do
+								local list = "    " .. wt.Color(i, ns.colors.green[2]) .. wt.Color(" • " .. MovementSpeedDB.profiles[i].title, ns.colors.yellow[2])
+
+								for j = i + 1, min(i + 3, #MovementSpeedDB.profiles) do
+									list = list .. "    " .. wt.Color(j, ns.colors.green[2]) .. wt.Color(" • " .. MovementSpeedDB.profiles[j].title, ns.colors.yellow[2])
+								end
+
+								print(list)
+							end
+						end,
+					},
+					{
+						command = ns.chat.commands.default,
+						description = function() return ns.strings.chat.default.description:gsub(
+							"#PROFILE", wt.Color(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].title, ns.colors.yellow[1])
+						) end,
+						handler = function() return options.dataManagement.resetProfile() end,
+					},
+					{
+						command = "hi",
+						hidden = true,
+						handler = function(manager) manager.welcome() end,
+					},
+					{
+						command = "delete",
+						hidden = true,
+						handler = function()
+							MovementSpeedDB = nil
+							ReloadUI()
+						end,
+					},
+				},
+				colors = {
+					title = ns.colors.green[1],
+					content = ns.colors.yellow[1],
+					command = ns.colors.green[2],
+					description = ns.colors.yellow[2]
+				},
+				onWelcome = function() print(wt.Color(ns.strings.chat.help.move, ns.colors.yellow[2])) end,
+			})
+
+			--Welcome message
+			if firstLoad then chatCommands.welcome() end
 
 			--[ Display Setup ]
 

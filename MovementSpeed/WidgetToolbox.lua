@@ -24,8 +24,6 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 	WidgetTools.frame:UnregisterEvent("ADDON_LOADED")
 
-	--[ Wrapper Table ]
-
 	---@class wt
 	local wt = ns.WidgetToolbox
 
@@ -36,6 +34,16 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	--\n represents the newline character
 
 	local english = {
+		chat = {
+			welcome = {
+				thanks = "Thank you for using #ADDON!",
+				hint = "Type #KEYWORD to see the chat command list.",
+				keywords = "#KEYWORD or #KEYWORD_ALTERNATE",
+			},
+			help = {
+				list = "#ADDON chat command list:",
+			},
+		},
 		popupInput = {
 			title = "Specify the text",
 			tooltip = "Press " .. KEY_ENTER .. " to accept the specified text or " .. KEY_ESCAPE .. " to dismiss it."
@@ -112,12 +120,13 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				label = "Restore Defaults",
 				tooltip = "Restore all settings on this page (or the whole category) to default values.",
 			},
-			warning = "Are you sure you want to reset the settings on page #PAGE, or all settings in the whole #CATEGORY category to defaults?\n\n#DISMISS",
-			warningSingle = "Are you sure you want to reset the settings on page #PAGE to defaults?\n\n#DISMISS",
+			warning = "Are you sure you want to reset the settings on page #PAGE or all settings in the whole #CATEGORY category to defaults?",
+			warningSingle = "Are you sure you want to reset the settings on page #PAGE to defaults?",
 		},
 		value = {
-			revert = "Revert Change",
+			revert = "Revert Changes",
 			restore = "Restore Default",
+			note = "Right-click to reset or revert changes.",
 		},
 		points = {
 			left = "Left",
@@ -200,7 +209,10 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			},
 			delete = {
 				tooltip = "Delete the currently active profile.",
-				warning = "Are you sure you want to remove the currently active profile and permanently delete all settings data stored in it?"
+				warning = "Are you sure you want to remove the currently active #PROFILE #ADDON settings profile and permanently delete all settings data stored in it?"
+			},
+			reset = {
+				warning = "Are you sure you want to override the currently active #PROFILE #ADDON settings profile with default values?",
 			},
 		},
 		backup = {
@@ -236,7 +248,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				tooltip = "Dismiss all changes made to the string, and reset it to contain the currently stored data.",
 			},
 			import = "Load the string",
-			warning = "Are you sure you want to attempt to load the currently inserted string?\n\n#DISMISS\n\nIf you've copied it from an online source or someone else has sent it to you, only load it after you've checked the code inside and you know what you are doing.\n\nIf don't trust the source, you may want to cancel to prevent any unwanted actions.",
+			warning = "Are you sure you want to attempt to load the currently inserted string?\n\nAll unsaved changes will be dismissed.\n\nIf you've copied it from an online source or someone else has sent it to you, only load it after you've checked the code inside and you know what you are doing.\n\nIf don't trust the source, you may want to cancel to prevent any unwanted actions.",
 			error = "The provided backup string could not be validated and no data was loaded. It might be missing some characters or errors may have been introduced if it was edited.",
 		},
 		position = {
@@ -284,12 +296,12 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			save = {
 				label = "Update #CUSTOM Preset",
 				tooltip = "Save the current position and visibility of #FRAME to the #CUSTOM preset.",
-				warning = "Are you sure you want to override the #CUSTOM Preset with the current customizations?\n\nThe #CUSTOM preset is account-wide.",
+				warning = "Are you sure you want to override the #CUSTOM preset with the current values?",
 			},
 			reset = {
 				label = "Reset #CUSTOM Preset",
 				tooltip = "Override currently saved #CUSTOM preset data with the default values, then apply it.",
-				warning = "Are you sure you want to override the #CUSTOM Preset with the default values?\n\nThe #CUSTOM preset is account-wide.",
+				warning = "Are you sure you want to override the #CUSTOM preset with the default values?",
 			},
 		},
 		layer = {
@@ -306,7 +318,6 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				tooltip = "The exact position of #FRAME above and under other frames within the same #STRATA stack.",
 			},
 		},
-		dismiss = "All unsaved changes will be dismissed.",
 		date = "#MONTH/#DAY/#YEAR",
 		override = "Override",
 		example = "Example",
@@ -330,9 +341,6 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| Fill static & internal references
 
-		ns.toolboxStrings.settings.warning = ns.toolboxStrings.settings.warning:gsub("#DISMISS", ns.toolboxStrings.dismiss)
-		ns.toolboxStrings.settings.warningSingle = ns.toolboxStrings.settings.warningSingle:gsub("#DISMISS", ns.toolboxStrings.dismiss)
-		ns.toolboxStrings.backup.warning = ns.toolboxStrings.backup.warning:gsub("#DISMISS", ns.toolboxStrings.dismiss)
 		ns.toolboxStrings.backup.box.tooltip[3] = ns.toolboxStrings.backup.box.tooltip[3]:gsub("#LOAD", ns.toolboxStrings.backup.load.label)
 		ns.toolboxStrings.position.keepInPlace.tooltip = ns.toolboxStrings.position.keepInPlace.tooltip:gsub("#ANCHOR", ns.toolboxStrings.position.anchor.label)
 		ns.toolboxStrings.position.offsetX.tooltip = ns.toolboxStrings.position.offsetX.tooltip:gsub("#ANCHOR", ns.toolboxStrings.position.anchor.label)
@@ -342,10 +350,6 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		ns.toolboxStrings.layer.level.tooltip = ns.toolboxStrings.layer.level.tooltip:gsub("#STRATA", ns.toolboxStrings.layer.strata.label)
 		-- ns.toolboxStrings.about.changelog.tooltip = ns.toolboxStrings.about.changelog.tooltip .. "\n\nThe changelog is only available in English for now." --TODO reinstate when more languages are added
 		-- ns.toolboxStrings.about.fullChangelog.tooltip = ns.toolboxStrings.about.fullChangelog.tooltip .. "\n\nThe changelog is only available in English for now."
-
-		--| Add extra strings
-
-		ns.toolboxStrings.default = "\n" .. WrapTextInColorCode(DEFAULT .. ": ", "FF66FF66")
 	end
 
 	loadLocale()
@@ -353,7 +357,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 	--[[ UTILITIES ]]
 
-	--Classic vs Dragonflight code separation
+	--Classic vs Retail code separation
 	wt.classic = select(4, GetBuildInfo()) < 100000
 
 	---Check if a table is a frame (or a backdrop object)
@@ -392,15 +396,15 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	---@param outputTable table Table to put the formatted output lines in
 	---@param name? any Value to print out as name string | ***Default:*** **object** as string
 	---@param blockrule? fun(key: integer|string): boolean Manually filter further exploring subtables under specific keys, skipping it if the value returned is true
+	---@param depth? integer How many levels of subtables to print out (root level: 0) | ***Default:*** *full depth*
 	---@param digTables? boolean ***Default:*** true
 	---@param digFrames? boolean ***Default:*** false
-	---@param depth? integer How many levels of subtables to print out (root level: 0) | ***Default:*** *full depth*
 	---@param currentKey? string
 	---@param currentLevel? integer
 	local function getDumpOutput(object, outputTable, name, blockrule, depth, digTables, digFrames, currentKey, currentLevel)
 		--Check whether the current key is to be skipped
 		local skip = false
-		if currentKey and blockrule then skip = blockrule(currentKey) end
+		if currentKey and type(blockrule) == "function" then skip = blockrule(currentKey) end
 
 		--Calculate indentation based on the current depth level
 		currentLevel = currentLevel or 0
@@ -439,8 +443,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	---***
 	---@param object any Object to dump out
 	---@param name? string A name to print out | ***Default:*** *the dumped object will not be named* | ***Default:*** true
-	---@param digTables? boolean If true, explore and dump the non-subtable values of table objects | ***Default:*** true
-	---@param digFrames? boolean If true, explore and dump the insides of objects recognized as frames | ***Default:*** false
+	---@param depth? integer How many levels of subtables to print out (root level: 0) | ***Default:*** *full depth*
 	---@param blockrule? fun(key: integer|string): boolean Manually filter further exploring subtables under specific keys, skipping it if the value returned is true
 	--- - ***Example:*** **Match:** Skip a specific matching key
 	--- 	```
@@ -470,7 +473,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	--- 		return false --or true to invert the functionality and treat the blocklist as an allowlist
 	--- 	end
 	--- 	```
-	---@param depth? integer How many levels of subtables to print out (root level: 0) | ***Default:*** *full depth*
+	---@param digTables? boolean If true, explore and dump the non-subtable values of table objects | ***Default:*** true
+	---@param digFrames? boolean If true, explore and dump the insides of objects recognized as frames | ***Default:*** false
 	---@param linesPerMessage? integer Print the specified number of output lines in a single chat message to be able to display more message history and allow faster scrolling | ***Default:*** 2
 	--- - ***Note:*** Set to 0 to print all lines in a single message.
 	function wt.Dump(object, name, blockrule, depth, digTables, digFrames, linesPerMessage)
@@ -789,8 +793,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	---Get an assembled & fully formatted string of a string table (changelog) that meets the specifications
 	---***
 	---@param changelog { [table[]] : string[] } String arrays nested in subtables representing a version containing the raw changelog data, lines of text with formatting directives included
-	--- - ***Note:*** The first line is expected to be the title containing the version number and/or the date of release.
-	--- - ***Note:*** Version tables are expected to be listed in ascending order by date of release (latest release last).
+	--- - ***Note:*** The first line in version tables is expected to be the title containing the version number and/or the date of release.
+	--- - ***Note:*** Version tables are expected to be listed in descending order by date of release (latest release first).
 	--- - ***Examples:***
 	--- 	- **Title formatting - version title:** `#V_`*Title text*`_#` (*it will appear as:* • Title text)
 	--- 	- **Color formatting - highlighted text:** `#H_`*text to be colored*`_#` (*it will be colored white*)
@@ -812,12 +816,12 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		--Assemble the changelog
 		local c = ""
 
-		for i = #changelog, 1, -1 do
+		for i = 1, #changelog do
 			local firstLine = latest and 2 or 1
 
 			for j = firstLine, #changelog[i] do
 				c = c .. (j > firstLine and "\n\n" or "") .. changelog[i][j]:gsub(
-					"#V_(.-)_#", (i < #changelog and "\n\n\n" or "") .. "|c" .. highlight .. "• %1|r"
+					"#V_(.-)_#", (i > 1 and "\n\n\n" or "") .. "|c" .. highlight .. "• %1|r"
 				):gsub(
 					"#N_(.-)_#", "|c".. new .. "%1|r"
 				):gsub(
@@ -1737,7 +1741,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		page.canvas.OnCommit = function() page.save(true) end
 		page.canvas.OnRefresh = function() page.load(nil, true) end
-		page.canvas.OnDefault = function() page.defaults(true) end
+		page.canvas.OnDefault = function() page.default(true) end
 
 		if parent then page.category = Settings.RegisterCanvasLayoutSubcategory(parent.category, page.canvas, title)
 		else page.category = Settings.RegisterCanvasLayoutCategory(page.canvas, title) end
@@ -1811,23 +1815,75 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	---Register a list of chat keywords and related commands for use
 	---***
 	---@param addon string The name of the addon's folder (the addon namespace not the display title)
-	---@param keywords string[] List of keywords to register
-	--- - ***Note:*** A slash character (`"/"`) will appended before each keyword specified here.
-	---@param commands chatCommandData[] Indexed table with the list of commands to register under the specified **keywords**
-	---@param defaultHandler? fun(command: string, ...: string) Default handler function to call when no matching command was typed after the keyword (separated by a space character)<hr><p>@*param* `command` string ― The unrecognized command typed after the keyword (separated by a space character)</p><p>@*param* `...` string Payload of the command typed, any words following the command name separated by spaces split and returned one by one</p>
+	---@param keywords string[] List of addon-specific keywords to register to listen to when typed as slash commands<ul><li>***Note:*** A slash character (`/`) will appended before each keyword specified here during registration, it doesn't need to be included.</li></ul>
+	---@param t chatCommandManagerCreationData Parameters are to be provided in this table
 	---***
-	---@return table commandManager Table containing command handler functions
-	--- - ***Note:*** Annotate `@type commandManager` for detailed field descriptions.
-	function wt.RegisterChatCommands(addon, keywords, commands, defaultHandler)
+	---@return chatCommandManager manager Table containing command handler functions
+	function wt.RegisterChatCommands(addon, keywords, t)
+		t = t or {}
+
+		local logo = C_AddOns.GetAddOnMetadata(addon, "IconTexture")
+		local addonTitle = wt.Clear(select(2, C_AddOns.GetAddOnInfo(addon))):gsub("^%s*(.-)%s*$", "%1")
+		local branding = (logo and (CreateSimpleTextureMarkup(logo, 9) .. " ") or "") .. addonTitle .. ": "
+
+		---@class chatCommandManager
+		local manager = {}
+
 		addon = addon:upper()
 
-		---@class commandManager
-		local commandManager = {}
-
 		--Register the keywords
-		for i = 1, #keywords do _G["SLASH_" .. addon .. i] = "/" .. keywords[i] end
+		for i = 1, #keywords do
+			keywords[i] = "/" .. keywords[i]
+			_G["SLASH_" .. addon .. i] = keywords[i]
+		end
 
-		--| Create a command handler utility
+		--| Utilities
+
+		---Print out a formatted chat message
+		---@param message string Message content
+		---@param title? string Title to start the message with | ***Default:*** *(**addon** title)*<ul><li>***Note:*** If "IconTexture" is specified in the TOC file of **addon**, a logo will also be included at the start of the message.</li></ul>
+		---@param contentColor? chatCommandColorNames|colorData ***Default:*** "content"
+		---@param titleColor? chatCommandColorNames|colorData ***Default:*** "title"
+		function manager.print(message, title, titleColor, contentColor)
+			title = type(title) == "string" or branding
+			titleColor = type(titleColor) == "table" and titleColor or t.colors[type(titleColor) == "string" and titleColor or "title"]
+			contentColor = type(contentColor) == "table" and contentColor or t.colors[type(contentColor) == "string" and contentColor or "content"]
+
+			if type(message) == "string" then print(wt.Color(title, titleColor) .. wt.Color(message, contentColor)) end
+		end
+
+		--Print a welcome message with a hint about chat keywords
+		function manager.welcome()
+			local keyword = wt.Color(keywords[1], t.colors.command)
+			if #keywords > 1 then
+				if #keywords > 2 then for i = 2, #keywords - 1 do keyword = " " .. keyword .. "," .. wt.Color(keywords[i], t.colors.command) end end
+				keyword = ns.toolboxStrings.chat.welcome.keywords:gsub("#KEYWORD_ALTERNATE", wt.Color(keywords[#keywords], t.colors.command)):gsub("#KEYWORD", keyword)
+			end
+
+			print(wt.Color(ns.toolboxStrings.chat.welcome.thanks:gsub(
+				"#ADDON", wt.Color(addonTitle, t.colors.title) .. (logo and " " .. CreateSimpleTextureMarkup(logo) or "")
+			), t.colors.content))
+			print(wt.Color(ns.toolboxStrings.chat.welcome.hint:gsub("#KEYWORD", keyword), t.colors.description))
+
+			if type(t.onWelcome) == "function" then t.onWelcome() end
+		end
+
+		--Trigger a help command, listing all registered chat commands with their specified descriptions, calling their onHelp handlers
+		function manager.help()
+			print(wt.Color(ns.toolboxStrings.chat.help.list:gsub("#ADDON", wt.Color(logo  .. addonTitle, t.colors.title)), t.colors.content))
+
+			for i = 1, #t.commands do
+				if not t.commands[i].hidden then
+					local description = type(t.commands[i].description) == "function" and t.commands[i].description() or t.commands[i].description
+
+					print(wt.Color("    " .. keywords[1] .. " ".. t.commands[i].command, t.colors.command) .. (
+						type(description) == "string" and wt.Color(" • " .. description, t.colors.description) or ""
+					))
+				end
+
+				if type(t.commands[i].onHelp) == "function" then t.commands[i].onHelp() end
+			end
+		end
 
 		---Find and a specific command by its name and call its handler script
 		---***
@@ -1835,25 +1891,34 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		---@param ... any Any further arguments are used as the payload of the command, passed over to its handler
 		---***
 		---@return boolean # Whether the command was found and the handler called successfully
-		function commandManager.handleCommand(command, ...)
+		function manager.handleCommand(command, ...)
 			--Find the command
-			for i = 1, #commands do if command == commands[i].command then
-				--Call the command handler
-				if commands[i].handler then
-					local results = { commands[i].handler(...) }
+			for i = 1, #t.commands do if command == t.commands[i].command then
+				--Call command handler
+				if t.commands[i].handler then
+					local results = { t.commands[i].handler(manager, ...) }
 
-					--Call success/error handlers
-					if commands[i].onSuccess and results[1] == true then
-						table.remove(results, 1)
-						commands[i].onSuccess(unpack(results))
-					elseif commands[i].onError and results[1] == false then
-						table.remove(results, 1)
-						commands[i].onError(unpack(results))
+					--Response
+					if results[1] == true then
+						local message = type(t.commands[i].success) == "function" and t.commands[i].success(unpack(results, 2)) or t.commands[i].success
+
+						--Print response message
+						if type(message) == "string" then manager.print(message) end
+
+						--Call handler
+						if type(t.commands[i].onSuccess) == "function" then t.commands[i].onSuccess(manager, unpack(results, 2)) end
+					elseif results[1] == false then
+						local message = type(t.commands[i].error) == "function" and t.commands[i].error(unpack(results, 2)) or t.commands[i].error
+
+						--Print response message
+						if type(message) == "string" then manager.print(message) end
+
+						--Call handler
+						if type(t.commands[i].onError) == "function" then t.commands[i].onError(manager, unpack(results, 2)) end
 					end
 				end
 
-				--Call help handlers
-				if commands[i].help then for j = 1, #commands do if commands[j].onHelp then commands[j].onHelp() end end end
+				if t.commands[i].help then manager.help(t.listHelpCommands) end
 
 				return true
 			end end
@@ -1866,17 +1931,24 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		SlashCmdList[addon] = function(line)
 			local payload = { strsplit(" ", line) }
 			local command = payload[1]
-			table.remove(payload, 1)
 
 			--Find and handle the specific command or call the default handler script
-			if not commandManager.handleCommand(command, unpack(payload)) and defaultHandler then defaultHandler(unpack(payload)) end
+			if not manager.handleCommand(command, unpack(payload, 2)) then
+				if type(t.defaultHandler) == "function" then t.defaultHandler(manager, command, unpack(payload, 2)) end
+
+				--List (non-hidden) commands
+				manager.help()
+			end
 		end
 
-		return commandManager
+		return manager
 	end
 
 
 	--[[ RESOURCES ]]
+
+	--Addon title
+	ns.title = wt.Clear(select(2, C_AddOns.GetAddOnInfo(ns.name))):gsub("^%s*(.-)%s*$", "%1")
 
 	--[ Data ]
 
@@ -2038,6 +2110,25 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		tooltipData.tooltip:SetScale(UIParent:GetScale())
 	end
 
+	---Add default value and utility menu hint tooltip lines to widget tooltip tables
+	---@param t optionsFrame|tooltipDescribableObject Parameters are to be provided in this table
+	---@param default? string Default value, formatted | ***Default:*** ""
+	function wt.AddWidgetTooltipLines(t, default)
+		if type(t) ~= "table" or (t.showDefault == false and t.utilityMenu == false) or type(t.tooltip) ~= "table" then return end
+
+		local hadLines = type(t.tooltip.lines) == "table" and next(t.tooltip.lines) or false
+
+		if not hadLines then t.tooltip.lines = { { text = " " } } end
+
+		if t.showDefault ~= false then table.insert(t.tooltip.lines, {
+			text = (hadLines and "\n" or "") .. WrapTextInColorCode(DEFAULT .. ": ", "FF66FF66") .. (type(default) == "string" and default or "")
+		}) end
+		if t.utilityMenu ~= false then table.insert(t.tooltip.lines, {
+			text = (t.showDefault == false and "\n" or "") .. ns.toolboxStrings.value.note, font = GameFontNormalTiny, color = ns.colors.grey[1],
+		})
+		end
+	end
+
 	--[ Addon Compartment ]
 
 	---Set up the [Addon Compartment](https://warcraft.wiki.gg/wiki/Addon_compartment#Automatic_registration) functionality by registering global functions for call
@@ -2101,6 +2192,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	---***
 	---@return string key The unique identifier key created for this popup in the global **StaticPopupDialogs** table used as the parameter when calling [StaticPopup_Show()](https://warcraft.wiki.gg/wiki/API_StaticPopup_Show) or [StaticPopup_Hide()](https://warcraft.wiki.gg/wiki/API_StaticPopup_Hide)
 	function wt.CreatePopupDialogueData(addon, name, t)
+		t = t or {}
+
 		local key = addon:upper() .. "_" .. name:gsub("%s+", "_"):upper()
 
 		--Create the popup dialogue
@@ -2124,9 +2217,12 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	---Update already existing popup dialogue data
 	---***
 	---@param key string The unique identifier key representing the defaults warning popup dialogue in the global **StaticPopupDialogs** table, and used as the parameter when calling [StaticPopup_Show()](https://warcraft.wiki.gg/wiki/API_StaticPopup_Show) or [StaticPopup_Hide()](https://warcraft.wiki.gg/wiki/API_StaticPopup_Hide)
-	---@param t popupDialogueData Parameters are to be provided in this table
+	---@param t? popupDialogueData Parameters are to be provided in this table
+	---@return string|nil key The unique identifier key created for this popup in the global **StaticPopupDialogs** table used as the parameter when calling [StaticPopup_Show()](https://warcraft.wiki.gg/wiki/API_StaticPopup_Show) or [StaticPopup_Hide()](https://warcraft.wiki.gg/wiki/API_StaticPopup_Hide), or nil if no popup has been registered with the provided **key**
 	function wt.UpdatePopupDialogueData(key, t)
 		if not StaticPopupDialogs[key] then return end
+
+		t = t or {}
 
 		--Create the popup dialogue
 		if t.text then StaticPopupDialogs[key].text = t.text end
@@ -2136,6 +2232,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		if t.onAccept then StaticPopupDialogs[key].OnAccept = t.onAccept end
 		if t.onCancel then StaticPopupDialogs[key].OnCancel = t.onCancel end
 		if t.onAlt then StaticPopupDialogs[key].OnAlt = t.onAlt end
+
+		return key
 	end
 
 	--| Input Box
@@ -2223,6 +2321,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					},
 					arrange = {},
 					value = t.text,
+					showDefault = false,
 					utilityMenu = false,
 				})
 
@@ -2354,6 +2453,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	---@return string name, Font font
 	---<hr><p></p>
 	function wt.CreateFont(t)
+		t = t or {}
+
 		if _G[t.name] then return t.name, _G[t.name] end
 
 		--[ Font Setup ]
@@ -2404,6 +2505,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	---@param t textCreationData Parameters are to be provided in this table
 	---@return FontString|nil text
 	function wt.CreateText(t)
+		t = t or {}
+
 		if not t.parent then return end
 
 		local text = t.parent:CreateFontString((t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "Text"), t.layer, t.font and t.font or "GameFontNormal")
@@ -2433,6 +2536,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	---@return FontString|nil title
 	---@return FontString|nil description
 	function wt.AddTitle(t)
+		t = t or {}
+
 		if not t.parent then return end
 
 		--Title
@@ -2479,6 +2584,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	---@param updates? table<AnyScriptType, textureUpdateRule> Table of key, value pairs containing the list of events to link texture changes to, and what parameters to change
 	---@return Texture|nil texture
 	function wt.CreateTexture(t, updates)
+		t = t or {}
+
 		if not t.parent then return end
 
 		local texture = t.parent:CreateTexture((t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "Texture"))
@@ -2572,6 +2679,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	---@param t lineCreationData Parameters are to be provided in this table
 	---@return Line|nil line
 	function wt.CreateLine(t)
+		t = t or {}
+
 		if not t.parent then return end
 
 		t.startPosition.offset = t.startPosition.offset or {}
@@ -2708,7 +2817,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		scrollFrame:SetScrollChild(scrollChild)
 
 		--Update scroll speed
-		t.scrollSpeed = t.scrollSpeed or 0.25
+		t.scrollSpeed = (t.scrollSpeed or 0.25)
 
 		--Override the built-in update function
 		scrollFrame.ScrollBar.SetPanExtentPercentage = function() --WATCH: Change when Blizzard provides a better way
@@ -2970,8 +3079,6 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		local width, height = 0, 0
 		local defaultsWarning
 
-		--[ Wrapper Table ]
-
 		---@class settingsPage
 		---@field canvas? Frame The settings page canvas frame to house the options widgets
 		---@field category? table The registered settings category page
@@ -3005,7 +3112,13 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		---Open the Settings window to this category page
 		--- - ***Note:*** No category page will be opened if **WidgetToolsDB.lite** is true.
 		function page.open()
-			if WidgetToolsDB.lite or not page.category then return end --ADD: tip about lite mode, how to disable it
+			if WidgetToolsDB.lite or not page.category then
+				print(CreateSimpleTextureMarkup(ns.textures.logo, 9) .. " " .. ns.title .. " " .. ns.strings.chat.lite.reminder:gsub(
+					"#COMMAND", "/" .. ns.chat.keyword .. ns.chat.commands.lite
+				))
+
+				return
+			end
 
 			Settings.OpenToCategory(page.category:GetID())
 		end
@@ -3052,12 +3165,12 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		---Call to reset all options in this category page to their default values
 		---***
 		---@param user? boolean Whether to mark the call as being the result of a user interaction | ***Default:*** false
-		function page.defaults(user)
+		function page.default(user)
 			--Update with default values
 			if t.optionsKeys then for i = 1, #t.optionsKeys do wt.ResetOptionsData(t.optionsKeys[i]) end end
 
 			--Call listener
-			if t.onDefaults then t.onDefaults(user == true) end
+			if t.onDefault then t.onDefault(user == true, false) end
 		end
 
 		--[ Settings Page ]
@@ -3137,10 +3250,10 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				disabled = t.static,
 			})
 
-			defaultsWarning = wt.CreatePopupDialogueData(addon, (t.name or "") .. "_Defaults", {
+			defaultsWarning = wt.CreatePopupDialogueData(addon, (t.name or "") .. "DEFAULT", {
 				text = ns.toolboxStrings.settings.warningSingle:gsub("#PAGE", wt.Color(title, colors.highlight)),
 				accept = ACCEPT,
-				onAccept = function() page.defaults(true) end
+				onAccept = function() page.default(true) end,
 			})
 
 			wt.CreateSimpleButton({
@@ -3225,8 +3338,6 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		t = t or {}
 
-		--[ Wrapper Table ]
-
 		---@class optionsCategory
 		---@field pages settingsPage[]
 		local category = { pages = {} }
@@ -3249,21 +3360,21 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		---Call to reset all options to their default values for all pages in this category
 		---***
 		---@param user? boolean Whether to mark the call as being the result of a user interaction | ***Default:*** false
-		---@param callListeners? boolean If true, call the **onDefaults** listeners (if set) of each individual category page separately | ***Default:*** false
+		---@param callListeners? boolean If true, call the **onDefault** listeners (if set) of each individual category page separately | ***Default:*** false
 		function category.defaults(user, callListeners)
 			for i = 1, #category.pages do
 				local optionsKeys = category.pages[i].getProperty("optionsKeys")
-				local onDefaults = category.pages[i].getProperty("onDefaults")
+				local onDefault = not callListeners and category.pages[i].getProperty("onDefault") or nil
 
 				--Update with default values
 				if optionsKeys then for i = 1, #optionsKeys do wt.ResetOptionsData(optionsKeys[i]) end end
 
 				--Call listeners
-				if callListeners and onDefaults then onDefaults(user == true) end
+				if type(onDefault) == "function" then onDefault(user == true, true) end
 			end
 
 			--Call listener
-			if t.onDefaults then t.onDefaults(user == true) end
+			if type(t.onDefaults) == "function" then t.onDefaults(user == true) end
 		end
 
 		--[ Category Pages ]
@@ -3283,8 +3394,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			text = ns.toolboxStrings.settings.warning:gsub("#CATEGORY", wt.Color(parentTitle, colors.highlight)):gsub("#PAGE", wt.Color(parentTitle, colors.highlight)),
 			accept = ALL_SETTINGS,
 			alt = CURRENT_SETTINGS,
-			onAccept = category.defaults,
-			onAlt = function() parent.defaults(true) end
+			onAccept = function() category.defaults(true) end,
+			onAlt = function() parent.default(true) end,
 		})
 
 		--| Subcategories
@@ -3303,8 +3414,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				),
 				accept = ALL_SETTINGS,
 				alt = CURRENT_SETTINGS,
-				onAccept = category.defaults,
-				onAlt = function() pages[i].defaults(true) end
+				onAccept = function() category.defaults(true) end,
+				onAlt = function() pages[i].default(true) end,
 			})
 		end end
 
@@ -3347,8 +3458,6 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	function wt.CreateActionButton(t)
 		t = t or {}
 
-		--[ Wrapper Table ]
-
 		---@class actionButton
 		local button = {}
 
@@ -3356,7 +3465,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| State
 
-		local enabled = t.disabled ~= false
+		local enabled = t.disabled ~= true
 
 		--| Events
 
@@ -3685,7 +3794,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| Data
 
-		local default = t.default == true
+		t.default = t.default == true
+		local default = t.default
 		local value = t.value
 		if type(value) ~= "boolean" and type(t.getData) == "function" then value = t.getData() end
 		if type(value) ~= "boolean" then value = default end
@@ -3693,7 +3803,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| State
 
-		local enabled = t.disabled ~= false
+		local enabled = t.disabled ~= true
 
 		--| Events
 
@@ -3936,6 +4046,11 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| Label
 
+		t.font = t.font or {}
+		t.font.normal = t.font.normal or "GameFontHighlight"
+		t.font.highlight = t.font.highlight or "GameFontNormal"
+		t.font.disabled = t.font.disabled or "GameFontDisable"
+
 		local title = t.title or t.name or "Toggle"
 
 		toggle.label = wt.AddTitle({
@@ -3944,6 +4059,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				offset = { x = t.size.h * (30 / 29) + 6, },
 				text = title,
 				anchor = "LEFT",
+				font = t.font.normal,
 			} or nil,
 		})
 
@@ -3979,18 +4095,18 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		end)
 
 		--Linked mouse interactions
-		toggle.frame:HookScript("OnEnter", function() if toggle.button:IsEnabled() then
+		toggle.frame:HookScript("OnEnter", function() if toggle.isEnabled() then
 			toggle.button.HoverBackground:Show()
 			if IsMouseButtonDown("LeftButton") then toggle.button:SetButtonState("PUSHED") end
 		end end)
-		toggle.frame:HookScript("OnLeave", function() if toggle.button:IsEnabled() then
+		toggle.frame:HookScript("OnLeave", function() if toggle.isEnabled() then
 			toggle.button.HoverBackground:Hide()
 			toggle.button:SetButtonState("NORMAL")
 		end end)
-		toggle.frame:HookScript("OnMouseDown", function(_, button) if toggle.button:IsEnabled() and button == "LeftButton" or (button == "RightButton") then
+		toggle.frame:HookScript("OnMouseDown", function(_, button) if toggle.isEnabled() and button == "LeftButton" or (button == "RightButton") then
 			toggle.button:SetButtonState("PUSHED")
 		end end)
-		toggle.frame:HookScript("OnMouseUp", function(_, button, isInside) if toggle.button:IsEnabled() then
+		toggle.frame:HookScript("OnMouseUp", function(_, button, isInside) if toggle.isEnabled() then
 			toggle.button:SetButtonState("NORMAL")
 
 			if isInside and button == "LeftButton" then toggle.button:Click(button) end
@@ -3998,18 +4114,24 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| Tooltip
 
-		if t.tooltip then wt.AddTooltip(toggle.button, {
-			title = t.tooltip.title or title,
-			lines = t.default ~= nil and table.insert(t.tooltip.lines, { text = ns.toolboxStrings.default .. WrapTextInColorCode(
-				(t.default and VIDEO_OPTIONS_ENABLED or VIDEO_OPTIONS_DISABLED):lower(), t.default and "FFAAAAFF" or "FFFFAA66"
-			) }) or t.tooltip.lines,
-			anchor = "ANCHOR_NONE",
-			position = {
-				anchor = "BOTTOMLEFT",
-				relativeTo = toggle.button,
-				relativePoint = "TOPRIGHT",
-			},
-		}, { triggers = { toggle.frame, }, }) end
+		if t.tooltip then
+			local defaultValue
+			if t.showDefault ~= false then
+				defaultValue = WrapTextInColorCode((t.default and VIDEO_OPTIONS_ENABLED or VIDEO_OPTIONS_DISABLED):lower(), t.default and "FFAAAAFF" or "FFFFAA66")
+			end
+
+			wt.AddWidgetTooltipLines(t, defaultValue)
+			wt.AddTooltip(toggle.button, {
+				title = t.tooltip.title or title,
+				lines = t.tooltip.lines,
+				anchor = "ANCHOR_NONE",
+				position = {
+					anchor = "BOTTOMLEFT",
+					relativeTo = toggle.button,
+					relativePoint = "TOPRIGHT",
+				},
+			}, { triggers = { toggle.frame, }, })
+		end
 
 		--| Utility menu
 
@@ -4020,6 +4142,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				if t.default ~= nil then wt.CreateMenuButton(menu, { title = ns.toolboxStrings.value.restore, action = function() toggle.resetData() end }) end
 			end, condition = toggle.isEnabled })
 
+			--Add trigger
 			toggle.button:HookScript("OnMouseUp", function(_, button, isInside) if toggle.isEnabled() and isInside and button == "RightButton" then menu.open() end end)
 		end
 
@@ -4032,7 +4155,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			toggle.button:SetEnabled(state)
 			toggle.button:EnableMouse(state)
 
-			if toggle.label then toggle.label:SetFontObject(state and "GameFontNormal" or "GameFontDisable") end
+			if toggle.label then toggle.label:SetFontObject(state and t.font.normal or t.font.disabled) end
 		end
 
 		--Handle widget updates
@@ -4098,18 +4221,24 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| Tooltip
 
-		if t.tooltip then wt.AddTooltip(toggle.frame, {
-			title = t.tooltip.title or title,
-			lines = t.default ~= nil and table.insert(t.tooltip.lines, { text = ns.toolboxStrings.default .. WrapTextInColorCode(
-				(t.default and VIDEO_OPTIONS_ENABLED or VIDEO_OPTIONS_DISABLED):lower(), t.default and "FFAAAAFF" or "FFFFAA66"
-			) }) or t.tooltip.lines,
-			anchor = "ANCHOR_NONE",
-			position = {
-				anchor = "BOTTOMLEFT",
-				relativeTo = toggle.button,
-				relativePoint = "TOPRIGHT",
-			},
-		}, { triggers = { toggle.button, }, }) end
+		if t.tooltip then
+			local defaultValue
+			if t.showDefault ~= false then
+				defaultValue = WrapTextInColorCode((t.default and VIDEO_OPTIONS_ENABLED or VIDEO_OPTIONS_DISABLED):lower(), t.default and "FFAAAAFF" or "FFFFAA66")
+			end
+
+			wt.AddWidgetTooltipLines(t, defaultValue)
+			wt.AddTooltip(toggle.frame, {
+				title = t.tooltip.title or title,
+				lines = t.tooltip.lines,
+				anchor = "ANCHOR_NONE",
+				position = {
+					anchor = "BOTTOMLEFT",
+					relativeTo = toggle.button,
+					relativePoint = "TOPRIGHT",
+				},
+			}, { triggers = { toggle.button, }, })
+		end
 
 		--| Utility menu
 
@@ -4120,6 +4249,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				if t.default ~= nil then wt.CreateMenuButton(menu, { title = ns.toolboxStrings.value.restore, action = function() toggle.resetData() end }) end
 			end, condition = toggle.isEnabled })
 
+			--Add trigger
 			toggle.button:HookScript("OnMouseUp", function(_, button, isInside) if toggle.isEnabled() and isInside and button == "RightButton" then menu.open() end end)
 		end
 
@@ -4155,13 +4285,18 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| Label
 
+		t.font = t.font or {}
+		t.font.normal = t.font.normal or "GameFontHighlight"
+		t.font.highlight = t.font.highlight or "GameFontNormal"
+		t.font.disabled = t.font.disabled or "GameFontDisable"
+
 		local title = t.title or t.name or "Toggle"
 
 		if t.label ~= false then
 			toggle.label = _G[name .. "CheckboxText"]
 
 			toggle.label:SetPoint("LEFT", toggle.button, "RIGHT", 2, 0)
-			toggle.label:SetFontObject("GameFontHighlight")
+			toggle.label:SetFontObject(t.font.normal)
 
 			toggle.label:SetText(title)
 		else _G[name .. "CheckboxText"]:Hide() end
@@ -4187,18 +4322,18 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		end)
 
 		--Linked mouse interactions
-		toggle.frame:HookScript("OnEnter", function() if toggle.button:IsEnabled() then
+		toggle.frame:HookScript("OnEnter", function() if toggle.isEnabled() then
 			toggle.button:LockHighlight()
 			if IsMouseButtonDown("LeftButton") or (IsMouseButtonDown("RightButton")) then toggle.button:SetButtonState("PUSHED") end
 		end end)
-		toggle.frame:HookScript("OnLeave", function() if toggle.button:IsEnabled() then
+		toggle.frame:HookScript("OnLeave", function() if toggle.isEnabled() then
 			toggle.button:UnlockHighlight()
 			toggle.button:SetButtonState("NORMAL")
 		end end)
-		toggle.frame:HookScript("OnMouseDown", function(_, button) if toggle.button:IsEnabled() and button == "LeftButton" or (button == "RightButton") then
+		toggle.frame:HookScript("OnMouseDown", function(_, button) if toggle.isEnabled() and button == "LeftButton" or (button == "RightButton") then
 			toggle.button:SetButtonState("PUSHED")
 		end end)
-		toggle.frame:HookScript("OnMouseUp", function(_, button, isInside) if toggle.button:IsEnabled() then
+		toggle.frame:HookScript("OnMouseUp", function(_, button, isInside) if toggle.isEnabled() then
 			toggle.button:SetButtonState("NORMAL")
 
 			if isInside and button == "LeftButton" or (button == "RightButton") then toggle.button:Click(button) end
@@ -4212,7 +4347,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		local function updateState(_, state)
 			toggle.button:SetEnabled(state)
 
-			if toggle.label then toggle.label:SetFontObject(state and "GameFontHighlight" or "GameFontDisable") end
+			if toggle.label then toggle.label:SetFontObject(state and t.font.normal or t.font.disabled) end
 		end
 
 		--Handle widget updates
@@ -4411,7 +4546,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| State
 
-		local enabled = t.disabled ~= false
+		local enabled = t.disabled ~= true
 
 		--| Events
 
@@ -4736,7 +4871,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| State
 
-		local enabled = t.disabled ~= false
+		local enabled = t.disabled ~= true
 
 		--| Events
 
@@ -4955,8 +5090,6 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	function wt.CreateMultiselector(t)
 		t = t or {}
 
-		--[ Wrapper Table ]
-
 		---@class multiselector
 		local selector = {}
 
@@ -4993,7 +5126,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| State
 
-		local enabled = t.disabled ~= false
+		local enabled = t.disabled ~= true
 
 		--| Events
 
@@ -5446,6 +5579,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 						if button == "LeftButton" then selector.setSelected(item.index, true)
 						elseif t.clearable and button == "RightButton" and not selector.getSelected() then selector.setSelected(nil, true) end
 					end, },
+					showDefault = false,
 					utilityMenu = false,
 				}, item)
 			elseif active then
@@ -5489,21 +5623,27 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| Tooltip
 
-		if t.tooltip then wt.AddTooltip(selector.frame, {
-			title = t.tooltip.title or title,
-			lines = t.default and table.insert(t.tooltip.lines, {
-				text = ns.toolboxStrings.default .. WrapTextInColorCode(t.items[t.default].title or tostring(t.default), "FFFFFFFF")
-			}) or t.tooltip.lines,
-			anchor = "ANCHOR_RIGHT",
-		}) end
+		if t.tooltip then
+			local defaultValue
+			if t.showDefault ~= false then defaultValue = WrapTextInColorCode(t.default and t.items[t.default].title or tostring(t.default), "FFFFFFFF") end
+
+			wt.AddWidgetTooltipLines(t, defaultValue)
+			wt.AddTooltip(selector.frame, {
+				title = t.tooltip.title or title,
+				lines = t.tooltip.lines,
+				anchor = "ANCHOR_RIGHT",
+			})
+		end
 
 		--| Utility menu
 
-		if t.utilityMenu ~= false then wt.CreateContextMenu({ parent = selector.frame, initialize = function(menu)
-			wt.CreateMenuTextline(menu, { text = title })
-			wt.CreateMenuButton(menu, { title = ns.toolboxStrings.value.revert, action = function() selector.revertData() end })
-			if t.default then wt.CreateMenuButton(menu, { title = ns.toolboxStrings.value.restore, action = function() selector.resetData() end }) end
-		end, condition = selector.isEnabled }) end
+		if t.utilityMenu ~= false then
+			wt.CreateContextMenu({ parent = selector.frame, initialize = function(menu)
+				wt.CreateMenuTextline(menu, { text = title })
+				wt.CreateMenuButton(menu, { title = ns.toolboxStrings.value.revert, action = function() selector.revertData() end })
+				if t.default then wt.CreateMenuButton(menu, { title = ns.toolboxStrings.value.restore, action = function() selector.resetData() end }) end
+			end, condition = selector.isEnabled })
+		end
 
 		return selector
 	end
@@ -5563,11 +5703,10 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		---@param limited boolean
 		local function setLock(item, limited)
 			if limited then
-				item.button:SetButtonState("DISABLED")
-				item.button:UnlockHighlight()
+				item.setEnabled(false, true)
 				item.button:SetAlpha(0.4)
 			elseif selector.isEnabled() then
-				item.button:SetButtonState("NORMAL")
+				item.setEnabled(true, true)
 				item.button:SetAlpha(1)
 			end
 		end
@@ -5592,16 +5731,11 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					},
 					size = { w = (t.width and t.columns == 1) and t.width or 160, h = 16 },
 					events = { OnClick = function(self) selector.setSelected(item.index, self:GetChecked(), true) end, },
-					listeners = { enabled = { { handler = function(self, state)
-						if self.label then self.label:SetFontObject(state and "GameFontHighlightSmall" or "GameFontDisableSmall") end
-					end, callIndex = 1 }, }, },
+					showDefault = false,
 					utilityMenu = false,
 				}, item)
 
-				if item.label then
-					item.label:SetFontObject("GameFontHighlightSmall")
-					item.label:SetIgnoreParentAlpha(true)
-				end
+				if item.label then item.label:SetIgnoreParentAlpha(true) end
 
 				--Handle limit updates
 				selector.setListener.limited(function(_, min, max)
@@ -5648,27 +5782,34 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| Tooltip
 
-		local defaultValue = ns.toolboxStrings.default
+		if t.tooltip then
+			local defaultValue
+			if t.showDefault ~= false then
+				defaultValue = ""
+				for i = 1, #t.items do
+					defaultValue = defaultValue .. "\n" .. WrapTextInColorCode(t.items[i].title, "FFFFFFFF") .. WrapTextInColorCode(": ", "FF999999") .. WrapTextInColorCode(
+						(t.default[i] and VIDEO_OPTIONS_ENABLED or VIDEO_OPTIONS_DISABLED):lower(), t.default[i] and "FFAAAAFF" or "FFFFAA66"
+					)
+				end
+			end
 
-		for i = 1, #t.default do
-			defaultValue = defaultValue .. "\n" .. WrapTextInColorCode(t.items[i].title, "FFFFFFFF") .. WrapTextInColorCode(": ", "FF999999") .. WrapTextInColorCode(
-				(t.default[i] and VIDEO_OPTIONS_ENABLED or VIDEO_OPTIONS_DISABLED):lower(), t.default[i] and "FFAAAAFF" or "FFFFAA66"
-			)
+			wt.AddWidgetTooltipLines(t, defaultValue)
+			wt.AddTooltip(selector.frame, {
+				title = t.tooltip.title or title,
+				lines = t.tooltip.lines,
+				anchor = "ANCHOR_RIGHT",
+			})
 		end
-
-		if t.tooltip then wt.AddTooltip(selector.frame, {
-			title = t.tooltip.title or title,
-			lines = t.default and table.insert(t.tooltip.lines, { text = defaultValue }) or t.tooltip.lines,
-			anchor = "ANCHOR_RIGHT",
-		}) end
 
 		--| Utility menu
 
-		if t.utilityMenu ~= false then wt.CreateContextMenu({ parent = selector.frame, initialize = function(menu)
-			wt.CreateMenuTextline(menu, { text = title })
-			wt.CreateMenuButton(menu, { title = ns.toolboxStrings.value.revert, action = function() selector.revertData() end })
-			if t.default then wt.CreateMenuButton(menu, { title = ns.toolboxStrings.value.restore, action = function() selector.resetData() end }) end
-		end, condition = selector.isEnabled }) end
+		if t.utilityMenu ~= false then
+			wt.CreateContextMenu({ parent = selector.frame, initialize = function(menu)
+				wt.CreateMenuTextline(menu, { text = title })
+				wt.CreateMenuButton(menu, { title = ns.toolboxStrings.value.revert, action = function() selector.revertData() end })
+				if t.default then wt.CreateMenuButton(menu, { title = ns.toolboxStrings.value.restore, action = function() selector.resetData() end }) end
+			end, condition = selector.isEnabled })
+		end
 
 		return selector
 	end
@@ -6070,21 +6211,27 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| Tooltip
 
-		if t.tooltip then wt.AddTooltip(selector.dropdown, {
-			title = t.tooltip.title or title,
-			lines = t.default and table.insert(t.tooltip.lines, {
-				text = ns.toolboxStrings.default .. WrapTextInColorCode(t.items[t.default].title or tostring(t.default), "FFFFFFFF")
-			}) or t.tooltip.lines,
-			anchor = "ANCHOR_RIGHT",
-		}) end
+		if t.tooltip then
+			local defaultValue
+			if t.showDefault ~= false then defaultValue = WrapTextInColorCode(t.default and t.items[t.default].title or tostring(t.default), "FFFFFFFF") end
+
+			wt.AddWidgetTooltipLines(t, defaultValue)
+			wt.AddTooltip(selector.dropdown, {
+				title = t.tooltip.title or title,
+				lines = t.tooltip.lines,
+				anchor = "ANCHOR_RIGHT",
+			})
+		end
 
 		--| Utility menu
 
-		if t.utilityMenu ~= false then wt.CreateContextMenu({ parent = selector.dropdown, initialize = function(menu)
-			wt.CreateMenuTextline(menu, { text = title })
-			wt.CreateMenuButton(menu, { title = ns.toolboxStrings.value.revert, action = function() selector.revertData() end })
-			if t.default then wt.CreateMenuButton(menu, { title = ns.toolboxStrings.value.restore, action = function() selector.resetData() end }) end
-		end, condition = selector.isEnabled }) end
+		if t.utilityMenu ~= false then
+			wt.CreateContextMenu({ parent = selector.dropdown, initialize = function(menu)
+				wt.CreateMenuTextline(menu, { text = title })
+				wt.CreateMenuButton(menu, { title = ns.toolboxStrings.value.revert, action = function() selector.revertData() end })
+				if t.default then wt.CreateMenuButton(menu, { title = ns.toolboxStrings.value.restore, action = function() selector.resetData() end }) end
+			end, condition = selector.isEnabled })
+		end
 
 		--| State
 
@@ -6117,7 +6264,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		return selector
 	end
 
-	--[ Text Box ]
+	--[ Textbox ]
 
 	---Create a non-GUI textbox widget with data management logic
 	---***
@@ -6136,14 +6283,15 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| Data
 
-		local default = type(t.default) == "string" and t.default or ""
+		t.default = type(t.default) == "string" and t.default or ""
+		local default = t.default
 		local value = type(t.value) == "string" and t.value or type(t.getData) == "function" and t.getData() or nil
 		value = type(value) == "string" and value or default
 		local snapshot = value
 
 		--| State
 
-		local enabled = t.disabled ~= false
+		local enabled = t.disabled ~= true
 
 		--| Events
 
@@ -6468,19 +6616,27 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| Tooltip
 
-		if t.tooltip then wt.AddTooltip(textbox.editbox, {
-			title = t.tooltip.title or title,
-			lines = t.default and table.insert(t.tooltip.lines, { text = ns.toolboxStrings.default .. WrapTextInColorCode(t.default, "FF55DD55") }) or t.tooltip.lines,
-			anchor = "ANCHOR_RIGHT",
-		}) end
+		if t.tooltip then
+			local defaultValue
+			if t.showDefault ~= false then defaultValue = WrapTextInColorCode(t.default, "FF55DD55") end
+
+			wt.AddWidgetTooltipLines(t, defaultValue)
+			wt.AddTooltip(textbox.editbox, {
+				title = t.tooltip.title or title,
+				lines = t.tooltip.lines,
+				anchor = "ANCHOR_RIGHT",
+			})
+		end
 
 		--| Utility menu
 
-		if t.utilityMenu ~= false then wt.CreateContextMenu({ parent = textbox.editbox, initialize = function(menu)
-			wt.CreateMenuTextline(menu, { text = title })
-			wt.CreateMenuButton(menu, { title = ns.toolboxStrings.value.revert, action = function() textbox.revertData() end })
-			if t.default then wt.CreateMenuButton(menu, { title = ns.toolboxStrings.value.restore, action = function() textbox.resetData() end }) end
-		end, condition = function() return textbox.isEnabled() and not t.readOnly end }) end
+		if t.utilityMenu ~= false then
+			wt.CreateContextMenu({ parent = textbox.editbox, initialize = function(menu)
+				wt.CreateMenuTextline(menu, { text = title })
+				wt.CreateMenuButton(menu, { title = ns.toolboxStrings.value.revert, action = function() textbox.revertData() end })
+				if t.default then wt.CreateMenuButton(menu, { title = ns.toolboxStrings.value.restore, action = function() textbox.resetData() end }) end
+			end, condition = function() return textbox.isEnabled() and not t.readOnly end })
+		end
 	end
 
 	---Create a default single-line Blizzard editbox GUI frame with enhanced widget functionality
@@ -6675,19 +6831,30 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| Tooltip
 
-		if t.tooltip then wt.AddTooltip(textbox.scrollFrame, {
-			title = t.tooltip.title or title,
-			lines = t.default and table.insert(t.tooltip.lines, { text = ns.toolboxStrings.default .. WrapTextInColorCode(t.default, "FF55DD55") }) or t.tooltip.lines,
-			anchor = "ANCHOR_RIGHT",
-		}, { triggers = { textbox.frame, textbox.editbox }, }) end
+		if t.tooltip then
+			if t.readOnly ~= true then
+				local defaultValue
+				if t.showDefault ~= false then defaultValue = WrapTextInColorCode(t.default, "FF55DD55") end
+
+				wt.AddWidgetTooltipLines(t, defaultValue)
+			end
+
+			wt.AddTooltip(textbox.scrollFrame, {
+				title = t.tooltip.title or title,
+				lines = t.tooltip.lines,
+				anchor = "ANCHOR_RIGHT",
+			}, { triggers = { textbox.frame, textbox.editbox }, })
+		end
 
 		--| Utility menu
 
-		if t.utilityMenu ~= false then wt.CreateContextMenu({ parent = textbox.frame, initialize = function(menu)
-			wt.CreateMenuTextline(menu, { text = title })
-			wt.CreateMenuButton(menu, { title = ns.toolboxStrings.value.revert, action = function() textbox.revertData() end })
-			if t.default then wt.CreateMenuButton(menu, { title = ns.toolboxStrings.value.restore, action = function() textbox.resetData() end }) end
-		end, condition = function() return textbox.isEnabled() and not t.readOnly end }) end
+		if t.utilityMenu ~= false then
+			wt.CreateContextMenu({ parent = textbox.frame, initialize = function(menu)
+				wt.CreateMenuTextline(menu, { text = title })
+				wt.CreateMenuButton(menu, { title = ns.toolboxStrings.value.revert, action = function() textbox.revertData() end })
+				if t.default then wt.CreateMenuButton(menu, { title = ns.toolboxStrings.value.restore, action = function() textbox.resetData() end }) end
+			end, condition = function() return textbox.isEnabled() and not t.readOnly end })
+		end
 
 		return textbox
 	end
@@ -6700,8 +6867,6 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	function wt.CreateCopybox(t)
 		t = t or {}
 		t.value = t.value or ""
-
-		--[ Wrapper Table ]
 
 		---@class copybox
 		local copybox = {}
@@ -6749,9 +6914,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 			--| Textbox
 
-			t.font = t.font or {}
-			t.font.normal = t.font.normal or "GameFontNormalSmall"
-			t.font.disabled = t.font.disabled or "GameFontNormalSmall"
+			t.font = t.font or "GameFontNormalSmall"
 			t.color = t.color or { r = 0.6, g = 0.8, b = 1, a = 1 }
 			t.colorOnMouse = t.colorOnMouse or { r = 0.8, g = 0.95, b = 1, a = 1 }
 
@@ -6763,7 +6926,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				tooltip = { lines = { { text = ns.toolboxStrings.copyBox, }, } },
 				position = { anchor = "BOTTOMLEFT", },
 				size = t.size,
-				font = t.font,
+				font = { normal = t.font, disabled = t.font },
 				color = t.color,
 				justify = { h = t.justify, },
 				events = {
@@ -6792,6 +6955,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					end,
 				},
 				value = t.value,
+				showDefault = false,
 				utilityMenu = false,
 			})
 		end
@@ -6799,7 +6963,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		return copybox
 	end
 
-	--[ Slider ]
+	--[ Numeric ]
 
 	---Create a non-GUI numeric widget with data management logic
 	---***
@@ -6827,7 +6991,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		---@param v any
 		---@return number|nil
 		local function verify(v)
-			return Clamp(type(v) == "number" and v or default, limitMin, limitMax)
+			v = Clamp(type(v) == "number" and v or default, limitMin, limitMax)
+
+			return v
 		end
 
 		default = verify(t.default)
@@ -6836,7 +7002,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| State
 
-		local enabled = t.disabled ~= false
+		local enabled = t.disabled ~= true
 
 		--| Events
 
@@ -7197,6 +7363,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					OnEscapePressed = function(self) self.setText(tostring(wt.Round(numeric.slider:GetValue(), decimals)):gsub(matchPattern, replacePattern)) end,
 				},
 				value = tostring(numeric.getNumber()):gsub(matchPattern, replacePattern),
+				showDefault = false,
 				utilityMenu = false,
 			})
 
@@ -7231,7 +7398,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				font = {
 					normal = "GameFontHighlightMedium",
 					highlight = "GameFontHighlightMedium",
-					disabled = "GameFontDisableMed2",
+					disabled = "GameFontDisableMed2"
 				},
 				backdrop = {
 					background = {
@@ -7386,19 +7553,30 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| Tooltip
 
-		if t.tooltip then wt.AddTooltip(numeric.slider, {
-			title = t.tooltip.title or title,
-			lines = t.default and table.insert(t.tooltip.lines, { text = ns.toolboxStrings.default .. WrapTextInColorCode(tostring(t.default), "FFDDDD55") }) or t.tooltip.lines,
-			anchor = "ANCHOR_RIGHT",
-		}, { triggers = { numeric.frame } }) end
+		if t.tooltip then
+			if t.readOnly ~= true then
+				local defaultValue
+				if t.showDefault ~= false then defaultValue = WrapTextInColorCode(tostring(t.default), "FFDDDD55") end
+
+				wt.AddWidgetTooltipLines(t, defaultValue)
+			end
+
+			wt.AddTooltip(numeric.slider, {
+				title = t.tooltip.title or title,
+				lines = t.tooltip.lines,
+				anchor = "ANCHOR_RIGHT",
+			}, { triggers = { numeric.frame } })
+		end
 
 		--| Utility menu
 
-		if t.utilityMenu ~= false then wt.CreateContextMenu({ parent = numeric.frame, initialize = function(menu)
-			wt.CreateMenuTextline(menu, { text = title })
-			wt.CreateMenuButton(menu, { title = ns.toolboxStrings.value.revert, action = function() numeric.revertData() end })
-			if t.default then wt.CreateMenuButton(menu, { title = ns.toolboxStrings.value.restore, action = function() numeric.resetData() end }) end
-		end, condition = numeric.isEnabled }) end
+		if t.utilityMenu ~= false then
+			wt.CreateContextMenu({ parent = numeric.frame, initialize = function(menu)
+				wt.CreateMenuTextline(menu, { text = title })
+				wt.CreateMenuButton(menu, { title = ns.toolboxStrings.value.revert, action = function() numeric.revertData() end })
+				if t.default then wt.CreateMenuButton(menu, { title = ns.toolboxStrings.value.restore, action = function() numeric.resetData() end }) end
+			end, condition = numeric.isEnabled })
+		end
 
 		--| State
 
@@ -7456,13 +7634,14 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		--| Data
 
 		local default = wt.PackColor(wt.UnpackColor(t.default))
+		wt.CopyValues(wt.AddMissing(wt.RemoveMismatch(wt.RemoveEmpty(t.default), default), default), default)
 		local value = t.value or type(t.getData) == "function" and t.getData() or nil
 		value = wt.PackColor(wt.UnpackColor(value))
 		local snapshot = value
 
 		--| State
 
-		local enabled = t.disabled ~= false
+		local enabled = t.disabled ~= true
 
 		--| Events
 
@@ -7883,6 +8062,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				OnEnterPressed = function(_, text) colorPicker.setColor(wt.PackColor(wt.HexToColor(text)), true) end,
 				OnEscapePressed = function(self) self.setText(wt.ColorToHex(colorPicker.getColor())) end,
 			},
+			showDefault = false,
 			utilityMenu = false,
 		})
 
@@ -7923,21 +8103,27 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| Tooltip
 
-		if t.tooltip then wt.AddTooltip(colorPicker.frame, {
-			title = t.tooltip.title or title,
-			lines = t.default and table.insert(t.tooltip.lines, {
-				text = ns.toolboxStrings.default .. WrapTextInColorCode(wt.ColorToHex(wt.UnpackColor(t.default)), "FFFFFFFF")
-			}) or t.tooltip.lines,
-			anchor = "ANCHOR_RIGHT",
-		}) end
+		if t.tooltip then
+			local defaultValue
+			if t.showDefault ~= false then defaultValue = "|TInterface/ChatFrame/ChatFrameBackground:12:12:0:0:16:16:0:16:0:16:" .. (t.default.r * 255) .. ":" .. (t.default.g * 255) .. ":" .. (t.default.b * 255) .. "|t " .. WrapTextInColorCode(wt.ColorToHex(wt.UnpackColor(t.default)), "FFFFFFFF") end
+
+			wt.AddWidgetTooltipLines(t, defaultValue)
+			wt.AddTooltip(colorPicker.frame, {
+				title = t.tooltip.title or title,
+				lines = t.tooltip.lines,
+				anchor = "ANCHOR_RIGHT",
+			})
+		end
 
 		--| Utility menu
 
-		if t.utilityMenu ~= false then wt.CreateContextMenu({ parent = colorPicker.frame, initialize = function(menu)
-			wt.CreateMenuTextline(menu, { text = title })
-			wt.CreateMenuButton(menu, { title = ns.toolboxStrings.value.revert, action = function() colorPicker.revertData() end })
-			if t.default then wt.CreateMenuButton(menu, { title = ns.toolboxStrings.value.restore, action = function() colorPicker.resetData() end }) end
-		end, condition = function() return colorPicker.isEnabled() and not ColorPickerFrame:IsVisible() end }) end
+		if t.utilityMenu ~= false then
+			wt.CreateContextMenu({ parent = colorPicker.frame, initialize = function(menu)
+				wt.CreateMenuTextline(menu, { text = title })
+				wt.CreateMenuButton(menu, { title = ns.toolboxStrings.value.revert, action = function() colorPicker.revertData() end })
+				if t.default then wt.CreateMenuButton(menu, { title = ns.toolboxStrings.value.restore, action = function() colorPicker.resetData() end }) end
+			end, condition = function() return colorPicker.isEnabled() and not ColorPickerFrame:IsVisible() end })
+		end
 
 		--| State
 
@@ -7982,6 +8168,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		t = t or {}
 		local data = {
+			title = wt.Clear(C_AddOns.GetAddOnMetadata(addon, "Title")):sub(1, -2),
 			version = C_AddOns.GetAddOnMetadata(addon, "Version"),
 			day = C_AddOns.GetAddOnMetadata(addon, "X-Day"),
 			month = C_AddOns.GetAddOnMetadata(addon, "X-Month"),
@@ -8000,7 +8187,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		return wt.CreateSettingsPage(addon, not WidgetToolsDB.lite and next(data) and {
 			register = t.register,
-			name = t.name or C_AddOns.GetAddOnMetadata(addon, "Title"),
+			name = t.name or data.title,
 			description = t.description or C_AddOns.GetAddOnMetadata(addon, "Notes"),
 			static = t.static ~= false,
 			initialize = function(canvas)
@@ -8011,7 +8198,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					parent = canvas,
 					name = "About",
 					title = ns.toolboxStrings.about.title,
-					description = ns.toolboxStrings.about.description:gsub("#ADDON", C_AddOns.GetAddOnMetadata(addon, "Title")),
+					description = ns.toolboxStrings.about.description:gsub("#ADDON", data.title),
 					arrange = {},
 					size = { h = 258 },
 					initialize = function(panel)
@@ -8248,7 +8435,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 										parent = canvas,
 										name = addon .. "Changelog",
 										append = false,
-										title = ns.toolboxStrings.about.fullChangelog.label:gsub("#ADDON", C_AddOns.GetAddOnMetadata(addon, "Title")),
+										title = ns.toolboxStrings.about.fullChangelog.label:gsub("#ADDON", data.title),
 										position = { anchor = "BOTTOMRIGHT", },
 										keepInBounds = true,
 										size = { w = 678, h = 610 },
@@ -8259,7 +8446,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 											wt.CreateMultilineEditbox({
 												parent = windowPanel,
 												name = "FullChangelog",
-												title = ns.toolboxStrings.about.fullChangelog.label:gsub("#ADDON", C_AddOns.GetAddOnMetadata(addon, "Title")),
+												title = ns.toolboxStrings.about.fullChangelog.label:gsub("#ADDON", data.title),
 												label = false,
 												tooltip = { lines = { { text = ns.toolboxStrings.about.fullChangelog.tooltip, }, } },
 												arrange = {},
@@ -8362,9 +8549,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	function wt.CreateDataManagementPage(addon, t)
 		if not addon or not C_AddOns.IsAddOnLoaded(addon) or not t.accountData or not t.characterData or not t.settingsData or not t.defaultsTable then return end
 
-		local addonTitle = C_AddOns.GetAddOnMetadata(addon, "Title")
-
-		--[ Wrapper Table ]
+		local addonTitle = wt.Clear(C_AddOns.GetAddOnMetadata(addon, "Title"))
 
 		---@class dataManagementPage
 		---@field profiles? table Collection of profiles settings widgets
@@ -8403,10 +8588,16 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			onSave = t.onSave,
 			onLoad = t.onLoad,
 			onCancel = t.onCancel,
-			onDefault = t.onDefaults,
+			onDefault = t.onDefault,
 			initialize = function(canvas)
 
 				--[ Profile Management ]
+
+				--Profile delete confirmation
+				local deleteProfilePopup = wt.CreatePopupDialogueData(addon, "DELETE_PROFILE", { accept = DELETE, })
+
+				--Profile reset confirmation
+				local resetProfilePopup = wt.CreatePopupDialogueData(addon, "RESET_PROFILE")
 
 				--| Utilities
 
@@ -8491,7 +8682,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					t.characterData.activeProfile = index
 
 					--Call listener
-					if t.onProfileActivated then t.onProfileActivated(t.characterData.activeProfile) end
+					if t.onProfileActivated then t.onProfileActivated(t.accountData.profiles[index].title, index) end
 
 					return t.characterData.activeProfile
 				end
@@ -8499,11 +8690,14 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				---Activate the specified settings profile
 				---***
 				---@param index integer Index of the profile to set as the currently active settings profile
+				---@return boolean # True on success, false if the operation failed
 				function dataManagement.activateProfile(index)
-					if not activateProfile(index) then return end
+					if not activateProfile(index) then return false end
 
 					--Update dropdown selection
 					if dataManagement.profiles then dataManagement.profiles.apply.setText(index) end
+
+					return true
 				end
 
 				---Create a new settings profile
@@ -8527,7 +8721,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					if dataManagement.profiles then dataManagement.profiles.apply.updateItems(t.accountData.profiles) end
 
 					--Call listener
-					if t.onProfileCreated then t.onProfileCreated(index) end
+					if t.onProfileCreated then t.onProfileCreated(t.accountData.profiles[index].title, index) end
 
 					--Activate the new profile
 					if apply ~= false then dataManagement.activateProfile(index) end
@@ -8536,38 +8730,64 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				---Delete the specified profile
 				---***
 				---@param index? integer Index of the profile to delete the data and dropdown item of | ***Default:*** **t.characterData.activeProfile**
-				function dataManagement.deleteProfile(index)
-					if index and not t.accountData.profiles[index] then return end
+				---@param unsafe? boolean If false, show a popup confirmation before attempting to delete the specified profile | ***Default:*** false
+				---@return boolean # True on success, false if the operation failed
+				function dataManagement.deleteProfile(index, unsafe)
+					if index and not t.accountData.profiles[index] then return false end
 
 					index = index or t.characterData.activeProfile
 					local title = t.accountData.profiles[index].title
 
-					--Delete profile data
-					table.remove(t.accountData.profiles, index)
+					local delete = function()
+						--Delete profile data
+						table.remove(t.accountData.profiles, index)
 
-					--Update dropdown items
-					if dataManagement.profiles then dataManagement.profiles.apply.updateItems(t.accountData.profiles) end
+						--Update dropdown items
+						if dataManagement.profiles then dataManagement.profiles.apply.updateItems(t.accountData.profiles) end
 
-					--Call listener
-					if t.onProfileDeleted then t.onProfileDeleted(title, index) end
+						--Call listener
+						if t.onProfileDeleted then t.onProfileDeleted(title, index) end
 
-					--Activate the replacement profile
-					if t.characterData.activeProfile == index then activateProfile(index) end
+						--Activate the replacement profile
+						if t.characterData.activeProfile == index then activateProfile(index) end
+					end
+
+					if unsafe then delete() else StaticPopup_Show(wt.UpdatePopupDialogueData(deleteProfilePopup, {
+						text = ns.toolboxStrings.profiles.delete.warning:gsub("#PROFILE", wt.Color(t.accountData.profiles[index].title, colors.highlight)):gsub("#ADDON", addonTitle),
+						onAccept = delete,
+					})) end
+
+					return true
 				end
 
-				---Restore the specified profile data to default values
+				---Reset the specified profile data to default values
 				---***
 				---@param index? integer Index of the profile to restore to defaults | ***Default:*** **t.characterData.activeProfile**
-				function dataManagement.resetProfile(index)
-					if index and not t.accountData.profiles[index] then return end
+				---@param unsafe? boolean If false, show a popup confirmation before attempting to reset the specified profile | ***Default:*** false
+				---@return boolean # True on success, false if the operation failed
+				function dataManagement.resetProfile(index, unsafe)
+					if index and not t.accountData.profiles[index] then return false end
 
 					index = index or t.characterData.activeProfile
 
-					--Update the profile in storage (without breaking table references)
-					wt.CopyValues(t.accountData.profiles[index].data, t.defaultsTable)
+					local function reset()
+						if index and not t.accountData.profiles[index] then return end
 
-					--Call listener
-					if t.onProfileReset then t.onProfileReset(t.characterData.activeProfile) end
+						index = index or t.characterData.activeProfile
+
+						--Update the profile in storage (without breaking table references)
+						wt.CopyValues(t.accountData.profiles[index].data, t.defaultsTable)
+
+						--Call listener
+						if t.onProfileReset then t.onProfileReset(t.accountData.profiles[index].title, index) end
+					end
+
+					if unsafe then reset() else StaticPopup_Show(wt.UpdatePopupDialogueData(resetProfilePopup, {
+						text = ns.toolboxStrings.profiles.reset.warning:gsub("#PROFILE", wt.Color(t.accountData.profiles[index].title, colors.highlight)):gsub("#ADDON", addonTitle),
+						onAccept = reset,
+					}))end
+
+					return true
 				end
 
 				---Load profiles data
@@ -8650,7 +8870,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 								width = 180,
 								items = t.accountData.profiles,
 								selected = t.characterData.activeProfile,
-								listeners = { selected = { { handler = activateProfile, }, }, },
+								listeners = { selected = { { handler = function(_, index) activateProfile(index) end, }, }, },
 							})
 
 							dataManagement.profiles.new = wt.CreateSimpleButton({
@@ -8663,7 +8883,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 									offset = { x = -312, y = -30 }
 								},
 								size = { w = 112, h = 26 },
-								action = function() dataManagement.newProfile(nil, #t.accountData.profiles) end,
+								action = function() dataManagement.newProfile(nil, #t.accountData.profiles + 1) end,
 							})
 
 							dataManagement.profiles.duplicate = wt.CreateSimpleButton({
@@ -8710,12 +8930,6 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 								end,
 							})
 
-							local deleteProfilePopup = wt.CreatePopupDialogueData(addon, "DELETE_PROFILE", {
-								text = ns.toolboxStrings.profiles.delete.warning,
-								accept = DELETE,
-								onAccept = function() dataManagement.deleteProfile() end,
-							})
-
 							dataManagement.profiles.delete = wt.CreateSimpleButton({
 								parent = panel,
 								name = "Delete",
@@ -8726,7 +8940,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 									offset = { x = -12, y = -30 }
 								},
 								size = { w = 72, h = 26 },
-								action = function() StaticPopup_Show(deleteProfilePopup) end,
+								action = function() dataManagement.deleteProfile() end,
 								dependencies = { { frame = dataManagement.profiles.apply, evaluate = function() return #t.accountData.profiles > 1 end }, }
 							})
 						end,
@@ -8791,6 +9005,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 								unfocusOnEnter = false,
 								optionsKey = addon .. "Backup",
 								listeners = { loaded = { { handler = dataManagement.refreshBackupBox, }, }, },
+								showDefault = false,
 							})
 
 							dataManagement.backup.compact = wt.CreateCheckbox({
@@ -8808,6 +9023,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 								onChange = { RefreshBackupBox = dataManagement.refreshBackupBox },
 								listeners = { loaded = { { handler = function() dataManagement.backupAllProfiles.compact.button:SetChecked(t.settingsData.compactBackup) end, }, }, },
 								events = { OnClick = function(_, state) dataManagement.backupAllProfiles.compact.button:SetChecked(state) end },
+								showDefault = false,
+								utilityMenu = false,
 							})
 
 							local importPopup = wt.CreatePopupDialogueData(addon, "IMPORT", {
@@ -8886,6 +9103,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 										unfocusOnEnter = false,
 										optionsKey = addon .. "Backup",
 										listeners = { loaded = { { handler = dataManagement.refreshAllProfilesBackupBox, }, }, },
+										showDefault = false,
 									})
 
 									wt.CreateSimpleButton({
@@ -8947,9 +9165,11 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 									dataManagement.backup.compact.toggleState(true)
 									dataManagement.refreshAllProfilesBackupBox()
 								end },
+								showDefault = false,
+								utilityMenu = false,
 							})
 
-							local allProfilesImportPopup = wt.CreatePopupDialogueData(addon, "IMPORT_AllProfiles", {
+							local allProfilesImportPopup = wt.CreatePopupDialogueData(addon, "IMPORT_ALL", {
 								text = ns.toolboxStrings.backup.warning,
 								accept = ns.toolboxStrings.backup.import,
 								onAccept = function()
@@ -9012,7 +9232,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	--| Positioning
 
 	local positioningVisualAids = {}
-	if WidgetToolsDB.lite then WidgetToolsDB.positioningAids = false end
+
+	if WidgetToolsDB.lite or wt.classic then WidgetToolsDB.positioningAids = false end --TODO fix in Classic
 
 	---Create and set up position options for a specified frame within a panel frame
 	---***
@@ -9022,8 +9243,6 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	---@return positionPanel|nil table Components of the options panel wrapped in a table
 	function wt. CreatePositionOptions(addon, t)
 		if not addon or not C_AddOns.IsAddOnLoaded(addon) then return end
-
-		--[ Wrapper Table ]
 
 		---@class positionPanel
 		---@field layer? table
@@ -9157,7 +9376,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 						end
 
 						--Position
-						if panel.presetList[i].data.position then
+						if type(panel.presetList[i].data.position) == "table" then
 							--Update the frame
 							wt.SetPosition(t.frame, panel.presetList[i].data.position, true)
 
@@ -9174,14 +9393,14 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 						end
 
 						--Keep in bounds
-						if panel.presetList[i].data.keepInBounds then
+						if panel.presetList[i].data.keepInBounds ~= nil then
 							t.frame:SetClampedToScreen(panel.presetList[i].data.keepInBounds) --Update the frame
 							t.getData().keepInBounds = panel.presetList[i].data.keepInBounds --Update the storage
 							if panel.position.keepInBounds then panel.position.keepInBounds.loadData(false) end --Update the options widget
 						end
 
 						--Screen Layer
-						if panel.presetList[i].data.layer then
+						if type(panel.presetList[i].data.layer) == "table" then
 							--Frame strata
 							if panel.presetList[i].data.layer.strata then
 								t.frame:SetFrameStrata(panel.presetList[i].data.layer.strata) --Update the frame
@@ -9190,7 +9409,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 							end
 
 							--Keep on top
-							if panel.presetList[i].data.layer.keepOnTop then
+							if panel.presetList[i].data.layer.keepOnTop ~= nil then
 								t.frame:SetToplevel(panel.presetList[i].data.layer.keepOnTop) --Update the frame
 								t.getData().layer.keepOnTop = panel.presetList[i].data.layer.keepOnTop --Update the storage
 								if panel.layer.keepOnTop then panel.layer.keepOnTop.loadData(false) end --Update the options widget
@@ -9239,9 +9458,11 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 						arrange = {},
 						width = 180,
 						items = panel.presetList,
-						listeners = { selected = { { handler = applyPreset, }, }, },
+						listeners = {
+							loaded = t.presets and { { handler = function(self) self.setText(ns.toolboxStrings.presets.apply.select) end, }, } or nil,
+							selected = { { handler = applyPreset, }, },
+						},
 						optionsKey = t.optionsKey,
-						onLoad = function(self) self.setText(nil, nil, ns.toolboxStrings.presets.apply.select) end,
 					})
 
 					--[ Custom Preset ]
@@ -9290,17 +9511,17 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 							wt.CopyValues(t.presets.custom.getData(), panel.presetList[t.presets.custom.index].data)
 							if t.presets.custom.getData() then wt.CopyValues(t.presets.custom.getData(), t.presets.custom.getData()) end
 
-							--Apply the custom preset
-							panel.applyPreset(t.presets.custom.index)
-
 							--Call the specified handler
 							if t.presets.custom.onReset then t.presets.custom.onReset() end
+
+							--Apply the custom preset
+							panel.applyPreset(t.presets.custom.index)
 						end
 
 						--| Options Widgets
 
-						local savePopup = wt.CreatePopupDialogueData(addon, "SAVEPRESET", {
-							text = ns.toolboxStrings.presets.save.warning:gsub("#CUSTOM", panel.presetList[t.presets.custom.index].title),
+						local savePopup = wt.CreatePopupDialogueData(addon, "SAVE_PRESET", {
+							text = ns.toolboxStrings.presets.save.warning:gsub("#CUSTOM", wt.Color(panel.presetList[t.presets.custom.index].title, colors.highlight)),
 							accept = ns.toolboxStrings.override,
 							onAccept = panel.saveCustomPreset,
 						})
@@ -9318,8 +9539,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 							dependencies = t.dependencies
 						})
 
-						local resetPopup = wt.CreatePopupDialogueData(addon, "RESETPRESET", {
-							text = ns.toolboxStrings.presets.reset.warning:gsub("#CUSTOM", panel.presetList[t.presets.custom.index].title),
+						local resetPopup = wt.CreatePopupDialogueData(addon, "RESET_PRESET", {
+							text = ns.toolboxStrings.presets.reset.warning:gsub("#CUSTOM", wt.Color(panel.presetList[t.presets.custom.index].title, colors.highlight)),
 							accept = ns.toolboxStrings.override,
 							onAccept = panel.resetCustomPreset,
 						})
@@ -9348,7 +9569,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					tooltip = { lines = { { text = ns.toolboxStrings.position.relativePoint.tooltip:gsub("#FRAME", t.frameName), }, } },
 					arrange = {},
 					width = 140,
-					listeners = t.presets and { selected = { { handler = function() panel.presets.apply.setText(nil, nil, ns.toolboxStrings.presets.apply.select) end, }, }, } or nil,
+					listeners = t.presets and { selected = { { handler = function(_, _, user)
+						if user then panel.presets.apply.setText(ns.toolboxStrings.presets.apply.select) end
+					end, }, }, } or nil,
 					dependencies = t.dependencies,
 					optionsKey = t.optionsKey,
 					getData = function() return t.getData().position.relativePoint end,
@@ -9368,7 +9591,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					tooltip = { lines = { { text = ns.toolboxStrings.position.anchor.tooltip:gsub("#FRAME", t.frameName), }, } },
 					arrange = { newRow = false, },
 					width = 140,
-					listeners = t.presets and { selected = { { handler = function() panel.presets.apply.setText(nil, nil, ns.toolboxStrings.presets.apply.select) end, }, }, } or nil,
+					listeners = t.presets and { selected = { { handler = function(_, _, user)
+						if user then panel.presets.apply.setText(ns.toolboxStrings.presets.apply.select) end
+					end, }, }, } or nil,
 					dependencies = t.dependencies,
 					optionsKey = t.optionsKey,
 					getData = function() return t.getData().position.anchor end,
@@ -9432,6 +9657,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					optionsKey = t.optionsKey,
 					getData = function() return t.settingsData.keepInPlace end,
 					saveData = function(state) t.settingsData.keepInPlace = state end,
+					default = true,
+					showDefault = false,
+					utilityMenu = false,
 				})
 
 				panel.position.offset.x = wt.CreateNumericSlider({
@@ -9445,9 +9673,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					fractional = 2,
 					step = 1,
 					altStep = 25,
-					events = t.presets and {
-						OnValueChanged = function(_, _, user) if user then panel.presets.apply.setText(nil, nil, ns.toolboxStrings.presets.apply.select) end end,
-					} or nil,
+					listeners = t.presets and { changed = { { handler = function(_, _, user)
+						if user then panel.presets.apply.setText(ns.toolboxStrings.presets.apply.select) end
+					end, }, }, } or nil,
 					dependencies = t.dependencies,
 					optionsKey = t.optionsKey,
 					getData = function() return t.getData().position.offset.x end,
@@ -9470,9 +9698,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					fractional = 2,
 					step = 1,
 					altStep = 25,
-					events = t.presets and {
-						OnValueChanged = function(_, _, user) if user then panel.presets.apply.setText(nil, nil, ns.toolboxStrings.presets.apply.select) end end,
-					} or nil,
+					listeners = t.presets and { changed = { { handler = function(_, _, user)
+						if user then panel.presets.apply.setText(ns.toolboxStrings.presets.apply.select) end
+					end, }, }, } or nil,
 					dependencies = t.dependencies,
 					optionsKey = t.optionsKey,
 					getData = function() return t.getData().position.offset.y end,
@@ -9490,6 +9718,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					title = ns.toolboxStrings.position.keepInBounds.label,
 					tooltip = { lines = { { text = ns.toolboxStrings.position.keepInBounds.tooltip:gsub("#FRAME", t.frameName), }, } },
 					arrange = { newRow = false, },
+					listeners = t.presets and { toggled = { { handler = function(_, _, user)
+						if user then panel.presets.apply.setText(ns.toolboxStrings.presets.apply.select) end
+					end, }, }, } or nil,
 					dependencies = t.dependencies,
 					optionsKey = t.optionsKey,
 					getData = function() return t.getData().keepInBounds end,
@@ -9569,9 +9800,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 						tooltip = { lines = { { text = ns.toolboxStrings.layer.strata.tooltip:gsub("#FRAME", t.frameName), }, } },
 						arrange = {},
 						width = 140,
-						listeners = t.presets and {
-							selected = { { handler = function() panel.presets.apply.setText(nil, nil, ns.toolboxStrings.presets.apply.select) end, }, },
-						} or nil,
+						listeners = t.presets and { selected = { { handler = function(_, _, user)
+							if user then panel.presets.apply.setText(ns.toolboxStrings.presets.apply.select) end
+						end, }, }, } or nil,
 						dependencies = t.dependencies,
 						optionsKey = t.optionsKey,
 						getData = function() return t.getData().layer.strata end,
@@ -9589,6 +9820,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 						title = ns.toolboxStrings.layer.keepOnTop.label,
 						tooltip = { lines = { { text = ns.toolboxStrings.layer.keepOnTop.tooltip:gsub("#FRAME", t.frameName), }, } },
 						arrange = { newRow = false, },
+						listeners = t.presets and { toggled = { { handler = function(_, _, user)
+							if user then panel.presets.apply.setText(ns.toolboxStrings.presets.apply.select) end
+						end, }, }, } or nil,
 						dependencies = t.dependencies,
 						optionsKey = t.optionsKey,
 						getData = function() return t.getData().layer.keepOnTop end,
@@ -9610,9 +9844,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 						max = 10000,
 						step = 1,
 						altStep = 100,
-						events = t.presets and {
-							OnValueChanged = function(_, _, user) if user then panel.presets.apply.setText(nil, nil, ns.toolboxStrings.presets.apply.select) end end,
-						} or nil,
+						listeners = t.presets and { changed = { { handler = function(_, _, user)
+							if user then panel.presets.apply.setText(ns.toolboxStrings.presets.apply.select) end
+						end, }, }, } or nil,
 						dependencies = t.dependencies,
 						optionsKey = t.optionsKey,
 						getData = function() return t.getData().layer.level end,
@@ -9649,6 +9883,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 						-- panel.position.relativeTo.loadData(false)
 						panel.position.offset.x.loadData(false)
 						panel.position.offset.y.loadData(false)
+
+						--Update the positioning visual aids
+						if WidgetToolsDB.positioningAids then positioningVisualAids.update(t.frame, t.getData().position) end
 
 						--Call the specified handler
 						if t.setMovable.events.onStop then t.setMovable.events.onStop() end
