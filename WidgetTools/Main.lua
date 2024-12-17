@@ -317,6 +317,8 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 										saveData = function(state) toggleAddon(state) end,
 										listeners = { saved = { { handler = function(self) if not self.getState() then wt.CreateReloadNotice() end end, }, }, },
 										instantSave = false,
+										showDefault = false,
+										utilityMenu = false,
 									})
 
 									if toggle.frame then toggle.frame:SetIgnoreParentAlpha(true) end

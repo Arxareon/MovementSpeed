@@ -20,6 +20,7 @@ ns.changelog = {
 		"Added Cataclysm Classic 4.4.1, vanilla Classic 1.15.4 & The War Within 11.0.5 support.",
 		"Added Skyriding (Dragonriding) speed support for the Player Speed display.",
 		"A separate independently customizable Travel Speed display has been added (not available for Classic versions). Settings values can be copied by category from one display to the other.",
+		"Added a new #H_swap_# chat command to be able to change which display is modified by chat commands (Player Speed or Travel Speed - not available in Classic).",
 		"Added settings Profiles to be able to have different setups for different characters: settings profiles are shared on account but profiles can be chosen and applied on a per character basis. Usable via Data Management settings or chat commands (with limited functionality at present).",
 		"Added new display positioning options allowing for more fine-tuning.",
 		"Positioning visual aids have been added via Widget Tools (a foundational addon - also developed by me - Movement Speed is built with). Toggle the use of visual aids in the Widget Tools settings.",
@@ -27,6 +28,7 @@ ns.changelog = {
 		"Added a new shorter chat command : #H_/ms_# alongside #H_/movespeed_#.\n(If conflicts with other addons arise, please do report it as an issue so I can make adjustments in the future!)",
 		"#H_#C_Changes_# & #F_Fixes_#:_#",
 		"Shortcuts have been removed from the main addon settings page in Classic.",
+		"Readded the ability to open specific settings pages from the display right-click menus (as Blizzard has finally - mostly - solved the issue).",
 		"Now a different method is used for throttling speed updates to conserve some system memory.",
 		"The look of checkboxes have been updated to match the new settings style.",
 		"Significant under the hood improvements & fixes.",
@@ -484,6 +486,7 @@ local english = {
 		description = "Live movement status summary.",
 		playerSpeed = "Calculated based on the type of your current movement activity, modified by the Speed stat and various buffs, debuffs, mounts & other effects.",
 		travelSpeed = "Estimated by tracking your horizontal movement through the current zone, negatively affected by obstacles and the angle of movement during flight.",
+		instanceError = "Not available while in this instance!",
 		text = {
 			"#YARDS yards / second.",
 			"#PERCENT of the base running speed.",

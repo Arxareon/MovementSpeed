@@ -14,14 +14,8 @@ ns.tooltip = wt.CreateGameTooltip(ns.name)
 
 --[ References ]
 
---Local frames
 local frames = { playerSpeed = {}, }
 
---Chat control
----@type chatCommandManager
-local chatCommands
-
---Options frames & utilities
 local options = {
 	main = {},
 	playerSpeed = {
@@ -40,6 +34,9 @@ local options = {
 	},
 	dataManagement = {},
 }
+
+---@type chatCommandManager
+local chatCommands
 
 --Speed values
 local speed = {
@@ -186,22 +183,50 @@ end
 
 --[ Speed Update ]
 
----Format the specified speed value based on the DB specifications
+---Format the raw string of the specified speed textline to be replaced by speed values later
+---@param type "playerSpeed"|"targetSpeed"
+---@param units table
+---@param color? boolean
+local function FormatSpeedText(type, units, color)
+	speedText[type] = ""
+
+	if units[1] then
+		local sign = (type == "targetSpeed" and "%%" or "%")
+		speedText[type] = speedText[type] .. (color and wt.Color("#PERCENT" .. sign, ns.colors.green[2]) or "#PERCENT" .. sign)
+	end
+	if units[2] then
+		speedText[type] = speedText[type] .. ns.strings.speedValue.separator .. (color and wt.Color(ns.strings.speedValue.yps:gsub(
+			"#YARDS", wt.Color("#YARDS", ns.colors.yellow[2])
+		), ns.colors.yellow[1]) or ns.strings.speedValue.yps)
+	end
+
+	speedText[type] = speedText[type]:gsub("^" .. ns.strings.speedValue.separator, "")
+end
+
+---Return the specified speed textline with placeholders replaced by formatted speed values
 ---@param type "playerSpeed"|"targetSpeed"
 ---@return string
-local function FormatSpeedValue(type)
+local function GetSpeedText(type)
 	local f = max(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[type].value.fractionals, 1)
 
 	return speedText[type]:gsub(
 		"#PERCENT", wt.FormatThousands(
-			speed[type].yards / BASE_MOVEMENT_SPEED * 100, MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[type].value.fractionals, true, not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[type].value.zeros
-		) .. (type == "targetSpeed" and "%%%%" or "")
+			speed[type].yards / BASE_MOVEMENT_SPEED * 100,
+			MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[type].value.fractionals,
+			true,
+			not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[type].value.zeros
+		)
 	):gsub(
-		"#YARDS", wt.FormatThousands(speed[type].yards, MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[type].value.fractionals, true, not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[type].value.zeros)
+		"#YARDS", wt.FormatThousands(
+			speed[type].yards,
+			MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[type].value.fractionals,
+			true,
+			not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[type].value.zeros
+		)
 	)
 end
 
---Update the current Player Speed values accessible through **speed**
+--Update the Player Speed values
 local function UpdatePlayerSpeed()
 	speed.playerSpeed.yards = GetUnitSpeed(_G[UnitInVehicle] and UnitInVehicle("player") and "vehicle" or "player")
 
@@ -213,22 +238,7 @@ local function UpdatePlayerSpeed()
 	else frames.playerSpeed.display:Show() end
 
 	--Update the display text
-	frames.playerSpeed.text:SetText(" " .. FormatSpeedValue("playerSpeed"))
-end
-
----Refresh the specified speed text template string to be filled with speed values when displaying it
----@param template "playerSpeed"|"targetSpeed"
----@param units table
----@param color? boolean
-local function UpdateSpeedText(template, units, color)
-	speedText[template] = ""
-
-	if units[1] then speedText[template] = speedText[template] .. (color and wt.Color("#PERCENT%", ns.colors.green[2]) or "#PERCENT%") end
-	if units[2] then speedText[template] = speedText[template] .. ns.strings.speedValue.separator .. (color and wt.Color(ns.strings.speedValue.yps:gsub(
-		"#YARDS", wt.Color("#YARDS", ns.colors.yellow[2])
-	), ns.colors.yellow[1]) or ns.strings.speedValue.yps) end
-
-	speedText[template] = speedText[template]:gsub("^" .. ns.strings.speedValue.separator, "")
+	frames.playerSpeed.text:SetText(" " .. GetSpeedText("playerSpeed"))
 end
 
 --[ Speed Displays ]
@@ -302,16 +312,8 @@ local function SetDisplayValues(data)
 	wt.SetPosition(frames.playerSpeed.text, { anchor = data.playerSpeed.font.alignment, })
 end
 
----Assemble the detailed text lines for the tooltip of the specified speed display
----@return table textLines Table containing text lines to be added to the tooltip [indexed, 0-based]
---- - **text** string ― Text to be added to the line
---- - **font**? string | FontObject *optional* ― The FontObject to set for this line | ***Default:*** GameTooltipTextSmall
---- - **color**? table *optional* ― Table containing the RGB values to color this line with | ***Default:*** HIGHLIGHT_FONT_COLOR (white)
---- 	- **r** number ― Red [Range: 0 - 1]
---- 	- **g** number ― Green [Range: 0 - 1]
---- 	- **b** number ― Blue [Range: 0 - 1]
---- - **wrap**? boolean *optional* ― Allow this line to be wrapped | ***Default:*** true
-local function GetSpeedDisplayTooltipLines()
+---Assemble the detailed text lines for the tooltip of the Player Speed display
+local function GetPlayerSpeedTooltipLines()
 	return {
 		{ text = ns.strings.speedTooltip.description },
 		{ text = "\n" .. ns.strings.speedTooltip.playerSpeed, },
@@ -364,7 +366,6 @@ end
 --Stop updating the speed display
 local function StopSpeedDisplayUpdates()
 	frames.playerSpeed.updater:SetScript("OnUpdate", nil)
-	if frames.playerSpeed.updater.ticker then frames.playerSpeed.updater.ticker:Cancel() end
 end
 
 --[ Target Speed ]
@@ -372,7 +373,7 @@ end
 ---Assemble the text for the mouseover target's speed
 ---@return string
 local function GetTargetSpeedText()
-	return CreateSimpleTextureMarkup(ns.textures.logo) .. " " .. ns.strings.targetSpeed:gsub("#SPEED", wt.Color(FormatSpeedValue("targetSpeed"), ns.colors.grey[2]))
+	return CreateSimpleTextureMarkup(ns.textures.logo) .. " " .. ns.strings.targetSpeed:gsub("#SPEED", wt.Color(GetSpeedText("targetSpeed"), ns.colors.grey[2]))
 end
 
 --Set up the Target Speed unit tooltip integration
@@ -526,7 +527,7 @@ local function CreateSpeedValueOptions(panel, optionsKey)
 		saveData = function(selections) MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.value.units = selections end,
 		onChange = {
 			UpdateDisplaySize = function() SetDisplaySize() end,
-			UpdateSpeedTextTemplate = function() UpdateSpeedText("playerSpeed", MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.value.units, MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.font.valueColoring) end,
+			UpdateSpeedTextTemplate = function() FormatSpeedText("playerSpeed", MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.value.units, MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.font.valueColoring) end,
 		},
 		default = ns.profileDefault.playerSpeed.value.units
 	})
@@ -672,7 +673,7 @@ local function CreateFontOptions(panel, optionsKey)
 			UpdateDisplayFontColor = function() frames.playerSpeed.text:SetTextColor(wt.UnpackColor(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.font.valueColoring and ns.colors.grey[2] or MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.font.color)) end,
 			UpdateEmbeddedValueColoring = function()
 				if MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.font.valueColoring then
-					UpdateSpeedText("playerSpeed", MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.value.units, true)
+					FormatSpeedText("playerSpeed", MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.value.units, true)
 				else speedText["playerSpeed"] = wt.Clear(speedText["playerSpeed"]) end
 			end,
 		},
@@ -749,14 +750,12 @@ end
 ---Create the category page
 ---@return settingsPage
 local function CreateSpeedDisplayOptionsPage()
-	local optionsKeys = {
-		ns.name .. "PlayerSpeedVisibility",
-		ns.name .. "PlayerSpeedPosition",
-		ns.name .. "PlayerSpeedUpdates",
-		ns.name .. "PlayerSpeedValue",
-		ns.name .. "PlayerSpeedFont",
-		ns.name .. "PlayerSpeedBackground",
-	}
+	local optionsKeyVisibility = ns.name .. "PlayerSpeedVisibility"
+	local optionsKeyPosition = ns.name .. "PlayerSpeedPosition"
+	local optionsKeyUpdates = ns.name .. "PlayerSpeedUpdates"
+	local optionsKeyValue = ns.name .. "PlayerSpeedValue"
+	local optionsKeyFont = ns.name .. "PlayerSpeedFont"
+	local optionsKeyBackground = ns.name .. "PlayerSpeedBackground"
 
 	options.playerSpeed.page = wt.CreateSettingsPage(ns.name, {
 		name = "PlayerSpeed",
@@ -764,7 +763,14 @@ local function CreateSpeedDisplayOptionsPage()
 		description = ns.strings.options.playerSpeed.description:gsub("#ADDON", ns.title),
 		logo = ns.textures.logo,
 		scroll = { speed = 0.21 },
-		optionsKeys = optionsKeys,
+		optionsKeys = {
+			optionsKeyFont,
+			optionsKeyBackground,
+			optionsKeyValue,
+			optionsKeyUpdates,
+			optionsKeyPosition,
+			optionsKeyVisibility
+		},
 		storage = { { storageTable = MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed, defaultsTable = ns.profileDefault.playerSpeed, }, },
 		onDefault = function()
 			chatCommands.print(ns.strings.chat.default.responseCategory:gsub(
@@ -785,7 +791,7 @@ local function CreateSpeedDisplayOptionsPage()
 				title = ns.strings.options.speedDisplay.visibility.title,
 				description = ns.strings.options.speedDisplay.visibility.description:gsub("#ADDON", ns.title),
 				arrange = {},
-				initialize = function(panel) CreateVisibilityOptions(panel, optionsKeys[1]) end,
+				initialize = function(panel) CreateVisibilityOptions(panel, optionsKeyVisibility) end,
 				arrangement = {}
 			})
 
@@ -859,7 +865,7 @@ local function CreateSpeedDisplayOptionsPage()
 					end,
 				}, },
 				dependencies = { { frame = options.playerSpeed.visibility.hidden, evaluate = function(state) return not state end }, },
-				optionsKey = optionsKeys[2],
+				optionsKey = optionsKeyPosition,
 				getData = function() return MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed end,
 				defaultsTable = ns.profileDefault.playerSpeed,
 				settingsData = MovementSpeedCS.playerSpeed,
@@ -873,7 +879,7 @@ local function CreateSpeedDisplayOptionsPage()
 				title = ns.strings.options.speedDisplay.update.title,
 				description = ns.strings.options.speedDisplay.update.description,
 				arrange = {},
-				initialize = function(panel) CreateUpdateOptions(panel, optionsKeys[3]) end,
+				initialize = function(panel) CreateUpdateOptions(panel, optionsKeyUpdates) end,
 				arrangement = {}
 			})
 
@@ -885,7 +891,7 @@ local function CreateSpeedDisplayOptionsPage()
 				title = ns.strings.options.speedValue.title,
 				description = ns.strings.options.speedValue.description,
 				arrange = {},
-				initialize = function(panel) CreateSpeedValueOptions(panel, optionsKeys[4]) end,
+				initialize = function(panel) CreateSpeedValueOptions(panel, optionsKeyValue) end,
 				arrangement = {}
 			})
 
@@ -897,7 +903,7 @@ local function CreateSpeedDisplayOptionsPage()
 				title = ns.strings.options.speedDisplay.font.title,
 				description = ns.strings.options.speedDisplay.font.description,
 				arrange = {},
-				initialize = function(panel) CreateFontOptions(panel, optionsKeys[5]) end,
+				initialize = function(panel) CreateFontOptions(panel, optionsKeyFont) end,
 				arrangement = {}
 			})
 
@@ -909,7 +915,7 @@ local function CreateSpeedDisplayOptionsPage()
 				title = ns.strings.options.speedDisplay.background.title,
 				description = ns.strings.options.speedDisplay.background.description:gsub("#ADDON", ns.title),
 				arrange = {},
-				initialize = function(panel) CreateBackgroundOptions(panel, optionsKeys[6]) end,
+				initialize = function(panel) CreateBackgroundOptions(panel, optionsKeyBackground) end,
 				arrangement = {}
 			})
 		end,
@@ -949,7 +955,7 @@ local function CreateTargetSpeedValueOptions(panel)
 		optionsKey = ns.name .. "TargetSpeed",
 		getData = function() return MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.targetSpeed.value.units end,
 		saveData = function(selections) MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.targetSpeed.value.units = selections end,
-		onChange = { UpdateTargetSpeedTextTemplate = function() UpdateSpeedText("targetSpeed", MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.targetSpeed.value.units, true) end, },
+		onChange = { UpdateTargetSpeedTextTemplate = function() FormatSpeedText("targetSpeed", MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.targetSpeed.value.units, true) end, },
 		default = ns.profileDefault.targetSpeed.value.units
 	})
 
@@ -1085,7 +1091,7 @@ local function CreateContextMenu()
 end
 
 --Create main addon frame & display
-frames.main = wt.CreateBaseFrame({
+frames.main = wt.CreateFrame({
 	name = ns.name,
 	position = {},
 	onEvent = {
@@ -1314,9 +1320,10 @@ frames.main = wt.CreateBaseFrame({
 		PLAYER_ENTERING_WORLD = function(self)
 			self:UnregisterEvent("PLAYER_ENTERING_WORLD")
 
+			FormatSpeedText("playerSpeed", MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.value.units, MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.font.valueColoring)
+			FormatSpeedText("targetSpeed", MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.targetSpeed.value.units, true)
+
 			--Start speed updates
-			UpdateSpeedText("playerSpeed", MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.value.units, MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.font.valueColoring)
-			UpdateSpeedText("targetSpeed", MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.targetSpeed.value.units, true)
 			if not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.visibility.hidden then StartSpeedDisplayUpdates() end
 			if MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.targetSpeed.enabled then EnableTargetSpeedUpdates() end
 
@@ -1332,13 +1339,13 @@ frames.main = wt.CreateBaseFrame({
 
 		--| Player Speed
 
-		frames.playerSpeed.display = wt.CreateBaseFrame({
+		frames.playerSpeed.display = wt.CreateFrame({
 			parent = UIParent,
 			name = ns.name .. "PlayerSpeed",
 			customizable = true,
 			events = { OnUpdate = function(self)
 				--Update the tooltip
-				if self:IsMouseOver() and ns.tooltip:IsVisible() then wt.UpdateTooltip(self, { lines = GetSpeedDisplayTooltipLines("playerSpeed"), }) end
+				if self:IsMouseOver() and ns.tooltip:IsVisible() then wt.UpdateTooltip(self, { lines = GetPlayerSpeedTooltipLines("playerSpeed"), }) end
 			end, },
 			initialize = function(display, _, height)
 				--Tooltip
@@ -1359,14 +1366,14 @@ frames.main = wt.CreateBaseFrame({
 			end,
 		})
 
-		frames.playerSpeed.updater = wt.CreateBaseFrame({
+		frames.playerSpeed.updater = wt.CreateFrame({
 			parent = frame,
 			name = "PlayerSpeedUpdater",
 		})
 
 		--| Target Speed
 
-		frames.targetSpeed = wt.CreateBaseFrame({
+		frames.targetSpeed = wt.CreateFrame({
 			parent = frame,
 			name = "TargetSpeedUpdater",
 		})

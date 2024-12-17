@@ -180,7 +180,8 @@ local english = {
 		lite = {
 			description = "Toggle Lite Mode: to load dependant addon settings or not",
 			response = "Lite Mode will be #STATE after the interface is reloaded.",
-			reminder = "Lite Mode is enabled, settings for dependant addons have not been loaded.\nType #COMMAND to disable Lite Mode.",
+			reminder = "Lite Mode is enabled, settings for dependant addons have not been loaded.\n#HINT",
+			hint = "Type #COMMAND to disable Lite Mode.",
 		},
 		dump = {
 			description = "List out the Widget Tools settings data",

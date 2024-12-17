@@ -1119,21 +1119,6 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 	local positioningAid
 
-	---Create an optional frame with the specified parameters
-	---@generic T, Tp
-	---@param type? `T`|FrameType|"nil" ***Default:*** nil *(create no frame)*
-	---@param name? string Unique global name to set for the new frame | ***Default:*** nil *(anonymous frame)*
-	---@param parent? Frame? Reference to the frame to set as the parent of the new frame | ***Default:*** nil *(parentless frame)*
-	---@param template? `Tp`|Template Comma-separated list of [FrameXML templates](https://warcraft.wiki.gg/wiki/Virtual_XML_template) to set up the frame with
-	---@param id? number Custom ID to set for the new frame
-	--- - ***Note:*** Can be set via [Frame:SetID](https://warcraft.wiki.gg/wiki/API_Frame_SetID) any time.
-	---@return T|Tp|nil frame
-	function wt.CreateFrame(type, name, parent, template, id)
-		if not type then return end
-
-		return CreateFrame(type, name, parent, template, id)
-	end
-
 	---Set the position and anchoring of a frame when it is unknown which parameters will be nil
 	---***
 	---@param frame AnyFrameObject Reference to the frame to be moved
@@ -1606,19 +1591,20 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		setter()
 	end
 
-	--[ Batch Options Data Management ]
+	--[ Batched Options Data Management ]
 
 	---@class optionsTable
 	---@field rules table<string, optionsTableRule[]> Collection of rules describing where to save/load options data to/from, and what change handlers to call in the process linked to each specific options key
 	---@field changeHandlers table<string, function> List of change handlers linked to each specific options key
 	local optionsTable = { rules = {}, changeHandlers = {} }
 
-	---Add a connection between an options widget and a DB entry to the options data table under the specified options key
+	---Add a connection between an options widget and a DB entry to the options data table under the specified options key for batched data handling
 	---***
-	---@param widget checkbox|radioButton|radioSelector|checkboxSelector|specialSelector|dropdownSelector|textbox|multilineEditbox|numericSlider|colorPicker Reference to the widget to be saved & loaded data to/from with defined **loadData** and **saveData** functions
+	---@param widget checkbox|radioButton|radioSelector|checkboxSelector|specialSelector|dropdownSelector|textbox|multilineEditbox|numericSlider|colorPicker Reference to the widget to be saved & loaded data to/from with defined **widget.loadData()** & **widget.saveData()** functions
 	---@param optionsKey string A unique key referencing a collection of widget options data to be handled together
+	---@param index? integer Set when to call **widget.loadData()** & **widget.saveData()** in the execution order while saving or loading batched data via ***WidgetToolbox*.SaveOptionsData(optionsKey)** or ***WidgetToolbox*.LoadOptionsData(optionsKey, ...)** | ***Default:*** *placed at the end of the current list*
 	---@param onChange? table<string|integer, function|string> List of new or already defined functions to call after the value of the widget was changed by the user or via options data management<ul><li>**[*key*]**? string|integer ― A unique key to point to a newly defined function to be added to options data management or just the index of the next function name to be linked to **optionsKey** | ***Default:*** *next assigned index*</li><li>**[*value*]** function|string ― The new function to register under its unique key, or the key of an already existing function linked to **optionsKey**</li><ul><li>***Note:*** Function definitions will be replaced by key references when they are registered to options data management. Duplicate functions are overwritten.</li></ul></ul>
-	function wt.AddToOptionsTable(widget, optionsKey, onChange)
+	function wt.AddOptionsRule(widget, optionsKey, index, onChange)
 		if not widget or not optionsKey then return end
 
 		optionsTable.rules[optionsKey] = optionsTable.rules[optionsKey] or {}
@@ -1642,7 +1628,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		end
 
 		--Add the options data rules to the collection
-		table.insert(optionsTable.rules[optionsKey], { widget = widget, onChange = onChange })
+		if type(index) ~= "number" then table.insert(optionsTable.rules[optionsKey], { widget = widget, onChange = onChange })
+		else table.insert(optionsTable.rules[optionsKey], Clamp(wt.Round(index), 1, #optionsTable.rules[optionsKey] + 1), { widget = widget, onChange = onChange }) end
 	end
 
 	---Load all data from storage to the widgets specified in the options data list referenced by the options key by calling **[*widget*].loadData(...)** for each
@@ -2047,7 +2034,6 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	---@param owner Frame Owner frame the tooltip to be shown for
 	--- - ***Note:*** If **owner** doesn't have a **tooltipData** property, no tooltip will be shown.
 	---@param tooltipData? tooltipUpdateData The tooltip parameters are to be provided in this table | ***Default:*** **owner.tooltipData**
-	--- - ***Note:*** All values are optional, missing ones will be filled from **owner.tooltipData**.
 	---@param clearLines? boolean Replace **owner.tooltipData.lines** with **tooltipData.lines** instead of adjusting existing values | ***Default:*** true if **tooltipData.lines** ~= nil
 	---@param override? boolean Update **owner.tooltipData** values with corresponding values provided in **tooltipData** | ***Default:*** true
 	function wt.UpdateTooltip(owner, tooltipData, clearLines, override)
@@ -2703,13 +2689,13 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 	--[[ CONTAINERS ]]
 
-	--[ Basic Frame ]
+	--[ Base Frame ]
 
-	---Create & set up a new basic frame
+	---Create & set up a new base frame
 	---***
 	---@param t? frameCreationData Parameters are to be provided in this table
 	---@return Frame frame
-	function wt.CreateBaseFrame(t)
+	function wt.CreateFrame(t)
 		t = t or {}
 		t.size = t.size or {}
 		t.size.w = t.size.w or 0
@@ -2725,7 +2711,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		--| Position & dimensions
 
 		if t.keepInBounds then frame:SetClampedToScreen(true) end
-		if t.position then wt.SetPosition(frame, t.position) end
+		if t.arrange then frame.arrangementInfo = t.arrange elseif t.position then wt.SetPosition(frame, t.position) end
 
 		if t.size then frame:SetSize(t.size.w, t.size.h) end
 
@@ -2804,7 +2790,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		--[ Scroll Child ]
 
 		--Create scrollable child frame
-		local scrollChild = wt.CreateBaseFrame({
+		local scrollChild = wt.CreateFrame({
 			parent = scrollFrame,
 			name = parentName .. (name or "Scroller"),
 			append = false,
@@ -2838,7 +2824,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	function wt.CreatePanel(t)
 		t = t or {}
 
-		if WidgetToolsDB.lite and t.lite ~= false then return wt.CreateBaseFrame(t) end
+		if WidgetToolsDB.lite and t.lite ~= false then return wt.CreateFrame(t) end
 
 		--[ Frame Setup ]
 
@@ -2955,7 +2941,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		--| Trigger events
 
 		if t.rightClickMenu ~= false or t.leftClickMenu then t.parent:HookScript("OnMouseUp", function(_, button, isInside)
-			if not isInside or (t.rightClickMenu ~= false and button ~= "RightButton") or (t.leftClickMenu and button ~= "LeftButton") then return end
+			if not isInside or (button == "RightButton" and t.rightClickMenu == false) or (button == "LeftButton" and not t.leftClickMenu) then return end
 
 			menu.open()
 		end) end
@@ -2963,6 +2949,97 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		if t.hoverMenu then t.parent:HookScript("OnEnter", menu.open) end
 
 		return menu
+	end
+
+	---Create a Blizzard context menu attached to a custom button frame to open it
+	---***
+	---@param t popupMenuCreationData Parameters are to be provided in this table
+	---***
+	---@return Frame menu Table containing a reference to the root description of the context menu
+	---@return contextMenu|nil menu Table containing a reference to the root description of the context menu
+	function wt.CreatePopupMenu(t)
+		t = t or {}
+		t.size = t.size or {}
+		t.size.w = t.size.w or 180
+		t.size.h = t.size.h or 26
+
+		local buttonFrame = wt.CreateFrame({
+			parent = t.parent,
+			name = t.name or "PopupMenu",
+			customizable = true,
+			position = t.position,
+			arrange = t.arrange,
+			size = t.size,
+			events = t.events,
+			onEvent = t.onEvent,
+			initialize = function(frame)
+				wt.CreateText({
+					parent = frame,
+					name = "Label",
+					text = t.title,
+					position = { anchor = "LEFT", offset = { x = 12, }, },
+					justify = { h = "LEFT", },
+					width = t.size.w - 48,
+					font = "GameFontHighlight",
+				})
+
+				wt.CreateText({
+					parent = frame,
+					name = "Arrow",
+					text = "►",
+					position = { anchor = "RIGHT", offset = { x = -12, }, },
+					justify = { h = "RIGHT", },
+					width = 16,
+					font = "ChatFontNormal",
+					color = colors.highlight,
+				})
+
+				if type(t.tooltip) == "table" then wt.AddTooltip(frame, {
+					title = t.tooltip.title or t.title,
+					lines = t.tooltip.lines,
+					anchor = "ANCHOR_RIGHT",
+				}) end
+
+				wt.SetBackdrop(frame, {
+					background = {
+						texture = {
+							size = 5,
+							insets = { l = 3, r = 3, t = 3, b = 3 },
+						},
+						color = { r = 0.1, g = 0.1, b = 0.1, a = 0.9 },
+					},
+					border = {
+						texture = { width = 14, },
+						color = { r = 0.5, g = 0.5, b = 0.5, a = 0.9 },
+					}
+				},
+				{
+					OnEnter = { rule = function()
+						return IsMouseButtonDown() and {
+							background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
+							border = { color = { r = 0.42, g = 0.42, b = 0.42, a = 0.9 } }
+						} or {
+							background = { color = { r = 0.15, g = 0.15, b = 0.15, a = 0.9 } },
+							border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
+						}
+					end },
+					OnLeave = { rule = function() return {}, true end },
+					OnMouseDown = { rule = function() return {
+						background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
+						border = { color = { r = 0.42, g = 0.42, b = 0.42, a = 0.9 } }
+					} end },
+				})
+			end
+		})
+
+		local menu = wt.CreateContextMenu({
+			parent = buttonFrame,
+			leftClickMenu = true,
+			rightClickMenu = false,
+			initialize = t.initialize,
+		})
+
+		return buttonFrame, menu
 	end
 
 	---Create a submenu item for an already existing Blizzard context menu
@@ -3113,9 +3190,11 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		--- - ***Note:*** No category page will be opened if **WidgetToolsDB.lite** is true.
 		function page.open()
 			if WidgetToolsDB.lite or not page.category then
-				print(CreateSimpleTextureMarkup(ns.textures.logo, 9) .. " " .. ns.title .. " " .. ns.strings.chat.lite.reminder:gsub(
-					"#COMMAND", "/" .. ns.chat.keyword .. ns.chat.commands.lite
-				))
+				print(wt.Color(CreateSimpleTextureMarkup(ns.textures.logo, 9) .. " " .. ns.title, ns.colors.gold[1]) .. " " .. wt.Color(ns.strings.chat.lite.reminder:gsub(
+					"#HINT", wt.Color(ns.strings.chat.lite.hint:gsub(
+						"#COMMAND", wt.Color("/" .. ns.chat.keyword .. " " .. ns.chat.commands.lite, { r = 1, g = 1, b = 1, })
+					), ns.colors.grey[1])
+				), ns.colors.gold[2]))
 
 				return
 			end
@@ -3123,7 +3202,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			Settings.OpenToCategory(page.category:GetID())
 		end
 
-		--| Batch options data management
+		--| Batched options data management
 
 		---Call to force save the options in this category page
 		---***
@@ -3182,7 +3261,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			t.name = t.name and t.name:gsub("%s+", "")
 			width, height = SettingsPanel.Container.SettingsCanvas:GetSize()
 
-			page.canvas = wt.CreateBaseFrame({
+			page.canvas = wt.CreateFrame({
 				name = (t.append ~= false and t.name and addon or "") .. (t.name or addon) .. (t.appendOptions ~= false and "Options" or ""),
 				size = { w = width, h = height },
 				visible = false,
@@ -3344,7 +3423,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--[ Utilities ]
 
-		--| Batch options data management
+		--| Batched options data management
 
 		---Call to force update the options widgets for all pages in this category
 		---***
@@ -3433,8 +3512,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	local function addListener(listeners, event, listener, callIndex)
 		listeners[event] = type(listeners[event]) == "table" and listeners[event] or {}
 
-		if type(callIndex) == "number" then table.insert(listeners[event], min(wt.Round(callIndex), #listeners[event] + 1), listener)
-		else table.insert(listeners[event], listener) end
+		if type(callIndex) ~= "number" then table.insert(listeners[event], listener)
+		else table.insert(listeners[event], Clamp(wt.Round(callIndex), 1, #listeners[event] + 1), listener) end
 	end
 
 	---Call registered listeners for **event**
@@ -3601,7 +3680,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 			--Create a trigger to show the tooltip when the button is disabled
 			if not button.hoverTarget then
-				button.hoverTarget = wt.CreateFrame("Frame", name .. "HoverTarget", button.frame)
+				button.hoverTarget = CreateFrame("Frame", name .. "HoverTarget", button.frame)
 				button.hoverTarget:SetPoint("TOPLEFT")
 				button.hoverTarget:SetSize(button.frame:GetSize())
 				button.hoverTarget:Hide()
@@ -3685,7 +3764,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		local name = (t.append ~= false and t.parent and t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "Button")
 
-		button.frame = wt.CreateFrame("Button", name, t.parent, "UIPanelButtonTemplate")
+		button.frame = CreateFrame("Button", name, t.parent, "UIPanelButtonTemplate")
 
 		--| Label
 
@@ -3740,7 +3819,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		local name = (t.append ~= false and t.parent and t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "Button")
 
-		button.frame = wt.CreateFrame("Button", name, t.parent, BackdropTemplateMixin and "BackdropTemplate")
+		button.frame = CreateFrame("Button", name, t.parent, BackdropTemplateMixin and "BackdropTemplate")
 
 		--| Label
 
@@ -3984,7 +4063,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		end end end end
 
 		--Register to options data management
-		if t.optionsKey then wt.AddToOptionsTable(toggle, t.optionsKey, t.onChange) end
+		if t.optionsKey then wt.AddOptionsRule(toggle, t.optionsKey, t.optionsIndex, t.onChange) end
 
 		--Assign dependencies
 		if t.dependencies then wt.AddDependencies(t.dependencies, toggle.setEnabled) end
@@ -4016,8 +4095,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		local name = (t.append ~= false and t.parent and t.parent~= UIParent and t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "Toggle")
 
-		toggle.frame = wt.CreateFrame("Frame", name, t.parent)
-		toggle.button = wt.CreateFrame("CheckButton", name .. "Checkbox", toggle.frame, "SettingsCheckboxTemplate")
+		toggle.frame = CreateFrame("Frame", name, t.parent)
+		toggle.button = CreateFrame("CheckButton", name .. "Checkbox", toggle.frame, "SettingsCheckboxTemplate")
 
 		--| Position & dimensions
 
@@ -4278,10 +4357,10 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		local name = (t.append ~= false and t.parent and t.parent~= UIParent and t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "Toggle")
 
 		--Click target
-		toggle.frame = wt.CreateFrame("Frame", name, t.parent)
+		toggle.frame = CreateFrame("Frame", name, t.parent)
 
 		--Checkbox
-		toggle.button = wt.CreateFrame("CheckButton", name .. "Checkbox", toggle.frame, "InterfaceOptionsCheckButtonTemplate")
+		toggle.button = CreateFrame("CheckButton", name .. "Checkbox", toggle.frame, "InterfaceOptionsCheckButtonTemplate")
 
 		--| Label
 
@@ -4381,10 +4460,10 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		local name = (t.append ~= false and t.parent and t.parent~= UIParent and t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "Toggle")
 
 		--Click target
-		toggle.frame = wt.CreateFrame("Frame", name, t.parent)
+		toggle.frame = CreateFrame("Frame", name, t.parent)
 
 		--Radio button
-		toggle.button = wt.CreateFrame("CheckButton", name .. "RadioButton", toggle.frame, "UIRadioButtonTemplate")
+		toggle.button = CreateFrame("CheckButton", name .. "RadioButton", toggle.frame, "UIRadioButtonTemplate")
 
 		--| Label
 
@@ -4805,7 +4884,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		for i = 1, #t.items do setToggle(i) end
 
 		--Register to options data management
-		if t.optionsKey then wt.AddToOptionsTable(selector, t.optionsKey, t.onChange) end
+		if t.optionsKey then wt.AddOptionsRule(selector, t.optionsKey, t.optionsIndex, t.onChange) end
 
 		--Assign dependencies
 		if t.dependencies then wt.AddDependencies(t.dependencies, selector.setEnabled) end
@@ -5071,7 +5150,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		end end
 
 		--Register to options data management
-		if t.optionsKey then wt.AddToOptionsTable(selector, t.optionsKey, t.onChange) end
+		if t.optionsKey then wt.AddOptionsRule(selector, t.optionsKey, t.optionsIndex, t.onChange) end
 
 		--Assign dependencies
 		if t.dependencies then wt.AddDependencies(t.dependencies, selector.setEnabled) end
@@ -5440,7 +5519,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		for i = 1, #t.items do setToggle(t.items[i], i) end
 
 		--Register to options data management
-		if t.optionsKey then wt.AddToOptionsTable(selector, t.optionsKey, t.onChange) end
+		if t.optionsKey then wt.AddOptionsRule(selector, t.optionsKey, t.optionsIndex, t.onChange) end
 
 		--Assign dependencies
 		if t.dependencies then wt.AddDependencies(t.dependencies, selector.setEnabled) end
@@ -5474,7 +5553,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--[ Frame Setup ]
 
-		selector.frame = wt.CreateFrame("Frame", name, t.parent)
+		selector.frame = CreateFrame("Frame", name, t.parent)
 
 		--| Position & dimensions
 
@@ -5833,7 +5912,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		local name = (t.append ~= false and t.parent and t.parent~= UIParent and t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "Drorpdown")
 
-		selector.dropdown = wt.CreateFrame("Frame", name, t.parent)
+		selector.dropdown = CreateFrame("Frame", name, t.parent)
 
 		--| Position & dimensions
 
@@ -6464,7 +6543,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		end end end end
 
 		--Register to options data management
-		if t.optionsKey then wt.AddToOptionsTable(textbox, t.optionsKey, t.onChange) end
+		if t.optionsKey then wt.AddOptionsRule(textbox, t.optionsKey, t.optionsIndex, t.onChange) end
 
 		--Assign dependencies
 		if t.dependencies then wt.AddDependencies(t.dependencies, textbox.setEnabled) end
@@ -6658,8 +6737,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		local name = (t.append ~= false and t.parent and t.parent~= UIParent and t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "Textbox")
 		local custom = t.customizable and (BackdropTemplateMixin and "BackdropTemplate") or nil
 
-		textbox.frame = wt.CreateFrame("Frame", name, t.parent)
-		textbox.editbox = wt.CreateFrame("EditBox", name .. "EditBox", textbox.frame, custom or "InputBoxTemplate")
+		textbox.frame = CreateFrame("Frame", name, t.parent)
+		textbox.editbox = CreateFrame("EditBox", name .. "EditBox", textbox.frame, custom or "InputBoxTemplate")
 
 		--| Dimensions
 
@@ -6695,8 +6774,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		local name = (t.append ~= false and t.parent and t.parent~= UIParent and t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "Textbox")
 
-		textbox.frame = wt.CreateFrame("Frame", name, t.parent)
-		textbox.editbox = wt.CreateFrame("EditBox", name .. "EditBox", textbox.frame, BackdropTemplateMixin and "BackdropTemplate")
+		textbox.frame = CreateFrame("Frame", name, t.parent)
+		textbox.editbox = CreateFrame("EditBox", name .. "EditBox", textbox.frame, BackdropTemplateMixin and "BackdropTemplate")
 
 		--| Dimensions
 
@@ -6742,8 +6821,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		local name = (t.append ~= false and t.parent and t.parent~= UIParent and t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "Textbox")
 
-		textbox.frame = wt.CreateFrame("Frame", name, t.parent)
-		textbox.scrollFrame = wt.CreateFrame("ScrollFrame", name .. "ScrollFrame", textbox.frame, ScrollControllerMixin and "InputScrollFrameTemplate")
+		textbox.frame = CreateFrame("Frame", name, t.parent)
+		textbox.scrollFrame = CreateFrame("ScrollFrame", name .. "ScrollFrame", textbox.frame, ScrollControllerMixin and "InputScrollFrameTemplate")
 
 		---@type EditBox|nil
 		textbox.editbox = textbox.scrollFrame.EditBox
@@ -6879,7 +6958,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 			local name = (t.append ~= false and t.parent and t.parent~= UIParent and t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "Copybox")
 
-			copybox.frame = wt.CreateFrame("Frame", name, t.parent)
+			copybox.frame = CreateFrame("Frame", name, t.parent)
 
 			--| Position & dimensions
 
@@ -7223,7 +7302,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		end end end end
 
 		--Register to options data management
-		if t.optionsKey then wt.AddToOptionsTable(numeric, t.optionsKey, t.onChange) end
+		if t.optionsKey then wt.AddOptionsRule(numeric, t.optionsKey, t.optionsIndex, t.onChange) end
 
 		--Assign dependencies
 		if t.dependencies then wt.AddDependencies(t.dependencies, numeric.setEnabled) end
@@ -7254,8 +7333,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		local name = (t.append ~= false and t.parent and t.parent~= UIParent and t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "Slider")
 
-		numeric.frame = wt.CreateFrame("Frame", name, t.parent)
-		numeric.slider = wt.CreateFrame("Slider", name .. "Frame", numeric.frame, "OptionsSliderTemplate")
+		numeric.frame = CreateFrame("Frame", name, t.parent)
+		numeric.slider = CreateFrame("Slider", name .. "Frame", numeric.frame, "OptionsSliderTemplate")
 		numeric.slider.min = _G[name .. "FrameLow"]
 		numeric.slider.max = _G[name .. "FrameHigh"]
 
@@ -7867,7 +7946,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		end end end end
 
 		--Register to options data management
-		if t.optionsKey then wt.AddToOptionsTable(colorPicker, t.optionsKey, t.onChange) end
+		if t.optionsKey then wt.AddOptionsRule(colorPicker, t.optionsKey, t.optionsIndex, t.onChange) end
 
 		--Assign dependencies
 		if t.dependencies then wt.AddDependencies(t.dependencies, colorPicker.setEnabled) end
@@ -7898,7 +7977,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		local name = (t.append ~= false and t.parent and t.parent~= UIParent and t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "ColorPicker")
 
-		colorPicker.frame = wt.CreateFrame("Frame", name, t.parent)
+		colorPicker.frame = CreateFrame("Frame", name, t.parent)
 
 		--| Position & dimensions
 
@@ -9252,7 +9331,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		--[ Visual Aids ]
 
 		if WidgetToolsDB.positioningAids then
-			positioningVisualAids.frame = positioningVisualAids.frame or wt.CreateBaseFrame({
+			positioningVisualAids.frame = positioningVisualAids.frame or wt.CreateFrame({
 				name = "WidgetToolsPositioningVisualAids",
 				position = { anchor = "CENTER", },
 				size = { w = GetScreenWidth() / C_CVar.GetCVar("uiScale") - 14, h = GetScreenHeight() / C_CVar.GetCVar("uiScale") - 14 },
@@ -9442,27 +9521,25 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 						--Apply the preset data to the frame & update the options widgets
 						applyPreset(nil, i)
 
-						--Update the preset selection
-						panel.presets.apply.setText(i)
-
 						return true
 					end
 
 					--| Options widgets
 
-					panel.presets.apply = wt.CreateDropdownSelector({
+					panel.presets.applyButton, panel.presets.applyMenu = wt.CreatePopupMenu({
 						parent = panelFrame,
 						name = "ApplyPreset",
 						title = ns.toolboxStrings.presets.apply.label,
 						tooltip = { lines = { { text = ns.toolboxStrings.presets.apply.tooltip:gsub("#FRAME", t.frameName), }, } },
 						arrange = {},
-						width = 180,
-						items = panel.presetList,
-						listeners = {
-							loaded = t.presets and { { handler = function(self) self.setText(ns.toolboxStrings.presets.apply.select) end, }, } or nil,
-							selected = { { handler = applyPreset, }, },
-						},
-						optionsKey = t.optionsKey,
+						initialize = function(menu)
+							wt.CreateMenuTextline(menu, { text = ns.toolboxStrings.presets.apply.select, })
+
+							for i = 1, #panel.presetList do wt.CreateMenuButton(menu, {
+								title = panel.presetList[i].title,
+								action = function() panel.applyPreset(i) end,
+							}) end
+						end,
 					})
 
 					--[ Custom Preset ]
@@ -9494,9 +9571,6 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 							--Save the custom preset
 							wt.CopyValues(t.presets.custom.getData(), panel.presetList[t.presets.custom.index].data)
 							if t.presets.custom.getData() then wt.CopyValues(t.presets.custom.getData(), t.presets.custom.getData()) end
-
-							--Update the preset selection
-							panel.presets.apply.setText(t.presets.custom.index)
 
 							--Call the specified handler
 							if t.presets.custom.onSave then t.presets.custom.onSave() end
@@ -9562,6 +9636,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				panel.position = { offset = {}, }
 				local previousAnchor = t.getData().position.anchor
 
+				--| Options widgets
+
 				panel.position.relativePoint = wt.CreateSpecialRadioSelector("anchor", {
 					parent = panelFrame,
 					name = "RelativePoint",
@@ -9569,9 +9645,6 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					tooltip = { lines = { { text = ns.toolboxStrings.position.relativePoint.tooltip:gsub("#FRAME", t.frameName), }, } },
 					arrange = {},
 					width = 140,
-					listeners = t.presets and { selected = { { handler = function(_, _, user)
-						if user then panel.presets.apply.setText(ns.toolboxStrings.presets.apply.select) end
-					end, }, }, } or nil,
 					dependencies = t.dependencies,
 					optionsKey = t.optionsKey,
 					getData = function() return t.getData().position.relativePoint end,
@@ -9591,11 +9664,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					tooltip = { lines = { { text = ns.toolboxStrings.position.anchor.tooltip:gsub("#FRAME", t.frameName), }, } },
 					arrange = { newRow = false, },
 					width = 140,
-					listeners = t.presets and { selected = { { handler = function(_, _, user)
-						if user then panel.presets.apply.setText(ns.toolboxStrings.presets.apply.select) end
-					end, }, }, } or nil,
 					dependencies = t.dependencies,
 					optionsKey = t.optionsKey,
+					optionsIndex = 1,
 					getData = function() return t.getData().position.anchor end,
 					saveData = function(value) t.getData().position.anchor = value end,
 					onChange = {
@@ -9673,11 +9744,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					fractional = 2,
 					step = 1,
 					altStep = 25,
-					listeners = t.presets and { changed = { { handler = function(_, _, user)
-						if user then panel.presets.apply.setText(ns.toolboxStrings.presets.apply.select) end
-					end, }, }, } or nil,
 					dependencies = t.dependencies,
 					optionsKey = t.optionsKey,
+					optionsIndex = 3,
 					getData = function() return t.getData().position.offset.x end,
 					saveData = function(value) t.getData().position.offset.x = value end,
 					onChange = {
@@ -9698,11 +9767,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					fractional = 2,
 					step = 1,
 					altStep = 25,
-					listeners = t.presets and { changed = { { handler = function(_, _, user)
-						if user then panel.presets.apply.setText(ns.toolboxStrings.presets.apply.select) end
-					end, }, }, } or nil,
 					dependencies = t.dependencies,
 					optionsKey = t.optionsKey,
+					optionsIndex = 4,
 					getData = function() return t.getData().position.offset.y end,
 					saveData = function(value) t.getData().position.offset.y = value end,
 					onChange = {
@@ -9718,9 +9785,6 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					title = ns.toolboxStrings.position.keepInBounds.label,
 					tooltip = { lines = { { text = ns.toolboxStrings.position.keepInBounds.tooltip:gsub("#FRAME", t.frameName), }, } },
 					arrange = { newRow = false, },
-					listeners = t.presets and { toggled = { { handler = function(_, _, user)
-						if user then panel.presets.apply.setText(ns.toolboxStrings.presets.apply.select) end
-					end, }, }, } or nil,
 					dependencies = t.dependencies,
 					optionsKey = t.optionsKey,
 					getData = function() return t.getData().keepInBounds end,
@@ -9793,6 +9857,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				if t.getData().layer and next(t.getData().layer) then
 					panel.layer = {}
 
+					--| Options widgets
+
 					if t.getData().layer.strata then panel.layer.strata = wt.CreateSpecialRadioSelector("frameStrata", {
 						parent = panelFrame,
 						name = "FrameStrata",
@@ -9800,9 +9866,6 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 						tooltip = { lines = { { text = ns.toolboxStrings.layer.strata.tooltip:gsub("#FRAME", t.frameName), }, } },
 						arrange = {},
 						width = 140,
-						listeners = t.presets and { selected = { { handler = function(_, _, user)
-							if user then panel.presets.apply.setText(ns.toolboxStrings.presets.apply.select) end
-						end, }, }, } or nil,
 						dependencies = t.dependencies,
 						optionsKey = t.optionsKey,
 						getData = function() return t.getData().layer.strata end,
@@ -9820,9 +9883,6 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 						title = ns.toolboxStrings.layer.keepOnTop.label,
 						tooltip = { lines = { { text = ns.toolboxStrings.layer.keepOnTop.tooltip:gsub("#FRAME", t.frameName), }, } },
 						arrange = { newRow = false, },
-						listeners = t.presets and { toggled = { { handler = function(_, _, user)
-							if user then panel.presets.apply.setText(ns.toolboxStrings.presets.apply.select) end
-						end, }, }, } or nil,
 						dependencies = t.dependencies,
 						optionsKey = t.optionsKey,
 						getData = function() return t.getData().layer.keepOnTop end,
@@ -9844,9 +9904,6 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 						max = 10000,
 						step = 1,
 						altStep = 100,
-						listeners = t.presets and { changed = { { handler = function(_, _, user)
-							if user then panel.presets.apply.setText(ns.toolboxStrings.presets.apply.select) end
-						end, }, }, } or nil,
 						dependencies = t.dependencies,
 						optionsKey = t.optionsKey,
 						getData = function() return t.getData().layer.level end,

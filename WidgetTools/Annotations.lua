@@ -344,15 +344,15 @@
 --[[ FONT & TEXT ]]
 
 ---@class justifyData
----@field h? string Horizontal alignment: "LEFT"|"RIGHT"|"CENTER"
----@field v? string Vertical alignment: "TOP"|"BOTTOM"|"MIDDLE"
+---@field h? JustifyHorizontal Horizontal text alignment
+---@field v? JustifyVertical Vertical text alignment
 
 ---@class justifyData_left
----@field h? string Horizontal alignment: "LEFT"|"RIGHT"|"CENTER" | ***Default:*** "LEFT"
----@field v? string Vertical alignment: "TOP"|"BOTTOM"|"MIDDLE" | ***Default:*** "MIDDLE"
+---@field h? JustifyHorizontal Horizontal text alignment| ***Default:*** "LEFT"
+---@field v? JustifyVertical Vertical text alignment | ***Default:*** "MIDDLE"
 
 ---@class justifyData_centered : justifyData_left
----@field h? string Horizontal alignment: "LEFT"|"RIGHT"|"CENTER" | ***Default:*** "CENTER"
+---@field h? JustifyHorizontal Horizontal text alignment| ***Default:*** "CENTER"
 
 ---@class fontData
 ---@field path string Path to the font file relative to the WoW client directory<ul><li>***Note:*** The use of "/" as separator is recommended (Example: Interface/AddOns/AddonNameKey/Fonts/Font.ttf), otherwise use "\\\\".</li><li>***Note*** **File format:** Font files must be in TTF or OTF format.</li></ul>
@@ -407,7 +407,7 @@
 ---@field text string Text to be shown as the main title of the frame
 ---@field font? string Name of the [Font](https://wowpedia.fandom.com/wiki/UIOBJECT_Font) object to be used for the [FontString](https://wowpedia.fandom.com/wiki/UIOBJECT_FontString) | ***Default:*** "GameFontNormal"
 ---@field color? colorData Apply the specified color to the title (overriding **t.title.font**)
----@field justify? string Set the horizontal alignment of the text: "LEFT"|"RIGHT"|"CENTER" (overriding **t.title.font**) | ***Default:*** "LEFT"
+---@field justify? JustifyHorizontal Set the horizontal text alignment (overriding **t.title.font**) | ***Default:*** "LEFT"
 
 ---@class descriptionData
 ---@field offset? offsetData The offset from the "BOTTOMLEFT" point of the main title
@@ -415,7 +415,7 @@
 ---@field text string Text to be shown as the description of the frame
 ---@field font? string Name of the [Font](https://wowpedia.fandom.com/wiki/UIOBJECT_Font) object to be used for the [FontString](https://wowpedia.fandom.com/wiki/UIOBJECT_FontString) | ***Default:*** "GameFontHighlightSmall"
 ---@field color? colorData Apply the specified color to the description (overriding **t.description.font**)
----@field justify? string Set the horizontal alignment of the text: "LEFT"|"RIGHT"|"CENTER" (overriding **t.description.font**) | ***Default:*** "LEFT"
+---@field justify? JustifyHorizontal Set the horizontal text alignment (overriding **t.description.font**) | ***Default:*** "LEFT"
 
 ---@class titleCreationData
 ---@field parent AnyFrameObject The frame panel to add the title & description to
@@ -573,7 +573,13 @@
 ---@field position? positionData_base Parameters to call [Region:SetPoint(...)](https://wowpedia.fandom.com/wiki/API_ScriptRegionResizing_SetPoint) with when the tooltip is not automatically positioned via **t.anchor** | ***Default:*** "TOPLEFT" if **tooltipData.anchor** == "ANCHOR_NONE"<ul><li>***Note:*** **t.offset** will be used when calling [Region:SetPoint(...)](https://wowpedia.fandom.com/wiki/API_ScriptRegionResizing_SetPoint) as well.</li></ul>
 ---@field flipColors? boolean Flip the default color values of the title and the text lines | ***Default:*** false
 
----@class tooltipUpdateData : tooltipData
+---@class tooltipUpdateData
+---@field title? string String to be shown as the tooltip title (text color: NORMAL_FONT_COLOR) | ***Default:*** **owner.tooltipData.title**
+---@field lines? tooltipLineData[] Table containing the lists of parameters for the text lines after the title | ***Default:*** **owner.tooltipData.lines**
+---@field tooltip? GameTooltip Reference to the tooltip frame to set up | ***Default:*** **owner.tooltipData.tooltip**
+---@field offset? offsetData Values to offset the position of **tooltipData.tooltip** by | ***Default:*** **owner.tooltipData.offset**
+---@field position? positionData_base Parameters to call [Region:SetPoint(...)](https://wowpedia.fandom.com/wiki/API_ScriptRegionResizing_SetPoint) with when the tooltip is not automatically positioned via **t.anchor** | ***Default:*** **owner.tooltipData.position**
+---@field flipColors? boolean Flip the default color values of the title and the text lines | ***Default:*** **owner.tooltipData.flipColors**
 ---@field anchor? TooltipAnchor [GameTooltip anchor](https://wowpedia.fandom.com/wiki/API_GameTooltip_SetOwner#Arguments) | ***Default:*** **owner.tooltipData.anchor**
 
 ---@class tooltipToggleData
@@ -614,13 +620,12 @@
 ---@field widget checkbox|radioButton|radioSelector|checkboxSelector|specialSelector|dropdownSelector|textbox|multilineEditbox|numericSlider|colorPicker Reference to the widget to be saved & loaded data to/from with defined **loadData** and **saveData** functions
 ---@field onChange? function[] List of functions called after the value of **widget** was changed by the user or via options data management
 
----@class optionsData_base
+---@class optionsKey
 ---@field optionsKey? string A unique key referencing a collection of widget options data to be handled together
 
----@class changeHandlerList : optionsData_base
+---@class optionsWidget : optionsKey
+---@field optionsIndex? integer Set when to place this widget in the execution order when saving or loading batched options data | ***Default:*** *placed at the end of the current list*
 ---@field onChange? table<string|integer, function|string> List of new or already defined functions to call after the value of the widget was changed by the user or via options data management<ul><li>**[*key*]**? string|integer ― A unique key to point to a newly defined function to be added to options data management or just the index of the next function name to be linked to **optionsKey** | ***Default:*** *next assigned index*</li><li>**[*value*]** function|string ― The new function to register under its unique key, or the key of an already existing function linked to **optionsKey**</li><ul><li>***Note:*** Function definitions will be replaced by key references when they are registered to options data management. Duplicate functions are overwritten.</li></ul></ul>
-
----@class optionsWidget : changeHandlerList
 ---@field instantSave? boolean Immediately commit the data to storage whenever it's changed via the widget | ***Default:*** true<ul><li>***Note:*** Any unsaved data will be saved when ***WidgetToolbox*.SaveOptionsData(optionsKey)** is executed.</li></ul>
 
 ---@class optionsFrame
@@ -675,7 +680,7 @@
 
 --[ Frame ]
 
----@class frameCreationData : positionableScreenObject, visibleObject_base, initializableContainer
+---@class frameCreationData : positionableScreenObject, arrangeableObject, visibleObject_base, initializableContainer
 ---@field parent? AnyFrameObject Reference to the frame to set as the parent of the new frame | ***Default:*** nil *(parentless frame)*<ul><li>***Note:*** You may use [Region:SetParent(...)](https://wowpedia.fandom.com/wiki/API_ScriptRegion_SetParent) to set the parent frame later.</li></ul>
 ---@field name? string Unique string used to set the name of the new frame | ***Default:*** nil *(anonymous frame)*<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
 ---@field append? boolean When setting the name, append **t.name** to the name of **t.parent** instead | ***Default:*** true if **t.name** ~= nil and **t.parent** ~= nil and **t.parent** ~= UIParent
@@ -767,10 +772,14 @@
 ---@class queuedMenuItem
 ---@field queue? boolean If true, the item will only appear when additional items are added to the menu | ***Default:*** false
 
+---@class sizeData_menuButton
+---@field w? number Width | ***Default:*** 180
+---@field h? number Height | ***Default:*** 26
+
 --| Constructors
 
 ---@class contextMenuCreationData_base
----@field initialize? fun(menu: rootDescription) This function will be called while setting up the container frame to perform specific tasks like creating content child frames right away<hr><p>@*param* `menu` rootDescription ― Reference to the container of menu elements (such as titles, widgets, dividers or other frames) to for menu items to be added to during initialization</p>
+---@field initialize? fun(menu: rootDescription) This function will be called while setting up the menu to perform specific tasks like creating menu content items right away<hr><p>@*param* `menu` rootDescription ― Reference to the container of menu elements (such as titles, widgets, dividers or other frames) for menu items to be added to during initialization</p>
 
 ---@class contextMenuCreationData : contextMenuCreationData_base
 ---@field parent AnyFrameObject? Reference to the frame to set as the parent | ***Default:*** UIParent *(opened at cursor position)*
@@ -780,7 +789,7 @@
 ---@field condition? fun(): boolean Function to call and evaluate before creating and opening the menu: if the returned value is not true, don't open the menu
 
 ---@class contextSubmenuCreationData : contextMenuCreationData_base
----@field title? string Text to be shown on the on the opener button item representing the submenu within the parent menu | ***Default:*** "Submenu"
+---@field title? string Text to be shown on the opener button item representing the submenu within the parent menu | ***Default:*** "Submenu"
 
 ---@class menuTextlineCreationData : queuedMenuItem
 ---@field text? string Text to be shown on the textline item within the parent menu | ***Default:*** "Title"
@@ -789,6 +798,12 @@
 ---@field title? string Text to be shown on the button item within the parent menu | ***Default:*** "Button"
 ---@field action? fun(...: any) Function to call when the button is clicked in the menu<hr><p>@*param* `...` any</p>
 
+---@class popupMenuCreationData : labeledChildObject, tooltipDescribableObject, positionableScreenObject, arrangeableObject, visibleObject_base, contextMenuCreationData_base
+---@field parent? AnyFrameObject Reference to the frame to set as the parent of the new frame | ***Default:*** nil *(parentless frame)*<ul><li>***Note:*** You may use [Region:SetParent(...)](https://wowpedia.fandom.com/wiki/API_ScriptRegion_SetParent) to set the parent frame later.</li></ul>
+---@field name? string Unique string used to set the frame name | ***Default:*** "PopupMenu"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
+---@field size? sizeData_menuButton
+---@field events? table<ScriptFrame, fun(...: any)|attributeEventData> Table of key, value pairs of the names of script event handlers to be set for the frame and the functions to assign as event handlers called when they trigger<ul><li>***Note:*** "[OnEvent](https://wowpedia.fandom.com/wiki/UIHANDLER_OnEvent)" handlers specified here will not be set. Handler functions for specific global events should be specified in the **t.onEvent** table.</li></ul>
+---@field onEvent? table<WowEvent, fun(self: Frame, ...: any)> Table of key, value pairs that holds global event tags & their corresponding event handlers to be registered for the frame<ul><li>***Note:*** You may want to include [Frame:UnregisterEvent(...)](https://wowpedia.fandom.com/wiki/API_Frame_UnregisterEvent) to prevent the handler function to be executed again.</li><li>***Example:*** "[ADDON_LOADED](https://wowpedia.fandom.com/wiki/ADDON_LOADED)" is fired repeatedly after each addon. To call the handler only after one specified addon is loaded, you may check the parameter the handler is called with. It's a good idea to unregister the event to prevent repeated calling for every other addon after the specified one has been loaded already.<pre>```function(self, addon)```<br>&#9;```if addon ~= "AddonNameSpace" then return end --Replace "AddonNameSpace" with the namespace of the specific addon to watch```<br>&#9;```self:UnregisterEvent("ADDON_LOADED")```<br>&#9;```--Do something```<br>```end```</pre></li></ul>
 
 --[[ SETTINGS ]]
 
@@ -832,7 +847,7 @@
 ---@field icon? string Path to the texture file to use as the icon of this settings page | ***Default:*** *the addon's logo specified in its TOC file with the "IconTexture" tag*
 ---@field titleIcon? boolean Append **t.icon** to the title of the button of the setting page in the AddOns list of the Settings window as well | ***Default:*** true if **t.register == true**
 ---@field scroll? settingsPageScrollData If set, make the canvas frame scrollable by creating a [ScrollFrame](https://wowpedia.fandom.com/wiki/UIOBJECT_ScrollFrame) as its child
----@field optionsKeys? string[] A list of unique keys linking collections of widget options data to be saved & loaded with this settings category page
+---@field optionsKeys? string[] A list of unique keys referencing collections of widget options data to be handled together via this settings category page in the specified order
 ---@field autoSave? boolean If true, automatically save the values of all widgets registered for options data management under options keys listed in **t.optionsKeys**, committing their data to storage via ***WidgetToolbox*.SaveOptionsData(...)** | ***Default:*** true if **t.optionsKeys** ~= nil<ul><li>***Note:*** If **t.optionsKeys** is not set, the automatic load will not be executed even if this is set to true.</li></ul>
 ---@field autoLoad? boolean If true, automatically load all data to the widgets registered for options data management under options keys listed in **t.optionsKeys** from storage via ***WidgetToolbox*.LoadOptionsData(...)** | ***Default:*** true if **t.optionsKeys** ~= nil<ul><li>***Note:*** If **t.optionsKeys** is not set, the automatic load will not be executed even if this is set to true.</li></ul>
 
@@ -1371,7 +1386,7 @@
 ---@field layer? DrawLayer
 ---@field font? string Name of the [Font](https://wowpedia.fandom.com/wiki/UIOBJECT_Font) object to be used for the [FontString](https://wowpedia.fandom.com/wiki/UIOBJECT_FontString) | ***Default:*** "GameFontNormalSmall"<ul><li>***Note:*** A new font object (or a modified copy of an existing one) can be created via ***WidgetToolbox*.CreateFont(...)** (even within this table definition).</li></ul>
 ---@field color? colorData Apply the specified color to the text (overriding **t.font**)
----@field justify? string Set the horizontal alignment of the label: "LEFT"|"RIGHT"|"CENTER" (overriding **t.font**) | ***Default:*** "LEFT"
+---@field justify? JustifyHorizontal Set the horizontal text alignment of the label (overriding **t.font**) | ***Default:*** "LEFT"
 ---@field flipOnMouse? boolean Hide/Reveal the editbox on mouseover instead of after a click | ***Default:*** false
 ---@field colorOnMouse? colorData If set, change the color of the text on mouseover to the specified color (if **t.flipOnMouse** is false) | ***Default:*** *no color change*
 ---@field value string The copyable text to be shown
@@ -1569,7 +1584,7 @@
 ---@class movabilityData_positioning : movabilityData
 ---@field modifier? ModifierKey The specific (or any) modifier key required to be pressed down to move **frame** (if **frame** has the "OnUpdate" script defined) | ***Default:*** "SHIFT"<ul><li>***Note:*** Used to determine the specific modifier check to use. Example: when set to "any" [IsModifierKeyDown](https://wowpedia.fandom.com/wiki/API_IsModifierKeyDown) is used.</li></ul>
 
----@class positionOptionsCreationData : optionsData_base
+---@class positionOptionsCreationData : optionsKey
 ---@field canvas Frame The canvas frame child item of an existing settings category page to add the position panel to
 ---@field frame AnyFrameObject Reference to the frame to create the position options for
 ---@field frameName string Include this string in the tooltips and descriptions of options widgets when referring to **t.frame**
