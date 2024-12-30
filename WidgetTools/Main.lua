@@ -90,9 +90,9 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 		name = "Specifications",
 		title = ns.strings.specifications.title,
 		description = ns.strings.specifications.description,
-		optionsKeys = { ns.name .. "Specifications", },
 		storage = { { storageTable = WidgetToolsDB, defaultsTable = ns.defaults, }, },
-		initialize = function(canvas)
+		dataManagement = {},
+		initialize = function(canvas, _, _, category, keys)
 			wt.CreatePanel({
 				parent = canvas,
 				name = "General",
@@ -102,7 +102,7 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 				initialize = function(panel)
 					local silentSave = false
 
-					local enableLitePopup = wt.CreatePopupDialogueData(ns.name, "ENABLE_LITE_MODE", {
+					local enableLitePopup = wt.RegisterPopupDialog(ns.name, "ENABLE_LITE_MODE", {
 						text = ns.strings.lite.enable.warning:gsub("#ADDON", addonTitle),
 						accept = ns.strings.lite.enable.accept,
 						onAccept = function()
@@ -112,7 +112,7 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 							chatCommands.print(ns.strings.chat.lite.response:gsub("#STATE", VIDEO_OPTIONS_ENABLED:lower()))
 						end,
 					})
-					local disableLitePopup = wt.CreatePopupDialogueData(ns.name, "DISABLE_LITE_MODE", {
+					local disableLitePopup = wt.RegisterPopupDialog(ns.name, "DISABLE_LITE_MODE", {
 						text = ns.strings.lite.disable.warning:gsub("#ADDON", addonTitle),
 						accept = ns.strings.lite.disable.accept,
 						onAccept = function()
@@ -129,10 +129,10 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 						title = ns.strings.specifications.general.lite.label,
 						tooltip = { lines = { { text = ns.strings.specifications.general.lite.tooltip:gsub("#COMMAND", WrapTextInColorCode("/wt lite", "FFFFFFFF")), }, } },
 						arrange = {},
-						optionsKey = ns.name .. "Specifications",
-						getData = function() return  end,
+						getData = function() return WidgetToolsDB.lite end,
 						saveData = function(state) WidgetToolsDB.lite = state end,
-						events = { OnClick = function() silentSave = true end, },
+						default = false,
+						instantSave = false,
 						listeners = {
 							saved = { { handler = function()
 								silentSave = false
@@ -147,8 +147,11 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 								liteToggle.setState(not state, false) --Wait for popup response
 							end }, },
 						},
-						instantSave = false,
-						default = false,
+						events = { OnClick = function() silentSave = true end, },
+						dataManagement = {
+							category = category,
+							key = keys[1],
+						},
 					})
 
 					wt.CreateCheckbox({
@@ -157,11 +160,14 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 						title = ns.strings.specifications.general.positioningAids.label,
 						tooltip = { lines = { { text = ns.strings.specifications.general.positioningAids.tooltip, }, } },
 						arrange = {},
-						optionsKey = ns.name .. "Specifications",
 						getData = function() return WidgetToolsDB.positioningAids end,
 						saveData = function(state) WidgetToolsDB.positioningAids = state end,
 						listeners = { saved = { { handler = function() if loaded.positioningAids ~= WidgetToolsDB.positioningAids then wt.CreateReloadNotice() end end, }, }, },
 						instantSave = false,
+						dataManagement = {
+							category = category,
+							key = keys[1],
+						},
 						default = not wt.classic, --TODO fix in Classic
 						disabled = wt.classic, --TODO fix in Classic
 					})
@@ -182,27 +188,30 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 						title = ns.strings.specifications.dev.frameAttributes.enabled.label,
 						tooltip = { lines = { { text = ns.strings.specifications.dev.frameAttributes.enabled.tooltip, }, } },
 						arrange = {},
-						optionsKey = ns.name .. "Specifications",
 						getData = function() return WidgetToolsDB.frameAttributes.enabled end,
 						saveData = function(state) WidgetToolsDB.frameAttributes.enabled = state end,
-						onChange = { ToggleWideFrameAttributes = function()
-							if WidgetToolsDB.frameAttributes.enabled then
-								if _G["TableAttributeDisplay"] then
-									TableAttributeDisplay:SetWidth(WidgetToolsDB.frameAttributes.width + 70)
-									TableAttributeDisplay.LinesScrollFrame:SetWidth(WidgetToolsDB.frameAttributes.width)
-								end
-
-								WidgetTools.frame:RegisterEvent("FRAMESTACK_VISIBILITY_UPDATED")
-							else
-								if _G["TableAttributeDisplay"] then
-									TableAttributeDisplay:SetWidth(500)
-									TableAttributeDisplay.LinesScrollFrame:SetWidth(430)
-								end
-
-								WidgetTools.frame:UnregisterEvent("FRAMESTACK_VISIBILITY_UPDATED")
-							end
-						end, },
 						default = false,
+						dataManagement = {
+							category = category,
+							key = keys[1],
+							onChange = { ToggleWideFrameAttributes = function()
+								if WidgetToolsDB.frameAttributes.enabled then
+									if _G["TableAttributeDisplay"] then
+										TableAttributeDisplay:SetWidth(WidgetToolsDB.frameAttributes.width + 70)
+										TableAttributeDisplay.LinesScrollFrame:SetWidth(WidgetToolsDB.frameAttributes.width)
+									end
+
+									WidgetTools.frame:RegisterEvent("FRAMESTACK_VISIBILITY_UPDATED")
+								else
+									if _G["TableAttributeDisplay"] then
+										TableAttributeDisplay:SetWidth(500)
+										TableAttributeDisplay.LinesScrollFrame:SetWidth(430)
+									end
+
+									WidgetTools.frame:UnregisterEvent("FRAMESTACK_VISIBILITY_UPDATED")
+								end
+							end, },
+						},
 					})
 
 					wt.CreateNumericSlider({
@@ -216,14 +225,17 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 						step = 20,
 						altStep = 1,
 						dependencies = { { frame = toggle, } },
-						optionsKey = ns.name .. "Specifications",
 						getData = function() return WidgetToolsDB.frameAttributes.width end,
 						saveData = function(value) WidgetToolsDB.frameAttributes.width = value end,
-						onChange = { ResizeWideFrameAttributes = function() if _G["TableAttributeDisplay"] then
-							TableAttributeDisplay:SetWidth(WidgetToolsDB.frameAttributes.width + 70)
-							TableAttributeDisplay.LinesScrollFrame:SetWidth(WidgetToolsDB.frameAttributes.width)
-						end end, },
 						default = 620,
+						dataManagement = {
+							category = category,
+							key = keys[1],
+							onChange = { ResizeWideFrameAttributes = function() if _G["TableAttributeDisplay"] then
+								TableAttributeDisplay:SetWidth(WidgetToolsDB.frameAttributes.width + 70)
+								TableAttributeDisplay.LinesScrollFrame:SetWidth(WidgetToolsDB.frameAttributes.width)
+							end end, },
+						},
 					})
 				end,
 				arrangement = {}
@@ -242,8 +254,8 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 		description = ns.strings.addons.description:gsub("#ADDON", addonTitle),
 		scroll = { speed = 0.2 },
 		static = true,
-		optionsKeys = { ns.name .. "Addons", },
-		initialize = function(canvas)
+		dataManagement = {},
+		initialize = function(canvas, _, _, category, keys)
 			--List Toolbox versions in use
 			for k, v in wt.SortedPairs(registry.addons) do
 				wt.CreatePanel({
@@ -311,14 +323,17 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 											offset = { x = -12, }
 										},
 										size = { w = 80, h = 20 },
-										events = { OnClick = function(_, state) toggleAddon(state) end, },
-										optionsKey = ns.name .. "Addons",
 										getData = function() return C_AddOns.GetAddOnEnableState(v[i]) > 0 end,
 										saveData = function(state) toggleAddon(state) end,
-										listeners = { saved = { { handler = function(self) if not self.getState() then wt.CreateReloadNotice() end end, }, }, },
 										instantSave = false,
+										listeners = { saved = { { handler = function(self) if not self.getState() then wt.CreateReloadNotice() end end, }, }, },
+										events = { OnClick = function(_, state) toggleAddon(state) end, },
 										showDefault = false,
 										utilityMenu = false,
+										dataManagement = {
+											category = category,
+											key = keys[1],
+										},
 									})
 
 									if toggle.frame then toggle.frame:SetIgnoreParentAlpha(true) end

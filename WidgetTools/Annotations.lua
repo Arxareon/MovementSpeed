@@ -205,8 +205,11 @@
 ---@field order? { [table[]] : integer[] } If set, position the child frames by into columns within rows in the order specified in a nested structure, an array of subtables representing rows, and their values representing the index of a given child frame in { **container**:[GetChildren()](https://wowpedia.fandom.com/wiki/API_Frame_GetChildren) }<ul><li>***Note:*** If not set, assemble the arrangement from the individual arrangement descriptions of child frames stored in their **arrangementInfo** custom table property.</li></ul>
 
 ---@class initializableContainer
----@field initialize? fun(container?: Frame, width: number, height: number) This function will be called while setting up the container frame to perform specific tasks like creating content child frames right away<hr><p>@*param* `container`? AnyFrameObject ― Reference to the frame to be set as the parent for child objects created during initialization (nil if **WidgetToolsDB.lite** is true)</p><p>@*param* `width` number The current width of the container frame (0 if **WidgetToolsDB.lite** is true)</p><p>@*param* `height` number The current height of the container frame (0 if **WidgetToolsDB.lite** is true)</p>
+---@field initialize? fun(container?: Frame, width: number, height: number, name?: string) This function will be called while setting up the container frame to perform specific tasks like creating content child frames right away<hr><p>@*param* `container`? AnyFrameObject ― Reference to the frame to be set as the parent for child objects created during initialization (nil if **WidgetToolsDB.lite** is true)</p><p>@*param* `width` number The current width of the container frame (0 if **WidgetToolsDB.lite** is true)</p><p>@*param* `height` number The current height of the container frame (0 if **WidgetToolsDB.lite** is true)</p><p>@*param* `name`? string The name parameter of the container specified at construction</p>
 ---@field arrangement? arrangementData If set, arrange the content added to the container frame during initialization into stacked rows based on the specifications provided in this table
+
+---@class initializableOptionsContainer : initializableContainer
+---@field initialize? fun(container?: Frame, width: number, height: number, category?: string, keys?: string[], name?: string) This function will be called while setting up the container frame to perform specific tasks like creating content child frames right away<hr><p>@*param* `container`? AnyFrameObject ― Reference to the frame to be set as the parent for child objects created during initialization (nil if **WidgetToolsDB.lite** is true)</p><p>@*param* `width` number The current width of the container frame (0 if **WidgetToolsDB.lite** is true)</p><p>@*param* `height` number The current height of the container frame (0 if **WidgetToolsDB.lite** is true)</p><p>@*param* `category`? string A unique string used for categorizing options data management rules & change handler scripts</p><p>@*param* `keys`? string[] A list of unique strings appended to **category** linking a subset of options data rules to be handled together in the specified order</p><p>@*param* `name`? string The name parameter of the container specified at construction</p>
 
 ---@class arrangementRules
 ---@field newRow? boolean Place the frame into a new row within its container instead of adding it to a specified row | ***Default:*** true
@@ -289,58 +292,6 @@
 ---@field b? number Blue | ***Range:*** (0, 1) | ***Default:*** 1
 
 
---[[ BACKDROP ]]
-
----@class insetData
----@field l? number Left side | ***Default:*** 0
----@field r? number Right side | ***Default:*** 0
----@field t? number Top | ***Default:*** 0
----@field b? number Bottom | ***Default:*** 0
-
----@class backdropBackgroundTextureData
----@field path? string Path to the specific texture file relative to the root directory of the specific WoW client | ***Default:*** "Interface/ChatFrame/ChatFrameBackground"<ul><li>***Note:*** The use of "/" as separator is recommended (Example: Interface/AddOns/AddonNameKey/Textures/TextureImage.tga), otherwise use "\\\\".</li><li>***Note:*** **File format:** Texture files must be in JPEG (no transparency, not recommended), PNG, TGA or BLP format.</li><li>***Note:*** **Size:** Texture files must have powers of 2 dimensions to be handled by the WoW client.</li><ul>
----@field size number Size of a single background tile square
----@field tile? boolean Whether to repeat the texture to fill the entire size of the frame | ***Default:*** true
----@field insets? insetData Offset the position of the background texture from the edges of the frame inward
-
----@class backdropBackgroundData
----@field texture? backdropBackgroundTextureData Parameters used for setting the background texture
----@field color? colorData Apply the specified color to the background texture
-
----@class backdropUpdateBackgroundData
----@field texture? backdropBackgroundTextureData Parameters used for setting the background texture | ***Default:*** **backdrop.background.texture** if **fill** == true *(if it's false, keep the currently set values of **frame**.[backdropInfo](https://wowpedia.fandom.com/wiki/BackdropTemplate#Table_structure))*
----@field color? colorData Apply the specified color to the background texture | ***Default:*** **backdrop.background.color** if **fill** == true *(if it's false, keep the currently set values of **frame**:[GetBackdropColor()](https://wowpedia.fandom.com/wiki/API_Frame_GetBackdropColor))*
-
----@class backdropBorderTextureData
----@field path? string Path to the specific texture file relative to the root directory of the specific WoW client | ***Default:*** "Interface/Tooltips/UI-Tooltip-Border"<ul><li>***Note:*** The use of "/" as separator is recommended (Example: Interface/AddOns/AddonNameKey/Textures/TextureImage.tga), otherwise use "\\\\".</li><li>***Note:*** **File format:** Texture files must be in JPEG (no transparency, not recommended), PNG, TGA or BLP format.</li><li>***Note:*** **Size:** Texture files must have powers of 2 dimensions to be handled by the WoW client.</li><ul>
----@field width number Width of the backdrop edge
-
----@class backdropBorderData
----@field texture? backdropBorderTextureData Parameters used for setting the border texture
----@field color? colorData Apply the specified color to the border texture
-
----@class backdropUpdateBorderData
----@field texture? backdropBorderTextureData Parameters used for setting the border texture | ***Default:*** **backdrop.border.texture** if **fill** == true *(if it's false, keep the currently set values of **frame**.[backdropInfo](https://wowpedia.fandom.com/wiki/BackdropTemplate#Table_structure))*
----@field color? colorData Apply the specified color to the border texture | ***Default:*** **backdrop.border.color** if **fill** == true *(if it's false, keep the currently set values of **frame**:[GetBackdropBorderColor()](https://wowpedia.fandom.com/wiki/API_Frame_GetBackdropBorderColor))*
-
----@class backdropData
----@field background? backdropBackgroundData Table containing the parameters used for the background
----@field border? backdropBorderData Table containing the parameters used for the border
-
----@class backdropUpdateData
----@field background? backdropBackgroundData Table containing the parameters used for the background | ***Default:*** **backdrop.background** if **fill** == true *(if it's false, keep the currently set values of **frame**.[backdropInfo](https://wowpedia.fandom.com/wiki/BackdropTemplate#Table_structure) and **frame**:[GetBackdropColor()](https://wowpedia.fandom.com/wiki/API_Frame_GetBackdropColor))*
----@field border? backdropBorderData Table containing the parameters used for the border | ***Default:*** **backdrop** if **fill** == true *(if it's false, keep the currently set values of **frame**.[backdropInfo](https://wowpedia.fandom.com/wiki/BackdropTemplate#Table_structure) and **frame**:[GetBackdropBorderColor()](https://wowpedia.fandom.com/wiki/API_Frame_GetBackdropBorderColor))*
-
----@class backdropUpdateRule
----@field trigger? AnyFrameObject Reference to the frame to add the listener script to | ***Default:*** **frame**
----@field rule? fun(self: Frame, ...: any): backdropUpdate: backdropUpdateData|nil, fill: boolean|nil Evaluate the event and specify the backdrop updates to set, or, if nil, restore the base **backdrop** unconditionally on event trigger<ul><li>***Note:*** Return an empty table `{}` for **backdropUpdate** and true for **fill** in order to restore the base **backdrop** after evaluation.</li><li>***Note:*** Return an empty table `{}` for **backdropUpdate** and false or nil for **fill** to do nothing (keep the current backdrop).</li></ul><hr><p>@*param* `self` AnyFrameObject ― Reference to **updates[*key*].frame**</p><p>@*param* `...` any ― Any leftover arguments will be passed from the handler script to **updates[*key*].rule**</p><hr><p>@*return* `backdropUpdate`? backdropUpdateData|nil ― Parameters to update the backdrop with | ***Default:*** nil *(remove the backdrop)*</p><p>@*return* `fill`? boolean|nil ― If true, fill the specified defaults for the unset values in **backdropUpdates** with the values provided in **backdrop** at matching keys, if false, fill them with their corresponding values from the currently set values of **frame**.[backdropInfo](https://wowpedia.fandom.com/wiki/BackdropTemplate#Table_structure), **frame**:[GetBackdropColor()](https://wowpedia.fandom.com/wiki/API_Frame_GetBackdropColor) and **frame**:[GetBackdropBorderColor()](https://wowpedia.fandom.com/wiki/API_Frame_GetBackdropBorderColor) | ***Default:*** false</p>
-
----@class customizableObject
----@field backdrop? backdropData Parameters to set the custom backdrop with
----@field backdropUpdates? table<AnyScriptType, backdropUpdateRule> Table of key, value pairs containing the list of events to set listeners for assigned to **t.backdropUpdates[*key*].frame**, linking backdrop changes to it, modifying the specified parameters on trigger
---- - ***Note:*** All update rules are additive, calling ***WidgetToolbox*.SetBackdrop(...)** multiple times with **t.backdropUpdates** specified *will not* override previously set update rules. The base **backdrop** values used for these old rules *will not* change by setting a new backdrop via ***WidgetToolbox*.SetBackdrop(...)** either!
-
-
 --[[ FONT & TEXT ]]
 
 ---@class justifyData
@@ -355,7 +306,7 @@
 ---@field h? JustifyHorizontal Horizontal text alignment| ***Default:*** "CENTER"
 
 ---@class fontData
----@field path string Path to the font file relative to the WoW client directory<ul><li>***Note:*** The use of "/" as separator is recommended (Example: Interface/AddOns/AddonNameKey/Fonts/Font.ttf), otherwise use "\\\\".</li><li>***Note*** **File format:** Font files must be in TTF or OTF format.</li></ul>
+---@field path string Path to the font file relative to the WoW client directory<ul><li>***Note:*** The use of `/` as separator is recommended (Example: Interface/AddOns/AddonNameKey/Fonts/Font.ttf), otherwise use `\\`.</li><li>***Note:*** **File format:** Font files must be in TTF or OTF format.</li></ul>
 ---@field size number The default display size of the new font object
 ---@field style TBFFlags|FontFlags Comma separated string of font styling flags
 
@@ -438,6 +389,9 @@
 
 --[[ TEXTURE ]]
 
+---@class pathData_ChatFrameDefault
+---@field path? string Path to the specific texture file relative to the root directory of the specific WoW client | ***Default:*** "Interface/ChatFrame/ChatFrameBackground"<ul><li>***Note:*** The use of `/` as separator is recommended (Example: Interface/AddOns/AddonNameKey/Textures/TextureImage.tga), otherwise use `\\`.</li><li>***Note:*** **File format:** Texture files must be in JPEG (no transparency, not recommended), PNG, TGA or BLP format.</li><li>***Note:*** **Size:** Texture files must have powers of 2 dimensions to be handled by the WoW client.</li></ul>
+
 ---@class wrapData
 ---@field h? WrapMode|boolean Horizontal | ***Value:*** true = "REPEAT" | ***Default:*** "CLAMP"
 ---@field v? WrapMode|boolean Vertical | ***Value:*** true = "REPEAT" | ***Default:*** "CLAMP"
@@ -449,8 +403,8 @@
 ---@class edgeCoordinates
 ---@field l number Left | ***Reference Range:*** (0, 1) | ***Default:*** 0
 ---@field r number Right | ***Reference Range:*** (0, 1) | ***Default:*** 1
----@field t number Top ***Value:*** *using canvas coordinates (inverted y axis)* | | ***Reference Range:*** (0, 1) | ***Default:*** 0
----@field b number Bottom ***Value:*** *using canvas coordinates (inverted y axis)* | | ***Reference Range:*** (0, 1) | ***Default:*** 1
+---@field t number Top | ***Value:*** *using canvas coordinates (inverted y axis)* | | ***Reference Range:*** (0, 1) | ***Default:*** 0
+---@field b number Bottom | ***Value:*** *using canvas coordinates (inverted y axis)* | | ***Reference Range:*** (0, 1) | ***Default:*** 1
 
 ---@class vertexCoordinates_topLeft
 ---@field x number ***Reference Range:*** (0, 1) | ***Default:*** 0
@@ -474,11 +428,10 @@
 ---@field bottomLeft vertexCoordinates_bottomLeft
 ---@field bottomRight vertexCoordinates_bottomRight
 
----@class textureCreationData : positionableObject
+---@class textureCreationData : positionableObject, pathData_ChatFrameDefault
 ---@field parent AnyFrameObject Reference to the frame to set as the parent of the new texture
 ---@field name? string String appended to the name of **t.parent** used to set the name of the new texture | ***Default:*** "Texture"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
 ---@field size? sizeData ***Default:*** *size of* **parent**
----@field path? string Path to the specific texture file relative to the root directory of the specific WoW client | ***Default:*** "Interface/ChatFrame/ChatFrameBackground"<ul><li>***Note:*** The use of "/" as separator is recommended (Example: Interface/AddOns/AddonNameKey/Textures/TextureImage.tga), otherwise use "\\\\".</li><li>***Note:*** **File format:** Texture files must be in JPEG (no transparency, not recommended), PNG, TGA or BLP format.</li><li>***Note:*** **Size:** Texture files must have powers of 2 dimensions to be handled by the WoW client.</li><ul>
 ---@field layer? DrawLayer
 ---@field level? integer Sublevel to set within the specified draw layer | ***Range:*** (-8, 7)
 ---@field tile? tileData Set the tiling behaviour of the texture | ***Default:*** *no tiling*
@@ -493,7 +446,7 @@
 ---@class textureUpdateData
 ---@field position? positionData Parameters to call [Region:SetPoint(...)](https://wowpedia.fandom.com/wiki/API_ScriptRegionResizing_SetPoint) with | ***Default:*** **t.position**
 ---@field size? sizeData | ***Default:*** **t.size**
----@field path? string Path to the specific texture file relative to the root directory of the specific WoW client | ***Default:*** **t.path**<ul><li>***Note:*** The use of "/" as separator is recommended (Example: Interface/AddOns/AddonNameKey/Textures/TextureImage.tga), otherwise use "\\\\".</li><li>***Note:*** **File format:** Texture files must be in JPEG (no transparency, not recommended), PNG, TGA or BLP format.</li><li>***Note:*** **Size:** Texture files must have powers of 2 dimensions to be handled by the WoW client.</li><ul>
+---@field path? string Path to the specific texture file relative to the root directory of the specific WoW client | ***Default:*** **t.path**<ul><li>***Note:*** The use of `/` as separator is recommended (Example: Interface/AddOns/AddonNameKey/Textures/TextureImage.tga), otherwise use `\\`.</li><li>***Note:*** **File format:** Texture files must be in JPEG (no transparency, not recommended), PNG, TGA or BLP format.</li><li>***Note:*** **Size:** Texture files must have powers of 2 dimensions to be handled by the WoW client.</li></ul>
 ---@field layer? DrawLayer | ***Default:*** **t.layer**
 ---@field level? integer Sublevel to set within the specified draw layer | ***Range:*** (-8, 7) | ***Default:*** **t.level**
 ---@field tile? tileData Set the tiling behaviour of the texture | ***Default:*** **t.tile**
@@ -520,6 +473,57 @@
 ---@field layer? DrawLayer 
 ---@field level? integer Sublevel to set within the draw layer specified with **t.layer** | ***Range:*** (-8, 7)
 ---@field color? colorData Apply the specified color to the line
+
+
+--[[ BACKDROP ]]
+
+---@class insetData
+---@field l? number Left side | ***Default:*** 0
+---@field r? number Right side | ***Default:*** 0
+---@field t? number Top | ***Default:*** 0
+---@field b? number Bottom | ***Default:*** 0
+
+---@class backdropBackgroundTextureData : pathData_ChatFrameDefault
+---@field size number Size of a single background tile square
+---@field tile? boolean Whether to repeat the texture to fill the entire size of the frame | ***Default:*** true
+---@field insets? insetData Offset the position of the background texture from the edges of the frame inward
+
+---@class backdropBackgroundData
+---@field texture? backdropBackgroundTextureData Parameters used for setting the background texture
+---@field color? colorData Apply the specified color to the background texture
+
+---@class backdropUpdateBackgroundData
+---@field texture? backdropBackgroundTextureData Parameters used for setting the background texture | ***Default:*** **backdrop.background.texture** if **fill** == true *(if it's false, keep the currently set values of **frame**.[backdropInfo](https://wowpedia.fandom.com/wiki/BackdropTemplate#Table_structure))*
+---@field color? colorData Apply the specified color to the background texture | ***Default:*** **backdrop.background.color** if **fill** == true *(if it's false, keep the currently set values of **frame**:[GetBackdropColor()](https://wowpedia.fandom.com/wiki/API_Frame_GetBackdropColor))*
+
+---@class backdropBorderTextureData
+---@field path? string Path to the specific texture file relative to the root directory of the specific WoW client | ***Default:*** "Interface/Tooltips/UI-Tooltip-Border"<ul><li>***Note:*** The use of `/` as separator is recommended (Example: Interface/AddOns/AddonNameKey/Textures/TextureImage.tga), otherwise use `\\`.</li><li>***Note:*** **File format:** Texture files must be in JPEG (no transparency, not recommended), PNG, TGA or BLP format.</li><li>***Note:*** **Size:** Texture files must have powers of 2 dimensions to be handled by the WoW client.</li></ul>
+---@field width number Width of the backdrop edge
+
+---@class backdropBorderData
+---@field texture? backdropBorderTextureData Parameters used for setting the border texture
+---@field color? colorData Apply the specified color to the border texture
+
+---@class backdropUpdateBorderData
+---@field texture? backdropBorderTextureData Parameters used for setting the border texture | ***Default:*** **backdrop.border.texture** if **fill** == true *(if it's false, keep the currently set values of **frame**.[backdropInfo](https://wowpedia.fandom.com/wiki/BackdropTemplate#Table_structure))*
+---@field color? colorData Apply the specified color to the border texture | ***Default:*** **backdrop.border.color** if **fill** == true *(if it's false, keep the currently set values of **frame**:[GetBackdropBorderColor()](https://wowpedia.fandom.com/wiki/API_Frame_GetBackdropBorderColor))*
+
+---@class backdropData
+---@field background? backdropBackgroundData Table containing the parameters used for the background
+---@field border? backdropBorderData Table containing the parameters used for the border
+
+---@class backdropUpdateData
+---@field background? backdropBackgroundData Table containing the parameters used for the background | ***Default:*** **backdrop.background** if **fill** == true *(if it's false, keep the currently set values of **frame**.[backdropInfo](https://wowpedia.fandom.com/wiki/BackdropTemplate#Table_structure) and **frame**:[GetBackdropColor()](https://wowpedia.fandom.com/wiki/API_Frame_GetBackdropColor))*
+---@field border? backdropBorderData Table containing the parameters used for the border | ***Default:*** **backdrop** if **fill** == true *(if it's false, keep the currently set values of **frame**.[backdropInfo](https://wowpedia.fandom.com/wiki/BackdropTemplate#Table_structure) and **frame**:[GetBackdropBorderColor()](https://wowpedia.fandom.com/wiki/API_Frame_GetBackdropBorderColor))*
+
+---@class backdropUpdateRule
+---@field trigger? AnyFrameObject Reference to the frame to add the listener script to | ***Default:*** **frame**
+---@field rule? fun(self: Frame, ...: any): backdropUpdate: backdropUpdateData|nil, fill: boolean|nil Evaluate the event and specify the backdrop updates to set, or, if nil, restore the base **backdrop** unconditionally on event trigger<ul><li>***Note:*** Return an empty table `{}` for **backdropUpdate** and true for **fill** in order to restore the base **backdrop** after evaluation.</li><li>***Note:*** Return an empty table `{}` for **backdropUpdate** and false or nil for **fill** to do nothing (keep the current backdrop).</li></ul><hr><p>@*param* `self` AnyFrameObject ― Reference to **updates[*key*].frame**</p><p>@*param* `...` any ― Any leftover arguments will be passed from the handler script to **updates[*key*].rule**</p><hr><p>@*return* `backdropUpdate`? backdropUpdateData|nil ― Parameters to update the backdrop with | ***Default:*** nil *(remove the backdrop)*</p><p>@*return* `fill`? boolean|nil ― If true, fill the specified defaults for the unset values in **backdropUpdates** with the values provided in **backdrop** at matching keys, if false, fill them with their corresponding values from the currently set values of **frame**.[backdropInfo](https://wowpedia.fandom.com/wiki/BackdropTemplate#Table_structure), **frame**:[GetBackdropColor()](https://wowpedia.fandom.com/wiki/API_Frame_GetBackdropColor) and **frame**:[GetBackdropBorderColor()](https://wowpedia.fandom.com/wiki/API_Frame_GetBackdropBorderColor) | ***Default:*** false</p>
+
+---@class customizableObject
+---@field backdrop? backdropData Parameters to set the custom backdrop with
+---@field backdropUpdates? table<AnyScriptType, backdropUpdateRule> Table of key, value pairs containing the list of events to set listeners for assigned to **t.backdropUpdates[*key*].frame**, linking backdrop changes to it, modifying the specified parameters on trigger
+--- - ***Note:*** All update rules are additive, calling ***WidgetToolbox*.SetBackdrop(...)** multiple times with **t.backdropUpdates** specified *will not* override previously set update rules. The base **backdrop** values used for these old rules *will not* change by setting a new backdrop via ***WidgetToolbox*.SetBackdrop(...)** either!
 
 
 --[[ CHAT CONTROL ]]
@@ -616,17 +620,26 @@
 
 --[[ OPTIONS DATA MANAGEMENT ]]
 
----@class optionsTableRule
+---@class optionsRule
 ---@field widget checkbox|radioButton|radioSelector|checkboxSelector|specialSelector|dropdownSelector|textbox|multilineEditbox|numericSlider|colorPicker Reference to the widget to be saved & loaded data to/from with defined **loadData** and **saveData** functions
----@field onChange? function[] List of functions called after the value of **widget** was changed by the user or via options data management
+---@field onChange? string[] List of keys referencing functions to be called after the value of **widget** was changed by the user or via options data management
 
----@class optionsKey
----@field optionsKey? string A unique key referencing a collection of widget options data to be handled together
+---@class optionsData
+---@field category? string A unique string used for categorizing options data management rules & change handler scripts | ***Default:*** "WidgetTools" *(register as a global rule)*
+---@field key? string A unique string appended to **category** linking a subset of options data rules to be handled together | ***Default:*** "" *(category-wide rule)*
+---@field index? integer Set when to place this widget in the execution order when saving or loading batched options data | ***Default:*** *placed at the end of the current list*
+---@field onChange? table<string|integer, function|string> table<string|integer, function|string> List of new or already defined functions to call after the value of the widget was changed by the user or via options data management<ul><li>**[*key*]**? string|integer ― A unique string appended to **category** to point to a newly defined function to be added to options data management or just the index of the next function name | ***Default:*** *next assigned index*</li><li>**[*value*]** function|string ― The new function to register under its unique key, or the key of an already existing function</li><ul><li>***Note:*** Function definitions will be replaced by key references when they are registered to options data management. Functions registered under duplicate keys are overwritten.</li></ul></ul>
 
----@class optionsWidget : optionsKey
----@field optionsIndex? integer Set when to place this widget in the execution order when saving or loading batched options data | ***Default:*** *placed at the end of the current list*
----@field onChange? table<string|integer, function|string> List of new or already defined functions to call after the value of the widget was changed by the user or via options data management<ul><li>**[*key*]**? string|integer ― A unique key to point to a newly defined function to be added to options data management or just the index of the next function name to be linked to **optionsKey** | ***Default:*** *next assigned index*</li><li>**[*value*]** function|string ― The new function to register under its unique key, or the key of an already existing function linked to **optionsKey**</li><ul><li>***Note:*** Function definitions will be replaced by key references when they are registered to options data management. Duplicate functions are overwritten.</li></ul></ul>
----@field instantSave? boolean Immediately commit the data to storage whenever it's changed via the widget | ***Default:*** true<ul><li>***Note:*** Any unsaved data will be saved when ***WidgetToolbox*.SaveOptionsData(optionsKey)** is executed.</li></ul>
+---@class optionsData_collection
+---@field category? string A unique string used for categorizing options data management rules & change handler scripts | ***Default:*** **addon**
+---@field keys? string[] An ordered list of unique strings appended to **category** linking a subset of options data rules to be handled together in the specified order via this settings category page | ***Default:*** { **t.name** or "" }
+
+---@class optionsWidget
+---@field dataManagement? optionsData If set, register this widget to options data management for batched data saving & loading and handling data changes
+---@field instantSave? boolean Immediately commit the data to storage whenever it's changed via the widget | ***Default:*** true<ul><li>***Note:*** Any unsaved data will be saved when ***WidgetToolbox*.SaveOptionsData(...)** is executed.</li></ul>
+
+---@class optionsCategory
+---@field dataManagement? optionsData_collection If set, register this settings page to options data management for batched data saving & loading and handling data changes of all linked widgets
 
 ---@class optionsFrame
 ---@field showDefault? boolean If true, show the default value of the widget in its tooltip | ***Default:*** true
@@ -637,7 +650,7 @@
 
 --| Dialogue
 
----@class popupDialogueData
+---@class popupDialogData
 ---@field text? string The text to display as the message in the popup window
 ---@field accept? string The text to display on the label of the accept button | ***Default:*** ***WidgetToolbox*.strings.misc.accept**
 ---@field cancel? string The text to display on the label of the cancel button | ***Default:*** ***WidgetToolbox*.strings.misc.cancel**
@@ -761,7 +774,7 @@
 ---@field background? backdropBackgroundData_panel Table containing the parameters used for the background
 ---@field border? backdropBorderData_panel Table containing the parameters used for the border
 ---@field events? table<ScriptFrame, fun(...: any)|attributeEventData> Table of key, value pairs of the names of script event handlers to be set for the panel and the functions to assign as event handlers called when they trigger
----@field initialize? fun(container?: panel, width: number, height: number) This function will be called while setting up the container frame to perform specific tasks like creating content child frames right away<hr><p>@*param* `container`? panel ― Reference to the frame to be set as the parent for child objects created during initialization (nil if **WidgetToolsDB.lite** is true)</p><p>@*param* `width` number The current width of the container frame (0 if **WidgetToolsDB.lite** is true)</p><p>@*param* `height` number The current height of the container frame (0 if **WidgetToolsDB.lite** is true)</p>
+---@field initialize? fun(container?: panel, width: number, height: number, name?: string) This function will be called while setting up the container frame to perform specific tasks like creating content child frames right away<hr><p>@*param* `container`? panel ― Reference to the frame to be set as the parent for child objects created during initialization (nil if **WidgetToolsDB.lite** is true)</p><p>@*param* `width` number The current width of the container frame (0 if **WidgetToolsDB.lite** is true)</p><p>@*param* `height` number The current height of the container frame (0 if **WidgetToolsDB.lite** is true)</p><p>@*param* `name`? string The name parameter of the container specified at construction</p>
 
 --[ Context Menu ]
 
@@ -841,15 +854,14 @@
 ---@field onCancel? fun(user: boolean) Called after the changes are scrapped (for instance when the custom "Revert Changes" button is clicked)<hr><p>@*param* `user` boolean — Marking whether the call is due to a user interaction or not</p>
 ---@field onDefault? fun(user: boolean, category: boolean) Called after options data handled by this settings page has been restored to default values (for example when the "Accept" or "These Settings" - affecting this settings category page only - is clicked in the dialogue opened by clicking on the "Restore Defaults" button)<hr><p>@*param* `user` boolean — Marking whether the call is due to a user interaction or not</p><p>@*param* `category` boolean — Marking whether the call is through **[*optionsCategory*].defaults(...)** or not (or example when "All Settings" have been clicked)</p>
 
----@class settingsPageCreationData : settingsPageCreationData_base, describableObject, settingsPageEvents, initializableContainer, liteObject
+---@class settingsPageCreationData : settingsPageCreationData_base, describableObject, optionsCategory, settingsPageEvents, initializableOptionsContainer, liteObject
 ---@field append? boolean When setting the name of the settings category page, append **t.name** after **addon** | ***Default:*** true if **t.name** ~= nil
 ---@field appendOptions? boolean When setting the name of the canvas frame, append "Options" at the end as well | ***Default:*** true
 ---@field icon? string Path to the texture file to use as the icon of this settings page | ***Default:*** *the addon's logo specified in its TOC file with the "IconTexture" tag*
 ---@field titleIcon? boolean Append **t.icon** to the title of the button of the setting page in the AddOns list of the Settings window as well | ***Default:*** true if **t.register == true**
 ---@field scroll? settingsPageScrollData If set, make the canvas frame scrollable by creating a [ScrollFrame](https://wowpedia.fandom.com/wiki/UIOBJECT_ScrollFrame) as its child
----@field optionsKeys? string[] A list of unique keys referencing collections of widget options data to be handled together via this settings category page in the specified order
----@field autoSave? boolean If true, automatically save the values of all widgets registered for options data management under options keys listed in **t.optionsKeys**, committing their data to storage via ***WidgetToolbox*.SaveOptionsData(...)** | ***Default:*** true if **t.optionsKeys** ~= nil<ul><li>***Note:*** If **t.optionsKeys** is not set, the automatic load will not be executed even if this is set to true.</li></ul>
----@field autoLoad? boolean If true, automatically load all data to the widgets registered for options data management under options keys listed in **t.optionsKeys** from storage via ***WidgetToolbox*.LoadOptionsData(...)** | ***Default:*** true if **t.optionsKeys** ~= nil<ul><li>***Note:*** If **t.optionsKeys** is not set, the automatic load will not be executed even if this is set to true.</li></ul>
+---@field autoSave? boolean If true, automatically save the values of all widgets registered for options data management under options keys listed in **t.dataManagement.keys**, committing their data to storage via ***WidgetToolbox*.SaveOptionsData(...)** | ***Default:*** true if **t.dataManagement.keys** ~= nil<ul><li>***Note:*** If **t.dataManagement.keys** is not set, the automatic load will not be executed even if this is set to true.</li></ul>
+---@field autoLoad? boolean If true, automatically load all data to the widgets registered for options data management under options keys listed in **t.dataManagement.keys** from storage via ***WidgetToolbox*.LoadOptionsData(...)** | ***Default:*** true if **t.dataManagement.keys** ~= nil<ul><li>***Note:*** If **t.dataManagement.keys** is not set, the automatic load will not be executed even if this is set to true.</li></ul>
 
 ---@class aboutPageCreationData : settingsPageCreationData_base
 ---@field description? string Text to be shown as the description below the title of the settings page | ***Default:*** [GetAddOnMetadata(**addon**, "Notes")](https://wowpedia.fandom.com/wiki/API_GetAddOnMetadata)
@@ -1064,6 +1076,12 @@
 ---@alias DropdownSelectorEventTag
 ---|SelectorEventTag
 ---|"open"
+
+---@alias SpecialSelectorItemset
+---|"anchor" Using the set of [AnchorPoint](https://warcraft.wiki.gg/wiki/Anchors) items
+---|"justifyH" Using the set of horizontal text alignment items (JustifyH)
+---|"justifyV" Using the set of vertical text alignment items (JustifyV)
+---|"frameStrata" Using the set of [FrameStrata](https://warcraft.wiki.gg/wiki/Frame_Strata) items (excluding "WORLD")
 
 --| Event handlers
 
@@ -1357,7 +1375,7 @@
 ---@field default? string Default value of the widget | ***Default:*** "" *(empty string)*
 
 ---@class editboxCreationData : textboxCreationData, labeledChildObject, tooltipDescribableObject, arrangeableObject, positionableObject, visibleObject_base, liteObject, optionsFrame
----@field name? string Unique string used to set the frame name | ***Default:*** "Text Box"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
+---@field name? string Unique string used to set the frame name | ***Default:*** "Textbox"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
 ---@field size? sizeData_editbox
 ---@field insets? insetData Table containing padding values by which to offset the position of the text in the editbox
 ---@field font? labelFontOptions_editbox List of the [Font](https://wowpedia.fandom.com/wiki/UIOBJECT_Font) object names to be used for the label<ul><li>***Note:*** A new font object (or a modified copy of an existing one) can be created via ***WidgetToolbox*.CreateFont(...)** (even within this table definition).</li></ul>
@@ -1381,7 +1399,7 @@
 ---@field scrollEvents? table<ScriptScrollFrame, fun(...: any)> Table of key, value pairs of the names of script event handlers to be set for the scroll frame of the editbox and the functions to assign as event handlers called when they trigger
 
 ---@class copyboxCreationData : labeledChildObject, tooltipDescribableObject, arrangeableObject, positionableObject, visibleObject_base, liteObject
----@field name? string Unique string used to set the frame name | ***Default:*** "Copy Box"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
+---@field name? string Unique string used to set the frame name | ***Default:*** "Copybox"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
 ---@field size? sizeData_editbox
 ---@field layer? DrawLayer
 ---@field font? string Name of the [Font](https://wowpedia.fandom.com/wiki/UIOBJECT_Font) object to be used for the [FontString](https://wowpedia.fandom.com/wiki/UIOBJECT_FontString) | ***Default:*** "GameFontNormalSmall"<ul><li>***Note:*** A new font object (or a modified copy of an existing one) can be created via ***WidgetToolbox*.CreateFont(...)** (even within this table definition).</li></ul>
@@ -1584,7 +1602,11 @@
 ---@class movabilityData_positioning : movabilityData
 ---@field modifier? ModifierKey The specific (or any) modifier key required to be pressed down to move **frame** (if **frame** has the "OnUpdate" script defined) | ***Default:*** "SHIFT"<ul><li>***Note:*** Used to determine the specific modifier check to use. Example: when set to "any" [IsModifierKeyDown](https://wowpedia.fandom.com/wiki/API_IsModifierKeyDown) is used.</li></ul>
 
----@class positionOptionsCreationData : optionsKey
+---@class optionsData_position
+---@field category? string A unique string used for categorizing options data management rules & change handler scripts | ***Default:*** **addon**
+---@field key? string A unique string appended to **category** linking a subset of options data rules to be handled together | ***Default:*** "Position"
+
+---@class positionOptionsCreationData
 ---@field canvas Frame The canvas frame child item of an existing settings category page to add the position panel to
 ---@field frame AnyFrameObject Reference to the frame to create the position options for
 ---@field frameName string Include this string in the tooltips and descriptions of options widgets when referring to **t.frame**
@@ -1594,6 +1616,7 @@
 ---@field getData fun(): table Return a reference to the table within a SavedVariables(PerCharacter) addon database where data is committed to when **t.frame** was successfully moved<ul><li>**position** table — Parameters to call [Region:SetPoint(...)](https://wowpedia.fandom.com/wiki/API_ScriptRegionResizing_SetPoint) with<ul><li>**anchor** [AnchorPoint](https://wowpedia.fandom.com/wiki/Anchors)</li><li>**relativeTo**? [Frame](https://wowpedia.fandom.com/wiki/API_CreateFrame#Frame_types)</li><li>**relativePoint**? [AnchorPoint](https://wowpedia.fandom.com/wiki/Anchors)</li><li>**offset** table<ul><li>**x** number</li><li>**y** number</li></ul></li></ul></li><li>**keepInBounds**? boolean — When set, add a toggle for a value used for **t.frame**:[SetClampedToScreen(...)](https://wowpedia.fandom.com/wiki/API_Frame_SetClampedToScreen)</li><li>**layer**? boolean — When set, add screen layer options<ul><li>**strata**? [FrameStrata](https://wowpedia.fandom.com/wiki/Frame_Strata) — Used for **t.frame**:[SetFrameStrata(...)](https://wowpedia.fandom.com/wiki/API_Frame_SetFrameStrata)</li><li>**keepOnTop**? boolean — When set, add a toggle for a value used for **t.frame**:[SetToplevel(...)](https://wowpedia.fandom.com/wiki/API_Frame_SetToplevel)</li></ul>
 ---@field defaultsTable table Reference to the table containing the default values<ul><li>***Note:*** The defaults table should contain values under matching keys to the values within *t.getData()*.</li></ul>
 ---@field settingsData table Reference to the SavedVariables or SavedVariablesPerCharacter table where settings specifications are to be stored and loaded from<ul><li>***Note:*** The following key, value pairs will be used for storing settings data within this table:<ul><li>**keepInPlace** — If true, don't move **frame** when changing the anchor, update the offset values instead.</li></li></ul></ul>
+---@field dataManagement? optionsData_position Register the positioning widgets to options data management linked with the specified key under the specified category
 ---@field onChangePosition? function Function to call after the value of **panel.position.anchor**, **panel.position.relativeTo**, **panel.position.relativePoint**, **panel.position.offset.x** or **panel.position.offset.y** was changed by the user or via options data management before the base onChange handler is called built-in to the functionality of the position options panel template updating the position of **t.frame**
 ---@field onChangeKeepInBounds? function Function to call after the value of **panel.position.keepInBounds** was changed by the user or via options data management before the base onChange handlers are called built-in to the functionality of the position options panel template updating **t.frame**
 ---@field onChangeStrata? function Function to call after the value of **panel.layer.strata** was changed by the user or via options data management before the base onChange handlers are called built-in to the functionality of the position options panel template updating **t.frame**

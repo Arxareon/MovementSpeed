@@ -1,9 +1,9 @@
-## Interface: 11504
+## Interface: 11505
 ## Title: Movement Speed |TInterface/AddOns/MovementSpeed/Textures/Logo.tga:0|t
 ## Notes: View the movement speed of anyone in customizable displays and tooltips with fast updates.
 ## IconTexture: Interface/AddOns/MovementSpeed/Textures/Logo.tga
 ## Version: 3.0
-## X-Day: 17
+## X-Day: 30
 ## X-Month: 12
 ## X-Year: 2024
 ## Author: Barnabas Nagy (Arxareon)

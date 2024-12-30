@@ -545,7 +545,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	---@param object any Object to convert to a formatted text
 	---***
 	---@return string s Formatted output string
-	---@return string t Recognized object type | ***Value:*** "Frame"|"FrameScriptObject"|"table"|"boolean"|"number"|"string"|"any"
+	---@return "Frame"|"FrameScriptObject"|"table"|"boolean"|"number"|"string"|"any" t Recognized object type
 	function wt.ToString(object)
 		local t = type(object)
 
@@ -709,7 +709,32 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 	--[ String Formatting ]
 
-	---Add coloring escape sequences to a string
+	---Format a number string with thousands separation and optional value rounding
+	---***
+	---@param value number Number value to turn into a string with thousand separation
+	---@param decimals? number Specify the number of decimal places to display if the number is a fractional value | ***Default:*** 0
+	---@param round? boolean Round the number value to the specified number of decimal places | ***Default:*** true
+	---@param trim? boolean Trim trailing zeros in decimal places | ***Default:*** true
+	---@return string
+	function wt.Thousands(value, decimals, round, trim)
+		value = round == false and value or wt.Round(value, decimals)
+		local fraction = math.fmod(value, 1)
+		local integer = value - fraction
+		local decimalText = tostring(fraction):sub(3, (decimals or 0) + 2)
+		local leftover
+
+		while true do
+			integer, leftover = string.gsub(integer, "^(-?%d+)(%d%d%d)", '%1' .. ns.toolboxStrings.separator .. '%2')
+			if leftover == 0 then break end
+		end
+		if trim == false then for i = 1, (decimals or 0) - #decimalText do decimalText = decimalText .. "0" end end
+
+		return integer .. (((decimals or 0) > 0 and (fraction ~= 0 or trim == false)) and ns.toolboxStrings.decimal .. decimalText or "")
+	end
+
+	--| Escape sequences
+
+	---Add coloring to a string via escape sequences
 	---***
 	---@param text string Text to add coloring to
 	---@param color colorData Table containing the color values
@@ -720,31 +745,21 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		return WrapTextInColorCode(text, wt.ColorToHex(r, g, b, a, true, false))
 	end
 
-	---Format a number string to include thousand separation
-	---***
-	---@param value number Number value to turn into a string with thousand separation
-	---@param decimals? number Specify the number of decimal places to display if the number is a fractional value | ***Default:*** 0
-	---@param round? boolean Round the number value to the specified number of decimal places | ***Default:*** true
-	---@param trim? boolean Trim trailing zeros in decimal places | ***Default:*** true
+	---Create a markup texture string snippet via escape sequences based on the specified values
+	---@param path string Path to the specific texture file relative to the root directory of the specific WoW client<ul><li>***Note:*** The use of `/` as separator is recommended (Example: Interface/AddOns/AddonNameKey/Textures/TextureImage.tga), otherwise use `\\`.</li><li>***Note:*** **File format:** Texture files must be in JPEG (no transparency, not recommended), PNG, TGA or BLP format.</li><li>***Note:*** **Size:** Texture files must have powers of 2 dimensions to be handled by the WoW client.</li></ul>
+	---@param width? number ***Default:*** *width of the texture file*
+	---@param height? number ***Default:*** **width**
+	---@param offsetX? number | ***Default:*** 0
+	---@param offsetY? number | ***Default:*** 0
+	---@param t? table Additional parameters are to be provided in this table
 	---@return string
-	function wt.FormatThousands(value, decimals, round, trim)
-		value = round == false and value or wt.Round(value, decimals)
-		local fraction = math.fmod(value, 1)
-		local integer = value - fraction
-
-		--Formatting
-		local leftover
-		while true do
-			integer, leftover = string.gsub(integer, "^(-?%d+)(%d%d%d)", '%1' .. ns.toolboxStrings.separator .. '%2')
-			if leftover == 0 then break end
-		end
-		local decimalText = tostring(fraction):sub(3, (decimals or 0) + 2)
-		if trim == false then for i = 1, (decimals or 0) - #decimalText do decimalText = decimalText .. "0" end end
-
-		return integer .. (((decimals or 0) > 0 and (fraction ~= 0 or trim == false)) and ns.toolboxStrings.decimal .. decimalText or "")
+	function wt.Texture(path, width, height, offsetX, offsetY, t)
+		if t then
+			return CreateSimpleTextureMarkup(path, height, width, offsetX, offsetY) --REPLACE with [CreateTextureMarkup](https://warcraft.wiki.gg/wiki/FrameXML_functions#:~:text=(role)-,CreateTextureMarkup,-(file%2C%20fileWidth)
+		else return CreateSimpleTextureMarkup(path, height, width, offsetX, offsetY) end
 	end
 
-	---Remove all recognized formatting, other escape sequences (like coloring) from a string
+	---Remove all recognized formatting (like coloring) & other (like hyperlink) escape sequences from a string
 	--- - ***Note:*** *Grammar* escape sequences are not yet supported, and will not be removed.
 	---@param s string
 	---@return string s
@@ -790,7 +805,56 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		return s
 	end
 
-	---Get an assembled & fully formatted string of a string table (changelog) that meets the specifications
+	---Format a table as a string with colored values appropriate to their type
+	---***
+	---@param table table Reference to the table to convert
+	---@param compact? boolean Whether spaces and indentations should be trimmed or not | ***Default:*** false
+	---@param space string Character(s) to add for additional spacing between non-atomic elements
+	---@param newLine string Character(s) to add for breaking lines (or not)
+	---@param indentation string Chain of characters to use as the indentation for subtables
+	---@return string
+	local function formatTableString(table, compact, space, newLine, indentation)
+		if wt.IsFrame(table) then return (wt.ToString(table)) end
+
+		local tableString = "{"
+
+		for key, value in wt.SortedPairs(table) do
+			--Key
+			tableString = tableString .. newLine .. (compact and "" or indentation) .. (
+				type(key) == "string" and (
+					key:match("^%a%w*$") and WrapTextInColorCode(key, "FFFFFFFF") or "[" .. WrapTextInColorCode("\"" .. key .. "\"", "FFFFFFFF") .. "]"
+				) or "[" .. WrapTextInColorCode(tostring(key), "FFFFFFFF") .. "]"
+			) .. space .. "="
+
+			--Value
+			local valueString, valueType = wt.ToString(value)
+			if valueType == "table" then valueString = formatTableString(value, compact, space, newLine, indentation .. (compact and "" or "    ")) end
+
+			tableString = tableString .. space .. valueString
+
+			--Add separator
+			tableString = tableString .. ","
+		end
+
+		return WrapTextInColorCode((tableString:sub(1, -2)) .. newLine .. indentation:sub(1, -5) .. "}", "FF999999") --base color (grey)
+	end
+
+	---Convert a table into a formatted and colored string (appearing as a functional LUA code chunk but including coloring escape sequences)
+	--- - ***Example:*** Turning back into a loadable code chunk to then be useable as a table:
+	--- 	```
+	--- 	local success, loadedTable = pcall(loadstring("return " .. wt.Clear(tableAsString)))
+	--- 	```
+	---***
+	---@param table table Reference to the table to convert
+	---@param compact? boolean Whether spaces and indentations should be trimmed or not | ***Default:*** false
+	---@return string
+	function wt.TableToString(table, compact)
+		if type(table) ~= "table" then return (wt.ToString(table)) end
+
+		return formatTableString(table, compact, compact and "" or " ", compact and "" or "\n", "    ")
+	end
+
+	---Get an assembled & fully formatted string of a specifically assembled changelog table
 	---***
 	---@param changelog { [table[]] : string[] } String arrays nested in subtables representing a version containing the raw changelog data, lines of text with formatting directives included
 	--- - ***Note:*** The first line in version tables is expected to be the title containing the version number and/or the date of release.
@@ -841,53 +905,66 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		return c
 	end
 
-	---Format a table as a string with colored values appropriate to their type
+	--| Hyperlinks
+
+	---Format a clickable hyperlink text via escape sequences
 	---***
-	---@param table table Reference to the table to convert
-	---@param compact? boolean Whether spaces and indentations should be trimmed or not | ***Default:*** false
-	---@param space string Character(s) to add for additional spacing between non-atomic elements
-	---@param newLine string Character(s) to add for breaking lines (or not)
-	---@param indentation string Chain of characters to use as the indentation for subtables
+	---@param type ExtendedHyperlinkType [Type of the hyperlink](https://warcraft.wiki.gg/wiki/Hyperlinks#Types) determining how it's being handled and what payload it carries
+	---@param content? string A colon-separated chain of parameters determined by **type** (Example: "content1:content2:content3") | ***Default:*** ""
+	---@param text string Clickable text to be displayed as the hyperlink
 	---@return string
-	local function formatTableString(table, compact, space, newLine, indentation)
-		if wt.IsFrame(table) then return (wt.ToString(table)) end
-
-		local tableString = "{"
-
-		for key, value in wt.SortedPairs(table) do
-			--Key
-			tableString = tableString .. newLine .. (compact and "" or indentation) .. (
-				type(key) == "string" and (
-					key:match("^%a%w*$") and WrapTextInColorCode(key, "FFFFFFFF") or "[" .. WrapTextInColorCode("\"" .. key .. "\"", "FFFFFFFF") .. "]"
-				) or "[" .. WrapTextInColorCode(tostring(key), "FFFFFFFF") .. "]"
-			) .. space .. "="
-
-			--Value
-			local valueString, valueType = wt.ToString(value)
-			if valueType == "table" then valueString = formatTableString(value, compact, space, newLine, indentation .. (compact and "" or "    ")) end
-
-			tableString = tableString .. space .. valueString
-
-			--Add separator
-			tableString = tableString .. ","
-		end
-
-		return WrapTextInColorCode((tableString:sub(1, -2)) .. newLine .. indentation:sub(1, -5) .. "}", "FF999999") --base color (grey)
+	---<hr><p></p>
+	function wt.Hyperlink(type, content, text)
+		return "\124H" .. type .. ":" .. (content or "") .. "\124h" .. text .. "\124h"
 	end
 
-	---Convert a table into a formatted and colored string appearing as a LUA code chunk
-	--- - ***Example:*** Turning back into a loadable code chunk to then be useable as a table:
-	--- 	```
-	--- 	local success, loadedTable = pcall(loadstring("return " .. wt.Clear(tableAsString)))
-	--- 	```
+	---Format a custom clickable addon hyperlink text via escape sequences
 	---***
-	---@param table table Reference to the table to convert
-	---@param compact? boolean Whether spaces and indentations should be trimmed or not | ***Default:*** false
-	---@return string
-	function wt.TableToString(table, compact)
-		if type(table) ~= "table" then return (wt.ToString(table)) end
+	---@param addon string The name of the addon's folder (the addon namespace, not its displayed title)
+	---@param type? string A unique key signifying the type of the hyperlink specific to the addon (if the addon handles multiple different custom types of hyperlinks) in order to be able to set unique hyperlink click handlers via ***WidgetToolbox*.SetHyperlinkHandler(...)** | ***Default:*** "-"
+	---@param content? string A colon-separated chain of data strings carried by the hyperlink to be provided to the handler function (Example: "content1:content2:content3") | ***Default:*** ""
+	---@param text string Clickable text to be displayed as the hyperlink
+	function wt.CustomHyperlink(addon, type, content, text)
+		return wt.Hyperlink("addon", addon .. ":" .. (type or "-") .. ":" .. (content or ""), text)
+	end
 
-		return formatTableString(table, compact, compact and "" or " ", compact and "" or "\n", "    ")
+	--Hyperlink handler script registry
+	local hyperlinkHandlers = {}
+
+	---Register a function to handle custom hyperlink clicks
+	---***
+	---@param addon string The name of the addon's folder (the addon namespace, not its displayed title)
+	---@param type? string Unique custom hyperlink type key used to identify the specific handler function | ***Default:*** "-"
+	---@param handler fun(...) Function to be called with the list of content data strings carried by the hyperlink returned one by one when clicking on a hyperlink text created via ***WidgetToolbox*.CustomHyperlink(...)**
+	function wt.SetHyperlinkHandler(addon, type, handler)
+		if not addon or type(handler) ~= "function" then return end
+
+		---Call the handler function if it has been registered
+		---@param addonID string
+		---@param handlerID string
+		---@param payload string
+		local function callHandler(addonID, handlerID, payload)
+			local handlerFunction = wt.FindValueByKey(wt.FindValueByKey(hyperlinkHandlers, addonID), handlerID)
+
+			if handlerFunction then handlerFunction(strsplit(":", payload)) end
+		end
+
+		--Hook the hyperlink handler caller
+		if not next(hyperlinkHandlers) then
+			if wt.classic then hooksecurefunc(ItemRefTooltip, "SetHyperlink", function(_, ...)
+				local _, addonID, handlerID, payload = strsplit(":", ..., 4)
+
+				callHandler(addonID, handlerID, payload)
+			end) else EventRegistry:RegisterCallback("SetItemRef", function(_, ...)
+				local linkType, addonID, handlerID, payload = strsplit(":", ..., 4)
+
+				if linkType == "addon" then callHandler(addonID, handlerID, payload) end
+			end) end
+		end
+
+		--Add the hyperlink handler function to the registry
+		if not hyperlinkHandlers[addon] then hyperlinkHandlers[addon] = {} end
+		hyperlinkHandlers[addon][type or "-"] = handler
 	end
 
 	--[ Table Management ]
@@ -906,7 +983,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		return copy
 	end
 
-	---Find and return the value at the first matching key
+	---Find and return the value at the first matching key via a deep search
 	---***
 	---@param tableToCheck table Reference to the table to find a value at a certain key in
 	---@param keyToFind any Key to look for in **tableToCheck** (including all subtables, recursively)
@@ -926,7 +1003,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		return nil
 	end
 
-	---Find the first matching value and return its key
+	---Find the first matching value and return its key via a deep search
 	---***
 	---@param tableToCheck table Reference to the table to find a value at a certain key in
 	---@param valueToFind any Value to look for in **tableToCheck** (including all subtables, recursively)
@@ -1117,16 +1194,19 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 	--[ Frame Setup ]
 
+	--Used for a transitional step to avoid anchor family connections during safe frame positioning
 	local positioningAid
 
 	---Set the position and anchoring of a frame when it is unknown which parameters will be nil
 	---***
 	---@param frame AnyFrameObject Reference to the frame to be moved
 	---@param position? positionData Table of parameters to call **frame**:[SetPoint(...)](https://warcraft.wiki.gg/wiki/API_ScriptRegionResizing_SetPoint) with | ***Default:*** "TOPLEFT"
-	---@param safeMode? boolean If true, move a positioning aid frame to the target position first, convert it to absolute position, then move **frame** relative to that positioning aid to prevent anchor family connections | ***Default:*** false
-	--- ***Note:*** The position of **frame** will be converted to absolute once the positioning is done, breaking the relative link to **position.relativeTo**.
+	---@param safeMode? boolean If true, to prevent anchor family connections, move a positioning aid frame to the target position first, convert it to absolute position by breaking relative links, then move **frame** relative to the positioning aid | ***Default:*** false
+	--- ***Note:*** The position of **frame** will be converted to absolute position once the positioning is done, breaking the relative link to **position.relativeTo**.
 	---@param userPlaced? boolean Remember the position if **frame**:[IsMovable()](https://warcraft.wiki.gg/wiki/API_Frame_IsMovable) | ***Default:*** true
 	function wt.SetPosition(frame, position, safeMode, userPlaced)
+		if not frame.SetPoint then return end
+
 		local anchor, relativeTo, relativePoint, offsetX, offsetY = wt.UnpackPosition(position)
 		relativeTo = relativeTo ~= "nil" and relativeTo or nil
 
@@ -1297,12 +1377,13 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	---Set the movability of a frame based in the specified values
 	---***
 	---@param frame AnyFrameObject Reference to the frame to make movable/unmovable
-	---@param movable boolean Whether to make the frame movable or unmovable
+	---@param movable? boolean Whether to make the frame movable or unmovable | ***Default:*** false
 	---@param t? movabilityData When specified, set **frame** as movable, dynamically updating the position options widgets when it's moved by the user
 	---<hr><p></p>
 	function wt.SetMovability(frame, movable, t)
 		if not frame.SetMovable then return end
 
+		movable = movable == true
 		t = t or {}
 		t.triggers = t.triggers or { frame }
 		if t.cursor == nil then t.cursor = t.modifier ~= nil end
@@ -1532,12 +1613,14 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	---Check and evaluate all dependencies in a ruleset
 	---***
 	---@param rules dependencyRule[] Indexed table containing the dependency rules to check
-	---@return boolean state
+	---@return boolean? state
 	function wt.CheckDependencies(rules)
+		if not type(rules) == "table" then return end
+
 		local state = true
 
 		for i = 1, #rules do
-			if wt.IsFrame(rules[i].frame) then --Base Blizzard frames
+			if wt.IsFrame(rules[i].frame) then --Base Blizzard frame objects
 				if rules[i].frame:IsObjectType("CheckButton") then state = rules[i].evaluate and rules[i].evaluate(rules[i].frame:GetChecked()) or rules[i].frame:GetChecked()
 				elseif rules[i].frame:IsObjectType("EditBox") then state = rules[i].evaluate(rules[i].frame:GetText())
 				elseif rules[i].frame:IsObjectType("Slider") then state = rules[i].evaluate(rules[i].frame:GetValue())
@@ -1545,8 +1628,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			elseif rules[i].frame.isType then --Custom WidgetTools widgets
 				if rules[i].frame.isType("Toggle") then if rules[i].evaluate then state = rules[i].evaluate(rules[i].frame.getState()) else state = rules[i].frame.getState() end
 				elseif rules[i].frame.isType("Selector") then state = rules[i].evaluate(rules[i].frame.getSelected())
-				elseif rules[i].frame.isType("Multiselector") then state = rules[i].evaluate(rules[i].frame.getSelected())
-				elseif rules[i].frame.isType("SpecialSelector") then state = rules[i].evaluate(rules[i].frame.getSelections())
+				elseif rules[i].frame.isType("SpecialSelector") then state = rules[i].evaluate(rules[i].frame.getSelected())
+				elseif rules[i].frame.isType("Multiselector") then state = rules[i].evaluate(rules[i].frame.getSelections())
 				elseif rules[i].frame.isType("Textbox") then state = rules[i].evaluate(rules[i].frame.getText())
 				elseif rules[i].frame.isType("Numeric") then state = rules[i].evaluate(rules[i].frame.getNumber())
 				end
@@ -1561,8 +1644,10 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	---Assign dependency rule listeners from a defined a ruleset
 	---***
 	---@param rules dependencyRule[] Indexed table containing the dependency rules to add
-	---@param setState fun(state: boolean) Function to call to set the state of the frame, enabling it on a true, or disabled it on a false input
+	---@param setState fun(state: boolean) Function to call to set the state of the frame, enabling it on a true, or disabling it on a false input
 	function wt.AddDependencies(rules, setState)
+		if not type(rules) == "table" or not type(setState) == "function" then return end
+
 		--Update utility
 		local setter = function() setState(wt.CheckDependencies(rules)) end
 
@@ -1591,127 +1676,147 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		setter()
 	end
 
-	--[ Batched Options Data Management ]
+	--[ Options Data Management ]
 
-	---@class optionsTable
-	---@field rules table<string, optionsTableRule[]> Collection of rules describing where to save/load options data to/from, and what change handlers to call in the process linked to each specific options key
-	---@field changeHandlers table<string, function> List of change handlers linked to each specific options key
+	--Options data management rule registry
+	---@class optionsRegistry
+	---@field rules table<string, optionsRule[]> Collection of rules describing where to save/load options data to/from, and what change handlers to call in the process linked to each specific options key under an addon
+	---@field changeHandlers table<string, function> List of pairs of addon-specific unique keys and change handler scripts
 	local optionsTable = { rules = {}, changeHandlers = {} }
 
-	---Add a connection between an options widget and a DB entry to the options data table under the specified options key for batched data handling
+	---Add a connection between an options widget and a DB entry to the options data table linked to the specified options key under the specified addon for batched data handling
 	---***
 	---@param widget checkbox|radioButton|radioSelector|checkboxSelector|specialSelector|dropdownSelector|textbox|multilineEditbox|numericSlider|colorPicker Reference to the widget to be saved & loaded data to/from with defined **widget.loadData()** & **widget.saveData()** functions
-	---@param optionsKey string A unique key referencing a collection of widget options data to be handled together
-	---@param index? integer Set when to call **widget.loadData()** & **widget.saveData()** in the execution order while saving or loading batched data via ***WidgetToolbox*.SaveOptionsData(optionsKey)** or ***WidgetToolbox*.LoadOptionsData(optionsKey, ...)** | ***Default:*** *placed at the end of the current list*
-	---@param onChange? table<string|integer, function|string> List of new or already defined functions to call after the value of the widget was changed by the user or via options data management<ul><li>**[*key*]**? string|integer ― A unique key to point to a newly defined function to be added to options data management or just the index of the next function name to be linked to **optionsKey** | ***Default:*** *next assigned index*</li><li>**[*value*]** function|string ― The new function to register under its unique key, or the key of an already existing function linked to **optionsKey**</li><ul><li>***Note:*** Function definitions will be replaced by key references when they are registered to options data management. Duplicate functions are overwritten.</li></ul></ul>
-	function wt.AddOptionsRule(widget, optionsKey, index, onChange)
-		if not widget or not optionsKey then return end
+	---@param t optionsData Parameters are to be provided in this table
+	function wt.AddOptionsRule(widget, t)
+		if not widget or not type(t) == "table" then return end
 
-		optionsTable.rules[optionsKey] = optionsTable.rules[optionsKey] or {}
+		t.category = t.category or "WidgetTools"
+		t.key = t.key or ""
+		local key = t.category .. t.key
+
+		optionsTable.rules[key] = optionsTable.rules[key] or {}
 
 		--Add the onChange handlers to options data management
-		if onChange then
+		if t.onChange then
 			local newKeys = {}
 
-			for k, v in pairs(onChange) do if type(k) == "string" and type(v) == "function" then
+			for k, v in pairs(t.onChange) do if type(k) == "string" and type(v) == "function" then
 				--Store the function
-				optionsTable.changeHandlers[optionsKey] = optionsTable.changeHandlers[optionsKey] or {}
-				optionsTable.changeHandlers[optionsKey][k] = v
+				optionsTable.changeHandlers[t.category .. k] = v
 
 				--Remove the function definitions, save their keys
-				onChange[k] = nil
+				t.onChange[k] = nil
 				table.insert(newKeys, k)
 			end end
 
 			--Add saved new keys
-			for i = 1, #newKeys do table.insert(onChange, newKeys[i]) end
+			for i = 1, #newKeys do table.insert(t.onChange, newKeys[i]) end
 		end
 
 		--Add the options data rules to the collection
-		if type(index) ~= "number" then table.insert(optionsTable.rules[optionsKey], { widget = widget, onChange = onChange })
-		else table.insert(optionsTable.rules[optionsKey], Clamp(wt.Round(index), 1, #optionsTable.rules[optionsKey] + 1), { widget = widget, onChange = onChange }) end
+		if type(t.index) ~= "number" then table.insert(optionsTable.rules[key], { widget = widget, onChange = t.onChange })
+		else table.insert(optionsTable.rules[key], Clamp(wt.Round(t.index), 1, #optionsTable.rules[key] + 1), { widget = widget, onChange = t.onChange }) end
 	end
 
-	---Load all data from storage to the widgets specified in the options data list referenced by the options key by calling **[*widget*].loadData(...)** for each
+	---Load all data from storage to the widgets specified in the options data list referenced by the specified options key under the specified addon by calling **[*widget*].loadData(...)** for each
 	---***
-	---@param optionsKey string A unique key referencing a collection of widget options data to be handled together
+	---@param category? string A unique string used for categorizing options data management rules & change handler scripts | ***Default:*** "WidgetTools" *(global rule)*
+	---@param key? string A unique string appended to **category** linking a subset of options data rules to be handled together | ***Default:*** "" *(category-wide rule)*
 	---@param handleChanges? boolean Whether to call **onChange** handlers or not | ***Default:*** false
-	function wt.LoadOptionsData(optionsKey, handleChanges)
-		if not optionsTable.rules[optionsKey] then return end
+	function wt.LoadOptionsData(category, key, handleChanges)
+		category = category or "WidgetTools"
+		key = category .. (key or "")
+
+		if not optionsTable.rules[key] then return end
 
 		if handleChanges then handleChanges = {} end
 
-		for i = 1, #optionsTable.rules[optionsKey] do
-			optionsTable.rules[optionsKey][i].widget.loadData(false)
+		for i = 1, #optionsTable.rules[key] do
+			optionsTable.rules[key][i].widget.loadData(false)
 
 			--Register onChange handlers for call
-			if handleChanges and optionsTable.rules[optionsKey][i].onChange then
-				for j = 1, #optionsTable.rules[optionsKey][i].onChange do handleChanges[optionsTable.rules[optionsKey][i].onChange[j]] = true end
+			if handleChanges and optionsTable.rules[key][i].onChange then
+				for j = 1, #optionsTable.rules[key][i].onChange do handleChanges[category .. optionsTable.rules[key][i].onChange[j]] = true end
 			end
 		end
 
 		--Call registered onChange handlers
-		if handleChanges then for k in pairs(handleChanges) do optionsTable.changeHandlers[optionsKey][k]() end end
+		if handleChanges then for k in pairs(handleChanges) do optionsTable.changeHandlers[k]() end end
 	end
 
-	---Save all data from the widgets to storage specified in the options data list referenced by the options key by calling **[*widget*].saveData(...)** for each
+	---Save all data from the widgets to storage specified in the options data list referenced by the specified options key under the specified addon by calling **[*widget*].saveData(...)** for each
 	---***
-	---@param optionsKey string A unique key referencing a collection of widget options data to be handled together
-	function wt.SaveOptionsData(optionsKey)
-		if not optionsTable.rules[optionsKey] then return end
+	---@param category? string A unique string used for categorizing options data management rules & change handler scripts | ***Default:*** "WidgetTools" *(global rule)*
+	---@param key? string A unique string appended to **category** linking a subset of options data rules to be handled together | ***Default:*** "" *(category-wide rule)*
+	function wt.SaveOptionsData(category, key)
+		key = (category or "WidgetTools") .. (key or "")
 
-		for i = 1, #optionsTable.rules[optionsKey] do optionsTable.rules[optionsKey][i].widget.saveData() end
+		if not optionsTable.rules[key] then return end
+
+		for i = 1, #optionsTable.rules[key] do optionsTable.rules[key][i].widget.saveData() end
 	end
 
-	---Set a data snapshot for each widget specified in the options data list referenced by the options key by calling **[*widget*].revertData()** for each
+	---Set a data snapshot for each widget specified in the options data list referenced by the specified options key by under the specified addon calling **[*widget*].revertData()** for each
 	---***
-	---@param optionsKey string A unique key referencing a collection of widget options data to be handled together
-	function wt.SnapshotOptionsData(optionsKey)
-		if not optionsTable.rules[optionsKey] then return end
+	---@param category? string A unique string used for categorizing options data management rules & change handler scripts | ***Default:*** "WidgetTools" *(global rule)*
+	---@param key? string A unique string appended to **category** linking a subset of options data rules to be handled together | ***Default:*** "" *(category-wide rule)*
+	function wt.SnapshotOptionsData(category, key)
+		key = (category or "WidgetTools") .. (key or "")
 
-		for i = 1, #optionsTable.rules[optionsKey] do optionsTable.rules[optionsKey][i].widget.snapshotData() end
+		if not optionsTable.rules[key] then return end
+
+		for i = 1, #optionsTable.rules[key] do optionsTable.rules[key][i].widget.snapshotData() end
 	end
 
-	---Set and load the stored data managed by each widget specified in the options data list referenced by the options key by calling **[*widget*].revertData()** for each
+	---Set & load the stored data managed by each widget specified in the options data list referenced by the specified options key under the specified addon by calling **[*widget*].revertData()** for each
 	---***
-	---@param optionsKey string A unique key referencing a collection of widget options data to be handled together
-	function wt.RevertOptionsData(optionsKey)
-		if not optionsTable.rules[optionsKey] then return end
+	---@param category? string A unique string used for categorizing options data management rules & change handler scripts | ***Default:*** "WidgetTools" *(global rule)*
+	---@param key? string A unique string appended to **category** linking a subset of options data rules to be handled together | ***Default:*** "" *(category-wide rule)*
+	function wt.RevertOptionsData(category, key)
+		category = category or "WidgetTools"
+		key = category .. (key or "")
+
+		if not optionsTable.rules[key] then return end
 
 		local handleChanges = {}
 
-		for i = 1, #optionsTable.rules[optionsKey] do
-			optionsTable.rules[optionsKey][i].widget.revertData(false)
+		for i = 1, #optionsTable.rules[key] do
+			optionsTable.rules[key][i].widget.revertData(false)
 
 			--Register onChange handlers for call
-			for i = 1, #optionsTable.rules[optionsKey] do if handleChanges and optionsTable.rules[optionsKey][i].onChange then
-				for j = 1, #optionsTable.rules[optionsKey][i].onChange do handleChanges[optionsTable.rules[optionsKey][i].onChange[j]] = true end
+			for i = 1, #optionsTable.rules[key] do if handleChanges and optionsTable.rules[key][i].onChange then
+				for j = 1, #optionsTable.rules[key][i].onChange do handleChanges[category .. optionsTable.rules[key][i].onChange[j]] = true end
 			end end
 		end
 
 		--Call registered onChange handlers
-		if handleChanges then for k in pairs(handleChanges) do optionsTable.changeHandlers[optionsKey][k]() end end
+		if handleChanges then for k in pairs(handleChanges) do optionsTable.changeHandlers[k]() end end
 	end
 
-	---Set and load the default data managed by each widget specified in the options data list referenced by the options key by calling **[*widget*].resetData()** for each
+	---Set & load the default data managed by each widget specified in the options data list referenced by the specified options key under the specified addon by calling **[*widget*].resetData()** for each
 	---***
-	---@param optionsKey string A unique key referencing a collection of widget options data to be handled together
-	function wt.ResetOptionsData(optionsKey)
-		if not optionsTable.rules[optionsKey] then return end
+	---@param category? string A unique string used for categorizing options data management rules & change handler scripts | ***Default:*** "WidgetTools" *(global rule)*
+	---@param key? string A unique string appended to **category** linking a subset of options data rules to be handled together | ***Default:*** "" *(category-wide rule)*
+	function wt.ResetOptionsData(category, key)
+		category = category or "WidgetTools"
+		key = category .. (key or "")
+
+		if not optionsTable.rules[key] then return end
 
 		local handleChanges = {}
 
-		for i = 1, #optionsTable.rules[optionsKey] do
-			optionsTable.rules[optionsKey][i].widget.resetData(false)
+		for i = 1, #optionsTable.rules[key] do
+			optionsTable.rules[key][i].widget.resetData(false)
 
 			--Register onChange handlers for call
-			for i = 1, #optionsTable.rules[optionsKey] do if handleChanges and optionsTable.rules[optionsKey][i].onChange then
-				for j = 1, #optionsTable.rules[optionsKey][i].onChange do handleChanges[optionsTable.rules[optionsKey][i].onChange[j]] = true end
+			for i = 1, #optionsTable.rules[key] do if handleChanges and optionsTable.rules[key][i].onChange then
+				for j = 1, #optionsTable.rules[key][i].onChange do handleChanges[category .. optionsTable.rules[key][i].onChange[j]] = true end
 			end end
 		end
 
 		--Call registered onChange handlers
-		if handleChanges then for k in pairs(handleChanges) do optionsTable.changeHandlers[optionsKey][k]() end end
+		if handleChanges then for k in pairs(handleChanges) do optionsTable.changeHandlers[k]() end end
 	end
 
 	--[ Settings Page Management ]
@@ -1724,7 +1829,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	function wt.RegisterSettingsPage(page, parent, icon)
 		if WidgetToolsDB.lite or type(page) ~= "table" or type(page.isType) ~= "function" or not page.isType("SettingsPage") or page.category then return end
 
-		local title = (page.title and page.title:GetText() or "") .. (icon or not parent and page.icon and (" " .. CreateSimpleTextureMarkup(page.icon:GetTextureFileID())) or "")
+		local title = (page.title and page.title:GetText() or "") .. (icon or not parent and page.icon and (" " .. wt.Texture(page.icon:GetTextureFileID())) or "")
 
 		page.canvas.OnCommit = function() page.save(true) end
 		page.canvas.OnRefresh = function() page.load(nil, true) end
@@ -1734,67 +1839,6 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		else page.category = Settings.RegisterCanvasLayoutCategory(page.canvas, title) end
 
 		Settings.RegisterAddOnCategory(page.category)
-	end
-
-	--[ Hyperlink Handlers ]
-
-	---Format a clickable hyperlink text via escape sequences
-	---***
-	---@param type ExtendedHyperlinkType [Type of the hyperlink](https://warcraft.wiki.gg/wiki/Hyperlinks#Types) determining how it's being handled and what payload it carries
-	---@param content? string A colon-separated chain of parameters determined by **type** (Example: "content1:content2:content3") | ***Default:*** ""
-	---@param text string Clickable text to be displayed as the hyperlink
-	---@return string
-	---<hr><p></p>
-	function wt.Hyperlink(type, content, text)
-		return "\124H" .. type .. ":" .. (content or "") .. "\124h" .. text .. "\124h"
-	end
-
-	---Format a custom clickable addon hyperlink text via escape sequences
-	---***
-	---@param addon string The name of the addon's folder (the addon namespace, not its displayed title)
-	---@param type? string A unique key signifying the type of the hyperlink specific to the addon (if the addon handles multiple different custom types of hyperlinks) in order to be able to set unique hyperlink click handlers via ***WidgetToolbox*.SetHyperlinkHandler(...)** | ***Default:*** "-"
-	---@param content? string A colon-separated chain of data strings carried by the hyperlink to be provided to the handler function (Example: "content1:content2:content3") | ***Default:*** ""
-	---@param text string Clickable text to be displayed as the hyperlink
-	function wt.CustomHyperlink(addon, type, content, text)
-		return wt.Hyperlink("addon", addon .. ":" .. (type or "-") .. ":" .. (content or ""), text)
-	end
-
-	--Collection of hyperlink handler scripts
-	local hyperlinkHandlers = {}
-
-	---Register a function to handle custom hyperlink clicks
-	---***
-	---@param addon string The name of the addon's folder (the addon namespace, not its displayed title)
-	---@param type? string Unique custom hyperlink type key used to identify the specific handler function | ***Default:*** "-"
-	---@param handler fun(...) Function to be called with the list of content data strings carried by the hyperlink returned one by one when clicking on a hyperlink text created via ***WidgetToolbox*.CustomHyperlink(...)**
-	function wt.SetHyperlinkHandler(addon, type, handler)
-
-		---Call the handler function if it has been registered
-		---@param addonID string
-		---@param handlerID string
-		---@param payload string
-		local function callHandler(addonID, handlerID, payload)
-			local handlerFunction = wt.FindValueByKey(wt.FindValueByKey(hyperlinkHandlers, addonID), handlerID)
-
-			if handlerFunction then handlerFunction(strsplit(":", payload)) end
-		end
-
-		--Hook the hyperlink handler caller
-		if not next(hyperlinkHandlers) then
-			if not wt.classic then EventRegistry:RegisterCallback("SetItemRef", function(_, ...)
-				local linkType, addonID, handlerID, payload = strsplit(":", ..., 4)
-
-				if linkType == "addon" then callHandler(addonID, handlerID, payload) end
-			end) else hooksecurefunc(ItemRefTooltip, "SetHyperlink", function(_, ...)
-				local _, addonID, handlerID, payload = strsplit(":", ..., 4)
-
-				callHandler(addonID, handlerID, payload)
-			end) end
-		end
-
-		--Add the hyperlink handler function to the table
-		if not hyperlinkHandlers[addon] then hyperlinkHandlers[addon] = {} end
-		hyperlinkHandlers[addon][type or "-"] = handler
 	end
 
 	--[ Chat Control ]
@@ -1811,7 +1855,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		local logo = C_AddOns.GetAddOnMetadata(addon, "IconTexture")
 		local addonTitle = wt.Clear(select(2, C_AddOns.GetAddOnInfo(addon))):gsub("^%s*(.-)%s*$", "%1")
-		local branding = (logo and (CreateSimpleTextureMarkup(logo, 9) .. " ") or "") .. addonTitle .. ": "
+		local branding = (logo and (wt.Texture(logo, 9) .. " ") or "") .. addonTitle .. ": "
 
 		---@class chatCommandManager
 		local manager = {}
@@ -1848,7 +1892,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			end
 
 			print(wt.Color(ns.toolboxStrings.chat.welcome.thanks:gsub(
-				"#ADDON", wt.Color(addonTitle, t.colors.title) .. (logo and " " .. CreateSimpleTextureMarkup(logo) or "")
+				"#ADDON", wt.Color(addonTitle, t.colors.title) .. (logo and " " .. wt.Texture(logo) or "")
 			), t.colors.content))
 			print(wt.Color(ns.toolboxStrings.chat.welcome.hint:gsub("#KEYWORD", keyword), t.colors.description))
 
@@ -2168,21 +2212,19 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 	--[ Popup ]
 
-	--| Dialogue
+	--| Dialog
 
-	---Create a popup dialogue with an accept function and cancel button
+	---Create a popup dialog with an accept function and cancel button
 	---***
-	---@param addon string The name of the addon's folder (the addon namespace, not its displayed title)
-	---@param name string Appended to **addon** as a unique identifier key in the global **StaticPopupDialogs** table<ul><li>***Note:*** Space characters will be replaced with "_".</li></ul>
-	---@param t? popupDialogueData Parameters are to be provided in this table
+	---@param addon? string The name of the addon's folder (the addon namespace, not its displayed title) | ***Default:*** "WidgetTools" *(register as global)*
+	---@param key? string Unique string appended to **addon** to be used as the identifier key in the global **StaticPopupDialogs** table | ***Default:*** "DIALOG"<ul><li>***Note:*** Dialog data registered under existing keys will be overwritten.</li><li>***Note:*** Space characters will be replaced with "_".</li></ul>
+	---@param t? popupDialogData Parameters are to be provided in this table
 	---***
 	---@return string key The unique identifier key created for this popup in the global **StaticPopupDialogs** table used as the parameter when calling [StaticPopup_Show()](https://warcraft.wiki.gg/wiki/API_StaticPopup_Show) or [StaticPopup_Hide()](https://warcraft.wiki.gg/wiki/API_StaticPopup_Hide)
-	function wt.CreatePopupDialogueData(addon, name, t)
+	function wt.RegisterPopupDialog(addon, key, t)
 		t = t or {}
+		key = addon:upper() .. "_" .. (type(key) == "string" and key:gsub("%s+", "_"):upper() or "DIALOG")
 
-		local key = addon:upper() .. "_" .. name:gsub("%s+", "_"):upper()
-
-		--Create the popup dialogue
 		StaticPopupDialogs[key] = {
 			text = t.text or "",
 			button1 = t.accept or ACCEPT,
@@ -2200,17 +2242,16 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		return key
 	end
 
-	---Update already existing popup dialogue data
+	---Update already existing popup dialog data
 	---***
-	---@param key string The unique identifier key representing the defaults warning popup dialogue in the global **StaticPopupDialogs** table, and used as the parameter when calling [StaticPopup_Show()](https://warcraft.wiki.gg/wiki/API_StaticPopup_Show) or [StaticPopup_Hide()](https://warcraft.wiki.gg/wiki/API_StaticPopup_Hide)
-	---@param t? popupDialogueData Parameters are to be provided in this table
+	---@param key string The unique identifier key representing the defaults warning popup dialog in the global **StaticPopupDialogs** table, and used as the parameter when calling [StaticPopup_Show()](https://warcraft.wiki.gg/wiki/API_StaticPopup_Show) or [StaticPopup_Hide()](https://warcraft.wiki.gg/wiki/API_StaticPopup_Hide)
+	---@param t? popupDialogData Parameters are to be provided in this table
 	---@return string|nil key The unique identifier key created for this popup in the global **StaticPopupDialogs** table used as the parameter when calling [StaticPopup_Show()](https://warcraft.wiki.gg/wiki/API_StaticPopup_Show) or [StaticPopup_Hide()](https://warcraft.wiki.gg/wiki/API_StaticPopup_Hide), or nil if no popup has been registered with the provided **key**
-	function wt.UpdatePopupDialogueData(key, t)
+	function wt.UpdatePopupDialog(key, t)
 		if not StaticPopupDialogs[key] then return end
 
 		t = t or {}
 
-		--Create the popup dialogue
 		if t.text then StaticPopupDialogs[key].text = t.text end
 		if t.accept then StaticPopupDialogs[key].button1 = t.accept end
 		if t.cancel then StaticPopupDialogs[key].button2 = t.cancel end
@@ -2469,7 +2510,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		return t.name, font
 	end
 
-	--| Create custom fonts for classic
+	--| Create custom fonts for Classic
 
 	if wt.classic then
 		wt.CreateFont({
@@ -2744,7 +2785,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--Add content, performs tasks
 		if t.initialize then
-			t.initialize(frame, t.size.w, t.size.h)
+			t.initialize(frame, t.size.w, t.size.h, t.name)
 
 			--Arrange content
 			if t.arrangement and frame then wt.ArrangeContent(frame, t.arrangement) end
@@ -2897,7 +2938,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--Add content, performs tasks
 		if t.initialize then
-			t.initialize(panel, t.size.w, t.size.h)
+			t.initialize(panel, t.size.w, t.size.h, t.name or "Panel")
 
 			--Arrange content
 			if t.arrangement then wt.ArrangeContent(panel, wt.AddMissing(t.arrangement, { parameters = { margins = { t = t.description and 30 or nil, }, }, })) end
@@ -3148,11 +3189,16 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	---@param addon string The name of the addon's folder (the addon namespace, not its displayed title)
 	---@param t? settingsPageCreationData Parameters are to be provided in this table
 	---***
-	---@return settingsPage|nil page Table containing references to the options canvas [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame), category page and utility functions
+	---@return settingsPage|nil page Table containing references to the settings canvas [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame), category page and utility functions
 	function wt.CreateSettingsPage(addon, t)
 		if not addon or not C_AddOns.IsAddOnLoaded(addon) then return end
 
 		t = t or {}
+		t.name = t.name and t.name:gsub("%s+", "")
+		if type(t.dataManagement) == "table" then
+			t.dataManagement.category = t.dataManagement.category or addon
+			t.dataManagement.keys = type((t.dataManagement.keys or {})[1]) == "string" and t.dataManagement.keys or { t.name or "" }
+		end
 		local width, height = 0, 0
 		local defaultsWarning
 
@@ -3166,12 +3212,12 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		---Returns the type of this object
 		---***
-		---@return WidgetTypeName type ***Value:*** "SettingsPage"
+		---@return "SettingsPage" string
 		---<hr><p></p>
 		function page.getType() return "SettingsPage" end
 
 		---Checks and returns if the type of this object is equal to the string provided
-		---@param type string
+		---@param type string|WidgetTypeName
 		---@return boolean
 		function page.isType(type) return type == "SettingsPage" end
 
@@ -3180,7 +3226,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		---@return any
 		function page.getProperty(key) return wt.FindValueByKey(t, key) end
 
-		---Returns the unique identifier key representing the defaults warning popup dialogue in the global **StaticPopupDialogs** table, and used as the parameter when calling [StaticPopup_Show()](https://warcraft.wiki.gg/wiki/API_StaticPopup_Show) or [StaticPopup_Hide()](https://warcraft.wiki.gg/wiki/API_StaticPopup_Hide)
+		---Returns the unique identifier key representing the defaults warning popup dialog in the global **StaticPopupDialogs** table, and used as the parameter when calling [StaticPopup_Show()](https://warcraft.wiki.gg/wiki/API_StaticPopup_Show) or [StaticPopup_Hide()](https://warcraft.wiki.gg/wiki/API_StaticPopup_Hide)
 		---@return string
 		function page.getDefaultsPopupKey() return defaultsWarning end
 
@@ -3190,7 +3236,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		--- - ***Note:*** No category page will be opened if **WidgetToolsDB.lite** is true.
 		function page.open()
 			if WidgetToolsDB.lite or not page.category then
-				print(wt.Color(CreateSimpleTextureMarkup(ns.textures.logo, 9) .. " " .. ns.title, ns.colors.gold[1]) .. " " .. wt.Color(ns.strings.chat.lite.reminder:gsub(
+				print(wt.Color(wt.Texture(ns.textures.logo, 9) .. " " .. ns.title, ns.colors.gold[1]) .. " " .. wt.Color(ns.strings.chat.lite.reminder:gsub(
 					"#HINT", wt.Color(ns.strings.chat.lite.hint:gsub(
 						"#COMMAND", wt.Color("/" .. ns.chat.keyword .. " " .. ns.chat.commands.lite, { r = 1, g = 1, b = 1, })
 					), ns.colors.grey[1])
@@ -3209,7 +3255,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		---@param user? boolean Whether to mark the call as being the result of a user interaction | ***Default:*** false
 		function page.save(user)
 			--Retrieve data from settings widgets and commit to storage
-			if t.autoSave ~= false and t.optionsKeys then for i = 1, #t.optionsKeys do wt.SaveOptionsData(t.optionsKeys[i]) end end
+			if t.autoSave ~= false and type(t.dataManagement) == "table" then for i = 1, #t.dataManagement.keys do
+				wt.SaveOptionsData(t.dataManagement.category, t.dataManagement.keys[i])
+			end end
 
 			--Call listener
 			if t.onSave then t.onSave(user == true) end
@@ -3221,9 +3269,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		---@param user? boolean Whether to mark the call as being the result of a user interaction | ***Default:*** false
 		function page.load(changes, user)
 			--Update settings widgets
-			if t.autoLoad ~= false and t.optionsKeys then for i = 1, #t.optionsKeys do
-				wt.LoadOptionsData(t.optionsKeys[i], changes)
-				wt.SnapshotOptionsData(t.optionsKeys[i])
+			if t.autoLoad ~= false and type(t.dataManagement) == "table" then for i = 1, #t.dataManagement.keys do
+				wt.LoadOptionsData(t.dataManagement.category, t.dataManagement.keys[i], changes)
+				wt.SnapshotOptionsData(t.dataManagement.category, t.dataManagement.keys[i])
 			end end
 
 			--Call listener
@@ -3235,7 +3283,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		---@param user? boolean Whether to mark the call as being the result of a user interaction | ***Default:*** false
 		function page.cancel(user)
 			--Update settings widgets
-			if t.optionsKeys then for i = 1, #t.optionsKeys do wt.RevertOptionsData(t.optionsKeys[i]) end end
+			if type(t.dataManagement) == "table" then for i = 1, #t.dataManagement.keys do wt.RevertOptionsData(t.dataManagement.category, t.dataManagement.keys[i]) end end
 
 			--Call listener
 			if t.onCancel then t.onCancel(user == true) end
@@ -3246,7 +3294,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		---@param user? boolean Whether to mark the call as being the result of a user interaction | ***Default:*** false
 		function page.default(user)
 			--Update with default values
-			if t.optionsKeys then for i = 1, #t.optionsKeys do wt.ResetOptionsData(t.optionsKeys[i]) end end
+			if type(t.dataManagement) == "table" then for i = 1, #t.dataManagement.keys do wt.ResetOptionsData(t.dataManagement.category, t.dataManagement.keys[i]) end end
 
 			--Call listener
 			if t.onDefault then t.onDefault(user == true, false) end
@@ -3258,7 +3306,6 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 			--[ Canvas Frame ]
 
-			t.name = t.name and t.name:gsub("%s+", "")
 			width, height = SettingsPanel.Container.SettingsCanvas:GetSize()
 
 			page.canvas = wt.CreateFrame({
@@ -3329,7 +3376,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				disabled = t.static,
 			})
 
-			defaultsWarning = wt.CreatePopupDialogueData(addon, (t.name or "") .. "DEFAULT", {
+			defaultsWarning = wt.RegisterPopupDialog(addon, (t.name or "") .. "DEFAULT", {
 				text = ns.toolboxStrings.settings.warningSingle:gsub("#PAGE", wt.Color(title, colors.highlight)),
 				accept = ACCEPT,
 				onAccept = function() page.default(true) end,
@@ -3389,7 +3436,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--Add content, performs tasks
 		if t.initialize then
-			t.initialize(page.scroller or page.canvas, width, height)
+			t.initialize(page.scroller or page.canvas, width, height, (t.dataManagement or {}).category, (t.dataManagement or {}).keys, t.name or addon)
 
 			--Arrange content
 			if t.arrangement and page.canvas then wt.ArrangeContent(page.scroller or page.canvas, wt.AddMissing(t.arrangement, { parameters = {
@@ -3411,13 +3458,13 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	--- - ***Note:*** Already registered pages (which contain a **category** value) will be skipped and won't be included in the new category.
 	---@param t? settingsCategoryCreationData Parameters are to be provided in this table
 	---***
-	---@return optionsCategory|nil category Table containing references to settings pages and utility functions or nil if the specified **parent** was invalid
+	---@return settingsCategory|nil category Table containing references to settings pages and utility functions or nil if the specified **parent** was invalid
 	function wt.CreateSettingsCategory(addon, parent, pages, t)
 		if not addon or not C_AddOns.IsAddOnLoaded(addon) or type(parent) ~= "table" and not parent.category then return end
 
 		t = t or {}
 
-		---@class optionsCategory
+		---@class settingsCategory
 		---@field pages settingsPage[]
 		local category = { pages = {} }
 
@@ -3439,14 +3486,16 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		---Call to reset all options to their default values for all pages in this category
 		---***
 		---@param user? boolean Whether to mark the call as being the result of a user interaction | ***Default:*** false
-		---@param callListeners? boolean If true, call the **onDefault** listeners (if set) of each individual category page separately | ***Default:*** false
+		---@param callListeners? boolean If true, call the **onDefault** listeners (if set) of each individual category page separately | ***Default:*** true
 		function category.defaults(user, callListeners)
 			for i = 1, #category.pages do
-				local optionsKeys = category.pages[i].getProperty("optionsKeys")
-				local onDefault = not callListeners and category.pages[i].getProperty("onDefault") or nil
+				local dataManagement = category.pages[i].getProperty("dataManagement")
+				local onDefault = callListeners ~= false and category.pages[i].getProperty("onDefault") or nil
 
 				--Update with default values
-				if optionsKeys then for i = 1, #optionsKeys do wt.ResetOptionsData(optionsKeys[i]) end end
+				if type(dataManagement) == "table" and type(dataManagement.keys) == "table" then for i = 1, #dataManagement.keys do
+					wt.ResetOptionsData(dataManagement.category, dataManagement.keys[i])
+				end end
 
 				--Call listeners
 				if type(onDefault) == "function" then onDefault(user == true, true) end
@@ -3468,8 +3517,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		wt.RegisterSettingsPage(parent)
 
-		--Override defaults warning and add all defaults option to dialogue
-		wt.UpdatePopupDialogueData(parent.getDefaultsPopupKey(), {
+		--Override defaults warning and add all defaults option to dialog
+		wt.UpdatePopupDialog(parent.getDefaultsPopupKey(), {
 			text = ns.toolboxStrings.settings.warning:gsub("#CATEGORY", wt.Color(parentTitle, colors.highlight)):gsub("#PAGE", wt.Color(parentTitle, colors.highlight)),
 			accept = ALL_SETTINGS,
 			alt = CURRENT_SETTINGS,
@@ -3486,8 +3535,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 			wt.RegisterSettingsPage(pages[i], parent, pages[i].getProperty("titleIcon"))
 
-			--Override defaults warning and add all defaults option to dialogue
-			wt.UpdatePopupDialogueData(pages[i].getDefaultsPopupKey(), {
+			--Override defaults warning and add all defaults option to dialog
+			wt.UpdatePopupDialog(pages[i].getDefaultsPopupKey(), {
 				text = ns.toolboxStrings.settings.warning:gsub("#CATEGORY", wt.Color(parentTitle, colors.highlight)):gsub(
 					"#PAGE", wt.Color(pages[i].title and pages[i].title:GetText() or "", colors.highlight)
 				),
@@ -3555,12 +3604,12 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		---Returns the object type of this widget
 		---***
-		---@return WidgetTypeName type ***Value:*** "ActionButton"
+		---@return "ActionButton" string
 		---<hr><p></p>
 		function button.getType() return "ActionButton" end
 
 		---Checks and returns if the type of this widget is equal to the string provided
-		---@param type string
+		---@param type string|WidgetTypeName
 		---@return boolean
 		function button.isType(type) return type == "ActionButton" end
 
@@ -3893,12 +3942,12 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		---Returns the object type of this widget
 		---***
-		---@return WidgetTypeName type ***Value:*** "Toggle"
+		---@return "Toggle" string
 		---<hr><p></p>
 		function toggle.getType() return "Toggle" end
 
 		---Checks and returns if the type of this widget is equal to the string provided
-		---@param type string
+		---@param type string|WidgetTypeName
 		---@return boolean
 		function toggle.isType(type) return type == "Toggle" end
 
@@ -3966,7 +4015,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				if not silent then toggle.invoke.loaded(true) end
 			else
 				--Handle changes
-				if handleChanges and t.optionsKey and type(t.onChange) == "table" then for i = 1, #t.onChange do optionsTable.changeHandlers[t.optionsKey][t.onChange[i]]() end end
+				if handleChanges and type(t.dataManagement) == "table" and type(t.dataManagement.onChange) == "table" then
+					for i = 1, #t.dataManagement.onChange do optionsTable.changeHandlers[t.dataManagement.category .. t.dataManagement.onChange[i]]() end
+				end
 
 				if not silent then toggle.invoke.loaded(false) end
 			end
@@ -4030,7 +4081,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			if user and t.instantSave ~= false then toggle.saveData(nil, silent) end
 
 			--Handle changes
-			if user and t.optionsKey and type(t.onChange) == "table" then for i = 1, #t.onChange do optionsTable.changeHandlers[t.optionsKey][t.onChange[i]]() end end
+			if user and type(t.dataManagement) == "table" and type(t.dataManagement.onChange) == "table" then
+				for i = 1, #t.dataManagement.onChange do optionsTable.changeHandlers[t.dataManagement.category .. t.dataManagement.onChange[i]]() end
+			end
 		end
 
 		---Flip the current toggle state of the widget
@@ -4063,7 +4116,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		end end end end
 
 		--Register to options data management
-		if t.optionsKey then wt.AddOptionsRule(toggle, t.optionsKey, t.optionsIndex, t.onChange) end
+		if t.dataManagement then wt.AddOptionsRule(toggle, t.dataManagement) end
 
 		--Assign dependencies
 		if t.dependencies then wt.AddDependencies(t.dependencies, toggle.setEnabled) end
@@ -4636,12 +4689,12 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		---Returns the object type of this widget
 		---***
-		---@return WidgetTypeName type ***Value:*** "Selector"
+		---@return "Selector" string
 		---<hr><p></p>
 		function selector.getType() return "Selector" end
 
 		---Checks and returns if the type of this widget is equal to the string provided
-		---@param type string
+		---@param type string|WidgetTypeName
 		---@return boolean
 		function selector.isType(type) return type == "Selector" end
 
@@ -4786,7 +4839,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 				if not silent then selector.invoke.loaded(true) end
 			else
-				if handleChanges and t.optionsKey and type(t.onChange) == "table" then for i = 1, #t.onChange do optionsTable.changeHandlers[t.optionsKey][t.onChange[i]]() end end
+				if handleChanges and type(t.dataManagement.onChange) == "table" then for i = 1, #t.dataManagement.onChange do optionsTable.changeHandlers[t.dataManagement.category .. t.dataManagement.onChange[i]]() end end
 
 				if not silent then selector.invoke.loaded(false) end
 			end
@@ -4851,7 +4904,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			if not silent then selector.invoke.selected(user == true) end
 
 			--Handle changes
-			if user and t.optionsKey and type(t.onChange) == "table" then for i = 1, #t.onChange do optionsTable.changeHandlers[t.optionsKey][t.onChange[i]]() end end
+			if user and type(t.dataManagement) == "table" and type(t.dataManagement.onChange) == "table" then
+				for i = 1, #t.dataManagement.onChange do optionsTable.changeHandlers[t.dataManagement.category .. t.dataManagement.onChange[i]]() end
+			end
 		end
 
 		--| State
@@ -4884,7 +4939,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		for i = 1, #t.items do setToggle(i) end
 
 		--Register to options data management
-		if t.optionsKey then wt.AddOptionsRule(selector, t.optionsKey, t.optionsIndex, t.onChange) end
+		if t.dataManagement then wt.AddOptionsRule(selector, t.dataManagement) end
 
 		--Assign dependencies
 		if t.dependencies then wt.AddDependencies(t.dependencies, selector.setEnabled) end
@@ -4897,11 +4952,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 	---Create a non-GUI special selector widget (with a collection of toggle widgets) with data management logic specific to the specified **itemset**
 	---***
-	---@param itemset string Specify what type of selector should be created | ***Value:*** "anchor"|"justifyH"|"justifyV"|"frameStrata"
-	--- - ***Note:*** Setting this to "anchor" will use the set of [AnchorPoint](https://warcraft.wiki.gg/wiki/Anchors) items.
-	--- - ***Note:*** Setting this to "justifyH" will use the set of horizontal text alignment items (JustifyH).
-	--- - ***Note:*** Setting this to "justifyV" will use the set of vertical text alignment items (JustifyV).
-	--- - ***Note:*** Setting this to "frameStrata" will use the set of [FrameStrata](https://warcraft.wiki.gg/wiki/Frame_Strata) items (excluding "WORLD").</li></ul>
+	---@param itemset SpecialSelectorItemset Specify what type of selector should be created
 	---@param t? specialSelectorCreationData Parameters are to be provided in this table
 	---***
 	---@return selector selector Reference to the new selector widget, utility functions and more wrapped in a table
@@ -4961,12 +5012,12 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		---Returns the object type of this widget
 		---***
-		---@return WidgetTypeName type ***Value:*** "SpecialSelector"
+		---@return "SpecialSelector" string
 		---<hr><p></p>
 		function selector.getType() return "SpecialSelector" end
 
 		---Checks and returns if the type of this widget is equal to the string provided
-		---@param type string
+		---@param type string|WidgetTypeName
 		---@return boolean
 		function selector.isType(type) return type == "SpecialSelector" end
 
@@ -4974,6 +5025,10 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		---@param key string
 		---@return any
 		function selector.getProperty(key) return wt.FindValueByKey(t, key) end
+
+		---Return the itemset type specified for this special selector on creation
+		---@return SpecialSelectorItemset itemset
+		function selector.getItemset() return itemset end
 
 		--| Event handling
 
@@ -5033,7 +5088,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 				if not silent then selector.invoke.loaded(true) end
 			else
-				if handleChanges and t.optionsKey and type(t.onChange) == "table" then for i = 1, #t.onChange do optionsTable.changeHandlers[t.optionsKey][t.onChange[i]]() end end
+				if handleChanges and type(t.dataManagement.onChange) == "table" then for i = 1, #t.dataManagement.onChange do optionsTable.changeHandlers[t.dataManagement.category .. t.dataManagement.onChange[i]]() end end
 
 				if not silent then selector.invoke.loaded(false) end
 			end
@@ -5098,7 +5153,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			if not silent then selector.invoke.selected(user == true) end
 
 			--Handle changes
-			if user and t.optionsKey and type(t.onChange) == "table" then for i = 1, #t.onChange do optionsTable.changeHandlers[t.optionsKey][t.onChange[i]]() end end
+			if user and type(t.dataManagement) == "table" and type(t.dataManagement.onChange) == "table" then
+				for i = 1, #t.dataManagement.onChange do optionsTable.changeHandlers[t.dataManagement.category .. t.dataManagement.onChange[i]]() end
+			end
 		end
 
 		--| State
@@ -5150,7 +5207,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		end end
 
 		--Register to options data management
-		if t.optionsKey then wt.AddOptionsRule(selector, t.optionsKey, t.optionsIndex, t.onChange) end
+		if t.dataManagement then wt.AddOptionsRule(selector, t.dataManagement) end
 
 		--Assign dependencies
 		if t.dependencies then wt.AddDependencies(t.dependencies, selector.setEnabled) end
@@ -5216,12 +5273,12 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		---Returns the object type of this widget
 		---***
-		---@return WidgetTypeName type ***Value:*** "Selector"
+		---@return "Selector" string
 		---<hr><p></p>
 		function selector.getType() return "Multiselector" end
 
 		---Checks and returns if the type of this widget is equal to the string provided
-		---@param type string
+		---@param type string|WidgetTypeName
 		---@return boolean
 		function selector.isType(type) return type == "Multiselector" end
 
@@ -5378,7 +5435,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 				if not silent then selector.invoke.loaded(true) end
 			else
-				if handleChanges and t.optionsKey and type(t.onChange) == "table" then for i = 1, #t.onChange do optionsTable.changeHandlers[t.optionsKey][t.onChange[i]]() end end
+				if handleChanges and type(t.dataManagement.onChange) == "table" then for i = 1, #t.dataManagement.onChange do optionsTable.changeHandlers[t.dataManagement.category .. t.dataManagement.onChange[i]]() end end
 
 				if not silent then selector.invoke.loaded(false) end
 			end
@@ -5454,7 +5511,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			end
 
 			--Handle changes
-			if user and t.optionsKey and type(t.onChange) == "table" then for i = 1, #t.onChange do optionsTable.changeHandlers[t.optionsKey][t.onChange[i]]() end end
+			if user and type(t.dataManagement) == "table" and type(t.dataManagement.onChange) == "table" then
+				for i = 1, #t.dataManagement.onChange do optionsTable.changeHandlers[t.dataManagement.category .. t.dataManagement.onChange[i]]() end
+			end
 		end
 
 		---Set the specified item as selected
@@ -5486,7 +5545,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			end
 
 			--Handle changes
-			if user and t.optionsKey and type(t.onChange) == "table" then for i = 1, #t.onChange do optionsTable.changeHandlers[t.optionsKey][t.onChange[i]]() end end
+			if user and type(t.dataManagement) == "table" and type(t.dataManagement.onChange) == "table" then
+				for i = 1, #t.dataManagement.onChange do optionsTable.changeHandlers[t.dataManagement.category .. t.dataManagement.onChange[i]]() end
+			end
 		end
 
 		--| State
@@ -5519,7 +5580,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		for i = 1, #t.items do setToggle(t.items[i], i) end
 
 		--Register to options data management
-		if t.optionsKey then wt.AddOptionsRule(selector, t.optionsKey, t.optionsIndex, t.onChange) end
+		if t.dataManagement then wt.AddOptionsRule(selector, t.dataManagement) end
 
 		--Assign dependencies
 		if t.dependencies then wt.AddDependencies(t.dependencies, selector.setEnabled) end
@@ -5729,11 +5790,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 	---Create a custom special radio selector GUI frame to pick an Anchor Point, a horizontal or vertical text alignment or Frame Strata value with enhanced widget functionality
 	---***
-	---@param itemset string Specify what type of selector should be created | ***Value:*** "anchor"|"justifyH"|"justifyV"|"frameStrata"
-	--- - ***Note:*** Setting this to "anchor" will use the set of [AnchorPoint](https://warcraft.wiki.gg/wiki/Anchors) items.
-	--- - ***Note:*** Setting this to "justifyH" will use the set of horizontal text alignment items (JustifyH).
-	--- - ***Note:*** Setting this to "justifyV" will use the set of vertical text alignment items (JustifyV).
-	--- - ***Note:*** Setting this to "frameStrata" will use the set of [FrameStrata](https://warcraft.wiki.gg/wiki/Frame_Strata) items (excluding "WORLD").</li></ul>
+	---@param itemset SpecialSelectorItemset Specify what type of selector should be created
 	---@param t? specialRadioSelectorCreationData Parameters are to be provided in this table
 	---@param widget? selector Reference to an already existing special selector widget to set up as a special selector frame instead of creating a new base widget
 	---***
@@ -5971,12 +6028,11 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				clearable = t.clearable,
 				listeners = t.listeners,
 				dependencies = t.dependencies,
-				optionsKey = t.optionsKey,
 				getData = t.getData,
 				saveData = t.saveData,
-				instantSave = t.instantSave,
-				onChange = t.onChange,
 				default = t.default,
+				instantSave = t.instantSave,
+				dataManagement = t.dataManagement,
 			}, selector) end,
 		})
 
@@ -6381,12 +6437,12 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		---Returns the object type of this widget
 		---***
-		---@return WidgetTypeName type ***Value:*** "Textbox"
+		---@return "Textbox" string
 		---<hr><p></p>
 		function textbox.getType() return "Textbox" end
 
 		---Checks and returns if the type of this widget is equal to the string provided
-		---@param type string
+		---@param type string|WidgetTypeName
 		---@return boolean
 		function textbox.isType(type) return type == "Textbox" end
 
@@ -6454,7 +6510,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				if not silent then textbox.invoke.loaded(true) end
 			else
 				--Handle changes
-				if handleChanges and t.optionsKey and type(t.onChange) == "table" then for i = 1, #t.onChange do optionsTable.changeHandlers[t.optionsKey][t.onChange[i]]() end end
+				if handleChanges and type(t.dataManagement) == "table" and type(t.dataManagement.onChange) == "table" then
+					for i = 1, #t.dataManagement.onChange do optionsTable.changeHandlers[t.dataManagement.category .. t.dataManagement.onChange[i]]() end
+				end
 
 				if not silent then textbox.invoke.loaded(false) end
 			end
@@ -6516,7 +6574,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			if user and t.instantSave ~= false then textbox.saveData(nil, silent) end
 
 			--Handle changes
-			if user and t.optionsKey and type(t.onChange) == "table" then for i = 1, #t.onChange do optionsTable.changeHandlers[t.optionsKey][t.onChange[i]]() end end
+			if user and type(t.dataManagement) == "table" and type(t.dataManagement.onChange) == "table" then
+				for i = 1, #t.dataManagement.onChange do optionsTable.changeHandlers[t.dataManagement.category .. t.dataManagement.onChange[i]]() end
+			end
 		end
 
 		--| State & dependencies
@@ -6543,7 +6603,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		end end end end
 
 		--Register to options data management
-		if t.optionsKey then wt.AddOptionsRule(textbox, t.optionsKey, t.optionsIndex, t.onChange) end
+		if t.dataManagement then wt.AddOptionsRule(textbox, t.dataManagement) end
 
 		--Assign dependencies
 		if t.dependencies then wt.AddDependencies(t.dependencies, textbox.setEnabled) end
@@ -7092,12 +7152,12 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		---Returns the object type of this widget
 		---***
-		---@return WidgetTypeName type ***Value:*** "Numeric"
+		---@return "Numeric" string
 		---<hr><p></p>
 		function numeric.getType() return "Numeric" end
 
 		---Checks and returns if the type of this widget is equal to the string provided
-		---@param type string
+		---@param type string|WidgetTypeName
 		---@return boolean
 		function numeric.isType(type) return type == "Numeric" end
 
@@ -7177,7 +7237,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				if not silent then numeric.invoke.loaded(true) end
 			else
 				--Handle changes
-				if handleChanges and t.optionsKey and type(t.onChange) == "table" then for i = 1, #t.onChange do optionsTable.changeHandlers[t.optionsKey][t.onChange[i]]() end end
+				if handleChanges and type(t.dataManagement) == "table" and type(t.dataManagement.onChange) == "table" then
+					for i = 1, #t.dataManagement.onChange do optionsTable.changeHandlers[t.dataManagement.category .. t.dataManagement.onChange[i]]() end
+				end
 
 				if not silent then numeric.invoke.loaded(false) end
 			end
@@ -7237,7 +7299,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			if user and t.instantSave ~= false then numeric.saveData(nil, silent) end
 
 			--Handle changes
-			if user and t.optionsKey and type(t.onChange) == "table" then for i = 1, #t.onChange do optionsTable.changeHandlers[t.optionsKey][t.onChange[i]]() end end
+			if user and type(t.dataManagement) == "table" and type(t.dataManagement.onChange) == "table" then
+				for i = 1, #t.dataManagement.onChange do optionsTable.changeHandlers[t.dataManagement.category .. t.dataManagement.onChange[i]]() end
+			end
 		end
 
 		---Decrease the value of the widget by the specified **t.step** or **t.altStep** amount
@@ -7302,7 +7366,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		end end end end
 
 		--Register to options data management
-		if t.optionsKey then wt.AddOptionsRule(numeric, t.optionsKey, t.optionsIndex, t.onChange) end
+		if t.dataManagement then wt.AddOptionsRule(numeric, t.dataManagement) end
 
 		--Assign dependencies
 		if t.dependencies then wt.AddDependencies(t.dependencies, numeric.setEnabled) end
@@ -7731,12 +7795,12 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		---Returns the object type of this widget
 		---***
-		---@return WidgetTypeName type ***Value:*** "ColorPicker"
+		---@return "ColorPicker" string
 		---<hr><p></p>
 		function colorPicker.getType() return "ColorPicker" end
 
 		---Checks and returns if the type of this widget is equal to the string provided
-		---@param type string
+		---@param type string|WidgetTypeName
 		---@return boolean
 		function colorPicker.isType(type) return type == "ColorPicker" end
 
@@ -7804,7 +7868,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				if not silent then colorPicker.invoke.loaded(true) end
 			else
 				--Handle changes
-				if handleChanges and t.optionsKey and type(t.onChange) == "table" then for i = 1, #t.onChange do optionsTable.changeHandlers[t.optionsKey][t.onChange[i]]() end end
+				if handleChanges and type(t.dataManagement) == "table" and type(t.dataManagement.onChange) == "table" then
+					for i = 1, #t.dataManagement.onChange do optionsTable.changeHandlers[t.dataManagement.category .. t.dataManagement.onChange[i]]() end
+				end
 
 				if not silent then colorPicker.invoke.loaded(false) end
 			end
@@ -7870,7 +7936,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			if user and t.instantSave ~= false then colorPicker.saveData(nil, silent) end
 
 			--Handle changes
-			if user and t.optionsKey and type(t.onChange) == "table" then for i = 1, #t.onChange do optionsTable.changeHandlers[t.optionsKey][t.onChange[i]]() end end
+			if user and type(t.dataManagement) == "table" and type(t.dataManagement.onChange) == "table" then
+				for i = 1, #t.dataManagement.onChange do optionsTable.changeHandlers[t.dataManagement.category .. t.dataManagement.onChange[i]]() end
+			end
 		end
 
 		--| Color wheel
@@ -7946,7 +8014,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		end end end end
 
 		--Register to options data management
-		if t.optionsKey then wt.AddOptionsRule(colorPicker, t.optionsKey, t.optionsIndex, t.onChange) end
+		if t.dataManagement then wt.AddOptionsRule(colorPicker, t.dataManagement) end
 
 		--Assign dependencies
 		if t.dependencies then wt.AddDependencies(t.dependencies, colorPicker.setEnabled) end
@@ -8266,7 +8334,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		return wt.CreateSettingsPage(addon, not WidgetToolsDB.lite and next(data) and {
 			register = t.register,
-			name = t.name or data.title,
+			name = t.name or "About",
+			title = t.title or data.title,
 			description = t.description or C_AddOns.GetAddOnMetadata(addon, "Notes"),
 			static = t.static ~= false,
 			initialize = function(canvas)
@@ -8642,12 +8711,12 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		---Returns the type of this object
 		---***
-		---@return WidgetTypeName type ***Value:*** "DataManagementPage"
+		---@return "DataManagementPage" string
 		---<hr><p></p>
 		function dataManagement.getType() return "DataManagementPage" end
 
 		---Checks and returns if the type of this object is equal to the string provided
-		---@param type string
+		---@param type string|WidgetTypeName
 		---@return boolean
 		function dataManagement.isType(type) return type == "DataManagementPage" end
 
@@ -8663,20 +8732,23 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			name = t.name or "DataManagement",
 			title = t.title or ns.toolboxStrings.dataManagement.title,
 			description = t.description or ns.toolboxStrings.dataManagement.description:gsub("#ADDON", addonTitle),
-			optionsKeys = { addon .. "Backup" },
+			dataManagement = {
+				category = addon,
+				keys = { "Backup" },
+			},
 			onSave = t.onSave,
 			onLoad = t.onLoad,
 			onCancel = t.onCancel,
 			onDefault = t.onDefault,
-			initialize = function(canvas)
+			initialize = function(canvas, _, _, category, keys)
 
 				--[ Profile Management ]
 
 				--Profile delete confirmation
-				local deleteProfilePopup = wt.CreatePopupDialogueData(addon, "DELETE_PROFILE", { accept = DELETE, })
+				local deleteProfilePopup = wt.RegisterPopupDialog(addon, "DELETE_PROFILE", { accept = DELETE, })
 
 				--Profile reset confirmation
-				local resetProfilePopup = wt.CreatePopupDialogueData(addon, "RESET_PROFILE")
+				local resetProfilePopup = wt.RegisterPopupDialog(addon, "RESET_PROFILE")
 
 				--| Utilities
 
@@ -8831,7 +8903,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 						if t.characterData.activeProfile == index then activateProfile(index) end
 					end
 
-					if unsafe then delete() else StaticPopup_Show(wt.UpdatePopupDialogueData(deleteProfilePopup, {
+					if unsafe then delete() else StaticPopup_Show(wt.UpdatePopupDialog(deleteProfilePopup, {
 						text = ns.toolboxStrings.profiles.delete.warning:gsub("#PROFILE", wt.Color(t.accountData.profiles[index].title, colors.highlight)):gsub("#ADDON", addonTitle),
 						onAccept = delete,
 					})) end
@@ -8861,7 +8933,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 						if t.onProfileReset then t.onProfileReset(t.accountData.profiles[index].title, index) end
 					end
 
-					if unsafe then reset() else StaticPopup_Show(wt.UpdatePopupDialogueData(resetProfilePopup, {
+					if unsafe then reset() else StaticPopup_Show(wt.UpdatePopupDialog(resetProfilePopup, {
 						text = ns.toolboxStrings.profiles.reset.warning:gsub("#PROFILE", wt.Color(t.accountData.profiles[index].title, colors.highlight)):gsub("#ADDON", addonTitle),
 						onAccept = reset,
 					}))end
@@ -8988,25 +9060,23 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 									offset = { x = -92, y = -30 }
 								},
 								size = { w = 92, h = 26 },
-								action = function()
-									wt.CreatePopupInputBox({
-										title = ns.toolboxStrings.profiles.rename.description:gsub(
-											"#PROFILE", WrapTextInColorCode(t.accountData.profiles[t.characterData.activeProfile].title, "FFFFFFFF")
-										),
-										position = {
-											anchor = "TOPRIGHT",
-											offset = { x = -92, y = -30 },
-											relativeTo = panel,
-										},
-										text = t.accountData.profiles[t.characterData.activeProfile].title,
-										accept = function(text)
-											t.accountData.profiles[t.characterData.activeProfile].title = text
+								action = function() wt.CreatePopupInputBox({
+									title = ns.toolboxStrings.profiles.rename.description:gsub(
+										"#PROFILE", WrapTextInColorCode(t.accountData.profiles[t.characterData.activeProfile].title, "FFFFFFFF")
+									),
+									position = {
+										anchor = "TOPRIGHT",
+										offset = { x = -92, y = -30 },
+										relativeTo = panel,
+									},
+									text = t.accountData.profiles[t.characterData.activeProfile].title,
+									accept = function(text)
+										t.accountData.profiles[t.characterData.activeProfile].title = text
 
-											--Update dropdown items
-											dataManagement.profiles.apply.updateItems(t.accountData.profiles)
-										end,
-									})
-								end,
+										--Update dropdown items
+										dataManagement.profiles.apply.updateItems(t.accountData.profiles)
+									end,
+								}) end,
 							})
 
 							dataManagement.profiles.delete = wt.CreateSimpleButton({
@@ -9033,7 +9103,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 					dataManagement.backup.frame = wt.CreatePanel({
 						parent = canvas,
-						name = "Backup",
+						name = keys[1],
 						title = ns.toolboxStrings.backup.title,
 						description = ns.toolboxStrings.backup.description:gsub("#ADDON", addonTitle),
 						arrange = {},
@@ -9082,7 +9152,10 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 								scrollSpeed = 0.2,
 								scrollToTop = false,
 								unfocusOnEnter = false,
-								optionsKey = addon .. "Backup",
+								dataManagement = {
+									category = category,
+									key = keys[1],
+								},
 								listeners = { loaded = { { handler = dataManagement.refreshBackupBox, }, }, },
 								showDefault = false,
 							})
@@ -9096,17 +9169,20 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 									anchor = "BOTTOMLEFT",
 									offset = { x = 12, y = 12 }
 								},
-								optionsKey = addon .. "Backup",
 								getData = function() return t.settingsData.compactBackup end,
 								saveData = function(state) t.settingsData.compactBackup = state end,
-								onChange = { RefreshBackupBox = dataManagement.refreshBackupBox },
+								dataManagement = {
+									category = addon,
+									key = keys[1],
+									onChange = { RefreshBackupBox = dataManagement.refreshBackupBox },
+								},
 								listeners = { loaded = { { handler = function() dataManagement.backupAllProfiles.compact.button:SetChecked(t.settingsData.compactBackup) end, }, }, },
 								events = { OnClick = function(_, state) dataManagement.backupAllProfiles.compact.button:SetChecked(state) end },
 								showDefault = false,
 								utilityMenu = false,
 							})
 
-							local importPopup = wt.CreatePopupDialogueData(addon, "IMPORT", {
+							local importPopup = wt.RegisterPopupDialog(addon, "IMPORT", {
 								text = ns.toolboxStrings.backup.warning,
 								accept = ns.toolboxStrings.backup.import,
 								onAccept = function()
@@ -9180,7 +9256,10 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 										scrollSpeed = 0.2,
 										scrollToTop = false,
 										unfocusOnEnter = false,
-										optionsKey = addon .. "Backup",
+										dataManagement = {
+											category = category,
+											key = keys[1],
+										},
 										listeners = { loaded = { { handler = dataManagement.refreshAllProfilesBackupBox, }, }, },
 										showDefault = false,
 									})
@@ -9248,7 +9327,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 								utilityMenu = false,
 							})
 
-							local allProfilesImportPopup = wt.CreatePopupDialogueData(addon, "IMPORT_ALL", {
+							local allProfilesImportPopup = wt.RegisterPopupDialog(addon, "IMPORT_ALL", {
 								text = ns.toolboxStrings.backup.warning,
 								accept = ns.toolboxStrings.backup.import,
 								onAccept = function()
@@ -9321,7 +9400,11 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	---***
 	---@return positionPanel|nil table Components of the options panel wrapped in a table
 	function wt. CreatePositionOptions(addon, t)
-		if not addon or not C_AddOns.IsAddOnLoaded(addon) then return end
+		if not addon or not C_AddOns.IsAddOnLoaded(addon) or not type(t) == "table" then return end
+
+		t.dataManagement = t.dataManagement or {}
+		t.dataManagement.category = t.dataManagement.category or addon
+		t.dataManagement.key = t.dataManagement.key or "Position"
 
 		---@class positionPanel
 		---@field layer? table
@@ -9594,7 +9677,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 						--| Options Widgets
 
-						local savePopup = wt.CreatePopupDialogueData(addon, "SAVE_PRESET", {
+						local savePopup = wt.RegisterPopupDialog(addon, "SAVE_PRESET", {
 							text = ns.toolboxStrings.presets.save.warning:gsub("#CUSTOM", wt.Color(panel.presetList[t.presets.custom.index].title, colors.highlight)),
 							accept = ns.toolboxStrings.override,
 							onAccept = panel.saveCustomPreset,
@@ -9613,7 +9696,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 							dependencies = t.dependencies
 						})
 
-						local resetPopup = wt.CreatePopupDialogueData(addon, "RESET_PRESET", {
+						local resetPopup = wt.RegisterPopupDialog(addon, "RESET_PRESET", {
 							text = ns.toolboxStrings.presets.reset.warning:gsub("#CUSTOM", wt.Color(panel.presetList[t.presets.custom.index].title, colors.highlight)),
 							accept = ns.toolboxStrings.override,
 							onAccept = panel.resetCustomPreset,
@@ -9646,15 +9729,18 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					arrange = {},
 					width = 140,
 					dependencies = t.dependencies,
-					optionsKey = t.optionsKey,
 					getData = function() return t.getData().position.relativePoint end,
 					saveData = function(value) t.getData().position.relativePoint = value end,
-					onChange = {
-						CustomPositionChangeHandler = function() if type(t.onChangePosition) == "function" then t.onChangePosition() end end,
-						UpdateFramePosition = function() wt.SetPosition(t.frame, t.getData().position, true) end,
-						UpdatePositioningVisualAids = function() if WidgetToolsDB.positioningAids then positioningVisualAids.update(t.frame, t.getData().position) end end,
-					},
 					default = t.defaultsTable.position.relativePoint,
+					dataManagement = {
+						category = t.dataManagement.category,
+						key = t.dataManagement.key,
+						onChange = {
+							CustomPositionChangeHandler = function() if type(t.onChangePosition) == "function" then t.onChangePosition() end end,
+							UpdateFramePosition = function() wt.SetPosition(t.frame, t.getData().position, true) end,
+							UpdatePositioningVisualAids = function() if WidgetToolsDB.positioningAids then positioningVisualAids.update(t.frame, t.getData().position) end end,
+						},
+					},
 				})
 
 				panel.position.anchor = wt.CreateSpecialRadioSelector("anchor", {
@@ -9665,57 +9751,60 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					arrange = { newRow = false, },
 					width = 140,
 					dependencies = t.dependencies,
-					optionsKey = t.optionsKey,
-					optionsIndex = 1,
 					getData = function() return t.getData().position.anchor end,
 					saveData = function(value) t.getData().position.anchor = value end,
-					onChange = {
-						"CustomPositionChangeHandler",
-						UpdateFrameOffsetsAndPosition = function() if not t.settingsData.keepInPlace then wt.SetPosition(t.frame, t.getData().position, true) else
-							local x, y = 0, 0
-
-							if previousAnchor:find("LEFT") then
-								if t.getData().position.anchor:find("RIGHT") then x = -t.frame:GetWidth()
-								elseif t.getData().position.anchor == "CENTER" or t.getData().position.anchor == "TOP" or t.getData().position.anchor == "BOTTOM" then
-									x = -t.frame:GetWidth() / 2
-								end
-							elseif previousAnchor:find("RIGHT") then
-								if t.getData().position.anchor:find("LEFT") then x = t.frame:GetWidth()
-								elseif t.getData().position.anchor == "CENTER" or t.getData().position.anchor == "TOP" or t.getData().position.anchor == "BOTTOM" then
-									x = t.frame:GetWidth() / 2
-								end
-							elseif previousAnchor == "CENTER" or previousAnchor == "TOP" or previousAnchor == "BOTTOM" then
-								if t.getData().position.anchor:find("LEFT") then x = t.frame:GetWidth() / 2
-								elseif t.getData().position.anchor:find("RIGHT") then x = -t.frame:GetWidth() / 2 end
-							end
-
-							if previousAnchor:find("TOP") then
-								if t.getData().position.anchor:find("BOTTOM") then y = t.frame:GetHeight()
-								elseif t.getData().position.anchor == "CENTER" or t.getData().position.anchor == "LEFT" or t.getData().position.anchor == "RIGHT" then
-									y = t.frame:GetHeight() / 2
-								end
-							elseif previousAnchor:find("BOTTOM") then
-								if t.getData().position.anchor:find("TOP") then y = -t.frame:GetHeight()
-								elseif t.getData().position.anchor == "CENTER" or t.getData().position.anchor == "LEFT" or t.getData().position.anchor == "RIGHT" then
-									y = -t.frame:GetHeight() / 2
-								end
-							elseif previousAnchor == "CENTER" or previousAnchor == "LEFT" or previousAnchor == "RIGHT" then
-								if t.getData().position.anchor:find("TOP") then y = -t.frame:GetHeight() / 2
-								elseif t.getData().position.anchor:find("BOTTOM") then y = t.frame:GetHeight() / 2 end
-							end
-
-							previousAnchor = t.getData().position.anchor
-
-							--Update offsets
-							panel.position.offset.x.setData(t.getData().position.offset.x - x, false, false)
-							panel.position.offset.y.setData(t.getData().position.offset.y - y, false, false)
-
-							--Update frame position
-							wt.SetPosition(t.frame, t.getData().position, true)
-						end end,
-						"UpdatePositioningVisualAids"
-					},
 					default = t.defaultsTable.position.anchor,
+					dataManagement = {
+						category = t.dataManagement.category,
+						key = t.dataManagement.key,
+						index = 1,
+						onChange = {
+							"CustomPositionChangeHandler",
+							UpdateFrameOffsetsAndPosition = function() if not t.settingsData.keepInPlace then wt.SetPosition(t.frame, t.getData().position, true) else
+								local x, y = 0, 0
+
+								if previousAnchor:find("LEFT") then
+									if t.getData().position.anchor:find("RIGHT") then x = -t.frame:GetWidth()
+									elseif t.getData().position.anchor == "CENTER" or t.getData().position.anchor == "TOP" or t.getData().position.anchor == "BOTTOM" then
+										x = -t.frame:GetWidth() / 2
+									end
+								elseif previousAnchor:find("RIGHT") then
+									if t.getData().position.anchor:find("LEFT") then x = t.frame:GetWidth()
+									elseif t.getData().position.anchor == "CENTER" or t.getData().position.anchor == "TOP" or t.getData().position.anchor == "BOTTOM" then
+										x = t.frame:GetWidth() / 2
+									end
+								elseif previousAnchor == "CENTER" or previousAnchor == "TOP" or previousAnchor == "BOTTOM" then
+									if t.getData().position.anchor:find("LEFT") then x = t.frame:GetWidth() / 2
+									elseif t.getData().position.anchor:find("RIGHT") then x = -t.frame:GetWidth() / 2 end
+								end
+
+								if previousAnchor:find("TOP") then
+									if t.getData().position.anchor:find("BOTTOM") then y = t.frame:GetHeight()
+									elseif t.getData().position.anchor == "CENTER" or t.getData().position.anchor == "LEFT" or t.getData().position.anchor == "RIGHT" then
+										y = t.frame:GetHeight() / 2
+									end
+								elseif previousAnchor:find("BOTTOM") then
+									if t.getData().position.anchor:find("TOP") then y = -t.frame:GetHeight()
+									elseif t.getData().position.anchor == "CENTER" or t.getData().position.anchor == "LEFT" or t.getData().position.anchor == "RIGHT" then
+										y = -t.frame:GetHeight() / 2
+									end
+								elseif previousAnchor == "CENTER" or previousAnchor == "LEFT" or previousAnchor == "RIGHT" then
+									if t.getData().position.anchor:find("TOP") then y = -t.frame:GetHeight() / 2
+									elseif t.getData().position.anchor:find("BOTTOM") then y = t.frame:GetHeight() / 2 end
+								end
+
+								previousAnchor = t.getData().position.anchor
+
+								--Update offsets
+								panel.position.offset.x.setData(t.getData().position.offset.x - x, false, false)
+								panel.position.offset.y.setData(t.getData().position.offset.y - y, false, false)
+
+								--Update frame position
+								wt.SetPosition(t.frame, t.getData().position, true)
+							end end,
+							"UpdatePositioningVisualAids"
+						},
+					},
 				})
 
 				panel.position.keepInPlace = wt.CreateCheckbox({
@@ -9725,12 +9814,15 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					tooltip = { lines = { { text = ns.toolboxStrings.position.keepInPlace.tooltip:gsub("#FRAME", t.frameName), }, } },
 					arrange = { newRow = false, },
 					dependencies = t.dependencies,
-					optionsKey = t.optionsKey,
 					getData = function() return t.settingsData.keepInPlace end,
 					saveData = function(state) t.settingsData.keepInPlace = state end,
 					default = true,
 					showDefault = false,
 					utilityMenu = false,
+					dataManagement = {
+						category = t.dataManagement.category,
+						key = t.dataManagement.key,
+					},
 				})
 
 				panel.position.offset.x = wt.CreateNumericSlider({
@@ -9745,15 +9837,18 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					step = 1,
 					altStep = 25,
 					dependencies = t.dependencies,
-					optionsKey = t.optionsKey,
-					optionsIndex = 3,
 					getData = function() return t.getData().position.offset.x end,
 					saveData = function(value) t.getData().position.offset.x = value end,
-					onChange = {
-						"CustomPositionChangeHandler",
-						"UpdateFramePosition",
-					},
 					default = t.defaultsTable.position.offset.x,
+					dataManagement = {
+						category = t.dataManagement.category,
+						key = t.dataManagement.key,
+						index = 3,
+						onChange = {
+							"CustomPositionChangeHandler",
+							"UpdateFramePosition",
+						},
+					},
 				})
 
 				panel.position.offset.y = wt.CreateNumericSlider({
@@ -9768,15 +9863,18 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					step = 1,
 					altStep = 25,
 					dependencies = t.dependencies,
-					optionsKey = t.optionsKey,
-					optionsIndex = 4,
 					getData = function() return t.getData().position.offset.y end,
 					saveData = function(value) t.getData().position.offset.y = value end,
-					onChange = {
-						"CustomPositionChangeHandler",
-						"UpdateFramePosition",
-					},
 					default = t.defaultsTable.position.offset.y,
+					dataManagement = {
+						category = t.dataManagement.category,
+						key = t.dataManagement.key,
+						index = 4,
+						onChange = {
+							"CustomPositionChangeHandler",
+							"UpdateFramePosition",
+						},
+					},
 				})
 
 				if t.getData().keepInBounds ~= nil then panel.position.keepInBounds = wt.CreateCheckbox({
@@ -9786,14 +9884,17 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					tooltip = { lines = { { text = ns.toolboxStrings.position.keepInBounds.tooltip:gsub("#FRAME", t.frameName), }, } },
 					arrange = { newRow = false, },
 					dependencies = t.dependencies,
-					optionsKey = t.optionsKey,
 					getData = function() return t.getData().keepInBounds end,
 					saveData = function(state) t.getData().keepInBounds = state end,
-					onChange = {
-						CustomKeepInBoundsChangeHandler = function() if type(t.onChangeKeepInBounds) == "function" then t.onChangeKeepInBounds() end end,
-						UpdateScreenClamp = function() t.frame:SetClampedToScreen(t.getData().keepInBounds) end,
-					},
 					default = t.defaultsTable.keepInBounds,
+					dataManagement = {
+						category = t.dataManagement.category,
+						key = t.dataManagement.key,
+						onChange = {
+							CustomKeepInBoundsChangeHandler = function() if type(t.onChangeKeepInBounds) == "function" then t.onChangeKeepInBounds() end end,
+							UpdateScreenClamp = function() t.frame:SetClampedToScreen(t.getData().keepInBounds) end,
+						},
+					},
 				}) end
 
 				-- panel.position.relativeTo = wt.CreateEditBox({ --TODO: Try out GetMouseFocus() instead
@@ -9867,14 +9968,17 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 						arrange = {},
 						width = 140,
 						dependencies = t.dependencies,
-						optionsKey = t.optionsKey,
 						getData = function() return t.getData().layer.strata end,
 						saveData = function(value) t.getData().layer.strata = value end,
-						onChange = {
-							CustomStrataChangeHandler = function() if type(t.onChangeStrata) == "function" then t.onChangeStrata() end end,
-							UpdateFrameStrata = function() t.frame:SetFrameStrata(t.getData().layer.strata) end,
-						},
 						default = t.defaultsTable.layer.strata,
+						dataManagement = {
+							category = t.dataManagement.category,
+							key = t.dataManagement.key,
+							onChange = {
+								CustomStrataChangeHandler = function() if type(t.onChangeStrata) == "function" then t.onChangeStrata() end end,
+								UpdateFrameStrata = function() t.frame:SetFrameStrata(t.getData().layer.strata) end,
+							},
+						},
 					}) end
 
 					if t.getData().layer.keepOnTop ~= nil then panel.layer.keepOnTop = wt.CreateCheckbox({
@@ -9884,14 +9988,17 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 						tooltip = { lines = { { text = ns.toolboxStrings.layer.keepOnTop.tooltip:gsub("#FRAME", t.frameName), }, } },
 						arrange = { newRow = false, },
 						dependencies = t.dependencies,
-						optionsKey = t.optionsKey,
 						getData = function() return t.getData().layer.keepOnTop end,
 						saveData = function(state) t.getData().layer.keepOnTop = state end,
-						onChange = {
-							CustomKeepOnTopChangeHandler = function() if type(t.onChangeKeepOnTop) == "function" then t.onChangeKeepOnTop() end end,
-							UpdateTopLevel = function() t.frame:SetToplevel(t.getData().layer.keepOnTop) end,
-						},
 						default = t.defaultsTable.layer.keepOnTop,
+						dataManagement = {
+							category = t.dataManagement.category,
+							key = t.dataManagement.key,
+							onChange = {
+								CustomKeepOnTopChangeHandler = function() if type(t.onChangeKeepOnTop) == "function" then t.onChangeKeepOnTop() end end,
+								UpdateTopLevel = function() t.frame:SetToplevel(t.getData().layer.keepOnTop) end,
+							},
+						},
 					}) end
 
 					if t.getData().layer.level then panel.layer.level = wt.CreateNumericSlider({
@@ -9905,14 +10012,17 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 						step = 1,
 						altStep = 100,
 						dependencies = t.dependencies,
-						optionsKey = t.optionsKey,
 						getData = function() return t.getData().layer.level end,
 						saveData = function(value) t.getData().layer.level = value end,
-						onChange = {
-							CustomLevelChangeHandler = function() if type(t.onChangeLevel) == "function" then t.onChangeLevel() end end,
-							UpdateFrameLevel = function() t.frame:SetFrameLevel(t.getData().layer.level) end,
-						},
 						default = t.defaultsTable.layer.level,
+						dataManagement = {
+							category = t.dataManagement.category,
+							key = t.dataManagement.key,
+							onChange = {
+								CustomLevelChangeHandler = function() if type(t.onChangeLevel) == "function" then t.onChangeLevel() end end,
+								UpdateFrameLevel = function() t.frame:SetFrameLevel(t.getData().layer.level) end,
+							},
+						},
 					}) end
 				end
 			end,
