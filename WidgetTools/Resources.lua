@@ -16,16 +16,16 @@ local root = "Interface/AddOns/" .. ns.name .. "/"
 
 ns.changelog = {
 	{
-		"#V_Version 2.0_# #H_(12/30/2024)_#",
+		"#V_Version 2.0_# #H_(4/25/2025)_#",
 		"#N_New:_#",
-		"Added Cataclysm Classic 4.4.1, vanilla Classic 1.15.5 & The War Within 11.0.7 support.",
-		"A new Lite mode has been introduced. When enabled, no settings managed by Widget Tools will be loaded for addons built with Widget Tools saving resources in the process. Disable to access addon settings again.",
-		"An option to enable positioning visual aids for addons built with Widget Tools have been added.",
+		"Added Cataclysm Classic 4.4.2, vanilla Classic 1.15.7 & The War Within 11.1.5 support.",
+		"#H_A new Lite mode has been introduced!_# When enabled, no settings pages managed by Widget Tools will be loaded for addons built with Widget Tools saving some resources in the process. Disable to access visible addon settings again. (Addon data is still loaded in the background causing no disruptions for addon functionality.)",
+		"#H_Added visual aids for positioning!_# An option to enable positioning visual aids for addons built with Widget Tools has been introduced to help with understanding how the advanced positioning settings work to allow you to be in control of the finest detail.",
 		"Added an option for developers to make the Frame Attributes window (TableAttributeDisplay Frame) wider.",
 		"Added chat commands for Widget Tools, use: #H_/wt_# to access.",
 		"#H_#C_Changes_# & #F_Fixes_#:_#",
 		"The look of checkboxes have been updated to match the new settings style.",
-		"Significant under the hood improvements & fixes.",
+		"Significant under the hood improvements & fixes and other smaller changes & fixes.",
 		"#H_If you encounter any issues, do not hesitate to report them! Try including when & how they occur, and which other addons are you using to give me the best chance of being able to reproduce & fix them. Try proving any LUA script error messages and if you know how, taint logs as well (when relevant). Thanks a lot for helping!_#",
 	},
 	{
@@ -115,7 +115,7 @@ local english = {
 		license = "License: #LICENSE",
 		toggle = {
 			label = "Enabled",
-			tooltip = "Shortcut to disable this addon.\n\nThis change will only take effect after the interface is reloaded. Once it has been disabled, this addon will not show up in this list until it's reenabled within the main AddOns menu.",
+			tooltip = "Uncheck to disable this addon.\n\nThis change will only take effect after the interface is reloaded. Once it has been disabled, this addon will not show up in this list until it's reenabled within the main AddOns menu.",
 		},
 	},
 	specifications = {
@@ -130,7 +130,7 @@ local english = {
 			},
 			positioningAids = {
 				label = "Positioning Visual Aids",
-				tooltip = "Display visual aids when positioning frames wia settings widgets of addons which use Widget Toolboxes under the hood.\n\nNot yet available in Classic.", --TODO fix in Classic
+				tooltip = "Display visual aids when positioning frames wia settings widgets of addons which use Widget Toolboxes under the hood.",
 			},
 		},
 		dev = {

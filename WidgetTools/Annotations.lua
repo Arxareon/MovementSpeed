@@ -194,19 +194,16 @@
 ---@field t? number Space to leave at the top (doesn't need to be negated) | ***Default:*** 12
 ---@field b? number Space to leave at the bottom | ***Default:*** 12
 
----@class arrangementParameters
+---@class arrangementData
 ---@field margins? spacingData Inset the content inside the container frame by the specified amount on each side
 ---@field gaps? number The amount of space to leave between rows | ***Default:*** 8
 ---@field flip? boolean Fill the rows from right to left instead of left to right | ***Default:*** false
 ---@field resize? boolean Set the height of the container frame to match the space taken up by the arranged content (including margins) | ***Default:*** true
-
----@class arrangementData
----@field parameters? arrangementParameters Set of parameters to arrange the frames by: spacing, direction & resizing
 ---@field order? { [table[]] : integer[] } If set, position the child frames by into columns within rows in the order specified in a nested structure, an array of subtables representing rows, and their values representing the index of a given child frame in { **container**:[GetChildren()](https://wowpedia.fandom.com/wiki/API_Frame_GetChildren) }<ul><li>***Note:*** If not set, assemble the arrangement from the individual arrangement descriptions of child frames stored in their **arrangementInfo** custom table property.</li></ul>
 
 ---@class initializableContainer
----@field initialize? fun(container?: Frame, width: number, height: number, name?: string) This function will be called while setting up the container frame to perform specific tasks like creating content child frames right away<hr><p>@*param* `container`? AnyFrameObject ― Reference to the frame to be set as the parent for child objects created during initialization (nil if **WidgetToolsDB.lite** is true)</p><p>@*param* `width` number The current width of the container frame (0 if **WidgetToolsDB.lite** is true)</p><p>@*param* `height` number The current height of the container frame (0 if **WidgetToolsDB.lite** is true)</p><p>@*param* `name`? string The name parameter of the container specified at construction</p>
 ---@field arrangement? arrangementData If set, arrange the content added to the container frame during initialization into stacked rows based on the specifications provided in this table
+---@field initialize? fun(container?: Frame, width: number, height: number, name?: string) This function will be called while setting up the container frame to perform specific tasks like creating content child frames right away<hr><p>@*param* `container`? AnyFrameObject ― Reference to the frame to be set as the parent for child objects created during initialization (nil if **WidgetToolsDB.lite** is true)</p><p>@*param* `width` number The current width of the container frame (0 if **WidgetToolsDB.lite** is true)</p><p>@*param* `height` number The current height of the container frame (0 if **WidgetToolsDB.lite** is true)</p><p>@*param* `name`? string The name parameter of the container specified at construction</p>
 
 ---@class initializableOptionsContainer : initializableContainer
 ---@field initialize? fun(container?: Frame, width: number, height: number, category?: string, keys?: string[], name?: string) This function will be called while setting up the container frame to perform specific tasks like creating content child frames right away<hr><p>@*param* `container`? AnyFrameObject ― Reference to the frame to be set as the parent for child objects created during initialization (nil if **WidgetToolsDB.lite** is true)</p><p>@*param* `width` number The current width of the container frame (0 if **WidgetToolsDB.lite** is true)</p><p>@*param* `height` number The current height of the container frame (0 if **WidgetToolsDB.lite** is true)</p><p>@*param* `category`? string A unique string used for categorizing options data management rules & change handler scripts</p><p>@*param* `keys`? string[] A list of unique strings appended to **category** linking a subset of options data rules to be handled together in the specified order</p><p>@*param* `name`? string The name parameter of the container specified at construction</p>
@@ -324,6 +321,7 @@
 ---@field parent AnyFrameObject he frame to create the text in
 ---@field name? string String appended to the name of **t.parent** used to set the name of the new [FontString](https://wowpedia.fandom.com/wiki/) | ***Default:*** "Text"
 ---@field width? number
+---@field height? number
 ---@field layer? DrawLayer
 ---@field text? string Text to be shown
 ---@field font? string Name of the [Font](https://wowpedia.fandom.com/wiki/UIOBJECT_Font) object to be used | ***Default:*** "GameFontNormal"<ul><li>***Note:*** A new font object (or a modified copy of an existing one) can be created via ***WidgetToolbox*.CreateFont(...)** (even within this table definition).</li></ul>
@@ -351,27 +349,26 @@
 
 ---[ Title & Description ]
 
----@class titleData
+---@class titleCreationData
+---@field parent AnyFrameObject Reference to the frame to add the title to
 ---@field anchor? FramePoint ***Default:*** "TOPLEFT"
 ---@field offset? offsetData The offset from the anchor point relative to the specified frame
----@field width? number ***Default:*** *width of the parent frame*
+---@field width? number ***Default:*** *width of the text*
 ---@field text string Text to be shown as the main title of the frame
----@field font? string Name of the [Font](https://wowpedia.fandom.com/wiki/UIOBJECT_Font) object to be used for the [FontString](https://wowpedia.fandom.com/wiki/UIOBJECT_FontString) | ***Default:*** "GameFontNormal"
----@field color? colorData Apply the specified color to the title (overriding **t.title.font**)
----@field justify? JustifyHorizontal Set the horizontal text alignment (overriding **t.title.font**) | ***Default:*** "LEFT"
+---@field font? string Name of the [Font](https://wowpedia.fandom.com/wiki/UIOBJECT_Font) object to be used for the [FontString](https://wowpedia.fandom.com/wiki/UIOBJECT_FontString) | ***Default:*** "GameFontHighlight"
+---@field color? colorData Apply the specified color to the title (overriding **t.font**)
+---@field justify? JustifyHorizontal Set the horizontal text alignment (overriding **t.font**) | ***Default:*** "LEFT"
 
----@class descriptionData
----@field offset? offsetData The offset from the "BOTTOMLEFT" point of the main title
----@field width? number ***Default:*** *width of the parent frame*
+---@class descriptionCreationData
+---@field title FontString Reference to the already existing title to place the description next to
+---@field offset? offsetData The offset from the default position (right side of the separator to the right of **t.title**)
+---@field width? number ***Default:*** *width of the parent frame of **t.title** - width of **t.title** (& separator, offsets)*
+---@field widthOffset? number Increase the calculated with by this amount | ***Default:*** 0
+---@field spacer? number Space to leave between **t.title** & the separator and the separator & the description | ***Default:*** 5
 ---@field text string Text to be shown as the description of the frame
----@field font? string Name of the [Font](https://wowpedia.fandom.com/wiki/UIOBJECT_Font) object to be used for the [FontString](https://wowpedia.fandom.com/wiki/UIOBJECT_FontString) | ***Default:*** "GameFontHighlightSmall"
----@field color? colorData Apply the specified color to the description (overriding **t.description.font**)
----@field justify? JustifyHorizontal Set the horizontal text alignment (overriding **t.description.font**) | ***Default:*** "LEFT"
-
----@class titleCreationData
----@field parent AnyFrameObject The frame panel to add the title & description to
----@field title? titleData
----@field description? descriptionData
+---@field font? string Name of the [Font](https://wowpedia.fandom.com/wiki/UIOBJECT_Font) object to be used for the [FontString](https://wowpedia.fandom.com/wiki/UIOBJECT_FontString) | ***Default:*** "GameFontHighlightSmall2"
+---@field color? colorData Apply the specified color to the description (overriding **t.font**)
+---@field justify? JustifyHorizontal Set the horizontal text alignment (overriding **t.font**) | ***Default:*** "LEFT"
 
 ---@class titledObject_base
 ---@field title? string Text to be displayed as the title | ***Default:*** **t.name**
@@ -432,6 +429,7 @@
 ---@field parent AnyFrameObject Reference to the frame to set as the parent of the new texture
 ---@field name? string String appended to the name of **t.parent** used to set the name of the new texture | ***Default:*** "Texture"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
 ---@field size? sizeData ***Default:*** *size of* **parent**
+---@field atlas? string Name of the texture atlas to use instead of creating a texture based on **t.path**<ul><li>***Note:*** Settings this will override whatever **t.path** is set to.</li></ul>
 ---@field layer? DrawLayer
 ---@field level? integer Sublevel to set within the specified draw layer | ***Range:*** (-8, 7)
 ---@field tile? tileData Set the tiling behaviour of the texture | ***Default:*** *no tiling*
@@ -760,12 +758,6 @@
 ---@class spacingData_panel : spacingData
 ---@field t? number Space to leave at the top (doesn't need to be negated) | ***Default:*** **t.description** and 30 or 12
 
----@class arrangementParameters_panel : arrangementParameters
----@field margins? spacingData_panel Inset the content inside the container frame by the specified amount on each side
-
----@class arrangementData_panel
----@field parameters? arrangementParameters_panel Set of parameters to arrange the frames by: spacing, direction & resizing
-
 --| Constructors
 
 ---@class panelCreationData : labeledChildObject, describableObject, positionableScreenObject, arrangeableObject, visibleObject_base, backdropData, initializableContainer, liteObject
@@ -831,16 +823,13 @@
 ---@class spacingData_settingsPage
 ---@field l? number Space to leave on the left side | 10
 ---@field r? number Space to leave on the right side (doesn't need to be negated) | ***Default:*** 10
----@field t? number Space to leave at the top (doesn't need to be negated) | ***Default:*** **t.scroll** and 78 or 82
----@field b? number Space to leave at the bottom | ***Default:*** **t.scroll** and 10 or 22
+---@field t? number Space to leave at the top (doesn't need to be negated) | ***Default:*** 44
+---@field b? number Space to leave at the bottom | ***Default:*** 44
 
----@class arrangementParameters_settingsPage : arrangementParameters
+---@class arrangementData_settingsPage : arrangementData
 ---@field margins? spacingData_settingsPage Inset the content inside the canvas frame by the specified amount on each side
----@field gaps? number The amount of space to leave between rows | ***Default:*** 32
+---@field gaps? number The amount of space to leave between rows | ***Default:*** 44
 ---@field resize? boolean Set the height of the canvas frame to match the space taken up by the arranged content (including margins) | ***Default:*** **t.scroll** ~= nil
-
----@class arrangementData_settingsPage
----@field parameters? arrangementParameters_settingsPage Set of parameters to arrange the frames by: spacing, direction & resizing
 
 ---@class settingsPageCreationData_base
 ---@field register? boolean|settingsPage If true, register the new page to the Settings panel as a parent category or a subcategory of an already registered parent category if a reference to an existing settings category parent page provided | ***Default:*** false<ul><li>***Note:*** The page can be registered later via ***WidgetToolbox*.RegisterSettingsPage(...)**.</li></ul>
@@ -856,12 +845,12 @@
 
 ---@class settingsPageCreationData : settingsPageCreationData_base, describableObject, optionsCategory, settingsPageEvents, initializableOptionsContainer, liteObject
 ---@field append? boolean When setting the name of the settings category page, append **t.name** after **addon** | ***Default:*** true if **t.name** ~= nil
----@field appendOptions? boolean When setting the name of the canvas frame, append "Options" at the end as well | ***Default:*** true
 ---@field icon? string Path to the texture file to use as the icon of this settings page | ***Default:*** *the addon's logo specified in its TOC file with the "IconTexture" tag*
 ---@field titleIcon? boolean Append **t.icon** to the title of the button of the setting page in the AddOns list of the Settings window as well | ***Default:*** true if **t.register == true**
 ---@field scroll? settingsPageScrollData If set, make the canvas frame scrollable by creating a [ScrollFrame](https://wowpedia.fandom.com/wiki/UIOBJECT_ScrollFrame) as its child
 ---@field autoSave? boolean If true, automatically save the values of all widgets registered for options data management under options keys listed in **t.dataManagement.keys**, committing their data to storage via ***WidgetToolbox*.SaveOptionsData(...)** | ***Default:*** true if **t.dataManagement.keys** ~= nil<ul><li>***Note:*** If **t.dataManagement.keys** is not set, the automatic load will not be executed even if this is set to true.</li></ul>
 ---@field autoLoad? boolean If true, automatically load all data to the widgets registered for options data management under options keys listed in **t.dataManagement.keys** from storage via ***WidgetToolbox*.LoadOptionsData(...)** | ***Default:*** true if **t.dataManagement.keys** ~= nil<ul><li>***Note:*** If **t.dataManagement.keys** is not set, the automatic load will not be executed even if this is set to true.</li></ul>
+---@field arrangement? arrangementData_settingsPage If set, arrange the content added to the container frame during initialization into stacked rows based on the specifications provided in this table
 
 ---@class aboutPageCreationData : settingsPageCreationData_base
 ---@field description? string Text to be shown as the description below the title of the settings page | ***Default:*** [GetAddOnMetadata(**addon**, "Notes")](https://wowpedia.fandom.com/wiki/API_GetAddOnMetadata)

@@ -1,14 +1,11 @@
-## Interface: 110007 #Fallback to the Mainline version
+## Interface: 110105, 40402, 11507
 ## Title: Widget Tools
-## Notes: Responsible for doing the heavy lifting for dependant addons in the background.
-## IconTexture: Interface/AddOns/WidgetTools/Textures/Logo.tga
-## AddonCompartmentFunc: AddonCompartment_OnClick_WidgetTools
-## AddonCompartmentFuncOnEnter: AddonCompartment_OnEnter_WidgetTools
-## AddonCompartmentFuncOnLeave: AddonCompartment_OnLeave_WidgetTools
 ## Version: 2.0
-## X-Day: 30
-## X-Month: 12
-## X-Year: 2024
+## X-Day: 26
+## X-Month: 4
+## X-Year: 2025
+## Category: Development Tools
+## Notes: Responsible for doing the heavy lifting in the background for other addons built on it & provides extra development tools.
 ## Author: Barnabas Nagy (Arxareon)
 ## X-Sponsors: Celierra
 ## X-License: All Rights Reserved
@@ -16,6 +13,10 @@
 ## X-Wago: addons.wago.io/addons/widget-tools
 ## X-Repository: github.com/Arxareon/WidgetTools
 ## X-Issues: github.com/Arxareon/WidgetTools/issues
+## IconTexture: Interface/AddOns/WidgetTools/Textures/Logo.tga
+## AddonCompartmentFunc: AddonCompartment_OnClick_WidgetTools
+## AddonCompartmentFuncOnEnter: AddonCompartment_OnEnter_WidgetTools
+## AddonCompartmentFuncOnLeave: AddonCompartment_OnLeave_WidgetTools
 ## SavedVariables: WidgetToolsDB
 
 Resources.lua

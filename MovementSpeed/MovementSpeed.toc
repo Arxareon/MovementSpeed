@@ -1,11 +1,11 @@
-## Interface: 110007 #Fallback to the Mainline version
+## Interface: 110105, 40402, 11507
 ## Title: Movement Speed
-## Notes: View the movement speed of anyone in customizable displays and tooltips with fast updates.
-## IconTexture: Interface/AddOns/MovementSpeed/Textures/Logo.tga
 ## Version: 3.0
-## X-Day: 30
-## X-Month: 12
-## X-Year: 2024
+## X-Day: 26
+## X-Month: 4
+## X-Year: 2025
+## Category: HUDs
+## Notes: View the movement speed of anyone in customizable displays and tooltips with fast updates.
 ## Author: Barnabas Nagy (Arxareon)
 ## X-Sponsors: Celierra
 ## X-License: All Rights Reserved
@@ -13,10 +13,12 @@
 ## X-Wago: addons.wago.io/addons/movement-speed
 ## X-Repository: github.com/Arxareon/MovementSpeed
 ## X-Issues: github.com/Arxareon/MovementSpeed/issues
+## IconTexture: Interface/AddOns/MovementSpeed/Textures/Logo.tga
 ## SavedVariables: MovementSpeedDB, MovementSpeedCS
 ## SavedVariablesPerCharacter: MovementSpeedDBC
 ## Dependencies: WidgetTools
 
 Resources.lua
 WidgetToolbox.lua
-Main.lua
+Main.lua [AllowLoadGameType mainline]
+Main_Classic.lua [AllowLoadGameType classic]

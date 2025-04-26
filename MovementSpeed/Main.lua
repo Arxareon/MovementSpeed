@@ -1056,6 +1056,7 @@ local function CreateSpeedDisplayOptionsPage(display)
 			if not category or display == "playerSpeed" then options[display].position.resetCustomPreset() else options[display].position.applyPreset(1) end
 			if display == "travelSpeed" then options.travelSpeed.visibility.hidden.setState(true, true) end
 		end,
+		arrangement = {},
 		initialize = function(canvas, _, _, category, keys)
 
 			--[ Visibility ]
@@ -1066,6 +1067,7 @@ local function CreateSpeedDisplayOptionsPage(display)
 				title = ns.strings.options.speedDisplay.visibility.title,
 				description = ns.strings.options.speedDisplay.visibility.description:gsub("#ADDON", ns.title),
 				arrange = {},
+				arrangement = {},
 				initialize = function(panel, _, _, key)
 					CreateVisibilityOptions(panel, display, category, key)
 
@@ -1081,7 +1083,6 @@ local function CreateSpeedDisplayOptionsPage(display)
 						dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
 					}, copyButtonData))
 				end,
-				arrangement = {}
 			})
 
 			--[ Position ]
@@ -1245,6 +1246,7 @@ local function CreateSpeedDisplayOptionsPage(display)
 				title = ns.strings.options.speedDisplay.update.title,
 				description = ns.strings.options.speedDisplay.update.description,
 				arrange = {},
+				arrangement = {},
 				initialize = function(panel, _, _, key)
 					CreateUpdateOptions(panel, display, category, key)
 
@@ -1260,7 +1262,6 @@ local function CreateSpeedDisplayOptionsPage(display)
 						dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
 					}, copyButtonData))
 				end,
-				arrangement = {}
 			})
 
 			--[ Value ]
@@ -1271,6 +1272,7 @@ local function CreateSpeedDisplayOptionsPage(display)
 				title = ns.strings.options.speedValue.title,
 				description = ns.strings.options.speedValue.description,
 				arrange = {},
+				arrangement = {},
 				initialize = function(panel, _, _, key)
 					CreateSpeedValueOptions(panel, display, category, key)
 
@@ -1286,7 +1288,6 @@ local function CreateSpeedDisplayOptionsPage(display)
 						dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
 					}, copyButtonData))
 				end,
-				arrangement = {}
 			})
 
 			--[ Font ]
@@ -1297,6 +1298,7 @@ local function CreateSpeedDisplayOptionsPage(display)
 				title = ns.strings.options.speedDisplay.font.title,
 				description = ns.strings.options.speedDisplay.font.description,
 				arrange = {},
+				arrangement = {},
 				initialize = function(panel, _, _, key)
 					CreateFontOptions(panel, display, category, key)
 
@@ -1312,7 +1314,6 @@ local function CreateSpeedDisplayOptionsPage(display)
 						dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
 					}, copyButtonData))
 				end,
-				arrangement = {}
 			})
 
 			--[ Background ]
@@ -1323,6 +1324,7 @@ local function CreateSpeedDisplayOptionsPage(display)
 				title = ns.strings.options.speedDisplay.background.title,
 				description = ns.strings.options.speedDisplay.background.description:gsub("#ADDON", ns.title),
 				arrange = {},
+				arrangement = {},
 				initialize = function(panel, _, _, key)
 					CreateBackgroundOptions(panel, display, category, key)
 
@@ -1338,10 +1340,8 @@ local function CreateSpeedDisplayOptionsPage(display)
 						dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
 					}, copyButtonData))
 				end,
-				arrangement = {}
 			})
 		end,
-		arrangement = {}
 	})
 
 	return options[display].page
@@ -1366,6 +1366,7 @@ local function CreateTargetSpeedOptionsPage()
 				"#PROFILE", wt.Color(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].title, ns.colors.yellow[2])
 			))
 		end,
+		arrangement = {},
 		initialize = function(canvas, _, _, category, keys)
 			wt.CreatePanel({
 				parent = canvas,
@@ -1373,6 +1374,7 @@ local function CreateTargetSpeedOptionsPage()
 				title = ns.strings.options.targetSpeed.mouseover.title,
 				description = ns.strings.options.targetSpeed.mouseover.description,
 				arrange = {},
+				arrangement = {},
 				initialize = function(panel)
 					options.targetSpeed.enabled = wt.CreateCheckbox({
 						parent = panel,
@@ -1390,7 +1392,6 @@ local function CreateTargetSpeedOptionsPage()
 						},
 					})
 				end,
-				arrangement = {}
 			})
 
 			wt.CreatePanel({
@@ -1399,6 +1400,7 @@ local function CreateTargetSpeedOptionsPage()
 				title = ns.strings.options.speedValue.title,
 				description = ns.strings.options.speedValue.description,
 				arrange = {},
+				arrangement = {},
 				initialize =function(panel)
 					options.targetSpeed.value.units = wt.CreateCheckboxSelector({
 						parent = panel,
@@ -1460,10 +1462,8 @@ local function CreateTargetSpeedOptionsPage()
 						},
 					})
 				end,
-				arrangement = {}
 			})
 		end,
-		arrangement = {}
 	})
 
 	return options.targetSpeed.page

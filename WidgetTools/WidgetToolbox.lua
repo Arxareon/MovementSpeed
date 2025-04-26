@@ -1274,17 +1274,16 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	---@param t? arrangementData Arrange the child frames of **container** based on the specifications provided in this table
 	function wt.ArrangeContent(container, t)
 		t = t or {}
-		t.parameters = t.parameters or {}
-		t.parameters.margins = t.parameters.margins or {}
-		t.parameters.margins = { l = t.parameters.margins.l or 12, r = t.parameters.margins.r or 12, t = t.parameters.margins.t or 12, b = t.parameters.margins.b or 12 }
-		if t.parameters.flip then
-			local temp = t.parameters.margins.l
-			t.parameters.margins.l = t.parameters.margins.r
-			t.parameters.margins.r = temp
+		t.margins = t.margins or {}
+		t.margins = { l = t.margins.l or 12, r = t.margins.r or 12, t = t.margins.t or 12, b = t.margins.b or 12 }
+		if t.flip then
+			local temp = t.margins.l
+			t.margins.l = t.margins.r
+			t.margins.r = temp
 		end
-		t.parameters.gaps = t.parameters.gaps or 8
-		local flipper = t.parameters.flip and -1 or 1
-		local height = t.parameters.margins.t
+		t.gaps = t.gaps or 8
+		local flipper = t.flip and -1 or 1
+		local height = t.margins.t
 		local frames = { container:GetChildren() }
 
 		--Assemble the arrangement descriptions
@@ -1330,10 +1329,10 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			end
 
 			--Increase the content height by the space between rows
-			height = height + (i > 1 and t.parameters.gaps or 0)
+			height = height + (i > 1 and t.gaps or 0)
 
 			--First frame goes to the top left (or right if flipped)
-			frames[t.order[i][1]]:SetPoint(t.parameters.flip and "TOPRIGHT" or "TOPLEFT", t.parameters.margins.l * flipper, -height)
+			frames[t.order[i][1]]:SetPoint(t.flip and "TOPRIGHT" or "TOPLEFT", t.margins.l * flipper, -height)
 
 			--Place the rest of the frames
 			if #t.order[i] > 1 then
@@ -1345,15 +1344,15 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 				if #t.order[i] > 2 then
 					--Last frame goes to the top right (or left if flipped)
-					frames[t.order[i][#t.order[i]]]:SetPoint(t.parameters.flip and "TOPLEFT" or "TOPRIGHT", -t.parameters.margins.r * flipper, -height)
+					frames[t.order[i][#t.order[i]]]:SetPoint(t.flip and "TOPLEFT" or "TOPRIGHT", -t.margins.r * flipper, -height)
 
 					--Fill the space between the main anchor points with the remaining frames
 					if #t.order[i] > 3 then
 						local shift = odd and 0 or 0.5
 						local w = container:GetWidth() / 2
 						local n = (#t.order[i] - (odd and 1 or 0)) / 2 - shift
-						local leftFillWidth = (w - frames[t.order[i][1]]:GetWidth() / 2 - t.parameters.margins.l) / -n * flipper
-						local rightFillWidth = (w - frames[t.order[i][#t.order[i]]]:GetWidth() / 2 - t.parameters.margins.r) / n * flipper
+						local leftFillWidth = (w - frames[t.order[i][1]]:GetWidth() / 2 - t.margins.l) / -n * flipper
+						local rightFillWidth = (w - frames[t.order[i][#t.order[i]]]:GetWidth() / 2 - t.margins.r) / n * flipper
 
 						--Fill the left half
 						local last = math.floor(#t.order[i] / 2)
@@ -1371,7 +1370,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		end
 
 		--Set the height of the container frame
-		if t.parameters.resize ~= false then container:SetHeight(height + t.parameters.margins.b) end
+		if t.resize ~= false then container:SetHeight(height + t.margins.b) end
 	end
 
 	---Set the movability of a frame based in the specified values
@@ -1829,7 +1828,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	function wt.RegisterSettingsPage(page, parent, icon)
 		if WidgetToolsDB.lite or type(page) ~= "table" or type(page.isType) ~= "function" or not page.isType("SettingsPage") or page.category then return end
 
-		local title = (page.title and page.title:GetText() or "") .. (icon or not parent and page.icon and (" " .. wt.Texture(page.icon:GetTextureFileID())) or "")
+		local title = (page.title and page.title or "") .. (icon or not parent and page.icon and (" " .. wt.Texture(page.icon)) or "")
 
 		page.canvas.OnCommit = function() page.save(true) end
 		page.canvas.OnRefresh = function() page.load(nil, true) end
@@ -1855,7 +1854,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		local logo = C_AddOns.GetAddOnMetadata(addon, "IconTexture")
 		local addonTitle = wt.Clear(select(2, C_AddOns.GetAddOnInfo(addon))):gsub("^%s*(.-)%s*$", "%1")
-		local branding = (logo and (wt.Texture(logo, 9) .. " ") or "") .. addonTitle .. ": "
+		local branding = (logo and (wt.Texture(logo, 11, 11) .. " ") or "") .. addonTitle .. ": "
 
 		---@class chatCommandManager
 		local manager = {}
@@ -1994,9 +1993,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	--[ Assets ]
 
 	--Colors
-	local colors = {
-		normal = wt.PackColor(HIGHLIGHT_FONT_COLOR:GetRGBA()),
-		highlight = wt.PackColor(NORMAL_FONT_COLOR:GetRGBA()),
+	wt.colors = {
+		normal = wt.PackColor(NORMAL_FONT_COLOR:GetRGBA()),
+		highlight = wt.PackColor(HIGHLIGHT_FONT_COLOR:GetRGBA()),
 		disabled = wt.PackColor(GRAY_FONT_COLOR:GetRGB()),
 		warning = wt.PackColor(RED_FONT_COLOR:GetRGB()),
 	}
@@ -2103,7 +2102,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| Add title
 
-		local titleColor = tooltipData.flipColors and colors.highlight or colors.normal
+		local titleColor = tooltipData.flipColors and wt.colors.normal or wt.colors.highlight
 
 		tooltipData.tooltip:AddLine(tooltipData.title, titleColor.r, titleColor.g, titleColor.b, true)
 
@@ -2129,7 +2128,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 				--| Add textline
 
-				local color = tooltipData.lines[i].color or (tooltipData.flipColors and colors.normal or colors.highlight)
+				local color = tooltipData.lines[i].color or (tooltipData.flipColors and wt.colors.highlight or wt.colors.normal)
 
 				tooltipData.tooltip:AddLine(tooltipData.lines[i].text, color.r, color.g, color.b, tooltipData.lines[i].wrap ~= false)
 			end
@@ -2288,10 +2287,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			if t.title then
 				if customPopupInputBoxFrame.textbox.label then customPopupInputBoxFrame.textbox.label:SetText(t.title) else customPopupInputBoxFrame.textbox.label = wt.AddTitle({
 					parent = customPopupInputBoxFrame.textbox.frame,
-					title = {
-						offset = { x = -1, },
-						text = t.title,
-					},
+					offset = { x = -1, },
+					text = t.title,
 				}) end
 			end
 
@@ -2330,6 +2327,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			frameStrata = "DIALOG",
 			keepOnTop = true,
 			background = { color = { a = 0.9 }, },
+			arrangement = {},
 			initialize = function(panel)
 
 				--[ Textbox ]
@@ -2375,7 +2373,6 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					action = cancel,
 				})
 			end,
-			arrangement = {}
 		})
 
 		--| Position & dimensions
@@ -2543,6 +2540,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		wt.SetPosition(text, t.position)
 
 		if t.width then text:SetWidth(t.width) end
+		if t.height then text:SetHeight(t.height) end
 
 		--| Font & text
 
@@ -2557,50 +2555,78 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		return text
 	end
 
-	---Add a title & description to a container frame
+	---Add a title to a frame
 	---***
-	---@param t titleCreationData Parameters are to be provided in this table
-	---@return FontString|nil title
-	---@return FontString|nil description
+	---@param t? titleCreationData Parameters are to be provided in this table
+	---@return FontString|nil
 	function wt.AddTitle(t)
 		t = t or {}
-
 		if not t.parent then return end
 
 		--Title
-		local title = t.title and wt.CreateText({
+		return wt.CreateText({
 			parent = t.parent,
 			name = "Title",
 			position = {
-				anchor = t.title.anchor,
-				offset = { x = t.title.offset.x, y = t.title.offset.y }
+				anchor = t.anchor,
+				offset = t.offset,
 			},
-			width = t.title.width or t.parent:GetWidth() - ((t.title.offset or {}).x or 0),
+			width = t.width,
 			layer = "ARTWORK",
-			text = t.title.text,
-			font =  t.title.font,
-			color = t.title.color,
-			justify = { h = t.title.justify or "LEFT", },
-		}) or nil
+			text = t.text,
+			font =  t.font or "GameFontHighlight",
+			color = t.color,
+			justify = { h = t.justify or "LEFT", },
+		})
+	end
 
-		--Description
-		local description = t.description and wt.CreateText({
-			parent = t.parent,
+	---Add a description to a titled frame
+	---***
+	---@param t? descriptionCreationData Table of parameters to create a description
+	---@return FontString|nil
+	function wt.AddDescription(t)
+		t = t or {}
+		if not t.title then return end
+
+		local parent = t.title:GetParent()
+		t.justify = t.justify or "LEFT"
+		local anchor = t.justify ~= "RIGHT" and "LEFT" or "RIGHT"
+		local relativePoint = t.justify ~= "RIGHT" and "RIGHT" or "LEFT"
+		t.offset = t.offset or {}
+		t.offset.x = t.offset.x or 0
+		t.offset.y = t.offset.y or 1
+		t.spacer = (t.spacer or 5) * (t.justify ~= "LEFT" and -1 or 1)
+
+		local separator = wt.CreateText({
+			parent = parent,
+			name = "Separator",
+			position = {
+				anchor = anchor,
+				relativeTo = t.title,
+				relativePoint = relativePoint,
+				offset = { x = t.spacer, }
+			},
+			layer = "ARTWORK",
+			text = "•",
+			font = t.title:GetFontObject():GetName(),
+		})
+
+		return wt.CreateText({
+			parent = parent,
 			name = "Description",
 			position = {
-				relativeTo = title,
-				relativePoint = "BOTTOMLEFT",
-				offset = { x = t.description.offset.x, y = t.description.offset.y }
+				anchor = anchor,
+				relativeTo = separator,
+				relativePoint = relativePoint,
+				offset = { x = t.offset.x + t.spacer + 4, y = t.offset.y }
 			},
-			width = t.description.width or t.parent:GetWidth() - (((t.title or {}).offset or {}).x or 0) - ((t.description.offset or {}).x or 0),
+			width = t.width or parent:GetWidth() - t.title:GetWidth() - separator:GetWidth() - t.spacer * 2 + (t.widthOffset or 0),
 			layer = "ARTWORK",
-			text = t.description.text,
-			font =  t.description.font or "GameFontHighlightSmall",
-			color = t.description.color,
-			justify = { h = t.description.justify or "LEFT", },
-		}) or nil
-
-		return title, description
+			text = t.text,
+			font = t.font or "GameFontHighlightSmall2",
+			color = t.color,
+			justify = { h = t.justify, v = "MIDDLE", },
+		})
 	end
 
 	--[ Texture ]
@@ -2630,7 +2656,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 			--| Asset & color
 
-			texture:SetTexture(data.path or t.path, data.wrap.h or t.wrap.h, data.wrap.v or t.wrap.v, data.filterMode or t.filterMode)
+			if t.atlas then texture:SetAtlas(t.atlas, true) else
+				texture:SetTexture(data.path or t.path, data.wrap.h or t.wrap.h, data.wrap.v or t.wrap.v, data.filterMode or t.filterMode)
+			end
 			if data.layer then if data.level then texture:SetDrawLayer(data.layer, data.level) else texture:SetDrawLayer(data.layer) end end
 			if data.flip then texture:SetTexCoord(t.flip.h and 1 or 0, t.flip.h and 0 or 1, t.flip.v and 1 or 0, t.flip.v and 0 or 1) end
 			if data.color then texture:SetVertexColor(wt.UnpackColor(data.color)) end
@@ -2847,7 +2875,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		t.scrollSpeed = (t.scrollSpeed or 0.25)
 
 		--Override the built-in update function
-		scrollFrame.ScrollBar.SetPanExtentPercentage = function() --WATCH: Change when Blizzard provides a better way
+		scrollFrame.ScrollBar.SetPanExtentPercentage = function() --WATCH: Change when Blizzard provides a better way to overriding the built-in update function
 			local height = scrollFrame:GetHeight()
 			scrollFrame.ScrollBar.panExtentPercentage = height * t.scrollSpeed / math.abs(scrollChild:GetHeight() - height)
 		end
@@ -2898,17 +2926,18 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| Title & description
 
-		panel.title, panel.description = wt.AddTitle({
+		panel.title = t.label ~= false and wt.AddTitle({
 			parent = panel,
-			title = t.label ~= false and {
-				offset = { x = 10, y = 16 },
-				text = t.title or t.name or "Panel",
-			} or nil,
-			description = t.description and {
-				offset = { x = 4, y = -16 },
-				text = t.description,
-			} or nil
-		})
+			offset = { x = 7, y = 27 },
+			text = t.title or t.name or "Panel",
+			font = "GameFontHighlightLarge",
+		}) or nil
+
+		panel.description = t.description and wt.AddDescription({
+			title = panel.title,
+			widthOffset = -22,
+			text = t.description,
+		}) or nil
 
 		--| Backdrop
 
@@ -2941,7 +2970,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			t.initialize(panel, t.size.w, t.size.h, t.name or "Panel")
 
 			--Arrange content
-			if t.arrangement then wt.ArrangeContent(panel, wt.AddMissing(t.arrangement, { parameters = { margins = { t = t.description and 30 or nil, }, }, })) end
+			if t.arrangement then wt.ArrangeContent(panel, t.arrangement) end
 		end
 
 		return panel
@@ -3032,7 +3061,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					justify = { h = "RIGHT", },
 					width = 16,
 					font = "ChatFontNormal",
-					color = colors.highlight,
+					color = wt.colors.normal,
 				})
 
 				if type(t.tooltip) == "table" then wt.AddTooltip(frame, {
@@ -3203,9 +3232,10 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		local defaultsWarning
 
 		---@class settingsPage
-		---@field canvas? Frame The settings page canvas frame to house the options widgets
+		---@field canvas? Frame The settings page main canvas frame
 		---@field category? table The registered settings category page
-		---@field scroller? Frame Scrollable child frame of the [ScrollFrame](https://warcraft.wiki.gg/wiki/UIOBJECT_ScrollFrame) created as a child of **canvas** if **t.scroll** was set
+		---@field content? Frame The content frame to house the options widgets or other page content
+		---@field header? Frame The header frame containing the page title, description and icon
 		local page = {}
 
 		--[ Getters & Setters ]
@@ -3309,58 +3339,95 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			width, height = SettingsPanel.Container.SettingsCanvas:GetSize()
 
 			page.canvas = wt.CreateFrame({
-				name = (t.append ~= false and t.name and addon or "") .. (t.name or addon) .. (t.appendOptions ~= false and "Options" or ""),
+				name = (t.append ~= false and t.name and addon or "") .. (t.name or addon) .. "Page",
 				size = { w = width, h = height },
 				visible = false,
 			})
 
+			page.content = t.scroll and wt.CreateScrollFrame({
+				parent = page.canvas,
+				name = "Content",
+				size = { w = width - 12, h = height - 50 },
+				position = { offset = { y = -50 }, },
+				scrollSize = { h = t.scroll.height, },
+				scrollSpeed = t.scroll.speed,
+			}) or wt.CreateFrame({
+				parent = page.canvas,
+				name = "Content",
+				size = { w = width - 12, h = height - 50 },
+				position = { offset = { y = -50 }, },
+			})
+
 			--| Title & description
 
-			local title = t.title or wt.Clear(C_AddOns.GetAddOnMetadata(addon, "title")):gsub("^%s*(.-)%s*$", "%1")
+			page.title = t.title or C_AddOns.GetAddOnMetadata(addon, "title")
 
-			--Title & description
-			page.title, page.description = wt.AddTitle({
+
+			local title = page.title and wt.AddTitle({
 				parent = page.canvas,
-				title = {
-					offset = { x = 10, y = -16 },
-					width = width - (t.icon and 72 or 32),
-					text = title,
-					font = "GameFontNormalLarge",
-				},
-				description = t.description and {
-					offset = { y = -8 },
-					width = width - (t.icon and 72 or 32),
-					text = t.description,
-				} or nil
-			})
+				name = "Title",
+				offset = { x = 7, y = -22 },
+				text = page.title,
+				font = "GameFontHighlightHuge",
+			}) or nil
+
+			if t.description then wt.AddDescription({
+				title = title,
+				widthOffset = -161,
+				spacer = 7,
+				text = t.description,
+			}) end
 
 			--| Icon texture
 
-			local icon = t.icon or C_AddOns.GetAddOnMetadata(addon, "IconTexture")
+			page.icon = t.icon or C_AddOns.GetAddOnMetadata(addon, "IconTexture")
 
-			if icon then page.icon = wt.CreateTexture({
+			if page.icon then wt.CreateTexture({
 				parent = page.canvas,
 				name = "Logo",
 				position = {
-					anchor = "TOPRIGHT",
-					offset = { x = -16, y = -16 }
+					anchor = "TOP",
+					relativeTo = SettingsPanel.Bg,
+					relativePoint = "TOP",
+					offset = { y = -18 }
 				},
-				size = { w = 36, h = 36 },
-				path = icon,
+				size = { w = 42, h = 42 },
+				path = page.icon,
 			}) end
+
+			--| Divider texture
+
+			wt.CreateTexture({
+				parent = page.canvas,
+				atlas = "Options_HorizontalDivider",
+				position = { anchor = "TOP", offset = { y = -50 } },
+			})
 
 			--[ Utility Widgets ]
 
-			--Add save notice text
-			wt.CreateText({
-				parent = page.canvas,
-				name = "SaveNotice",
-				position = {
-					anchor = "BOTTOMRIGHT",
-					offset = { x = -106, y = -26.75 }
-				},
-				text = ns.toolboxStrings.settings.save,
+			--| Defaults button
+
+			defaultsWarning = wt.RegisterPopupDialog(addon, (t.name or "") .. "DEFAULT", {
+				text = ns.toolboxStrings.settings.warningSingle:gsub("#PAGE", wt.Color(page.title, wt.colors.normal)),
+				accept = ACCEPT,
+				onAccept = function() page.default(true) end,
 			})
+
+			wt.CreateSimpleButton({
+				parent = page.canvas,
+				name = "Defaults",
+				title = DEFAULTS,
+				tooltip = { lines = { { text = ns.toolboxStrings.settings.defaults.tooltip, }, } },
+				position = {
+					anchor = "TOPRIGHT",
+					offset = { x = -36, y = -16 }
+				},
+				size = { w = 96, },
+				action = function() StaticPopup_Show(defaultsWarning) end,
+				disabled = t.static,
+			})
+
+			--| Cancel button
 
 			wt.CreateSimpleButton({
 				parent = page.canvas,
@@ -3369,60 +3436,24 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				tooltip = { lines = { { text = ns.toolboxStrings.settings.cancel.tooltip, }, } },
 				position = {
 					anchor = "BOTTOMLEFT",
-					offset = { x = 138, y = -31 }
+					offset = { x = -18, y = -31 }
 				},
 				size = { w = 140, },
 				action = function() page.cancel(true) end,
 				disabled = t.static,
 			})
 
-			defaultsWarning = wt.RegisterPopupDialog(addon, (t.name or "") .. "DEFAULT", {
-				text = ns.toolboxStrings.settings.warningSingle:gsub("#PAGE", wt.Color(title, colors.highlight)),
-				accept = ACCEPT,
-				onAccept = function() page.default(true) end,
-			})
-
-			wt.CreateSimpleButton({
+			--Add save notice text
+			wt.CreateText({
 				parent = page.canvas,
-				name = "Defaults",
-				title = ns.toolboxStrings.settings.defaults.label,
-				tooltip = { lines = { { text = ns.toolboxStrings.settings.defaults.tooltip, }, } },
+				name = "SaveNotice",
 				position = {
-					anchor = "BOTTOMLEFT",
-					offset = { x = -18, y = -31 }
+					anchor = "BOTTOMRIGHT",
+					offset = { x = -96, y = -26.75 }
 				},
-				size = { w = 140, },
-				action = function() StaticPopup_Show(defaultsWarning) end,
-				disabled = t.static,
+				text = ns.toolboxStrings.settings.save,
+				justify = { h = "RIGHT", },
 			})
-
-			--[ Make Scrollable ]
-
-			if t.scroll then
-				page.scroller = wt.CreateScrollFrame({
-					parent = page.canvas,
-					position = { offset = { x = 0, y = -4 } },
-					size = { w = width - 8, h = height - 16 },
-					scrollSize = { h = t.scroll.height, },
-					scrollSpeed = t.scroll.speed
-				})
-
-				--| Reparent, reposition and resize default elements
-
-				page.title:SetParent(page.scroller)
-				page.title:SetPoint("TOPLEFT", 10, -12)
-				page.title:SetWidth(page.title:GetWidth() - 20)
-
-				if page.description then
-					page.description:SetParent(page.scroller)
-					page.description:SetWidth(page.description:GetWidth() - 20)
-				end
-
-				if page.icon then
-					page.icon:SetParent(page.scroller)
-					page.icon:SetPoint("TOPRIGHT", -16, -12)
-				end
-			end
 		end
 
 		--[ Initialization ]
@@ -3436,14 +3467,14 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--Add content, performs tasks
 		if t.initialize then
-			t.initialize(page.scroller or page.canvas, width, height, (t.dataManagement or {}).category, (t.dataManagement or {}).keys, t.name or addon)
+			t.initialize(page.scroller or page.content, width, height, (t.dataManagement or {}).category, (t.dataManagement or {}).keys, t.name or addon)
 
 			--Arrange content
-			if t.arrangement and page.canvas then wt.ArrangeContent(page.scroller or page.canvas, wt.AddMissing(t.arrangement, { parameters = {
-				margins = { l = 10, r = 10, t = t.scroll and 78 or 82, b = t.scroll and 10 or 22 },
-				gaps = 32,
+			if t.arrangement and page.content then wt.ArrangeContent(page.scroller or page.content, wt.AddMissing(t.arrangement, {
+				margins = { l = 10, r = 10, t = 44, b = 44 },
+				gaps = 44,
 				resize = t.scroll ~= nil
-			}, })) end
+			})) end
 		end
 
 		return page
@@ -3509,7 +3540,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| Parent
 
-		local parentTitle = parent.title and parent.title:GetText() or ""
+		local parentTitle = parent.title or ""
 
 		if type(parent.isType) ~= "function" and not parent.isType("SettingsPage") then parent = wt.CreateSettingsPage(addon, parent) end
 
@@ -3519,7 +3550,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--Override defaults warning and add all defaults option to dialog
 		wt.UpdatePopupDialog(parent.getDefaultsPopupKey(), {
-			text = ns.toolboxStrings.settings.warning:gsub("#CATEGORY", wt.Color(parentTitle, colors.highlight)):gsub("#PAGE", wt.Color(parentTitle, colors.highlight)),
+			text = ns.toolboxStrings.settings.warning:gsub("#CATEGORY", wt.Color(parentTitle, wt.colors.normal)):gsub("#PAGE", wt.Color(parentTitle, wt.colors.normal)),
 			accept = ALL_SETTINGS,
 			alt = CURRENT_SETTINGS,
 			onAccept = function() category.defaults(true) end,
@@ -3537,8 +3568,8 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 			--Override defaults warning and add all defaults option to dialog
 			wt.UpdatePopupDialog(pages[i].getDefaultsPopupKey(), {
-				text = ns.toolboxStrings.settings.warning:gsub("#CATEGORY", wt.Color(parentTitle, colors.highlight)):gsub(
-					"#PAGE", wt.Color(pages[i].title and pages[i].title:GetText() or "", colors.highlight)
+				text = ns.toolboxStrings.settings.warning:gsub("#CATEGORY", wt.Color(parentTitle, wt.colors.normal)):gsub(
+					"#PAGE", wt.Color(pages[i].title or "", wt.colors.normal)
 				),
 				accept = ALL_SETTINGS,
 				alt = CURRENT_SETTINGS,
@@ -4179,21 +4210,19 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 		--| Label
 
 		t.font = t.font or {}
-		t.font.normal = t.font.normal or "GameFontHighlight"
-		t.font.highlight = t.font.highlight or "GameFontNormal"
+		t.font.normal = t.font.normal or "GameFontNormal"
+		t.font.highlight = t.font.highlight or "GameFontHighlight"
 		t.font.disabled = t.font.disabled or "GameFontDisable"
 
 		local title = t.title or t.name or "Toggle"
 
-		toggle.label = wt.AddTitle({
+		toggle.label = t.label ~= false and wt.AddTitle({
 			parent = toggle.frame,
-			title = t.label ~= false and {
-				offset = { x = t.size.h * (30 / 29) + 6, },
-				text = title,
-				anchor = "LEFT",
-				font = t.font.normal,
-			} or nil,
-		})
+			offset = { x = t.size.h * (30 / 29) + 6, },
+			text = title,
+			anchor = "LEFT",
+			font = t.font.normal,
+		}) or nil
 
 		--| Texture
 
@@ -5635,13 +5664,11 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		--| Label
 
-		selector.label = wt.AddTitle({
+		selector.label = t.label ~= false and wt.AddTitle({
 			parent = selector.frame,
-			title = t.label ~= false and {
-				offset = { x = 4, },
-				text = title,
-			} or nil,
-		})
+			offset = { x = 4, },
+			text = title,
+		}) or nil
 
 		--[ Events ]
 
@@ -5991,13 +6018,11 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		local title = t.title or name or "Dropdown"
 
-		selector.label = wt.AddTitle({
+		selector.label = t.label ~= false and wt.AddTitle({
 			parent = selector.dropdown,
-			title = t.label ~= false and {
-				offset = { x = 4, },
-				text = title,
-			} or nil,
-		})
+			offset = { x = 4, },
+			text = title,
+		}) or nil
 
 		--[ Dropdown List ]
 
@@ -6739,13 +6764,11 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		local title = t.title or t.name or "Text Box"
 
-		textbox.label = wt.AddTitle({
+		textbox.label = t.label ~= false and wt.AddTitle({
 			parent = textbox.frame,
-			title = t.label ~= false and {
-				offset = { x = -1, },
-				text = title,
-			} or nil,
-		})
+			offset = { x = -1, },
+			text = title,
+		}) or nil
 
 		--| Shared setup
 
@@ -6911,13 +6934,11 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		local title = t.title or t.name or "Text Box"
 
-		textbox.label = wt.AddTitle({
+		textbox.label = t.label ~= false and wt.AddTitle({
 			parent = textbox.frame,
-			title = t.label ~= false and {
-				offset = { x = 3, },
-				text = title,
-			} or nil,
-		})
+			offset = { x = 3, },
+			text = title,
+		}) or nil
 
 		--| Scroll speed
 
@@ -7042,14 +7063,13 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 			local title = t.title or t.name or "Copybox"
 
-			copybox.label = wt.AddTitle({
+			copybox.label = t.label ~= false and wt.AddTitle({
 				parent = copybox.frame,
-				title = t.label ~= false and {
-					offset = { x = -1, },
-					width = t.size.w,
-					text = title,
-				} or nil,
-			})
+				offset = { x = -1, },
+				width = t.size.w,
+				text = title,
+				font = "GameFontNormal",
+			}) or nil
 
 			--| Textbox
 
@@ -8067,13 +8087,11 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		local title = t.title or t.name or "Color Picker"
 
-		colorPicker.label = wt.AddTitle({
+		colorPicker.label = t.label ~= false and wt.AddTitle({
 			parent = colorPicker.frame,
-			title = t.label ~= false and {
-				offset = { x = 4, },
-				text = title,
-			} or nil,
-		})
+			offset = { x = 4, },
+			text = title,
+		}) or nil
 
 		--| Color wheel toggle button
 
@@ -8315,11 +8333,13 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 		t = t or {}
 		local data = {
-			title = wt.Clear(C_AddOns.GetAddOnMetadata(addon, "Title")):sub(1, -2),
+			title = C_AddOns.GetAddOnMetadata(addon, "Title"),
 			version = C_AddOns.GetAddOnMetadata(addon, "Version"),
 			day = C_AddOns.GetAddOnMetadata(addon, "X-Day"),
 			month = C_AddOns.GetAddOnMetadata(addon, "X-Month"),
 			year = C_AddOns.GetAddOnMetadata(addon, "X-Year"),
+			category = C_AddOns.GetAddOnMetadata(addon, "Category"),
+			notes = C_AddOns.GetAddOnMetadata(addon, "Notes"),
 			author = C_AddOns.GetAddOnMetadata(addon, "Author"),
 			license = C_AddOns.GetAddOnMetadata(addon, "X-License"),
 			curse = C_AddOns.GetAddOnMetadata(addon, "X-CurseForge"),
@@ -8328,6 +8348,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			issues = C_AddOns.GetAddOnMetadata(addon, "X-Issues"),
 			sponsors = C_AddOns.GetAddOnMetadata(addon, "X-Sponsors"),
 			topSponsors = C_AddOns.GetAddOnMetadata(addon, "X-TopSponsors"),
+			logo = C_AddOns.GetAddOnMetadata(addon, "IconTexture"),
 		}
 
 		--[ Settings Page ]
@@ -8336,8 +8357,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			register = t.register,
 			name = t.name or "About",
 			title = t.title or data.title,
-			description = t.description or C_AddOns.GetAddOnMetadata(addon, "Notes"),
+			description = t.description or data.notes,
 			static = t.static ~= false,
+			arrangement = {},
 			initialize = function(canvas)
 
 				--[ About ]
@@ -8348,23 +8370,29 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					title = ns.toolboxStrings.about.title,
 					description = ns.toolboxStrings.about.description:gsub("#ADDON", data.title),
 					arrange = {},
-					size = { h = 258 },
+					size = { h = 236 },
+					arrangement = {
+						flip = true,
+						resize = false
+					},
 					initialize = function(panel)
 
 						--[ Information ]
 
-						local position = { offset = { x = 16, y = -30 } }
+						local position = { offset = { x = 16, y = -12 } }
 
 						if data.version then
 							local version = wt.CreateText({
 								parent = panel,
 								name = "VersionTitle",
 								position = position,
-								width = 45,
+								width = 48,
 								text = ns.toolboxStrings.about.version,
-								font = "GameFontNormalSmall",
+								font = "GameFontHighlightSmall",
 								justify = { h = "RIGHT", },
+								wrap = false,
 							})
+
 							wt.CreateText({
 								parent = panel,
 								name = "Version",
@@ -8374,51 +8402,54 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 									offset = { x = 5 }
 								},
 								width = 140,
-								text = data.version,
-								font = "GameFontHighlightSmall",
-								justify = { h = "LEFT", },
-							})
-
-							position.relativeTo = version
-							position.relativePoint = "BOTTOMLEFT"
-							position.offset.x = 0
-							position.offset.y = -8
-						end
-
-						if data.day and data.month and data.year then
-							local date = wt.CreateText({
-								parent = panel,
-								name = "DateTitle",
-								position = position,
-								width = 45,
-								text = ns.toolboxStrings.about.date,
-								font = "GameFontNormalSmall",
-								justify = { h = "RIGHT", },
-							})
-							wt.CreateText({
-								parent = panel,
-								name = "Date",
-								position = {
-									relativeTo = date,
-									relativePoint = "TOPRIGHT",
-									offset = { x = 5 }
-								},
-								width = 140,
-								text = ns.toolboxStrings.date:gsub(
+								text = data.version .. (data.day and data.month and data.year and WrapTextInColorCode(" ( " .. ns.toolboxStrings.about.date .. ": " .. wt.Color(ns.toolboxStrings.date:gsub(
 									"#DAY", data.day
 								):gsub(
 									"#MONTH", data.month
 								):gsub(
 									"#YEAR", data.year
-								),
+								), wt.colors.normal) .. ")", "FFFFFFFF") or ""),
+								font = "GameFontNormalSmall",
+								justify = { h = "LEFT", },
+								wrap = false,
+							})
+
+							position.relativeTo = version
+							position.relativePoint = "BOTTOMLEFT"
+							position.offset.x = 0
+							position.offset.y = -6
+						end
+
+						if data.category then
+							local category = wt.CreateText({
+								parent = panel,
+								name = "Category",
+								position = position,
+								width = 48,
+								text = CATEGORY,
 								font = "GameFontHighlightSmall",
+								justify = { h = "RIGHT", },
+								wrap = false,
+							})
+
+							wt.CreateText({
+								parent = panel,
+								name = "Category",
+								position = {
+									relativeTo = category,
+									relativePoint = "TOPRIGHT",
+									offset = { x = 5 }
+								},
+								width = 140,
+								text = data.category,
+								font = "GameFontNormalSmall",
 								justify = { h = "LEFT", },
 							})
 
-							position.relativeTo = date
+							position.relativeTo = category
 							position.relativePoint = "BOTTOMLEFT"
 							position.offset.x = 0
-							position.offset.y = -8
+							position.offset.y = -6
 						end
 
 						if data.author then
@@ -8426,11 +8457,12 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 								parent = panel,
 								name = "AuthorTitle",
 								position = position,
-								width = 45,
+								width = 48,
 								text = ns.toolboxStrings.about.author,
-								font = "GameFontNormalSmall",
+								font = "GameFontHighlightSmall",
 								justify = { h = "RIGHT", },
 							})
+
 							wt.CreateText({
 								parent = panel,
 								name = "Author",
@@ -8441,14 +8473,15 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 								},
 								width = 140,
 								text = data.author,
-								font = "GameFontHighlightSmall",
+								font = "GameFontNormalSmall",
 								justify = { h = "LEFT", },
+								wrap = false,
 							})
 
 							position.relativeTo = author
 							position.relativePoint = "BOTTOMLEFT"
 							position.offset.x = 0
-							position.offset.y = -8
+							position.offset.y = -6
 						end
 
 						if data.license then
@@ -8456,11 +8489,13 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 								parent = panel,
 								name = "LicenseTitle",
 								position = position,
-								width = 45,
+								width = 48,
 								text = ns.toolboxStrings.about.license,
-								font = "GameFontNormalSmall",
+								font = "GameFontHighlightSmall",
 								justify = { h = "RIGHT", },
+								wrap = false,
 							})
+
 							wt.CreateText({
 								parent = panel,
 								name = "License",
@@ -8471,8 +8506,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 								},
 								width = 140,
 								text = data.license,
-								font = "GameFontHighlightSmall",
+								font = "GameFontNormalSmall",
 								justify = { h = "LEFT", },
+								wrap = false,
 							})
 
 							position.relativeTo = license
@@ -8551,7 +8587,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 							title = ns.toolboxStrings.about.changelog.label,
 							tooltip = { lines = { { text = ns.toolboxStrings.about.changelog.tooltip:gsub("#VERSION", WrapTextInColorCode(data.version, "FFFFFFFF")), }, } },
 							arrange = {},
-							size = { w = panel:GetWidth() - 225, h = panel:GetHeight() - 42 },
+							size = { w = panel:GetWidth() - 225, h = panel:GetHeight() - 25 },
 							font = { normal = "GameFontDisableSmall", },
 							color = ns.colors.grey[2],
 							value = wt.FormatChangelog(t.changelog, true),
@@ -8559,6 +8595,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 						})
 
 						local fullChangelogFrame
+
 						wt.CreateSimpleButton({
 							parent = panel,
 							name = "ChangelogButton",
@@ -8576,62 +8613,53 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 								normal = "GameFontNormalSmall",
 								highlight = "GameFontHighlightSmall",
 							},
-							action = function()
-								if fullChangelogFrame then fullChangelogFrame:Show()
-								else
-									fullChangelogFrame = wt.CreatePanel({
-										parent = canvas,
-										name = addon .. "Changelog",
-										append = false,
+							action = function() if fullChangelogFrame then fullChangelogFrame:Show() else fullChangelogFrame = wt.CreatePanel({
+								parent = canvas,
+								name = addon .. "Changelog",
+								append = false,
+								title = ns.toolboxStrings.about.fullChangelog.label:gsub("#ADDON", data.title),
+								position = { anchor = "BOTTOMRIGHT", offset = { x = 12, }, },
+								keepInBounds = true,
+								size = { w = 678, h = 610 },
+								frameStrata = "DIALOG",
+								keepOnTop = true,
+								background = { color = { a = 0.9 }, },
+								arrangement = {
+									margins = { l = 16, r = 16, t = 42, b = 16 },
+									flip = true,
+								},
+								initialize = function(windowPanel)
+									wt.CreateMultilineEditbox({
+										parent = windowPanel,
+										name = "FullChangelog",
 										title = ns.toolboxStrings.about.fullChangelog.label:gsub("#ADDON", data.title),
-										position = { anchor = "BOTTOMRIGHT", },
-										keepInBounds = true,
-										size = { w = 678, h = 610 },
-										frameStrata = "DIALOG",
-										keepOnTop = true,
-										background = { color = { a = 0.9 }, },
-										initialize = function(windowPanel)
-											wt.CreateMultilineEditbox({
-												parent = windowPanel,
-												name = "FullChangelog",
-												title = ns.toolboxStrings.about.fullChangelog.label:gsub("#ADDON", data.title),
-												label = false,
-												tooltip = { lines = { { text = ns.toolboxStrings.about.fullChangelog.tooltip, }, } },
-												arrange = {},
-												size = { w = windowPanel:GetWidth() - 32, h = windowPanel:GetHeight() - 88 },
-												font = { normal = "GameFontDisable", },
-												color = ns.colors.grey[2],
-												value = wt.FormatChangelog(t.changelog),
-												readOnly = true,
-												scrollSpeed = 0.2,
-											})
-
-											wt.CreateSimpleButton({
-												parent = windowPanel,
-												name = "CloseButton",
-												title = CLOSE,
-												arrange = {},
-												size = { w = 96, },
-												action = function() windowPanel:Hide() end,
-											})
-
-											_G[windowPanel:GetName() .. "Title"]:SetPoint("TOPLEFT", 18, -18)
-
-											windowPanel:EnableMouse(true)
-										end,
-										arrangement = { parameters = {
-											margins = { l = 16, r = 16, t = 42, b = 16 },
-											flip = true,
-										}, }
+										label = false,
+										tooltip = { lines = { { text = ns.toolboxStrings.about.fullChangelog.tooltip, }, } },
+										arrange = {},
+										size = { w = windowPanel:GetWidth() - 32, h = windowPanel:GetHeight() - 88 },
+										font = { normal = "GameFontDisable", },
+										color = ns.colors.grey[2],
+										value = wt.FormatChangelog(t.changelog),
+										readOnly = true,
+										scrollSpeed = 0.2,
 									})
-								end
-							end,
+
+									wt.CreateSimpleButton({
+										parent = windowPanel,
+										name = "CloseButton",
+										title = CLOSE,
+										arrange = {},
+										size = { w = 96, },
+										action = function() windowPanel:Hide() end,
+									})
+
+									_G[windowPanel:GetName() .. "Title"]:SetPoint("TOPLEFT", 18, -18)
+
+									windowPanel:EnableMouse(true)
+								end,
+							}) end end,
 						})
 					end,
-					arrangement = { parameters = {
-						flip = true,
-						resize = false
-					}, }
 				})
 
 				--[ Sponsors ]
@@ -8643,31 +8671,27 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 						title = ns.toolboxStrings.sponsors.title,
 						description = ns.toolboxStrings.sponsors.description,
 						arrange = {},
-						size = { h = 64 + (data.topSponsors and data.sponsors and 24 or 0) },
+						size = { h = 46 + (data.topSponsors and data.sponsors and 24 or 0) },
 						initialize = function(panel)
-							if data.topSponsors then
-								wt.CreateText({
-									parent = panel,
-									name = "Top",
-									position = { offset = { x = 16, y = -33 } },
-									width = panel:GetWidth() - 32,
-									text = data.topSponsors:gsub("|", " • "),
-									font = "GameFontNormalLarge",
-									justify = { h = "LEFT", },
-								})
-							end
+							if data.topSponsors then wt.CreateText({
+								parent = panel,
+								name = "Top",
+								position = { offset = { x = 16, y = -12 } },
+								width = panel:GetWidth() - 46,
+								text = data.topSponsors:gsub("|", " • "),
+								font = "GameFontNormalLarge",
+								justify = { h = "LEFT", },
+							}) end
 
-							if data.sponsors then
-								wt.CreateText({
-									parent = panel,
-									name = "Normal",
-									position = { offset = { x = 16, y = -33 -(data.topSponsors and 24 or 0) } },
-									width = panel:GetWidth() - 32,
-									text = data.sponsors:gsub("|", " • "),
-									font = "GameFontHighlightMedium",
-									justify = { h = "LEFT", },
-								})
-							end
+							if data.sponsors then wt.CreateText({
+								parent = panel,
+								name = "Normal",
+								position = { offset = { x = 16, y = -16 -(data.topSponsors and 24 or 0) } },
+								width = panel:GetWidth() - 46,
+								text = data.sponsors:gsub("|", " • "),
+								font = "GameFontNormalMed1",
+								justify = { h = "LEFT", },
+							}) end
 						end,
 					})
 
@@ -8676,15 +8700,15 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 						name = "DescriptionHeart",
 						position = {
 							anchor = "TOPRIGHT",
-							offset = { x = -12, y = -6 }
+							offset = { x = -14, y = -12 }
 						},
 						text = "♥",
 						font = "NumberFont_Shadow_Large",
+						color = { r = 1, g = 0.4, b = 0.4, }, 
 						justify = { h = "LEFT", },
 					})
 				end
 			end,
-			arrangement = {}
 		} or nil)
 	end
 
@@ -8697,7 +8721,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	function wt.CreateDataManagementPage(addon, t)
 		if not addon or not C_AddOns.IsAddOnLoaded(addon) or not t.accountData or not t.characterData or not t.settingsData or not t.defaultsTable then return end
 
-		local addonTitle = wt.Clear(C_AddOns.GetAddOnMetadata(addon, "Title"))
+		local addonTitle = C_AddOns.GetAddOnMetadata(addon, "Title")
 
 		---@class dataManagementPage
 		---@field profiles? table Collection of profiles settings widgets
@@ -8740,6 +8764,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			onLoad = t.onLoad,
 			onCancel = t.onCancel,
 			onDefault = t.onDefault,
+			arrangement = {},
 			initialize = function(canvas, _, _, category, keys)
 
 				--[ Profile Management ]
@@ -8904,7 +8929,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					end
 
 					if unsafe then delete() else StaticPopup_Show(wt.UpdatePopupDialog(deleteProfilePopup, {
-						text = ns.toolboxStrings.profiles.delete.warning:gsub("#PROFILE", wt.Color(t.accountData.profiles[index].title, colors.highlight)):gsub("#ADDON", addonTitle),
+						text = ns.toolboxStrings.profiles.delete.warning:gsub("#PROFILE", wt.Color(t.accountData.profiles[index].title, wt.colors.normal)):gsub("#ADDON", addonTitle),
 						onAccept = delete,
 					})) end
 
@@ -8934,7 +8959,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					end
 
 					if unsafe then reset() else StaticPopup_Show(wt.UpdatePopupDialog(resetProfilePopup, {
-						text = ns.toolboxStrings.profiles.reset.warning:gsub("#PROFILE", wt.Color(t.accountData.profiles[index].title, colors.highlight)):gsub("#ADDON", addonTitle),
+						text = ns.toolboxStrings.profiles.reset.warning:gsub("#PROFILE", wt.Color(t.accountData.profiles[index].title, wt.colors.normal)):gsub("#ADDON", addonTitle),
 						onAccept = reset,
 					}))end
 
@@ -9012,6 +9037,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 						description = ns.toolboxStrings.profiles.description:gsub("#ADDON", addonTitle),
 						arrange = {},
 						size = { h = 64 },
+						arrangement = {},
 						initialize = function(panel)
 							dataManagement.profiles.apply = wt.CreateDropdownSelector({
 								parent = panel,
@@ -9093,7 +9119,6 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 								dependencies = { { frame = dataManagement.profiles.apply, evaluate = function() return #t.accountData.profiles > 1 end }, }
 							})
 						end,
-						arrangement = {}
 					})
 
 					--[ Backup ]
@@ -9108,6 +9133,10 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 						description = ns.toolboxStrings.backup.description:gsub("#ADDON", addonTitle),
 						arrange = {},
 						size = { h = canvas:GetHeight() - 214 },
+						arrangement = {
+							flip = true,
+							resize = false
+						},
 						initialize = function(panel)
 
 							--[ Utilities ]
@@ -9231,12 +9260,16 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 								name = addon .. "AllProfilesBackup",
 								append = false,
 								title = ns.toolboxStrings.backup.allProfiles.label,
-								position = { anchor = "BOTTOMRIGHT", },
+								position = { anchor = "BOTTOMRIGHT", offset = { x = 12, }, },
 								keepInBounds = true,
 								size = { w = 678, h = 610 },
 								frameStrata = "DIALOG",
 								keepOnTop = true,
 								background = { color = { a = 0.9 }, },
+								arrangement = {
+									margins = { l = 16, r = 16, t = 42, b = 16 },
+									flip = true,
+								},
 								initialize = function(windowPanel)
 									dataManagement.backupAllProfiles.box = wt.CreateMultilineEditbox({
 										parent = windowPanel,
@@ -9278,10 +9311,6 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 									windowPanel:EnableMouse(true)
 									windowPanel:Hide()
 								end,
-								arrangement = { parameters = {
-									margins = { l = 16, r = 16, t = 42, b = 16 },
-									flip = true,
-								}, }
 							})
 
 							wt.CreateSimpleButton({
@@ -9372,14 +9401,9 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 								action = dataManagement.refreshAllProfilesBackupBox,
 							})
 						end,
-						arrangement = { parameters = {
-							flip = true,
-							resize = false
-						}, }
 					})
 				end
 			end,
-			arrangement = {},
 		})
 
 		return dataManagement
@@ -9390,8 +9414,6 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 	--| Positioning
 
 	local positioningVisualAids = {}
-
-	if WidgetToolsDB.lite or wt.classic then WidgetToolsDB.positioningAids = false end --TODO fix in Classic
 
 	---Create and set up position options for a specified frame within a panel frame
 	---***
@@ -9417,36 +9439,25 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			positioningVisualAids.frame = positioningVisualAids.frame or wt.CreateFrame({
 				name = "WidgetToolsPositioningVisualAids",
 				position = { anchor = "CENTER", },
-				size = { w = GetScreenWidth() / C_CVar.GetCVar("uiScale") - 14, h = GetScreenHeight() / C_CVar.GetCVar("uiScale") - 14 },
+				size = { w = GetScreenWidth() - 14, h = GetScreenHeight() - 14 },
 				visible = false,
 				frameStrata = "BACKGROUND",
 				initialize = function(container)
 
 					--[ Textures ]
 
-					-- positioningVisualAids.highlight = positioningVisualAids.highlight or wt.CreateTexture({
-					-- 	parent = container,
-					-- 	name = "Highlight",
-					-- 	wrap = { h = true, v = true },
-					-- 	color = ns.colors.halfTransparent.grey,
-					-- 	events = {
-					-- 		OnEnter = function() positioningVisualAids.highlight:SetColorTexture(wt.UnpackColor(ns.colors.halfTransparent.blue)) end,
-					-- 		OnLeave = function() positioningVisualAids.highlight:SetColorTexture(wt.UnpackColor(ns.colors.halfTransparent.grey)) end
-					-- 	}
-					-- })
-
 					positioningVisualAids.anchor = positioningVisualAids.anchor or wt.CreateTexture({
 						parent = container,
 						name = "Anchor",
 						size = { w = 14, h = 14 },
-						path = "Interface/Common/common-mask-diamond",
+						path = wt.classic and "Interface/CharacterFrame/TempPortraitAlphaMask" or "Interface/Common/common-mask-diamond",
 					})
 
 					positioningVisualAids.relativePoint = positioningVisualAids.relativePoint or wt.CreateTexture({
 						parent = container,
 						name = "RelativePoint",
 						size = { w = 14, h = 14 },
-						path = "Interface/Common/common-iconmask",
+						path = not wt.classic and "Interface/Common/common-iconmask" or nil,
 					})
 
 					positioningVisualAids.line = positioningVisualAids.line or wt.CreateLine({
@@ -9487,14 +9498,6 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 
 					function positioningVisualAids.show(frame, position)
 						positioningVisualAids.frame:Show()
-						positioningVisualAids.frame:SetScale(UIParent:GetScale())
-
-						--Highlight
-						-- wt.SetPosition(positioningVisualAids.highlight, {
-						-- 	anchor = "CENTER",
-						-- 	relativeTo = t.frame,
-						-- })
-						-- positioningVisualAids.highlight:SetSize(t.frame:GetSize())
 
 						--Points
 						positioningVisualAids.update(frame, position)
@@ -9502,13 +9505,19 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 				end
 			})
 
-			--Update the size of the highlight aid
-			-- t.frame:HookScript("OnSizeChanged", function(_, ...) if positioningVisualAids.frame:IsVisible() then positioningVisualAids.highlight:SetSize(...) end end)
-
 			--[ Toggle ]
 
 			t.canvas:HookScript("OnShow", function() positioningVisualAids.show(t.frame, t.getData().position) end)
 			t.canvas:HookScript("OnHide", function() positioningVisualAids.frame:Hide() end)
+
+			--[ Update Size ]
+
+			WidgetTools.frame:RegisterEvent("UI_SCALE_CHANGED")
+
+			function WidgetTools.frame:UI_SCALE_CHANGED()
+				positioningVisualAids.frame:SetSize(GetScreenWidth() - 14, GetScreenHeight() - 14)
+				positioningVisualAids.frame:SetScale(UIParent:GetScale())
+			end
 		end
 
 		--[ Options Panel ]
@@ -9519,6 +9528,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 			title = ns.toolboxStrings.position.title,
 			description = ns.toolboxStrings.position.description[t.setMovable and "movable" or "static"]:gsub("#FRAME", t.frameName),
 			arrange = {},
+			arrangement = {},
 			initialize = function(panelFrame)
 
 				--[ Presets ]
@@ -9678,7 +9688,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 						--| Options Widgets
 
 						local savePopup = wt.RegisterPopupDialog(addon, "SAVE_PRESET", {
-							text = ns.toolboxStrings.presets.save.warning:gsub("#CUSTOM", wt.Color(panel.presetList[t.presets.custom.index].title, colors.highlight)),
+							text = ns.toolboxStrings.presets.save.warning:gsub("#CUSTOM", wt.Color(panel.presetList[t.presets.custom.index].title, wt.colors.normal)),
 							accept = ns.toolboxStrings.override,
 							onAccept = panel.saveCustomPreset,
 						})
@@ -9697,7 +9707,7 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 						})
 
 						local resetPopup = wt.RegisterPopupDialog(addon, "RESET_PRESET", {
-							text = ns.toolboxStrings.presets.reset.warning:gsub("#CUSTOM", wt.Color(panel.presetList[t.presets.custom.index].title, colors.highlight)),
+							text = ns.toolboxStrings.presets.reset.warning:gsub("#CUSTOM", wt.Color(panel.presetList[t.presets.custom.index].title, wt.colors.normal)),
 							accept = ns.toolboxStrings.override,
 							onAccept = panel.resetCustomPreset,
 						})
@@ -9897,62 +9907,6 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					},
 				}) end
 
-				-- panel.position.relativeTo = wt.CreateEditBox({ --TODO: Try out GetMouseFocus() instead
-				-- 	parent = panelFrame,
-				-- 	name = "RelativeFrame",
-				-- 	title = strings.position.relativeTo.label,
-				-- 	tooltip = { lines = { { text = strings.position.relativeTo.tooltip:gsub("#FRAME", t.frameName), }, } },
-				-- 	arrange = { newRow = false, },
-				-- 	width = 170,
-				-- 	events = {
-				-- 		OnTextChanged = function(self, text)
-				-- 			print("SET TEXT CHANGED", t.frameName, text) --REMOVE
-				-- 			if text then
-				-- 				text = wt.Clear(text)
-				-- 				self:SetText(wt.Color(text, wt.ToFrame(text) and { r = 1, g = 1, b = 1 } or { r = 1, g = 0.3, b = 0.3 }))
-				-- 			else self:SetText("") end
-				-- 		end,
-				-- 		OnEnterPressed = function(self, text) local l = wt.ToFrame(wt.Clear(text)) if not l then
-				-- 			self:SetText("")
-				-- 			print("ON ENTER PRESSED", l) --REMOVE
-				-- 			panel.position.relativePoint.setSelected(nil)
-				-- 		end end,
-				-- 		OnEscapePressed = function(self) self:SetText(t.getData().position.relativeTo) end,
-				-- 	},
-				-- 	dependencies = wt.MergeTable(wt.Clone(t.dependencies), { { frame = panel.position.absolute, evaluate = function(value) return not value end }, }),
-				-- 	optionsKey = t.optionsKey,
-				-- 	getData = function()
-				-- 		if type(t.getData().position.relativeTo) == "table" then if t.getData().position.relativeTo.GetName then print(t.getData().position.relativeTo:GetName() .. ".") end end --REMOVE
-				-- 		return wt.Clear(wt.ToString(t.getData().position.relativeTo))
-				-- 	end,
-				-- 	saveData = function(text)
-				-- 		text = wt.Clear(value)
-				-- 		local frame = wt.ToFrame(text)
-				-- 		print("CONVERT SAVE", frame, frame and text or nil) --REMOVE
-				--		
-				-- 		t.getData().position.relativeTo = frame and text
-				-- 	end,
-				-- 	onChange = { "CustomPositionChangeHandler", "UpdateFramePosition", },
-				-- 	-- disabled = not t.getData().position.relativeTo,
-				-- 	-- dependencies = t.getData().position.relativeTo and t.dependencies or nil,
-				-- 	-- optionsData = t.getData().position.relativeTo and {
-				-- 	-- 	optionsKey = t.optionsKey,
-				-- 	-- 	st = t.getData().position,
-				-- 	-- 	storageKey = "relativeTo",
-				-- 	-- 	convertSave = function(value)
-				-- 	-- 		local text = wt.Clear(value)
-				-- 	-- 		local frame = wt.ToFrame(text)
-				-- 	-- 		print("CONVERT SAVE", frame, frame and text or nil) --REMOVE
-				-- 	-- 		return frame and text or nil
-				-- 	-- 	end,
-				-- 	-- 	convertLoad = function(value)
-				-- 	-- 		if type(value) == "table" then if value.GetName then print(value:GetName() .. ".") end end --REMOVE
-				-- 	-- 		return wt.Clear(wt.ToString(value))
-				-- 	-- 	end,
-				-- 	-- 	onChange = { "CustomPositionChangeHandler", "UpdateFramePosition", }
-				-- 	-- } or nil
-				-- })
-
 				--[ Screen Layer ]
 
 				if t.getData().layer and next(t.getData().layer) then
@@ -10026,7 +9980,6 @@ function WidgetTools.frame:ADDON_LOADED(addon)
 					}) end
 				end
 			end,
-			arrangement = {}
 		})
 
 		--[ Movability ]

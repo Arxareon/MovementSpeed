@@ -38,13 +38,17 @@ $source = Join-Path $source "\[addon]\*"
 $destination = Get-Content -Path $pathFile
 $destination = Join-Path $destination "\[client]\Interface\Addons\[addon]\"
 
-<# Copy the files #>
+<# Clear the directories & Copy the files #>
 
 foreach ($addon in $addons) {
 	foreach ($client in $clients) {
 		#Fill in the paths
 		$sourcePath = $source -replace "\[addon\]", $addon
 		$destinationPath = $destination -replace "\[client\]", $client -replace "\[addon\]", $addon
+
+		#Clear the directory
+		Remove-Item $destinationPath -Include *.* -Recurse -Force
+
 		#Install the addon
 		if (!(Test-Path -Path $destinationPath)) { New-Item $destinationPath -Type Directory }
 		Copy-Item $sourcePath -Destination $destinationPath -Recurse -Force

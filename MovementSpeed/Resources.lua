@@ -15,9 +15,9 @@ local root = "Interface/AddOns/" .. ns.name .. "/"
 
 ns.changelog = {
 	{
-		"#V_Version 3.0_# #H_(12/30/2024)_#",
+		"#V_Version 3.0_# #H_(4/26/2025)_#",
 		"#N_New:_#",
-		"Added Cataclysm Classic 4.4.1, vanilla Classic 1.15.5 & The War Within 11.0.7 support.",
+		"Added Cataclysm Classic 4.4.2, Classic 1.15.7 & The War Within 11.1.5 support.",
 		"Added Skyriding (Dragonriding) speed support for the Player Speed display.",
 		"A separate independently customizable Travel Speed display has been added (not available for Classic versions). Settings values can be copied by category from one display to the other.",
 		"Added a new #H_swap_# chat command to be able to change which display is modified by chat commands (Player Speed or Travel Speed - not available in Classic).",
