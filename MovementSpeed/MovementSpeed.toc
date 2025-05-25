@@ -1,8 +1,8 @@
 ## Interface: 110105, 40402, 11507
 ## Title: Movement Speed
 ## Version: 3.0
-## X-Day: 26
-## X-Month: 4
+## X-Day: 25
+## X-Month: 5
 ## X-Year: 2025
 ## Category: HUDs
 ## Notes: View the movement speed of anyone in customizable displays and tooltips with fast updates.
@@ -19,6 +19,9 @@
 ## Dependencies: WidgetTools
 
 Resources.lua
-WidgetToolbox.lua
+Toolbox\Load.lua
+Toolbox\Resources.lua
+Toolbox\Utilities.lua
+Toolbox\Constructors.lua
 Main.lua [AllowLoadGameType mainline]
 Main_Classic.lua [AllowLoadGameType classic]

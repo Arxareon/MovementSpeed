@@ -1,15 +1,18 @@
---[[ ADDON INFO ]]
+--[[ NAMESPACE ]]
 
 ---Addon namespace table
 ---@class WidgetToolsNamespace
 ---@field name string Addon namespace name
 local ns = select(2, ...)
 
+--Addon namespace name
 ns.name = ...
 
+--Addon display title
+ns.title = select(2, C_AddOns.GetAddOnInfo(ns.name)):gsub("^%s*(.-)%s*$", "%1")
 
 --Addon root folder
-local root = "Interface/AddOns/" .. ns.name .. "/"
+ns.root = "Interface/AddOns/" .. ns.name .. "/"
 
 
 --[[ CHANGELOG ]]
@@ -102,7 +105,7 @@ ns.changelog = {
 }
 
 
---[[ LOCALIZATIONS ]]
+--[[ LOCALIZATION ]]
 
 --# flags will be replaced with code
 --\n represents the newline character
@@ -243,16 +246,16 @@ ns.colors = {
 
 --Textures
 ns.textures = {
-	logo = root .. "Textures/Logo.tga",
-	missing = root .. "Textures/MissingLogo.tga",
-	alphaBG = root .. "Textures/AlphaBG.tga",
-	gradientBG = root .. "Textures/GradientBG.tga",
+	logo = ns.root .. "Textures/Logo.tga",
+	missing = ns.root .. "Textures/MissingLogo.tga",
+	alphaBG = ns.root .. "Textures/AlphaBG.tga",
+	gradientBG = ns.root .. "Textures/GradientBG.tga",
 }
 
 
 --[[ DATA ]]
 
---Default values
+--Defaults
 ns.defaults = {
 	lite = false,
 	positioningAids = true,

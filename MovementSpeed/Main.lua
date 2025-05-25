@@ -1,18 +1,13 @@
---[[ RESOURCES ]]
+--[[ NAMESPACE ]]
 
 ---@class MovementSpeedNamespace
 local ns = select(2, ...)
 
+
+--[[ REFERENCES ]]
+
 ---@class wt
 local wt = ns.WidgetToolbox
-
---Addon title
-ns.title = wt.Clear(select(2, C_AddOns.GetAddOnInfo(ns.name))):gsub("^%s*(.-)%s*$", "%1")
-
---Custom Tooltip
-ns.tooltip = wt.CreateGameTooltip(ns.name)
-
---[ References ]
 
 local frames = {
 	playerSpeed = {},
@@ -209,6 +204,18 @@ local function GetRecoveryMap(data)
 		["visibility.hidden"] = { saveTo = { data.playerSpeed.visibility, }, saveKey = "hidden", },
 		["appearance.hidden"] = { saveTo = { data.playerSpeed.visibility, }, saveKey = "hidden", },
 	}
+end
+
+--[ Chat Control ]
+
+---Print visibility info
+---@param display "playerSpeed"|"travelSpeed"
+local function PrintStatus(display)
+	print(wt.Color((frames.main:IsVisible() and (
+		not frames[display].display:IsVisible() and ns.strings.chat.status.notVisible or ns.strings.chat.status.visible
+	) or ns.strings.chat.status.hidden):gsub("#TYPE", ns.strings.options[display].title):gsub("#AUTO", ns.strings.chat.status.auto:gsub("#STATE", wt.Color(
+		MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].visibility.autoHide and ns.strings.misc.enabled or ns.strings.misc.disabled, ns.colors.yellow[1]
+	))), ns.colors.yellow[2]))
 end
 
 --[ Speed Update ]
@@ -1470,22 +1477,10 @@ local function CreateTargetSpeedOptionsPage()
 end
 
 
---[[ CHAT CONTROL ]]
-
---[ Chat Utilities ]
-
----Print visibility info
----@param display "playerSpeed"|"travelSpeed"
-local function PrintStatus(display)
-	print(wt.Color((frames.main:IsVisible() and (
-		not frames[display].display:IsVisible() and ns.strings.chat.status.notVisible or ns.strings.chat.status.visible
-	) or ns.strings.chat.status.hidden):gsub("#TYPE", ns.strings.options[display].title):gsub("#AUTO", ns.strings.chat.status.auto:gsub("#STATE", wt.Color(
-		MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].visibility.autoHide and ns.strings.misc.enabled or ns.strings.misc.disabled, ns.colors.yellow[1]
-	))), ns.colors.yellow[2]))
-end
-
-
 --[[ INITIALIZATION ]]
+
+--Custom Tooltip
+ns.tooltip = wt.CreateGameTooltip(ns.name)
 
 ---Set up the speed display context menu
 ---@param display "playerSpeed"|"travelSpeed"
@@ -1542,18 +1537,21 @@ frames.main = wt.CreateFrame({
 
 			local firstLoad = not MovementSpeedDB
 
-			--Load storage DBs
+			--| Load storage DBs
+
 			MovementSpeedDB = MovementSpeedDB or {}
 			MovementSpeedDBC = MovementSpeedDBC or {}
 
-			--Load cross-session data
+			--| Load cross-session data
+
 			MovementSpeedCS = wt.AddMissing(MovementSpeedCS or {}, {
 				compactBackup = true,
 				playerSpeed = { keepInPlace = true, },
 				travelSpeed = { keepInPlace = true, },
 			})
 
-			--Initialize data management
+			--| Initialize data management
+
 			options.dataManagement = wt.CreateDataManagementPage(ns.name, {
 				onDefault = function(_, category) if not category then options.dataManagement.resetProfile() end end,
 				accountData = MovementSpeedDB,

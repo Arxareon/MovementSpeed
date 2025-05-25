@@ -1,4 +1,4 @@
---[[ RESOURCES ]]
+--[[ NAMESPACE ]]
 
 ---@class WidgetToolsNamespace
 local ns = select(2, ...)
@@ -42,10 +42,10 @@ WidgetTools.frame = CreateFrame("Frame", ns.name .. "InitializationFrame")
 --Event handler
 WidgetTools.frame:SetScript("OnEvent", function(self, event, ...) return self[event] and self[event](self, ...) end)
 
-WidgetTools.frame:RegisterEvent("PLAYER_ENTERING_WORLD")
+WidgetTools.frame:RegisterEvent("PLAYER_LOGIN")
 
-function WidgetTools.frame:PLAYER_ENTERING_WORLD()
-	WidgetTools.frame:UnregisterEvent("PLAYER_ENTERING_WORLD")
+function WidgetTools.frame:PLAYER_LOGIN()
+	WidgetTools.frame:UnregisterEvent("PLAYER_LOGIN")
 
 
 	--[[ RESOURCES ]]
@@ -53,15 +53,12 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 	---@class wt
 	local wt = ns.WidgetToolbox
 
-	--Addon title
-	local addonTitle = wt.Clear(select(2, C_AddOns.GetAddOnInfo(ns.name))):gsub("^%s*(.-)%s*$", "%1")
-
 	---@type chatCommandManager
 	local chatCommands
 
 	--[ Data ]
 
-	--Loaded DB reference
+	--Loaded DB snapshot
 	local loaded = wt.Clone(WidgetToolsDB)
 
 
@@ -105,7 +102,7 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 					local silentSave = false
 
 					local enableLitePopup = wt.RegisterPopupDialog(ns.name, "ENABLE_LITE_MODE", {
-						text = ns.strings.lite.enable.warning:gsub("#ADDON", addonTitle),
+						text = ns.strings.lite.enable.warning:gsub("#ADDON", ns.title),
 						accept = ns.strings.lite.enable.accept,
 						onAccept = function()
 							liteToggle.setState(true)
@@ -115,7 +112,7 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 						end,
 					})
 					local disableLitePopup = wt.RegisterPopupDialog(ns.name, "DISABLE_LITE_MODE", {
-						text = ns.strings.lite.disable.warning:gsub("#ADDON", addonTitle),
+						text = ns.strings.lite.disable.warning:gsub("#ADDON", ns.title),
 						accept = ns.strings.lite.disable.accept,
 						onAccept = function()
 							liteToggle.setState(false)
@@ -249,7 +246,7 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 		register = mainPage,
 		name = "Addons",
 		title = ns.strings.addons.title,
-		description = ns.strings.addons.description:gsub("#ADDON", addonTitle),
+		description = ns.strings.addons.description:gsub("#ADDON", ns.title),
 		scroll = { speed = 0.2 },
 		static = true,
 		dataManagement = {},
@@ -376,7 +373,7 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 											name = "VersionTitle",
 											position = position,
 											width = 48,
-											text = ns.toolboxStrings.about.version,
+											text = wt.strings.about.version,
 											font = "GameFontHighlightSmall",
 											justify = { h = "RIGHT", },
 										})
@@ -390,7 +387,7 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 												offset = { x = 5 }
 											},
 											width = 140,
-											text = data.version .. (data.day and data.month and data.year and WrapTextInColorCode(" ( " .. ns.toolboxStrings.about.date .. ": " .. wt.Color(ns.toolboxStrings.date:gsub(
+											text = data.version .. (data.day and data.month and data.year and WrapTextInColorCode(" ( " .. wt.strings.about.date .. ": " .. wt.Color(wt.strings.date:gsub(
 												"#DAY", data.day
 											):gsub(
 												"#MONTH", data.month
@@ -445,7 +442,7 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 											name = "AuthorTitle",
 											position = position,
 											width = 48,
-											text = ns.toolboxStrings.about.author,
+											text = wt.strings.about.author,
 											font = "GameFontHighlightSmall",
 											justify = { h = "RIGHT", },
 										})
@@ -476,7 +473,7 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 											name = "LicenseTitle",
 											position = position,
 											width = 48,
-											text = ns.toolboxStrings.about.license,
+											text = wt.strings.about.license,
 											font = "GameFontHighlightSmall",
 											justify = { h = "RIGHT", },
 										})
@@ -508,9 +505,9 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 				title = ns.strings.addons.old.title,
 				description = ns.strings.addons.old.description,
 				arrange = {},
-				size = { h = 44 },
+				size = { h = 42 },
 				initialize = function(panel)
-					local oldToolboxes = ns.strings.addons.old.none:gsub("#ADDON", addonTitle)
+					local oldToolboxes = ns.strings.addons.old.none:gsub("#ADDON", ns.title)
 
 					if type(WidgetToolbox) == "table" and next(WidgetToolbox) then
 						local toolboxes = ""
@@ -528,7 +525,7 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 						name = "OldToolboxes",
 						position = { offset = { x = 16, y = -16 } },
 						text = oldToolboxes,
-						font = "GameFontDisableSmall",
+						font = "GameFontDisable",
 						justify = { h = "LEFT", },
 					})
 				end,
@@ -586,7 +583,7 @@ function WidgetTools.frame:PLAYER_ENTERING_WORLD()
 		onClick = function()
 			if WidgetToolsDB.lite then liteToggle.setState(false, true) else wt.CreateContextMenu({
 				initialize = function(menu)
-					wt.CreateMenuTextline(menu, { text = addonTitle, })
+					wt.CreateMenuTextline(menu, { text = ns.title, })
 					wt.CreateMenuButton(menu, {
 						title = wt.GetStrings("about").title,
 						action = mainPage.open

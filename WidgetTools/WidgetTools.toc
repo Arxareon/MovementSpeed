@@ -1,8 +1,8 @@
 ## Interface: 110105, 40402, 11507
 ## Title: Widget Tools
 ## Version: 2.0
-## X-Day: 26
-## X-Month: 4
+## X-Day: 25
+## X-Month: 5
 ## X-Year: 2025
 ## Category: Development Tools
 ## Notes: Responsible for doing the heavy lifting in the background for other addons built on it & provides extra development tools.
@@ -21,4 +21,7 @@
 
 Resources.lua
 Main.lua
-WidgetToolbox.lua
+Toolbox\Load.lua
+Toolbox\Utilities.lua
+Toolbox\Resources.lua
+Toolbox\Constructors.lua

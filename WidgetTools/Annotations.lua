@@ -349,6 +349,12 @@
 
 ---[ Title & Description ]
 
+---@class descriptionColorData
+---@field r? number Red | ***Range:*** (0, 1) | ***Default:*** HIGHLIGHT_FONT_COLOR.r
+---@field g? number Green | ***Range:*** (0, 1) | ***Default:*** HIGHLIGHT_FONT_COLOR.g
+---@field b? number Blue | ***Range:*** (0, 1) | ***Default:*** HIGHLIGHT_FONT_COLOR.b
+---@field a? number Opacity | ***Range:*** (0, 1) | ***Default:*** 0.55
+
 ---@class titleCreationData
 ---@field parent AnyFrameObject Reference to the frame to add the title to
 ---@field anchor? FramePoint ***Default:*** "TOPLEFT"
@@ -367,7 +373,7 @@
 ---@field spacer? number Space to leave between **t.title** & the separator and the separator & the description | ***Default:*** 5
 ---@field text string Text to be shown as the description of the frame
 ---@field font? string Name of the [Font](https://wowpedia.fandom.com/wiki/UIOBJECT_Font) object to be used for the [FontString](https://wowpedia.fandom.com/wiki/UIOBJECT_FontString) | ***Default:*** "GameFontHighlightSmall2"
----@field color? colorData Apply the specified color to the description (overriding **t.font**)
+---@field color? descriptionColorData Apply the specified color to the description (overriding **t.font**)
 ---@field justify? JustifyHorizontal Set the horizontal text alignment (overriding **t.font**) | ***Default:*** "LEFT"
 
 ---@class titledObject_base
@@ -561,7 +567,7 @@
 ---@class tooltipLineData
 ---@field text string Text to be displayed in the line
 ---@field font? string|FontObject The FontObject to set for this line | ***Default:*** GameTooltipTextSmall
----@field color? rgbData_base Table containing the RGB values to color this line with | ***Default:*** HIGHLIGHT_FONT_COLOR (white)
+---@field color? rgbData_base Table containing the RGB values to color this line with (overriding **font**)
 ---@field wrap? boolean Allow the text in this line to be wrapped | ***Default:*** true
 
 ---@class tooltipTextData
@@ -726,7 +732,7 @@
 ---@field r? number Red | ***Range:*** (0, 1) | ***Default:*** 0.175
 ---@field g? number Green | ***Range:*** (0, 1) | ***Default:*** 0.175
 ---@field b? number Blue | ***Range:*** (0, 1) | ***Default:*** 0.175
----@field a? number Opacity | ***Range:*** (0, 1) | ***Default:*** 0.45
+---@field a? number Opacity | ***Range:*** (0, 1) | ***Default:*** 0.65
 
 ---@class insetData_panel
 ---@field l? number Left side | ***Default:*** 4

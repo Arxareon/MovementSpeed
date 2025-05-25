@@ -1,14 +1,18 @@
---[[ RESOURCES ]]
+--[[ NAMESPACE ]]
 
 ---Addon namespace table
 ---@class MovementSpeedNamespace
 ---@field name string Addon namespace name
 local ns = select(2, ...)
 
+--Addon namespace name
 ns.name = ...
 
+--Addon display title
+ns.title = select(2, C_AddOns.GetAddOnInfo(ns.name)):gsub("^%s*(.-)%s*$", "%1")
+
 --Addon root folder
-local root = "Interface/AddOns/" .. ns.name .. "/"
+ns.root = "Interface/AddOns/" .. ns.name .. "/"
 
 
 --[[ CHANGELOG ]]
@@ -261,7 +265,7 @@ ns.changelog = {
 }
 
 
---[[ LOCALIZATIONS ]]
+--[[ LOCALIZATION ]]
 
 --# flags will be replaced with code
 --\n represents the newline character
@@ -595,26 +599,26 @@ ns.colors = {
 --Fonts
 ns.fonts = {
 	{ name = ns.strings.misc.default, path = ns.strings.defaultFont, widthRatio = 1 },
-	{ name = "Arbutus Slab", path = root .. "Fonts/ArbutusSlab.ttf", widthRatio = 1.07 },
-	{ name = "Caesar Dressing", path = root .. "Fonts/CaesarDressing.ttf", widthRatio = 0.84 },
-	{ name = "Germania One", path = root .. "Fonts/GermaniaOne.ttf", widthRatio = 0.86 },
-	{ name = "Mitr", path = root .. "Fonts/Mitr.ttf", widthRatio = 1.07 },
-	{ name = "Oxanium", path = root .. "Fonts/Oxanium.ttf", widthRatio = 0.94 },
-	{ name = "Pattaya", path = root .. "Fonts/Pattaya.ttf", widthRatio = 0.87 },
-	{ name = "Reem Kufi", path = root .. "Fonts/ReemKufi.ttf", widthRatio = 0.92 },
-	{ name = "Source Code Pro", path = root .. "Fonts/SourceCodePro.ttf", widthRatio = 1.11 },
-	{ name = ns.strings.misc.custom, path = root .. "Fonts/CUSTOM.ttf", widthRatio = 1.2 },
+	{ name = "Arbutus Slab", path = ns.root .. "Fonts/ArbutusSlab.ttf", widthRatio = 1.07 },
+	{ name = "Caesar Dressing", path = ns.root .. "Fonts/CaesarDressing.ttf", widthRatio = 0.84 },
+	{ name = "Germania One", path = ns.root .. "Fonts/GermaniaOne.ttf", widthRatio = 0.86 },
+	{ name = "Mitr", path = ns.root .. "Fonts/Mitr.ttf", widthRatio = 1.07 },
+	{ name = "Oxanium", path = ns.root .. "Fonts/Oxanium.ttf", widthRatio = 0.94 },
+	{ name = "Pattaya", path = ns.root .. "Fonts/Pattaya.ttf", widthRatio = 0.87 },
+	{ name = "Reem Kufi", path = ns.root .. "Fonts/ReemKufi.ttf", widthRatio = 0.92 },
+	{ name = "Source Code Pro", path = ns.root .. "Fonts/SourceCodePro.ttf", widthRatio = 1.11 },
+	{ name = ns.strings.misc.custom, path = ns.root .. "Fonts/CUSTOM.ttf", widthRatio = 1.2 },
 }
 
 --Textures
 ns.textures = {
-	logo = root .. "Textures/Logo.tga",
+	logo = ns.root .. "Textures/Logo.tga",
 }
 
 
 --[[ DATA ]]
 
---Default values
+--Defaults
 ns.profileDefault = {
 	mainDisplay = "playerSpeed",
 	customPreset = {
