@@ -69,14 +69,17 @@ local speedText = {}
 --Sum of time since the last speed update
 local timeSinceSpeedUpdate = {
 	playerSpeed = 0,
-	travelSpeed = 0
+	travelSpeed = 0,
 }
 
 --System time of the last Travel Speed update
 local lastTime = 0
 
+--Current player coordinates
+local currentPosition = {}
+
 --Player position at the last Travel Speed update
-local pastPosition
+local pastPosition = {}
 
 --Map info
 local map = { size = {} }
@@ -220,6 +223,15 @@ end
 
 --[ Speed Update ]
 
+local function UpdateMapInfo()
+	map.id = C_Map.GetBestMapForUnit("player")
+
+	if not map.id then return end
+
+	map.name = C_Map.GetMapInfo(map.id).name
+	map.size.w, map.size.h = C_Map.GetMapWorldSize(map.id)
+end
+
 ---Format the raw string of the specified speed textline to be replaced by speed values later
 ---@param type "playerSpeed"|"travelSpeed"|"targetSpeed"
 ---@param units table
@@ -280,8 +292,8 @@ end
 
 --Update the Player Speed values
 local function UpdatePlayerSpeed()
-	local skyriding, _, flightSpeed = C_PlayerInfo.GetGlidingInfo()
-	speed.playerSpeed.yards = skyriding and flightSpeed or GetUnitSpeed(UnitInVehicle("player") and "vehicle" or "player")
+	local advanced, _, flightSpeed = C_PlayerInfo.GetGlidingInfo()
+	speed.playerSpeed.yards = advanced and flightSpeed or GetUnitSpeed(UnitInVehicle("player") and "vehicle" or "player")
 	speed.playerSpeed.percent = speed.playerSpeed.yards / BASE_MOVEMENT_SPEED * 100
 	speed.playerSpeed.coords.x, speed.playerSpeed.coords.y = speed.playerSpeed.yards / (map.size.w / 100), speed.playerSpeed.yards / (map.size.h / 100)
 
@@ -296,15 +308,20 @@ local function UpdatePlayerSpeed()
 	frames.playerSpeed.text:SetText(" " .. GetSpeedText("playerSpeed"))
 end
 
---Updates the Travel Speed values since the last sample
-local function UpdateTravelSpeed()
-	local time = GetTime()
-	local delta = time - lastTime
-	local currentPosition = map.id and C_Map.GetPlayerMapPosition(map.id, "player") or nil
+---Updates the Travel Speed values since the last sample
+---@param deltaTime number Time since last update
+local function UpdateTravelSpeed(deltaTime)
+	if map.id then
+		currentPosition.x, currentPosition.y = C_Map.GetPlayerMapPosition(map.id, "player"):GetXY() --NOTE: high RAM littering, garbage collection has a hard time keeping up
 
-	if pastPosition and currentPosition then
-		speed.travelSpeed.coords.x, speed.travelSpeed.coords.y = (currentPosition.x - pastPosition.x) * map.size.w, (currentPosition.y - pastPosition.y) * map.size.h
-		speed.travelSpeed.yards = math.sqrt(speed.travelSpeed.coords.x ^ 2 + speed.travelSpeed.coords.y ^ 2) / (delta > 0.01 and delta or 1)
+		currentPosition.x = currentPosition.x * map.size.w
+		currentPosition.y = currentPosition.y * map.size.h
+	else currentPosition.x, currentPosition.y = nil end
+	-- currentPosition.x, currentPosition.y = UnitPosition("player") end --NOTE: no RAM waste but produces less accurate results in calculations
+
+	if currentPosition.x and pastPosition.x then
+		speed.travelSpeed.coords.x, speed.travelSpeed.coords.y = (currentPosition.x - pastPosition.x), (currentPosition.y - pastPosition.y)
+		speed.travelSpeed.yards = math.sqrt(speed.travelSpeed.coords.x ^ 2 + speed.travelSpeed.coords.y ^ 2) / max(deltaTime, 0.01)
 		speed.travelSpeed.percent = speed.travelSpeed.yards / BASE_MOVEMENT_SPEED * 100
 		speed.travelSpeed.coords.x, speed.travelSpeed.coords.y = math.abs(speed.travelSpeed.coords.x), math.abs(speed.travelSpeed.coords.y)
 	else
@@ -313,7 +330,8 @@ local function UpdateTravelSpeed()
 		speed.travelSpeed.coords.x, speed.travelSpeed.coords.y = -1, -1
 	end
 
-	pastPosition = currentPosition
+	pastPosition.x = currentPosition.x
+	pastPosition.y = currentPosition.y
 	lastTime = time
 
 	--Hide when stationery
@@ -324,16 +342,7 @@ local function UpdateTravelSpeed()
 	else frames.travelSpeed.display:Show() end
 
 	--Update the display text
-	frames.travelSpeed.text:SetText(" " .. GetSpeedText("travelSpeed"):gsub("-1", not currentPosition and GetUnitSpeed("player") ~= 0 and "X" or "0"))
-end
-
-local function UpdateMapInfo()
-	map.id = C_Map.GetBestMapForUnit("player")
-
-	if not map.id then return end
-
-	map.name = C_Map.GetMapInfo(map.id).name
-	map.size.w, map.size.h = C_Map.GetMapWorldSize(map.id)
+	frames.travelSpeed.text:SetText(" " .. GetSpeedText("travelSpeed"):gsub("-1", not currentPosition.x and GetUnitSpeed("player") ~= 0 and "X" or "0"))
 end
 
 --[ Speed Displays ]
@@ -411,9 +420,13 @@ local function SetDisplayValues(display, data)
 	wt.SetPosition(frames[display].text, { anchor = data[display].font.alignment, })
 end
 
+--| Tooltip content
+
+local playerSpeedTooltipLines, travelSpeedTooltipLines
+
 --Assemble the detailed text lines for the tooltip of the Player Speed display
 local function GetPlayerSpeedTooltipLines()
-	return {
+	playerSpeedTooltipLines = {
 		{ text = ns.strings.speedTooltip.description },
 		{ text = "\n" .. ns.strings.speedTooltip.playerSpeed, },
 		{
@@ -464,29 +477,31 @@ local function GetPlayerSpeedTooltipLines()
 			color = ns.colors.grey[1],
 		},
 	}
+
+	return playerSpeedTooltipLines
 end
 
 --Assemble the detailed text lines for the tooltip of the Travel Speed display
 local function GetTravelSpeedTooltipLines()
-	return {
+	travelSpeedTooltipLines = {
 		{ text = ns.strings.speedTooltip.description },
 		{ text = "\n" .. ns.strings.speedTooltip.travelSpeed, },
 		{
-			text = "\n" .. (not pastPosition and (ns.strings.speedTooltip.instanceError .. "\n\n") or "") ,
+			text = "\n" .. (not currentPosition.x and (ns.strings.speedTooltip.instanceError .. "\n\n") or "") ,
 			font = GameTooltipText,
 			color = { r = 0.92, g = 0.34, b = 0.23 },
 		},
 		{
 			text = ns.strings.speedTooltip.text[1]:gsub(
 				"#YARDS", wt.Color(wt.Thousands(speed.travelSpeed.yards, 2, true), ns.colors.yellow[2])
-			):gsub("-1", not pastPosition and GetUnitSpeed("player") ~= 0 and "X" or "0"),
+			):gsub("-1", not currentPosition.x and GetUnitSpeed("player") ~= 0 and "X" or "0"),
 			font = GameTooltipText,
 			color = ns.colors.yellow[1],
 		},
 		{
 			text = "\n" .. ns.strings.speedTooltip.text[2]:gsub(
 				"#PERCENT", wt.Color(wt.Thousands(speed.travelSpeed.percent, 2, true) .. "%%", ns.colors.green[2])
-			):gsub("-1", not pastPosition and GetUnitSpeed("player") ~= 0 and "X" or "0"),
+			):gsub("-1", not currentPosition.x and GetUnitSpeed("player") ~= 0 and "X" or "0"),
 			font = GameTooltipText,
 			color = ns.colors.green[1],
 		},
@@ -497,7 +512,7 @@ local function GetTravelSpeedTooltipLines()
 				):gsub(
 					"#Y", wt.Thousands(speed.travelSpeed.coords.y, 2, true)
 				), ns.colors.blue[2])
-			):gsub("-1", not pastPosition and GetUnitSpeed("player") ~= 0 and "X" or "0"),
+			):gsub("-1", not currentPosition.x and GetUnitSpeed("player") ~= 0 and "X" or "0"),
 			font = GameTooltipText,
 			color = ns.colors.blue[1],
 		},
@@ -526,7 +541,11 @@ local function GetTravelSpeedTooltipLines()
 			color = ns.colors.grey[1],
 		},
 	}
+
+	return travelSpeedTooltipLines
 end
+
+--| Toggle updates
 
 ---Start updating the specified speed display
 ---@param display "playerSpeed"|"travelSpeed"
@@ -534,22 +553,19 @@ local function StartSpeedDisplayUpdates(display)
 	local updater = display == "playerSpeed" and UpdatePlayerSpeed or UpdateTravelSpeed
 
 	--Update the speed values at start
-	updater()
+	updater(timeSinceSpeedUpdate[display])
 
 	--| Repeated updates
 
-	frames[display].updater:SetScript("OnUpdate", function(_, deltaTime)
-		--Throttle the update
-		if MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].update.throttle then
-			timeSinceSpeedUpdate[display] = timeSinceSpeedUpdate[display] + deltaTime
+	frames[display].updater:SetScript("OnUpdate", function(_, deltaTime) if MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].update.throttle then
+		timeSinceSpeedUpdate[display] = timeSinceSpeedUpdate[display] + deltaTime
 
-			if timeSinceSpeedUpdate[display] < MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].update.frequency then return
-			else timeSinceSpeedUpdate[display] = 0 end
+		if timeSinceSpeedUpdate[display] < MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].update.frequency then return else
+			updater(timeSinceSpeedUpdate[display])
+
+			timeSinceSpeedUpdate[display] = 0
 		end
-
-		--Update the speed values
-		updater()
-	end)
+	else updater(deltaTime) end end)
 end
 
 ---Stop updating the specified speed display
@@ -566,9 +582,14 @@ local function GetTargetSpeedText()
 	return wt.Texture(ns.textures.logo) .. " " .. ns.strings.targetSpeed:gsub("#SPEED", wt.Color(GetSpeedText("targetSpeed"), ns.colors.grey[2]))
 end
 
---Set up the Target Speed unit tooltip integration
+--| Updates
+
 local targetSpeedEnabled = false
+
+--Set up the Target Speed unit tooltip integration
 local function EnableTargetSpeedUpdates()
+	local lineAdded, line
+
 	targetSpeedEnabled = true
 
 	--Start mouseover Target Speed updates
@@ -584,9 +605,9 @@ local function EnableTargetSpeedUpdates()
 			speed.targetSpeed.coords.x, speed.targetSpeed.coords.y = speed.targetSpeed.yards / (map.size.w / 100), speed.targetSpeed.yards / (map.size.h / 100)
 
 			--Find the speed line
-			local lineAdded = false
+			lineAdded = false
 			for i = 2, tooltip:NumLines() do
-				local line = _G["GameTooltipTextLeft" .. i]
+				line = _G["GameTooltipTextLeft" .. i]
 				if line then if string.match(line:GetText() or "", wt.Texture(ns.textures.logo)) then
 					--Update the speed line
 					line:SetText(GetTargetSpeedText())
@@ -1072,7 +1093,6 @@ local function CreateSpeedDisplayOptionsPage(display)
 				parent = canvas,
 				name = keys[6],
 				title = ns.strings.options.speedDisplay.visibility.title,
-				description = ns.strings.options.speedDisplay.visibility.description:gsub("#ADDON", ns.title),
 				arrange = {},
 				arrangement = {},
 				initialize = function(panel, _, _, key)
@@ -1251,7 +1271,6 @@ local function CreateSpeedDisplayOptionsPage(display)
 				parent = canvas,
 				name = keys[4],
 				title = ns.strings.options.speedDisplay.update.title,
-				description = ns.strings.options.speedDisplay.update.description,
 				arrange = {},
 				arrangement = {},
 				initialize = function(panel, _, _, key)
@@ -1277,7 +1296,6 @@ local function CreateSpeedDisplayOptionsPage(display)
 				parent = canvas,
 				name = keys[3],
 				title = ns.strings.options.speedValue.title,
-				description = ns.strings.options.speedValue.description,
 				arrange = {},
 				arrangement = {},
 				initialize = function(panel, _, _, key)
@@ -1303,7 +1321,6 @@ local function CreateSpeedDisplayOptionsPage(display)
 				parent = canvas,
 				name = keys[1],
 				title = ns.strings.options.speedDisplay.font.title,
-				description = ns.strings.options.speedDisplay.font.description,
 				arrange = {},
 				arrangement = {},
 				initialize = function(panel, _, _, key)
@@ -1329,7 +1346,6 @@ local function CreateSpeedDisplayOptionsPage(display)
 				parent = canvas,
 				name = keys[2],
 				title = ns.strings.options.speedDisplay.background.title,
-				description = ns.strings.options.speedDisplay.background.description:gsub("#ADDON", ns.title),
 				arrange = {},
 				arrangement = {},
 				initialize = function(panel, _, _, key)
@@ -1379,7 +1395,6 @@ local function CreateTargetSpeedOptionsPage()
 				parent = canvas,
 				name = "Mouseover",
 				title = ns.strings.options.targetSpeed.mouseover.title,
-				description = ns.strings.options.targetSpeed.mouseover.description,
 				arrange = {},
 				arrangement = {},
 				initialize = function(panel)
@@ -1405,7 +1420,6 @@ local function CreateTargetSpeedOptionsPage()
 				parent = canvas,
 				name = "Value",
 				title = ns.strings.options.speedValue.title,
-				description = ns.strings.options.speedValue.description,
 				arrange = {},
 				arrangement = {},
 				initialize =function(panel)
