@@ -9,14 +9,9 @@ local ns = select(2, ...)
 ---@class wt
 local wt = ns.WidgetToolbox
 
-ns.title = wt.Clear(select(2, C_AddOns.GetAddOnInfo(ns.name))):gsub("^%s*(.-)%s*$", "%1")
-
---Custom Tooltip
-ns.tooltip = wt.CreateGameTooltip(ns.name)
-
---[ References ]
-
-local frames = { playerSpeed = {}, }
+local frames = {
+	playerSpeed = {},
+}
 
 local options = {
 	main = {},
@@ -42,12 +37,8 @@ local chatCommands
 
 --Speed values
 local speed = {
-	playerSpeed = {
-		yards = 0,
-	},
-	targetSpeed = {
-		yards = 0,
-	}
+	playerSpeed = { yards = 0, },
+	targetSpeed = { yards = 0, }
 }
 
 --Speed text templates
@@ -183,6 +174,17 @@ local function GetRecoveryMap(data)
 	}
 end
 
+--[ Chat Control ]
+
+---Print visibility info
+local function PrintStatus()
+	print(wt.Color((frames.main:IsVisible() and (
+		not frames.playerSpeed.display:IsVisible() and ns.strings.chat.status.notVisible or ns.strings.chat.status.visible
+	) or ns.strings.chat.status.hidden):gsub("#TYPE", ns.strings.options.playerSpeed.title):gsub("#AUTO", ns.strings.chat.status.auto:gsub("#STATE", wt.Color(
+		MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.visibility.autoHide and ns.strings.misc.enabled or ns.strings.misc.disabled, ns.colors.yellow[1]
+	))), ns.colors.yellow[2]))
+end
+
 --[ Speed Update ]
 
 ---Format the raw string of the specified speed textline to be replaced by speed values later
@@ -213,7 +215,7 @@ local function GetSpeedText(type)
 
 	return speedText[type]:gsub(
 		"#PERCENT", wt.Thousands(
-			speed[type].yards / BASE_MOVEMENT_SPEED * 100,
+			speed[type].percent,
 			MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[type].value.fractionals,
 			true,
 			not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[type].value.zeros
@@ -230,7 +232,8 @@ end
 
 --Update the Player Speed values
 local function UpdatePlayerSpeed()
-	speed.playerSpeed.yards = GetUnitSpeed(_G[UnitInVehicle] and UnitInVehicle("player") and "vehicle" or "player")
+	speed.playerSpeed.yards = GetUnitSpeed("player")
+	speed.playerSpeed.percent = speed.playerSpeed.yards / BASE_MOVEMENT_SPEED * 100
 
 	--Hide when stationery
 	if speed.playerSpeed.yards == 0 and MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.visibility.autoHide then
@@ -314,9 +317,13 @@ local function SetDisplayValues(data)
 	wt.SetPosition(frames.playerSpeed.text, { anchor = data.playerSpeed.font.alignment, })
 end
 
----Assemble the detailed text lines for the tooltip of the Player Speed display
+--| Tooltip content
+
+local playerSpeedTooltipLines
+
+--Assemble the detailed text lines for the tooltip of the Player Speed display
 local function GetPlayerSpeedTooltipLines()
-	return {
+	playerSpeedTooltipLines = {
 		{ text = ns.strings.speedTooltip.description },
 		{ text = "\n" .. ns.strings.speedTooltip.playerSpeed, },
 		{
@@ -326,7 +333,7 @@ local function GetPlayerSpeedTooltipLines()
 		},
 		{
 			text = "\n" .. ns.strings.speedTooltip.text[2]:gsub(
-				"#PERCENT", wt.Color(wt.Thousands(speed.playerSpeed.yards / BASE_MOVEMENT_SPEED * 100, 2, true) .. "%%", ns.colors.green[2])
+				"#PERCENT", wt.Color(wt.Thousands(speed.playerSpeed.percent, 2, true) .. "%%", ns.colors.green[2])
 			),
 			font = GameTooltipText,
 			color = ns.colors.green[1],
@@ -342,27 +349,28 @@ local function GetPlayerSpeedTooltipLines()
 			color = ns.colors.grey[1],
 		},
 	}
+
+	return playerSpeedTooltipLines
 end
 
---Start updating the speed display
+--| Toggle updates
+
+---Start updating the speed display
 local function StartSpeedDisplayUpdates()
 	--Update the speed values at start
-	UpdatePlayerSpeed()
+	UpdatePlayerSpeed(timeSinceSpeedUpdate.playerSpeed)
 
 	--| Repeated updates
 
-	frames.playerSpeed.updater:SetScript("OnUpdate", function(_, deltaTime)
-		--Throttle the update
-		if MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.update.throttle then
-			timeSinceSpeedUpdate.playerSpeed = timeSinceSpeedUpdate.playerSpeed + deltaTime
+	frames.playerSpeed.updater:SetScript("OnUpdate", function(_, deltaTime) if MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.update.throttle then
+		timeSinceSpeedUpdate.playerSpeed = timeSinceSpeedUpdate.playerSpeed + deltaTime
 
-			if timeSinceSpeedUpdate.playerSpeed < MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.update.frequency then return
-			else timeSinceSpeedUpdate.playerSpeed = 0 end
+		if timeSinceSpeedUpdate.playerSpeed < MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.update.frequency then return else
+			UpdatePlayerSpeed(timeSinceSpeedUpdate.playerSpeed)
+
+			timeSinceSpeedUpdate.playerSpeed = 0
 		end
-
-		--Update the speed values
-		UpdatePlayerSpeed()
-	end)
+	else UpdatePlayerSpeed(deltaTime) end end)
 end
 
 --Stop updating the speed display
@@ -378,9 +386,14 @@ local function GetTargetSpeedText()
 	return wt.Texture(ns.textures.logo) .. " " .. ns.strings.targetSpeed:gsub("#SPEED", wt.Color(GetSpeedText("targetSpeed"), ns.colors.grey[2]))
 end
 
---Set up the Target Speed unit tooltip integration
+--| Updates
+
 local targetSpeedEnabled = false
+
+--Set up the Target Speed unit tooltip integration
 local function EnableTargetSpeedUpdates()
+	local lineAdded, line
+
 	targetSpeedEnabled = true
 
 	--Start mouseover Target Speed updates
@@ -392,11 +405,12 @@ local function EnableTargetSpeedUpdates()
 
 			--Update target speed values
 			speed.targetSpeed.yards = GetUnitSpeed("mouseover")
+			speed.targetSpeed.percent = speed.targetSpeed.yards / BASE_MOVEMENT_SPEED * 100
 
 			--Find the speed line
-			local lineAdded = false
+			lineAdded = false
 			for i = 2, tooltip:NumLines() do
-				local line = _G["GameTooltipTextLeft" .. i]
+				line = _G["GameTooltipTextLeft" .. i]
 				if line then if string.match(line:GetText() or "", wt.Texture(ns.textures.logo)) then
 					--Update the speed line
 					line:SetText(GetTargetSpeedText())
@@ -433,6 +447,7 @@ end
 
 --Create the widgets
 local function CreateVisibilityOptions(panel, category, key)
+	---@type toggle|checkbox
 	options.playerSpeed.visibility.hidden = wt.CreateCheckbox({
 		parent = panel,
 		name = "Hidden",
@@ -452,6 +467,7 @@ local function CreateVisibilityOptions(panel, category, key)
 		},
 	})
 
+	---@type toggle|checkbox
 	options.playerSpeed.visibility.autoHide = wt.CreateCheckbox({
 		parent = panel,
 		name = "AutoHide",
@@ -468,6 +484,7 @@ local function CreateVisibilityOptions(panel, category, key)
 		},
 	})
 
+	---@type toggle|checkbox
 	options.playerSpeed.visibility.status = wt.CreateCheckbox({
 		parent = panel,
 		name = "StatusNotice",
@@ -484,6 +501,7 @@ local function CreateVisibilityOptions(panel, category, key)
 	})
 end
 local function CreateUpdateOptions(panel, category, key)
+	---@type toggle|checkbox
 	options.playerSpeed.update.throttle = wt.CreateCheckbox({
 		parent = panel,
 		name = "Throttle",
@@ -504,6 +522,7 @@ local function CreateUpdateOptions(panel, category, key)
 		},
 	})
 
+	---@type numeric|numericSlider
 	options.playerSpeed.update.frequency = wt.CreateNumericSlider({
 		parent = panel,
 		name = "Frequency",
@@ -530,6 +549,7 @@ local function CreateUpdateOptions(panel, category, key)
 	})
 end
 local function CreateSpeedValueOptions(panel, category, key)
+	---@type checkboxSelector|multiselector
 	options.playerSpeed.value.units = wt.CreateCheckboxSelector({
 		parent = panel,
 		name = "Units",
@@ -552,6 +572,7 @@ local function CreateSpeedValueOptions(panel, category, key)
 		},
 	})
 
+	---@type numeric|numericSlider
 	options.playerSpeed.value.fractionals = wt.CreateNumericSlider({
 		parent = panel,
 		name = "Fractionals",
@@ -572,6 +593,7 @@ local function CreateSpeedValueOptions(panel, category, key)
 		},
 	})
 
+	---@type toggle|checkbox
 	options.playerSpeed.value.zeros = wt.CreateCheckbox({
 		parent = panel,
 		name = "Zeros",
@@ -608,6 +630,7 @@ local function CreateFontOptions(panel, category, key)
 			} or nil),
 		}
 	end
+	---@type selector|dropdownSelector
 	options.playerSpeed.font.family = wt.CreateDropdownSelector({
 		parent = panel,
 		name = "Family",
@@ -649,6 +672,7 @@ local function CreateFontOptions(panel, category, key)
 		options.playerSpeed.font.family.toggles[i].label:SetFont(ns.fonts[i].path, size, flags)
 	end end end
 
+	---@type numeric|numericSlider
 	options.playerSpeed.font.size = wt.CreateNumericSlider({
 		parent = panel,
 		name = "Size",
@@ -673,6 +697,7 @@ local function CreateFontOptions(panel, category, key)
 		},
 	})
 
+	---@type specialSelector|specialRadioSelector
 	options.playerSpeed.font.alignment = wt.CreateSpecialRadioSelector("justifyH", {
 		parent = panel,
 		name = "Alignment",
@@ -694,6 +719,7 @@ local function CreateFontOptions(panel, category, key)
 		},
 	})
 
+	---@type toggle|checkbox
 	options.playerSpeed.font.valueColoring = wt.CreateCheckbox({
 		parent = panel,
 		name = "ValueColoring",
@@ -718,6 +744,7 @@ local function CreateFontOptions(panel, category, key)
 		},
 	})
 
+	---@type colorPicker|colorPickerFrame
 	options.playerSpeed.font.color = wt.CreateColorPickerFrame({
 		parent = panel,
 		name = "Color",
@@ -739,6 +766,7 @@ local function CreateFontOptions(panel, category, key)
 	})
 end
 local function CreateBackgroundOptions(panel, category, key)
+	---@type toggle|checkbox
 	options.playerSpeed.background.visible = wt.CreateCheckbox({
 		parent = panel,
 		name = "Visible",
@@ -760,11 +788,12 @@ local function CreateBackgroundOptions(panel, category, key)
 		},
 	})
 
+	---@type colorPicker|colorPickerFrame
 	options.playerSpeed.background.colors.bg = wt.CreateColorPickerFrame({
 		parent = panel,
 		name = "Color",
 		title = ns.strings.options.speedDisplay.background.colors.bg.label,
-		tooltip = { lines = { { text = ns.strings.options.speedDisplay.background.colors.bg.tooltip, }, } },
+		tooltip = {},
 		arrange = { newRow = false, },
 		dependencies = {
 			{ frame = options.playerSpeed.visibility.hidden, evaluate = function(state) return not state end },
@@ -782,11 +811,12 @@ local function CreateBackgroundOptions(panel, category, key)
 		},
 	})
 
+	---@type colorPicker|colorPickerFrame
 	options.playerSpeed.background.colors.border = wt.CreateColorPickerFrame({
 		parent = panel,
 		name = "BorderColor",
 		title = ns.strings.options.speedDisplay.background.colors.border.label,
-		tooltip = { lines = { { text = ns.strings.options.speedDisplay.background.colors.border.tooltip, }, } },
+		tooltip = {},
 		arrange = { newRow = false, },
 		dependencies = {
 			{ frame = options.playerSpeed.visibility.hidden, evaluate = function(state) return not state end },
@@ -808,14 +838,17 @@ end
 ---Create the category page
 ---@return settingsPage
 local function CreateSpeedDisplayOptionsPage()
+	local displayName = ns.strings.options.playerSpeed.title:gsub("%s+", "")
+
+	---@type settingsPage|nil
 	options.playerSpeed.page = wt.CreateSettingsPage(ns.name, {
-		name = "PlayerSpeed",
+		name = displayName,
 		title = ns.strings.options.speedDisplay.title:gsub("#TYPE", ns.strings.options.playerSpeed.title),
 		description = ns.strings.options.playerSpeed.description:gsub("#ADDON", ns.title),
 		logo = ns.textures.logo,
 		scroll = { speed = 0.21 },
 		dataManagement = {
-			category = ns.name .. "PlayerSpeed",
+			category = ns.name .. displayName,
 			keys = {
 				"Font",
 				"Background",
@@ -826,15 +859,16 @@ local function CreateSpeedDisplayOptionsPage()
 			}
 		},
 		storage = { { storageTable = MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed, defaultsTable = ns.profileDefault.playerSpeed, }, },
-		onDefault = function()
+		onDefault = function(_, category)
 			chatCommands.print(ns.strings.chat.default.responseCategory:gsub(
 				"#CATEGORY", wt.Color(ns.strings.options.speedDisplay.title:gsub("#TYPE", ns.strings.options.playerSpeed.title), ns.colors.yellow[2])
 			):gsub(
 				"#PROFILE", wt.Color(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].title, ns.colors.yellow[2])
 			))
 
-			options.playerSpeed.position.resetCustomPreset()
+			if not category then options.playerSpeed.position.resetCustomPreset() else options.playerSpeed.position.applyPreset(1) end
 		end,
+		arrangement = {},
 		initialize = function(canvas, _, _, category, keys)
 
 			--[ Visibility ]
@@ -843,14 +877,14 @@ local function CreateSpeedDisplayOptionsPage()
 				parent = canvas,
 				name = keys[6],
 				title = ns.strings.options.speedDisplay.visibility.title,
-				description = ns.strings.options.speedDisplay.visibility.description:gsub("#ADDON", ns.title),
 				arrange = {},
+				arrangement = {},
 				initialize = function(panel, _, _, key) CreateVisibilityOptions(panel, category, key) end,
-				arrangement = {}
 			})
 
 			--[ Position ]
 
+			---@type positionPanel|nil
 			options.playerSpeed.position = wt.CreatePositionOptions(ns.name, {
 				canvas = canvas,
 				frame = frames.playerSpeed.display,
@@ -922,7 +956,7 @@ local function CreateSpeedDisplayOptionsPage()
 				getData = function() return MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed end,
 				defaultsTable = ns.profileDefault.playerSpeed,
 				settingsData = MovementSpeedCS.playerSpeed,
-				dataManagement = { category = ns.name .. "PlayerSpeed", },
+				dataManagement = { category = ns.name .. displayName, },
 			})
 
 			--[ Updates ]
@@ -931,10 +965,9 @@ local function CreateSpeedDisplayOptionsPage()
 				parent = canvas,
 				name = keys[4],
 				title = ns.strings.options.speedDisplay.update.title,
-				description = ns.strings.options.speedDisplay.update.description,
 				arrange = {},
-				initialize = function(panel, _, _, key) CreateUpdateOptions(panel, category, key) end,
-				arrangement = {}
+				arrangement = {},
+				initialize = function(panel, _, _, key) CreateUpdateOptions(panel, category, key) end
 			})
 
 			--[ Value ]
@@ -943,10 +976,9 @@ local function CreateSpeedDisplayOptionsPage()
 				parent = canvas,
 				name = keys[3],
 				title = ns.strings.options.speedValue.title,
-				description = ns.strings.options.speedValue.description,
 				arrange = {},
+				arrangement = {},
 				initialize = function(panel, _, _, key) CreateSpeedValueOptions(panel, category, key) end,
-				arrangement = {}
 			})
 
 			--[ Font ]
@@ -955,10 +987,9 @@ local function CreateSpeedDisplayOptionsPage()
 				parent = canvas,
 				name = keys[1],
 				title = ns.strings.options.speedDisplay.font.title,
-				description = ns.strings.options.speedDisplay.font.description,
 				arrange = {},
+				arrangement = {},
 				initialize = function(panel, _, _, key) CreateFontOptions(panel, category, key) end,
-				arrangement = {}
 			})
 
 			--[ Background ]
@@ -967,13 +998,11 @@ local function CreateSpeedDisplayOptionsPage()
 				parent = canvas,
 				name = keys[2],
 				title = ns.strings.options.speedDisplay.background.title,
-				description = ns.strings.options.speedDisplay.background.description:gsub("#ADDON", ns.title),
 				arrange = {},
+				arrangement = {},
 				initialize = function(panel, _, _, key) CreateBackgroundOptions(panel, category, key) end,
-				arrangement = {}
 			})
 		end,
-		arrangement = {}
 	})
 
 	return options.playerSpeed.page
@@ -998,13 +1027,14 @@ local function CreateTargetSpeedOptionsPage()
 				"#PROFILE", wt.Color(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].title, ns.colors.yellow[2])
 			))
 		end,
+		arrangement = {},
 		initialize = function(canvas, _, _, category, keys)
 			wt.CreatePanel({
 				parent = canvas,
 				name = "Mouseover",
 				title = ns.strings.options.targetSpeed.mouseover.title,
-				description = ns.strings.options.targetSpeed.mouseover.description,
 				arrange = {},
+				arrangement = {},
 				initialize = function(panel)
 					options.targetSpeed.enabled = wt.CreateCheckbox({
 						parent = panel,
@@ -1022,15 +1052,14 @@ local function CreateTargetSpeedOptionsPage()
 						},
 					})
 				end,
-				arrangement = {}
 			})
 
 			wt.CreatePanel({
 				parent = canvas,
 				name = "Value",
 				title = ns.strings.options.speedValue.title,
-				description = ns.strings.options.speedValue.description,
 				arrange = {},
+				arrangement = {},
 				initialize =function(panel)
 					options.targetSpeed.value.units = wt.CreateCheckboxSelector({
 						parent = panel,
@@ -1092,32 +1121,20 @@ local function CreateTargetSpeedOptionsPage()
 						},
 					})
 				end,
-				arrangement = {}
 			})
 		end,
-		arrangement = {}
 	})
 
 	return options.targetSpeed.page
 end
 
 
---[[ CHAT CONTROL ]]
-
---[ Chat Utilities ]
-
---Print visibility info
-local function PrintStatus()
-	print(wt.Color((frames.main:IsVisible() and (
-		not frames.playerSpeed.display:IsVisible() and ns.strings.chat.status.notVisible or ns.strings.chat.status.visible) or ns.strings.chat.status.hidden):gsub("#TYPE", ns.strings.options.playerSpeed.title):gsub("#AUTO", ns.strings.chat.status.auto:gsub("#STATE", wt.Color(
-		MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.visibility.autoHide and ns.strings.misc.enabled or ns.strings.misc.disabled, ns.colors.yellow[1]
-	))), ns.colors.yellow[2]))
-end
-
-
 --[[ INITIALIZATION ]]
 
---Set up the speed display context menu
+--Custom Tooltip
+ns.tooltip = wt.CreateGameTooltip(ns.name)
+
+---Set up the speed display context menu
 local function CreateContextMenu()
 	wt.CreateContextMenu({ parent = frames.playerSpeed.display, initialize = function(menu)
 		wt.CreateMenuTextline(menu, { text = ns.title, })
@@ -1166,17 +1183,20 @@ frames.main = wt.CreateFrame({
 
 			local firstLoad = not MovementSpeedDB
 
-			--Load storage DBs
+			--| Load storage DBs
+
 			MovementSpeedDB = MovementSpeedDB or {}
 			MovementSpeedDBC = MovementSpeedDBC or {}
 
-			--Load cross-session data
+			--| Load cross-session data
+
 			MovementSpeedCS = wt.AddMissing(MovementSpeedCS or {}, {
 				compactBackup = true,
 				playerSpeed = { keepInPlace = true, },
 			})
 
-			--Initialize data management
+			--| Initialize data management
+
 			options.dataManagement = wt.CreateDataManagementPage(ns.name, {
 				onDefault = function(_, category) if not category then options.dataManagement.resetProfile() end end,
 				accountData = MovementSpeedDB,

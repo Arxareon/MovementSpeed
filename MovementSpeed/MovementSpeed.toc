@@ -1,8 +1,8 @@
 ## Interface: 110107, 50500, 11507
 ## Title: Movement Speed
 ## Version: 3.0
-## X-Day: 31
-## X-Month: 7
+## X-Day: 2
+## X-Month: 8
 ## X-Year: 2025
 ## Category: HUDs
 ## Notes: View the movement speed of anyone in customizable displays and tooltips with fast updates.
