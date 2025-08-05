@@ -44,7 +44,7 @@ local speed = {
 --Speed text templates
 local speedText = {}
 
---Sum of time since the last speed update
+--Accumulated time since the last speed update
 local timeSinceSpeedUpdate = {
 	playerSpeed = 0,
 }
@@ -176,7 +176,7 @@ end
 
 --[ Chat Control ]
 
----Print visibility info
+--Print visibility info
 local function PrintStatus()
 	print(wt.Color((frames.main:IsVisible() and (
 		not frames.playerSpeed.display:IsVisible() and ns.strings.chat.status.notVisible or ns.strings.chat.status.visible
@@ -355,7 +355,7 @@ end
 
 --| Toggle updates
 
----Start updating the speed display
+--Start updating the speed display
 local function StartSpeedDisplayUpdates()
 	--Update the speed values at start
 	UpdatePlayerSpeed(timeSinceSpeedUpdate.playerSpeed)
@@ -1134,7 +1134,7 @@ end
 --Custom Tooltip
 ns.tooltip = wt.CreateGameTooltip(ns.name)
 
----Set up the speed display context menu
+--Set up the speed display context menu
 local function CreateContextMenu()
 	wt.CreateContextMenu({ parent = frames.playerSpeed.display, initialize = function(menu)
 		wt.CreateMenuTextline(menu, { text = ns.title, })

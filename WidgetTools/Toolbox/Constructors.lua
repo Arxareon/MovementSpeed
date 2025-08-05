@@ -819,7 +819,7 @@ function wt.CreateFrame(t)
 	--[ Initialization ]
 
 	--Add content, performs tasks
-	if t.initialize then
+	if type(t.initialize) == "function" then
 		t.initialize(frame, t.size.w, t.size.h, t.name)
 
 		--Arrange content
@@ -973,7 +973,7 @@ function wt.CreatePanel(t)
 	--[ Initialization ]
 
 	--Add content, performs tasks
-	if t.initialize then
+	if type(t.initialize) == "function" then
 		t.initialize(panel, t.size.w, t.size.h, t.name or "Panel")
 
 		--Arrange content
@@ -1473,7 +1473,7 @@ function wt.CreateSettingsPage(addon, t)
 	end
 
 	--Add content, performs tasks
-	if t.initialize then
+	if type(t.initialize) == "function" then
 		t.initialize(page.scroller or page.content, width, height, (t.dataManagement or {}).category, (t.dataManagement or {}).keys, t.name or addon)
 
 		--Arrange content
@@ -6725,9 +6725,13 @@ end
 ---@param t dataManagementPageCreationData Parameters are to be provided in this table
 ---***
 ---@return dataManagementPage|nil profilesPage Table containing references to the settings page, options widgets grouped in subtables and utility functions by category, or, if required parameters are missing, no settings page will be created and the returned value will be nil
+---@return boolean|nil firstLoad True, if **t.accountData.profiles** did not exist yet, or nil if **dataManagementPage** is also nil
+---@return boolean|nil newCharacter True, if **t.characterData.activeProfile** did not exist yet, or nil if **dataManagementPage** is also nil
 function wt.CreateDataManagementPage(addon, t)
 	if not addon or not C_AddOns.IsAddOnLoaded(addon) or not t.accountData or not t.characterData or not t.settingsData or not t.defaultsTable then return end
 
+	local firstLoad = not t.accountData.profiles
+	local newCharacter = not t.characterData.activeProfile
 	local addonTitle = C_AddOns.GetAddOnMetadata(addon, "Title")
 
 	---@class dataManagementPage
@@ -6865,7 +6869,7 @@ function wt.CreateDataManagementPage(addon, t)
 				t.characterData.activeProfile = index
 
 				--Call listener
-				if t.onProfileActivated then t.onProfileActivated(t.accountData.profiles[index].title, index) end
+				if type(t.onProfileActivated) == "function" then t.onProfileActivated(t.accountData.profiles[index].title, index) end
 
 				return t.characterData.activeProfile
 			end
@@ -6904,7 +6908,7 @@ function wt.CreateDataManagementPage(addon, t)
 				if dataManagement.profiles then dataManagement.profiles.apply.updateItems(t.accountData.profiles) end
 
 				--Call listener
-				if t.onProfileCreated then t.onProfileCreated(t.accountData.profiles[index].title, index) end
+				if type(t.onProfileCreated) == "function" then t.onProfileCreated(t.accountData.profiles[index].title, index) end
 
 				--Activate the new profile
 				if apply ~= false then dataManagement.activateProfile(index) end
@@ -6929,7 +6933,7 @@ function wt.CreateDataManagementPage(addon, t)
 					if dataManagement.profiles then dataManagement.profiles.apply.updateItems(t.accountData.profiles) end
 
 					--Call listener
-					if t.onProfileDeleted then t.onProfileDeleted(title, index) end
+					if type(t.onProfileDeleted) == "function" then t.onProfileDeleted(title, index) end
 
 					--Activate the replacement profile
 					if t.characterData.activeProfile == index then activateProfile(index) end
@@ -6962,7 +6966,7 @@ function wt.CreateDataManagementPage(addon, t)
 					wt.CopyValues(t.accountData.profiles[index].data, t.defaultsTable)
 
 					--Call listener
-					if t.onProfileReset then t.onProfileReset(t.accountData.profiles[index].title, index) end
+					if type(t.onProfileReset) == "function" then t.onProfileReset(t.accountData.profiles[index].title, index) end
 				end
 
 				if unsafe then reset() else StaticPopup_Show(wt.UpdatePopupDialog(resetProfilePopup, {
@@ -7022,7 +7026,7 @@ function wt.CreateDataManagementPage(addon, t)
 
 				--| Call listener
 
-				if t.onProfilesLoaded then t.onProfilesLoaded() end
+				if type(t.onProfilesLoaded) == "function" then t.onProfilesLoaded() end
 			end
 
 			--| Initialization
@@ -7413,7 +7417,7 @@ function wt.CreateDataManagementPage(addon, t)
 		end,
 	})
 
-	return dataManagement
+	return dataManagement, firstLoad, newCharacter
 end
 
 --[ Settings Widget Panels ]
@@ -7734,7 +7738,6 @@ function wt. CreatePositionOptions(addon, t)
 			--[ Position ]
 
 			panel.position = { offset = {}, }
-			local previousAnchor = t.getData().position.anchor
 
 			--| Options widgets
 
@@ -7778,46 +7781,11 @@ function wt. CreatePositionOptions(addon, t)
 					onChange = {
 						"CustomPositionChangeHandler",
 						UpdateFrameOffsetsAndPosition = function() if not t.settingsData.keepInPlace then wt.SetPosition(t.frame, t.getData().position, true) else
-							local x, y = 0, 0
-
-							if previousAnchor:find("LEFT") then
-								if t.getData().position.anchor:find("RIGHT") then x = -t.frame:GetWidth()
-								elseif t.getData().position.anchor == "CENTER" or t.getData().position.anchor == "TOP" or t.getData().position.anchor == "BOTTOM" then
-									x = -t.frame:GetWidth() / 2
-								end
-							elseif previousAnchor:find("RIGHT") then
-								if t.getData().position.anchor:find("LEFT") then x = t.frame:GetWidth()
-								elseif t.getData().position.anchor == "CENTER" or t.getData().position.anchor == "TOP" or t.getData().position.anchor == "BOTTOM" then
-									x = t.frame:GetWidth() / 2
-								end
-							elseif previousAnchor == "CENTER" or previousAnchor == "TOP" or previousAnchor == "BOTTOM" then
-								if t.getData().position.anchor:find("LEFT") then x = t.frame:GetWidth() / 2
-								elseif t.getData().position.anchor:find("RIGHT") then x = -t.frame:GetWidth() / 2 end
-							end
-
-							if previousAnchor:find("TOP") then
-								if t.getData().position.anchor:find("BOTTOM") then y = t.frame:GetHeight()
-								elseif t.getData().position.anchor == "CENTER" or t.getData().position.anchor == "LEFT" or t.getData().position.anchor == "RIGHT" then
-									y = t.frame:GetHeight() / 2
-								end
-							elseif previousAnchor:find("BOTTOM") then
-								if t.getData().position.anchor:find("TOP") then y = -t.frame:GetHeight()
-								elseif t.getData().position.anchor == "CENTER" or t.getData().position.anchor == "LEFT" or t.getData().position.anchor == "RIGHT" then
-									y = -t.frame:GetHeight() / 2
-								end
-							elseif previousAnchor == "CENTER" or previousAnchor == "LEFT" or previousAnchor == "RIGHT" then
-								if t.getData().position.anchor:find("TOP") then y = -t.frame:GetHeight() / 2
-								elseif t.getData().position.anchor:find("BOTTOM") then y = t.frame:GetHeight() / 2 end
-							end
-
-							previousAnchor = t.getData().position.anchor
+							local x, y = wt.SetAnchor(t.frame, t.getData().position.anchor)
 
 							--Update offsets
-							panel.position.offset.x.setData(t.getData().position.offset.x - x, false, false)
-							panel.position.offset.y.setData(t.getData().position.offset.y - y, false, false)
-
-							--Update frame position
-							wt.SetPosition(t.frame, t.getData().position, true)
+							panel.position.offset.x.setData(x, false)
+							panel.position.offset.y.setData(y, false)
 						end end,
 						"UpdatePositioningVisualAids"
 					},

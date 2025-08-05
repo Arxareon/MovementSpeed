@@ -5,6 +5,7 @@
 ---@field name string Addon namespace name
 local ns = select(2, ...)
 
+--Addon namespace name
 ns.name = ...
 
 --Addon display title

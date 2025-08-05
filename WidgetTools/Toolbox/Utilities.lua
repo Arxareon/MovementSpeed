@@ -375,8 +375,9 @@ end
 ---@return string
 function wt.Thousands(value, decimals, round, trim)
 	value = round == false and value or wt.Round(value, decimals)
-	local fraction = math.fmod(value, 1)
-	local integer = value - fraction
+	local sign = value < 0 and "-" or ""
+	local fraction = math.abs(value) % 1
+	local integer = math.abs(value) - fraction
 	local decimalText = tostring(fraction):sub(3, (decimals or 0) + 2)
 	local leftover
 
@@ -386,7 +387,7 @@ function wt.Thousands(value, decimals, round, trim)
 	end
 	if trim == false then for i = 1, (decimals or 0) - #decimalText do decimalText = decimalText .. "0" end end
 
-	return integer .. (((decimals or 0) > 0 and (fraction ~= 0 or trim == false)) and wt.strings.decimal .. decimalText or "")
+	return sign .. integer .. (((decimals or 0) > 0 and (fraction ~= 0 or trim == false)) and wt.strings.decimal .. decimalText or "")
 end
 
 --[ Escape sequences ]
@@ -860,22 +861,23 @@ local positioningAid
 ---***
 ---@param frame AnyFrameObject Reference to the frame to be moved
 ---@param position? positionData Table of parameters to call **frame**:[SetPoint(...)](https://warcraft.wiki.gg/wiki/API_ScriptRegionResizing_SetPoint) with | ***Default:*** "TOPLEFT"
----@param safeMode? boolean If true, to prevent anchor family connections, move a positioning aid frame to the target position first, convert it to absolute position by breaking relative links, then move **frame** relative to the positioning aid | ***Default:*** false
---- ***Note:*** The position of **frame** will be converted to absolute position once the positioning is done, breaking the relative link to **position.relativeTo**.
+---@param unlink? boolean If true, unlink the position of **frame** from **position.relativeTo** (preventing anchor family connections) by moving a positioning aid frame to **position** first, convert its position to absolute, breaking relative links (making it relative to screen points instead), then move **frame** to the position of the aid | ***Default:*** false
 ---@param userPlaced? boolean Remember the position if **frame**:[IsMovable()](https://warcraft.wiki.gg/wiki/API_Frame_IsMovable) | ***Default:*** true
-function wt.SetPosition(frame, position, safeMode, userPlaced)
+function wt.SetPosition(frame, position, unlink, userPlaced)
 	if not frame.SetPoint then return end
 
 	local anchor, relativeTo, relativePoint, offsetX, offsetY = wt.UnpackPosition(position)
 	relativeTo = relativeTo ~= "nil" and relativeTo or nil
 
 	--Set the position
-	if relativeTo and safeMode then
+	if relativeTo and unlink then
 		if not positioningAid then
-			positioningAid = CreateFrame("Frame", ns.name .. "PositioningAid")
+			positioningAid = CreateFrame("Frame", ns.name .. "PositioningAid", UIParent)
 
-			positioningAid:SetSize(10, 10)
+			positioningAid:Hide()
 		end
+
+		positioningAid:SetSize(frame:GetSize())
 
 		--[ Position the Aid ]
 
@@ -886,15 +888,13 @@ function wt.SetPosition(frame, position, safeMode, userPlaced)
 		elseif not offsetX and not offsetY then positioningAid:SetPoint(anchor, relativeTo, relativePoint or anchor)
 		else positioningAid:SetPoint(anchor, relativeTo, relativePoint or anchor, offsetX, offsetY) end
 
-		wt.ConvertToAbsolutePosition(positioningAid)
+		wt.ConvertToAbsolutePosition(positioningAid, true)
 
 		--[ Position the Frame ]
 
 		frame:ClearAllPoints()
 
-		frame:SetPoint("CENTER", positioningAid, "CENTER")
-
-		wt.ConvertToAbsolutePosition(frame)
+		frame:SetPoint(positioningAid:GetPoint())
 	else
 		frame:ClearAllPoints()
 
@@ -908,22 +908,60 @@ function wt.SetPosition(frame, position, safeMode, userPlaced)
 	if frame.SetUserPlaced and frame:IsMovable() then frame:SetUserPlaced(userPlaced ~= false) end
 end
 
----Convert the position of a frame positioned relative to another to absolute position (being positioned in the UIParent)
+---Set the anchor of a frame while keeping its positioning by updating its relative offsets
+---@param frame AnyFrameObject Reference to the frame to be update
+---@param anchor FramePoint New anchor point to set
+---@return number offsetX The new horizontal offset value
+---@return number offsetY The new vertical offset value
+function wt.SetAnchor(frame, anchor)
+	local oldAnchor, relativeTo, relativePoint, offsetX, offsetY = frame:GetPoint()
+	local x, y = 0, 0
+
+	if oldAnchor:find("LEFT") then
+		if anchor:find("RIGHT") then x = -frame:GetWidth() elseif anchor == "CENTER" or anchor == "TOP" or anchor == "BOTTOM" then x = -frame:GetWidth() / 2 end
+	elseif oldAnchor:find("RIGHT") then
+		if anchor:find("LEFT") then x = frame:GetWidth() elseif anchor == "CENTER" or anchor == "TOP" or anchor == "BOTTOM" then x = frame:GetWidth() / 2 end
+	elseif oldAnchor == "CENTER" or oldAnchor == "TOP" or oldAnchor == "BOTTOM" then
+		if anchor:find("LEFT") then x = frame:GetWidth() / 2 elseif anchor:find("RIGHT") then x = -frame:GetWidth() / 2 end
+	end
+	if oldAnchor:find("TOP") then
+		if anchor:find("BOTTOM") then y = frame:GetHeight() elseif anchor == "CENTER" or anchor == "LEFT" or anchor == "RIGHT" then y = frame:GetHeight() / 2 end
+	elseif oldAnchor:find("BOTTOM") then
+		if anchor:find("TOP") then y = -frame:GetHeight() elseif anchor == "CENTER" or anchor == "LEFT" or anchor == "RIGHT" then y = -frame:GetHeight() / 2 end
+	elseif oldAnchor == "CENTER" or oldAnchor == "LEFT" or oldAnchor == "RIGHT" then
+		if anchor:find("TOP") then y = -frame:GetHeight() / 2 elseif anchor:find("BOTTOM") then y = frame:GetHeight() / 2 end
+	end
+
+	offsetX = offsetX - x
+	offsetY = offsetY - y
+
+	frame:SetPoint(anchor, relativeTo, relativePoint, offsetX, offsetY)
+
+	return offsetX, offsetY
+end
+
+---Convert the position of a frame positioned relative to another to absolute position (making it relative to screen points, the UIParent instead)
 ---***
 ---@param frame AnyFrameObject Reference to the frame the position of which to be converted to absolute position
-function wt.ConvertToAbsolutePosition(frame)
+---@param keepAnchor? boolean If true, restore the original anchor of **frame** (as its closest anchor to the nearest screen point will be chosen after conversion) | ***Default:*** true
+function wt.ConvertToAbsolutePosition(frame, keepAnchor)
 	if not frame.IsMovable then return end
 
-	--Store movability
 	local movable = frame:IsMovable()
+	local oldAnchor = frame:GetPoint()
 
-	--Convert position
+	--Unlink relative anchoring
 	frame:SetMovable(true)
 	frame:StartMoving()
 	frame:StopMovingOrSizing()
 
 	--Restore movability
 	frame:SetMovable(movable)
+
+	if keepAnchor == false then return end
+
+	--Restore frame anchoring
+	wt.SetAnchor(frame, oldAnchor)
 end
 
 ---Arrange the child frames of a container frame into stacked rows based on the parameters provided

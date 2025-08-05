@@ -66,23 +66,17 @@ local speed = {
 --Speed text templates
 local speedText = {}
 
---Sum of time since the last speed update
+--Accumulated time since the last speed update
 local timeSinceSpeedUpdate = {
 	playerSpeed = 0,
 	travelSpeed = 0,
 }
 
---System time of the last Travel Speed update
-local lastTime = 0
-
---Current player coordinates
-local currentPosition = {}
-
 --Player position at the last Travel Speed update
-local pastPosition = {}
+local pastPosition = CreateVector2D(0, 0)
 
 --Map info
-local map = { size = {} }
+local map = { size = { w = 0, h = 0 } }
 
 
 --[[ UTILITIES ]]
@@ -293,9 +287,10 @@ end
 --Update the Player Speed values
 local function UpdatePlayerSpeed()
 	local advanced, _, flightSpeed = C_PlayerInfo.GetGlidingInfo()
+	local r = GetPlayerFacing() or 0
 	speed.playerSpeed.yards = advanced and flightSpeed or GetUnitSpeed(UnitInVehicle("player") and "vehicle" or "player")
 	speed.playerSpeed.percent = speed.playerSpeed.yards / BASE_MOVEMENT_SPEED * 100
-	speed.playerSpeed.coords.x, speed.playerSpeed.coords.y = speed.playerSpeed.yards / (map.size.w / 100), speed.playerSpeed.yards / (map.size.h / 100)
+	speed.playerSpeed.coords.x, speed.playerSpeed.coords.y = speed.playerSpeed.yards / (map.size.w / 100) * -math.sin(r), speed.playerSpeed.yards / (map.size.h / 100) * math.cos(r)
 
 	--Hide when stationery
 	if speed.playerSpeed.yards == 0 and MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.visibility.autoHide then
@@ -311,38 +306,35 @@ end
 ---Updates the Travel Speed values since the last sample
 ---@param deltaTime number Time since last update
 local function UpdateTravelSpeed(deltaTime)
-	if map.id then
-		currentPosition.x, currentPosition.y = C_Map.GetPlayerMapPosition(map.id, "player"):GetXY() --NOTE: high RAM littering, garbage collection has a hard time keeping up
+	local currentPosition = map.id and C_Map.GetPlayerMapPosition(map.id, "player") or nil --NOTE: this generates a lot of memory garbage over time (that eventually gets collected). Using UnitPosition() produces less accurate calculation results.
 
-		currentPosition.x = currentPosition.x * map.size.w
-		currentPosition.y = currentPosition.y * map.size.h
-	else currentPosition.x, currentPosition.y = nil end
-	-- currentPosition.x, currentPosition.y = UnitPosition("player") end --NOTE: no RAM waste but produces less accurate results in calculations
-
-	if currentPosition.x and pastPosition.x then
-		speed.travelSpeed.coords.x, speed.travelSpeed.coords.y = (currentPosition.x - pastPosition.x), (currentPosition.y - pastPosition.y)
-		speed.travelSpeed.yards = math.sqrt(speed.travelSpeed.coords.x ^ 2 + speed.travelSpeed.coords.y ^ 2) / max(deltaTime, 0.01)
+	if currentPosition and pastPosition.x then
+		local dX, dY, dT = pastPosition.x - currentPosition.x, pastPosition.y - currentPosition.y, max(deltaTime, 0.01)
+		speed.travelSpeed.yards = math.sqrt((dX * map.size.w) ^ 2 + (dY * map.size.h) ^ 2) / dT
 		speed.travelSpeed.percent = speed.travelSpeed.yards / BASE_MOVEMENT_SPEED * 100
-		speed.travelSpeed.coords.x, speed.travelSpeed.coords.y = math.abs(speed.travelSpeed.coords.x), math.abs(speed.travelSpeed.coords.y)
+		speed.travelSpeed.coords.x = dX * -100 / dT
+		speed.travelSpeed.coords.y = dY * 100 / dT
 	else
 		speed.travelSpeed.yards = -1
 		speed.travelSpeed.percent = -1
 		speed.travelSpeed.coords.x, speed.travelSpeed.coords.y = -1, -1
 	end
 
-	pastPosition.x = currentPosition.x
-	pastPosition.y = currentPosition.y
-	lastTime = time
+	if currentPosition then
+		pastPosition:SetXY(currentPosition:GetXY())
+
+		wipe(currentPosition)
+	end
 
 	--Hide when stationery
-	if speed.travelSpeed.yards == 0 and MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.travelSpeed.visibility.autoHide then
+	if MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.travelSpeed.visibility.autoHide and speed.travelSpeed.yards == 0 then
 		frames.travelSpeed.display:Hide()
 
 		return
 	else frames.travelSpeed.display:Show() end
 
 	--Update the display text
-	frames.travelSpeed.text:SetText(" " .. GetSpeedText("travelSpeed"):gsub("-1", not currentPosition.x and GetUnitSpeed("player") ~= 0 and "X" or "0"))
+	frames.travelSpeed.text:SetText(" " .. GetSpeedText("travelSpeed"):gsub("-1", not pastPosition.x and GetUnitSpeed("player") ~= 0 and "X" or "0"))
 end
 
 --[ Speed Displays ]
@@ -487,21 +479,21 @@ local function GetTravelSpeedTooltipLines()
 		{ text = ns.strings.speedTooltip.description },
 		{ text = "\n" .. ns.strings.speedTooltip.travelSpeed, },
 		{
-			text = "\n" .. (not currentPosition.x and (ns.strings.speedTooltip.instanceError .. "\n\n") or "") ,
+			text = "\n" .. (not pastPosition.x and (ns.strings.speedTooltip.instanceError .. "\n\n") or "") ,
 			font = GameTooltipText,
 			color = { r = 0.92, g = 0.34, b = 0.23 },
 		},
 		{
 			text = ns.strings.speedTooltip.text[1]:gsub(
 				"#YARDS", wt.Color(wt.Thousands(speed.travelSpeed.yards, 2, true), ns.colors.yellow[2])
-			):gsub("-1", not currentPosition.x and GetUnitSpeed("player") ~= 0 and "X" or "0"),
+			):gsub("-1", not pastPosition.x and GetUnitSpeed("player") ~= 0 and "X" or "0"),
 			font = GameTooltipText,
 			color = ns.colors.yellow[1],
 		},
 		{
 			text = "\n" .. ns.strings.speedTooltip.text[2]:gsub(
 				"#PERCENT", wt.Color(wt.Thousands(speed.travelSpeed.percent, 2, true) .. "%%", ns.colors.green[2])
-			):gsub("-1", not currentPosition.x and GetUnitSpeed("player") ~= 0 and "X" or "0"),
+			):gsub("-1", not pastPosition.x and GetUnitSpeed("player") ~= 0 and "X" or "0"),
 			font = GameTooltipText,
 			color = ns.colors.green[1],
 		},
@@ -512,7 +504,7 @@ local function GetTravelSpeedTooltipLines()
 				):gsub(
 					"#Y", wt.Thousands(speed.travelSpeed.coords.y, 2, true)
 				), ns.colors.blue[2])
-			):gsub("-1", not currentPosition.x and GetUnitSpeed("player") ~= 0 and "X" or "0"),
+			):gsub("-1", not pastPosition.x and GetUnitSpeed("player") ~= 0 and "X" or "0"),
 			font = GameTooltipText,
 			color = ns.colors.blue[1],
 		},
@@ -1493,6 +1485,8 @@ end
 
 --[[ INITIALIZATION ]]
 
+local firstLoad, newCharacter
+
 --Custom Tooltip
 ns.tooltip = wt.CreateGameTooltip(ns.name)
 
@@ -1549,15 +1543,8 @@ frames.main = wt.CreateFrame({
 
 			--[ Data ]
 
-			local firstLoad = not MovementSpeedDB
-
-			--| Load storage DBs
-
 			MovementSpeedDB = MovementSpeedDB or {}
 			MovementSpeedDBC = MovementSpeedDBC or {}
-
-			--| Load cross-session data
-
 			MovementSpeedCS = wt.AddMissing(MovementSpeedCS or {}, {
 				compactBackup = true,
 				playerSpeed = { keepInPlace = true, },
@@ -1566,7 +1553,7 @@ frames.main = wt.CreateFrame({
 
 			--| Initialize data management
 
-			options.dataManagement = wt.CreateDataManagementPage(ns.name, {
+			options.dataManagement, firstLoad, newCharacter = wt.CreateDataManagementPage(ns.name, {
 				onDefault = function(_, category) if not category then options.dataManagement.resetProfile() end end,
 				accountData = MovementSpeedDB,
 				characterData = MovementSpeedDBC,
@@ -1592,7 +1579,7 @@ frames.main = wt.CreateFrame({
 				else chatCommands.print(wt.GetStrings("backup").error) end end,
 				onImportAllProfiles = function(success) if not success then chatCommands.print(wt.GetStrings("backup").error) end end,
 				valueChecker = CheckValidity,
-				onRecovery = GetRecoveryMap
+				onRecovery = GetRecoveryMap,
 			})
 
 			--[ Settings Setup ]
@@ -1823,6 +1810,17 @@ frames.main = wt.CreateFrame({
 			if not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.visibility.hidden then StartSpeedDisplayUpdates("playerSpeed") end
 			if not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.travelSpeed.visibility.hidden then StartSpeedDisplayUpdates("travelSpeed") end
 			if MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.targetSpeed.enabled then EnableTargetSpeedUpdates() end
+
+			--Finish loading the active profile for new characters
+			if newCharacter then
+				--Update the interface options
+				options.playerSpeed.page.load(true)
+				options.travelSpeed.page.load(true)
+				options.targetSpeed.page.load(true)
+				options.dataManagement.page.load(true)
+
+				chatCommands.print(ns.strings.chat.profile.response:gsub("#PROFILE", wt.Color(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].title, ns.colors.yellow[2])))
+			end
 
 			--Visibility notice
 			if not frames.playerSpeed.display:IsVisible() and MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.visibility.statusNotice then
