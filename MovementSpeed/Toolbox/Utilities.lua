@@ -1553,8 +1553,9 @@ function wt.RegisterChatCommands(addon, keywords, t)
 	t = t or {}
 
 	local logo = C_AddOns.GetAddOnMetadata(addon, "IconTexture")
+	logo = logo and (wt.Texture(logo, 11, 11) .. " ") or nil
 	local addonTitle = wt.Clear(select(2, C_AddOns.GetAddOnInfo(addon))):gsub("^%s*(.-)%s*$", "%1")
-	local branding = (logo and (wt.Texture(logo, 11, 11) .. " ") or "") .. addonTitle .. ": "
+	local branding = logo .. addonTitle .. ": "
 
 	---@class chatCommandManager
 	local manager = {}
@@ -1590,17 +1591,15 @@ function wt.RegisterChatCommands(addon, keywords, t)
 			keyword = wt.strings.chat.welcome.keywords:gsub("#KEYWORD_ALTERNATE", wt.Color(keywords[#keywords], t.colors.command)):gsub("#KEYWORD", keyword)
 		end
 
-		print(wt.Color(wt.strings.chat.welcome.thanks:gsub(
-			"#ADDON", wt.Color(addonTitle, t.colors.title) .. (logo and " " .. wt.Texture(logo) or "")
-		), t.colors.content))
+		print(wt.Color(logo .. wt.strings.chat.welcome.thanks:gsub("#ADDON", wt.Color(addonTitle, t.colors.title)), t.colors.content))
 		print(wt.Color(wt.strings.chat.welcome.hint:gsub("#KEYWORD", keyword), t.colors.description))
 
 		if type(t.onWelcome) == "function" then t.onWelcome() end
 	end
-
+manager.welcome()
 	--Trigger a help command, listing all registered chat commands with their specified descriptions, calling their onHelp handlers
 	function manager.help()
-		print(wt.Color(wt.strings.chat.help.list:gsub("#ADDON", wt.Color(logo  .. addonTitle, t.colors.title)), t.colors.content))
+		print(wt.Color(wt.strings.chat.help.list:gsub("#ADDON", wt.Color(logo .. addonTitle, t.colors.title)), t.colors.content))
 
 		for i = 1, #t.commands do
 			if not t.commands[i].hidden then

@@ -556,7 +556,7 @@ function WidgetTools.frame:PLAYER_LOGIN()
 			{
 				command = ns.chat.commands.run,
 				description = ns.strings.chat.run.description:gsub("#EXAMPLE", wt.Color("/wt run Dump { 1, \"a\", true, { print, UIParent, { 2 } } }; \"T\"; _; 2", ns.colors.grey[2])),
-				handler = function(f, ...) return type(wt[f]) == "function", f, ... end,
+				handler = function(f, ...) print(f, wt[f]) return type(wt[f]) == "function", f, ... end,
 				success = ns.strings.chat.run.success,
 				error = ns.strings.chat.run.error,
 				onSuccess = function(f, ...)

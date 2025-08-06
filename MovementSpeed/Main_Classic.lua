@@ -866,7 +866,7 @@ local function CreateSpeedDisplayOptionsPage()
 				"#PROFILE", wt.Color(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].title, ns.colors.yellow[2])
 			))
 
-			if not category then options.playerSpeed.position.resetCustomPreset() else options.playerSpeed.position.applyPreset(1) end
+			options.playerSpeed.position.resetCustomPreset()
 		end,
 		arrangement = {},
 		initialize = function(canvas, _, _, category, keys)
@@ -1131,6 +1131,8 @@ end
 
 --[[ INITIALIZATION ]]
 
+local firstLoad, newCharacter
+
 --Custom Tooltip
 ns.tooltip = wt.CreateGameTooltip(ns.name)
 
@@ -1181,15 +1183,8 @@ frames.main = wt.CreateFrame({
 
 			--[ Data ]
 
-			local firstLoad = not MovementSpeedDB
-
-			--| Load storage DBs
-
 			MovementSpeedDB = MovementSpeedDB or {}
 			MovementSpeedDBC = MovementSpeedDBC or {}
-
-			--| Load cross-session data
-
 			MovementSpeedCS = wt.AddMissing(MovementSpeedCS or {}, {
 				compactBackup = true,
 				playerSpeed = { keepInPlace = true, },
@@ -1197,7 +1192,7 @@ frames.main = wt.CreateFrame({
 
 			--| Initialize data management
 
-			options.dataManagement = wt.CreateDataManagementPage(ns.name, {
+			options.dataManagement, firstLoad, newCharacter = wt.CreateDataManagementPage(ns.name, {
 				onDefault = function(_, category) if not category then options.dataManagement.resetProfile() end end,
 				accountData = MovementSpeedDB,
 				characterData = MovementSpeedDBC,
@@ -1221,7 +1216,7 @@ frames.main = wt.CreateFrame({
 				else chatCommands.print(wt.GetStrings("backup").error) end end,
 				onImportAllProfiles = function(success) if not success then chatCommands.print(wt.GetStrings("backup").error) end end,
 				valueChecker = CheckValidity,
-				onRecovery = GetRecoveryMap
+				onRecovery = GetRecoveryMap,
 			})
 
 			--[ Settings Setup ]
@@ -1408,6 +1403,16 @@ frames.main = wt.CreateFrame({
 			--Start speed updates
 			if not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.visibility.hidden then StartSpeedDisplayUpdates() end
 			if MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.targetSpeed.enabled then EnableTargetSpeedUpdates() end
+
+			--Finish loading the active profile for new characters
+			if newCharacter then
+				--Update the interface options
+				options.playerSpeed.page.load(true)
+				options.targetSpeed.page.load(true)
+				options.dataManagement.page.load(true)
+
+				chatCommands.print(ns.strings.chat.profile.response:gsub("#PROFILE", wt.Color(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].title, ns.colors.yellow[2])))
+			end
 
 			--Visibility notice
 			if not frames.playerSpeed.display:IsVisible() and MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.visibility.statusNotice then PrintStatus() end

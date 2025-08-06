@@ -1057,7 +1057,7 @@ function wt.CreatePopupMenu(t)
 				position = { anchor = "LEFT", offset = { x = 12, }, },
 				justify = { h = "LEFT", },
 				width = t.size.w - 48,
-				font = "GameFontHighlight",
+				font = "GameFontNormal",
 			})
 
 			wt.CreateText({
@@ -1393,10 +1393,10 @@ function wt.CreateSettingsPage(addon, t)
 			parent = page.canvas,
 			name = "Logo",
 			position = {
-				anchor = "TOP",
-				relativeTo = SettingsPanel.Bg,
-				relativePoint = "TOP",
-				offset = { y = -18 }
+				anchor = "BOTTOMLEFT",
+				relativeTo = SettingsPanel.Container,
+				relativePoint = "TOPLEFT",
+				offset = { x = 8, }
 			},
 			size = { w = 42, h = 42 },
 			path = page.icon,
@@ -1478,7 +1478,7 @@ function wt.CreateSettingsPage(addon, t)
 
 		--Arrange content
 		if t.arrangement and page.content then wt.ArrangeContent(page.scroller or page.content, wt.AddMissing(t.arrangement, {
-			margins = { l = 10, r = 10, t = 54, b = 54 },
+			margins = { l = 10, r = 10, t = 54, b = 10 },
 			gaps = 54,
 			resize = t.scroll ~= nil
 		})) end
@@ -4029,6 +4029,7 @@ function wt.CreateDropdownSelector(t, widget)
 		parent = selector.dropdown,
 		offset = { x = 4, },
 		text = title,
+		font = "GameFontNormal",
 	}) or nil
 
 	--[ Dropdown List ]
@@ -4922,7 +4923,7 @@ function wt.CreateMultilineEditbox(t, widget)
 
 	--| Position & dimensions
 
-	local scrollFrameHeight = t.size.h - (t.label ~= false and 24 or 10)
+	local scrollFrameHeight = t.size.h - (t.label ~= false and 28 or 10)
 
 	if t.arrange then textbox.frame.arrangementInfo = t.arrange else wt.SetPosition(textbox.frame, t.position) end
 	textbox.scrollFrame:SetPoint("BOTTOM", 0, 5)
@@ -6377,7 +6378,7 @@ function wt.CreateAboutPage(addon, t)
 				title = wt.strings.about.title,
 				description = wt.strings.about.description:gsub("#ADDON", data.title),
 				arrange = {},
-				size = { h = 236 },
+				size = { h = 240 },
 				arrangement = {
 					flip = true,
 					resize = false
@@ -6386,7 +6387,7 @@ function wt.CreateAboutPage(addon, t)
 
 					--[ Information ]
 
-					local position = { offset = { x = 16, y = -12 } }
+					local position = { offset = { x = 16, y = -14 } }
 
 					if data.version then
 						local version = wt.CreateText({
@@ -6525,7 +6526,7 @@ function wt.CreateAboutPage(addon, t)
 
 					--[ Links ]
 
-					if position.relativeTo then position.offset.y = -12 end
+					if position.relativeTo then position.offset.y = -14 end
 
 					if data.curse then
 						local curse = wt.CreateCopybox({
@@ -6612,9 +6613,9 @@ function wt.CreateAboutPage(addon, t)
 							anchor = "TOPRIGHT",
 							relativeTo = changelog.frame,
 							relativePoint = "TOPRIGHT",
-							offset = { x = -3, y = 2 }
+							offset = { x = -1, y = 2 }
 						},
-						size = { w = 100, h = 14 },
+						size = { w = 100, h = 17 },
 						frameLevel = changelog.frame:GetFrameLevel() + 1, --Make sure it's on top to be clickable
 						font = {
 							normal = "GameFontNormalSmall",
@@ -6625,15 +6626,15 @@ function wt.CreateAboutPage(addon, t)
 							name = addon .. "Changelog",
 							append = false,
 							title = wt.strings.about.fullChangelog.label:gsub("#ADDON", data.title),
-							position = { anchor = "BOTTOMRIGHT", offset = { x = 12, }, },
+							position = { anchor = "BOTTOMRIGHT", offset = { x = 12, y = 1 }, },
 							keepInBounds = true,
-							size = { w = 678, h = 610 },
+							size = { w = 678, h = 609 },
 							frameStrata = "DIALOG",
 							keepOnTop = true,
 							background = { color = { a = 0.9 }, },
 							arrangement = {
 								margins = { l = 16, r = 16, t = 42, b = 16 },
-								flip = true,
+								resize = false,
 							},
 							initialize = function(windowPanel)
 								wt.CreateMultilineEditbox({
@@ -6643,7 +6644,7 @@ function wt.CreateAboutPage(addon, t)
 									label = false,
 									tooltip = { lines = { { text = wt.strings.about.fullChangelog.tooltip, }, } },
 									arrange = {},
-									size = { w = windowPanel:GetWidth() - 32, h = windowPanel:GetHeight() - 88 },
+									size = { w = windowPanel:GetWidth() - 32, h = windowPanel:GetHeight() - 58 },
 									font = { normal = "GameFontDisable", },
 									color = ns.colors.grey[2],
 									value = wt.FormatChangelog(t.changelog),
@@ -6655,7 +6656,10 @@ function wt.CreateAboutPage(addon, t)
 									parent = windowPanel,
 									name = "CloseButton",
 									title = CLOSE,
-									arrange = {},
+									position = {
+										anchor = "TOPRIGHT",
+										offset = { x = -12, y = -12 },
+									},
 									size = { w = 96, },
 									action = function() windowPanel:Hide() end,
 								})
@@ -7047,7 +7051,6 @@ function wt.CreateDataManagementPage(addon, t)
 					title = wt.strings.profiles.title,
 					description = wt.strings.profiles.description:gsub("#ADDON", addonTitle),
 					arrange = {},
-					size = { h = 64 },
 					arrangement = {},
 					initialize = function(panel)
 						dataManagement.profiles.apply = wt.CreateDropdownSelector({
@@ -7068,7 +7071,7 @@ function wt.CreateDataManagementPage(addon, t)
 							tooltip = { lines = { { text = wt.strings.profiles.new.tooltip, }, } },
 							position = {
 								anchor = "TOPRIGHT",
-								offset = { x = -312, y = -30 }
+								offset = { x = -312, y = -21 }
 							},
 							size = { w = 112, h = 26 },
 							action = function() dataManagement.newProfile(nil, #t.accountData.profiles + 1) end,
@@ -7081,7 +7084,7 @@ function wt.CreateDataManagementPage(addon, t)
 							tooltip = { lines = { { text = wt.strings.profiles.duplicate.tooltip, }, } },
 							position = {
 								anchor = "TOPRIGHT",
-								offset = { x = -192, y = -30 }
+								offset = { x = -192, y = -21 }
 							},
 							size = { w = 112, h = 26 },
 							action = function() dataManagement.newProfile(nil, nil, t.characterData.activeProfile) end,
@@ -7094,7 +7097,7 @@ function wt.CreateDataManagementPage(addon, t)
 							tooltip = { lines = { { text = wt.strings.profiles.rename.tooltip, }, } },
 							position = {
 								anchor = "TOPRIGHT",
-								offset = { x = -92, y = -30 }
+								offset = { x = -92, y = -21 }
 							},
 							size = { w = 92, h = 26 },
 							action = function() wt.CreatePopupInputBox({
@@ -7103,7 +7106,7 @@ function wt.CreateDataManagementPage(addon, t)
 								),
 								position = {
 									anchor = "TOPRIGHT",
-									offset = { x = -92, y = -30 },
+									offset = { x = -92, y = -21 },
 									relativeTo = panel,
 								},
 								text = t.accountData.profiles[t.characterData.activeProfile].title,
@@ -7123,7 +7126,7 @@ function wt.CreateDataManagementPage(addon, t)
 							tooltip = { lines = { { text = wt.strings.profiles.delete.tooltip, }, } },
 							position = {
 								anchor = "TOPRIGHT",
-								offset = { x = -12, y = -30 }
+								offset = { x = -12, y = -21 }
 							},
 							size = { w = 72, h = 26 },
 							action = function() dataManagement.deleteProfile() end,
@@ -7143,11 +7146,8 @@ function wt.CreateDataManagementPage(addon, t)
 					title = wt.strings.backup.title,
 					description = wt.strings.backup.description:gsub("#ADDON", addonTitle),
 					arrange = {},
-					size = { h = canvas:GetHeight() - 214 },
-					arrangement = {
-						flip = true,
-						resize = false
-					},
+					size = { h = canvas:GetHeight() - dataManagement.profiles.frame:GetHeight() - 118 },
+					arrangement = { resize = false, },
 					initialize = function(panel)
 
 						--[ Utilities ]
@@ -7187,7 +7187,7 @@ function wt.CreateDataManagementPage(addon, t)
 								{ text = "\n" .. wt.strings.backup.box.tooltip[5], color = { r = 0.92, g = 0.34, b = 0.23 }, },
 							}, },
 							arrange = {},
-							size = { w = panel:GetWidth() - 24, h = panel:GetHeight() - 76 },
+							size = { w = panel:GetWidth() - 24, h = panel:GetHeight() - 60 },
 							font = { normal = "GameFontWhiteSmall", },
 							scrollSpeed = 0.2,
 							scrollToTop = false,
@@ -7205,10 +7205,7 @@ function wt.CreateDataManagementPage(addon, t)
 							name = "Compact",
 							title = wt.strings.backup.compact.label,
 							tooltip = { lines = { { text = wt.strings.backup.compact.tooltip, }, } },
-							position = {
-								anchor = "BOTTOMLEFT",
-								offset = { x = 12, y = 12 }
-							},
+							arrange = {},
 							getData = function() return t.settingsData.compactBackup end,
 							saveData = function(state) t.settingsData.compactBackup = state end,
 							dataManagement = {
@@ -7246,7 +7243,12 @@ function wt.CreateDataManagementPage(addon, t)
 								{ text = wt.strings.backup.load.tooltip, },
 								{ text = "\n" .. wt.strings.backup.box.tooltip[5], color = { r = 0.92, g = 0.34, b = 0.23 }, },
 							} },
-							arrange = {},
+							position = {
+								anchor = "TOPRIGHT",
+								relativeTo = dataManagement.backup.box.frame,
+								relativePoint = "BOTTOMRIGHT",
+								offset = { y = -8 }
+							},
 							size = { h = 26 },
 							action = function() StaticPopup_Show(importPopup) end,
 						})
@@ -7257,8 +7259,10 @@ function wt.CreateDataManagementPage(addon, t)
 							title = RESET,
 							tooltip = { lines = { { text = wt.strings.backup.reset.tooltip, }, } },
 							position = {
-								anchor = "BOTTOMRIGHT",
-								offset = { x = -100, y = 12 }
+								anchor = "RIGHT",
+								relativeTo = dataManagement.backup.load.frame,
+								relativePoint = "LEFT",
+								offset = { x = -8, }
 							},
 							size = { h = 26 },
 							action = dataManagement.refreshBackupBox,
@@ -7271,15 +7275,15 @@ function wt.CreateDataManagementPage(addon, t)
 							name = addon .. "AllProfilesBackup",
 							append = false,
 							title = wt.strings.backup.allProfiles.label,
-							position = { anchor = "BOTTOMRIGHT", offset = { x = 12, }, },
+							position = { anchor = "BOTTOMRIGHT", offset = { x = 12, y = 1 }, },
 							keepInBounds = true,
-							size = { w = 678, h = 610 },
+							size = { w = 678, h = 609 },
 							frameStrata = "DIALOG",
 							keepOnTop = true,
 							background = { color = { a = 0.9 }, },
 							arrangement = {
 								margins = { l = 16, r = 16, t = 42, b = 16 },
-								flip = true,
+								resize = false,
 							},
 							initialize = function(windowPanel)
 								dataManagement.backupAllProfiles.box = wt.CreateMultilineEditbox({
@@ -7295,7 +7299,7 @@ function wt.CreateDataManagementPage(addon, t)
 										{ text = "\n" .. wt.strings.backup.box.tooltip[5], color = { r = 0.92, g = 0.34, b = 0.23 }, },
 									}, },
 									arrange = {},
-									size = { w = windowPanel:GetWidth() - 32, h = windowPanel:GetHeight() - 88 },
+									size = { w = windowPanel:GetWidth() - 32, h = windowPanel:GetHeight() - 92 },
 									font = { normal = "GameFontWhiteSmall", },
 									scrollSpeed = 0.2,
 									scrollToTop = false,
@@ -7308,11 +7312,28 @@ function wt.CreateDataManagementPage(addon, t)
 									showDefault = false,
 								})
 
+								dataManagement.backupAllProfiles.compact = wt.CreateCheckbox({
+									parent = windowPanel,
+									name = "Compact",
+									title = wt.strings.backup.compact.label,
+									tooltip = { lines = { { text = wt.strings.backup.compact.tooltip, }, } },
+									arrange = {},
+									events = { OnClick = function()
+										dataManagement.backup.compact.toggleState(true)
+										dataManagement.refreshAllProfilesBackupBox()
+									end },
+									showDefault = false,
+									utilityMenu = false,
+								})
+
 								wt.CreateSimpleButton({
 									parent = windowPanel,
 									name = "CloseButton",
 									title = CLOSE,
-									arrange = {},
+									position = {
+										anchor = "TOPRIGHT",
+										offset = { x = -12, y = -12 },
+									},
 									size = { w = 96, },
 									action = function() windowPanel:Hide() end,
 								})
@@ -7333,9 +7354,9 @@ function wt.CreateDataManagementPage(addon, t)
 								anchor = "TOPRIGHT",
 								relativeTo = dataManagement.backup.box.frame,
 								relativePoint = "TOPRIGHT",
-								offset = { x = -3, y = 2 }
+								offset = { x = -1, y = 2 }
 							},
-							size = { w = 100, h = 14 },
+							size = { w = 100, h = 17 },
 							frameLevel = dataManagement.backup.box.frame:GetFrameLevel() + 1, --Make sure it's on top to be clickable
 							font = {
 								normal = "GameFontNormalSmall",
@@ -7348,23 +7369,6 @@ function wt.CreateDataManagementPage(addon, t)
 
 								dataManagement.refreshAllProfilesBackupBox()
 							end,
-						})
-
-						dataManagement.backupAllProfiles.compact = wt.CreateCheckbox({
-							parent = allProfilesBackupFrame,
-							name = "Compact",
-							title = wt.strings.backup.compact.label,
-							tooltip = { lines = { { text = wt.strings.backup.compact.tooltip, }, } },
-							position = {
-								anchor = "BOTTOMLEFT",
-								offset = { x = 12, y = 12 }
-							},
-							events = { OnClick = function()
-								dataManagement.backup.compact.toggleState(true)
-								dataManagement.refreshAllProfilesBackupBox()
-							end },
-							showDefault = false,
-							utilityMenu = false,
 						})
 
 						local allProfilesImportPopup = wt.RegisterPopupDialog(addon, "IMPORT_ALL", {
@@ -7392,8 +7396,10 @@ function wt.CreateDataManagementPage(addon, t)
 								{ text = "\n" .. wt.strings.backup.box.tooltip[5], color = { r = 0.92, g = 0.34, b = 0.23 }, },
 							} },
 							position = {
-								anchor = "BOTTOM",
-								offset = { x = 45, y = 12 }
+								anchor = "TOPRIGHT",
+								relativeTo = dataManagement.backupAllProfiles.box.frame,
+								relativePoint = "BOTTOMRIGHT",
+								offset = { y = -8 }
 							},
 							size = { h = 26 },
 							action = function() StaticPopup_Show(allProfilesImportPopup) end,
@@ -7405,8 +7411,10 @@ function wt.CreateDataManagementPage(addon, t)
 							title = RESET,
 							tooltip = { lines = { { text = wt.strings.backup.reset.tooltip, }, } },
 							position = {
-								anchor = "BOTTOM",
-								offset = { x = -45, y = 12 }
+								anchor = "RIGHT",
+								relativeTo = dataManagement.backupAllProfiles.load.frame,
+								relativePoint = "LEFT",
+								offset = { x = -8, }
 							},
 							size = { h = 26 },
 							action = dataManagement.refreshAllProfilesBackupBox,
@@ -7717,7 +7725,7 @@ function wt. CreatePositionOptions(addon, t)
 						dependencies = t.dependencies
 					})
 
-					local resetPopup = wt.RegisterPopupDialog(addon, "RESET_PRESET", {
+					local resetPopup = wt.RegisterPopupDialog(addon, "RESET_PRESET_" .. panelFrame:GetName(), {
 						text = wt.strings.presets.reset.warning:gsub("#CUSTOM", wt.Color(panel.presetList[t.presets.custom.index].title, wt.colors.normal)),
 						accept = wt.strings.override,
 						onAccept = panel.resetCustomPreset,

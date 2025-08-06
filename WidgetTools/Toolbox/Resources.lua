@@ -17,8 +17,8 @@ local wt = ns.WidgetToolbox
 --[ Localization ]
 
 ---Localized strings
----@class strings
-wt.string = ns.toolboxLocalizations[GetLocale()]
+---@class toolboxStrings
+wt.strings = wt.localizations[GetLocale()]
 
 --| Fill static & internal references
 
@@ -34,7 +34,7 @@ wt.strings.about.fullChangelog.tooltip = wt.strings.about.fullChangelog.tooltip 
 
 --| Cleanup
 
-ns.toolboxLocalizations = nil
+wt.localizations = nil
 
 --[[ ASSETS ]]
 

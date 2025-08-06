@@ -1,7 +1,7 @@
 ## Interface: 110200, 50500, 11507
 ## Title: Widget Tools
 ## Version: 2.0
-## X-Day: 5
+## X-Day: 6
 ## X-Month: 8
 ## X-Year: 2025
 ## Category: Development Tools
@@ -19,9 +19,11 @@
 ## AddonCompartmentFuncOnLeave: AddonCompartment_OnLeave_WidgetTools
 ## SavedVariables: WidgetToolsDB
 
+Localizations.lua
 Resources.lua
 Main.lua
 Toolbox\Load.lua
+Toolbox\Localizations.lua
 Toolbox\Utilities.lua
 Toolbox\Resources.lua
 Toolbox\Constructors.lua

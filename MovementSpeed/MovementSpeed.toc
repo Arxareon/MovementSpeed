@@ -1,7 +1,7 @@
 ## Interface: 110200, 50500, 11507
 ## Title: Movement Speed
 ## Version: 3.0
-## X-Day: 5
+## X-Day: 6
 ## X-Month: 8
 ## X-Year: 2025
 ## Category: HUDs

@@ -1031,19 +1031,57 @@ end
 local function CreateSpeedDisplayOptionsPage(display)
 	local displayName = ns.strings.options[display].title:gsub("%s+", "")
 	local otherDisplay = display == "playerSpeed" and "travelSpeed" or "playerSpeed"
+	---@type customButtonCreationData
 	local copyButtonData = {
 		name = "Copy",
 		title =  ns.strings.options.speedDisplay.copy.label:gsub("#TYPE", ns.strings.options[otherDisplay].title),
 		tooltip = { lines = { { text = ns.strings.options.speedDisplay.copy.tooltip:gsub("#TYPE", ns.strings.options[otherDisplay].title), }, } },
 		position = {
 			anchor = "TOPRIGHT",
-			offset = { x = -8, y = 18 }
+			offset = { x = -6, y = 30 }
 		},
-		size = { w = 164, h = 14 },
+		size = { w = 166, },
 		font = {
-			normal = "GameFontNormalSmall",
+			normal = "GameFontHighlightSmall",
 			highlight = "GameFontHighlightSmall",
 			disabled = "GameFontDisableSmall"
+		},
+		backdrop = {
+			background = {
+				texture = {
+					size = 5,
+					insets = { l = 3, r = 3, t = 3, b = 3 },
+				},
+				color = { r = 0.1, g = 0.1, b = 0.1, a = 0.9 },
+			},
+			border = {
+				texture = { width = 12, },
+				color = { r = 0.5, g = 0.5, b = 0.5, a = 0.9 },
+			}
+		},
+		backdropUpdates = {
+			OnEnter = { rule = function()
+				return IsMouseButtonDown() and {
+					background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
+					border = { color = { r = 0.42, g = 0.42, b = 0.42, a = 0.9 } }
+				} or {
+					background = { color = { r = 0.15, g = 0.15, b = 0.15, a = 0.9 } },
+					border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
+				}
+			end },
+			OnLeave = { rule = function() return {}, true end },
+			OnMouseDown = { rule = function(self)
+				return self:IsEnabled() and {
+					background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
+					border = { color = { r = 0.42, g = 0.42, b = 0.42, a = 0.9 } }
+				} or {}
+			end },
+			OnMouseUp = { rule = function(self)
+				return self:IsEnabled() and self:IsMouseOver() and {
+					background = { color = { r = 0.15, g = 0.15, b = 0.15, a = 0.9 } },
+					border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
+				} or {}
+			end },
 		},
 	}
 
@@ -1090,7 +1128,7 @@ local function CreateSpeedDisplayOptionsPage(display)
 				initialize = function(panel, _, _, key)
 					CreateVisibilityOptions(panel, display, category, key)
 
-					wt.CreateSimpleButton(wt.AddMissing({
+					wt.CreateCustomButton(wt.AddMissing({
 						parent = panel,
 						action = function()
 							wt.CopyValues(
@@ -1245,7 +1283,9 @@ local function CreateSpeedDisplayOptionsPage(display)
 				dataManagement = { category = ns.name .. displayName, },
 			})
 
-			wt.CreateSimpleButton(wt.AddMissing({
+			_G[options[display].position.frame:GetName() .. "Description"]:SetWidth(328)
+
+			wt.CreateCustomButton(wt.AddMissing({
 				parent = options[display].position.frame,
 				action = function()
 					wt.CopyValues(
@@ -1268,7 +1308,7 @@ local function CreateSpeedDisplayOptionsPage(display)
 				initialize = function(panel, _, _, key)
 					CreateUpdateOptions(panel, display, category, key)
 
-					wt.CreateSimpleButton(wt.AddMissing({
+					wt.CreateCustomButton(wt.AddMissing({
 						parent = panel,
 						action = function()
 							wt.CopyValues(
@@ -1293,7 +1333,7 @@ local function CreateSpeedDisplayOptionsPage(display)
 				initialize = function(panel, _, _, key)
 					CreateSpeedValueOptions(panel, display, category, key)
 
-					wt.CreateSimpleButton(wt.AddMissing({
+					wt.CreateCustomButton(wt.AddMissing({
 						parent = panel,
 						action = function()
 							wt.CopyValues(
@@ -1318,7 +1358,7 @@ local function CreateSpeedDisplayOptionsPage(display)
 				initialize = function(panel, _, _, key)
 					CreateFontOptions(panel, display, category, key)
 
-					wt.CreateSimpleButton(wt.AddMissing({
+					wt.CreateCustomButton(wt.AddMissing({
 						parent = panel,
 						action = function()
 							wt.CopyValues(
@@ -1343,7 +1383,7 @@ local function CreateSpeedDisplayOptionsPage(display)
 				initialize = function(panel, _, _, key)
 					CreateBackgroundOptions(panel, display, category, key)
 
-					wt.CreateSimpleButton(wt.AddMissing({
+					wt.CreateCustomButton(wt.AddMissing({
 						parent = panel,
 						action = function()
 							wt.CopyValues(
@@ -1549,6 +1589,7 @@ frames.main = wt.CreateFrame({
 				compactBackup = true,
 				playerSpeed = { keepInPlace = true, },
 				travelSpeed = { keepInPlace = true, },
+				mainDisplay = "playerSpeed",
 			})
 
 			--| Initialize data management
@@ -1610,22 +1651,22 @@ frames.main = wt.CreateFrame({
 						command = ns.chat.commands.preset,
 						description = function()
 							return ns.strings.chat.preset.description:gsub(
-								"#TYPE", ns.strings.options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].title
+								"#TYPE", ns.strings.options[MovementSpeedCS.mainDisplay].title
 							):gsub(
 								"#INDEX", wt.Color(ns.chat.commands.preset .. " " .. 1, ns.colors.green[2])
 							)
 						end,
-						handler = function(_, p) return options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].position.applyPreset(tonumber(p)) end,
+						handler = function(_, p) return options[MovementSpeedCS.mainDisplay].position.applyPreset(tonumber(p)) end,
 						error = ns.strings.chat.preset.unchanged .. "\n" .. wt.Color(ns.strings.chat.preset.error:gsub(
 							"#INDEX", wt.Color(ns.chat.commands.preset .. " " .. 1, ns.colors.green[2])
 						), ns.colors.yellow[2]),
 						onError = function()
 							print(wt.Color(ns.strings.chat.preset.list, ns.colors.yellow[1]))
-							for i = 1, #options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].position.presetList, 2 do
-								local list = "    " .. wt.Color(i, ns.colors.green[2]) .. wt.Color(" • " .. options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].position.presetList[i].title, ns.colors.yellow[2])
+							for i = 1, #options[MovementSpeedCS.mainDisplay].position.presetList, 2 do
+								local list = "    " .. wt.Color(i, ns.colors.green[2]) .. wt.Color(" • " .. options[MovementSpeedCS.mainDisplay].position.presetList[i].title, ns.colors.yellow[2])
 
-								if i + 1 <= #options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].position.presetList then
-									list = list .. "    " .. wt.Color(i + 1, ns.colors.green[2]) .. wt.Color(" • " .. options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].position.presetList[i + 1].title, ns.colors.yellow[2])
+								if i + 1 <= #options[MovementSpeedCS.mainDisplay].position.presetList then
+									list = list .. "    " .. wt.Color(i + 1, ns.colors.green[2]) .. wt.Color(" • " .. options[MovementSpeedCS.mainDisplay].position.presetList[i + 1].title, ns.colors.yellow[2])
 								end
 
 								print(list)
@@ -1636,53 +1677,53 @@ frames.main = wt.CreateFrame({
 						command = ns.chat.commands.save,
 						description = function()
 							return ns.strings.chat.save.description:gsub(
-								"#TYPE", ns.strings.options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].title
+								"#TYPE", ns.strings.options[MovementSpeedCS.mainDisplay].title
 							):gsub(
-								"#CUSTOM", wt.Color(options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].position.presetList[1].title, ns.colors.yellow[1])
+								"#CUSTOM", wt.Color(options[MovementSpeedCS.mainDisplay].position.presetList[1].title, ns.colors.yellow[1])
 							)
 						end,
-						handler = function() options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].position.saveCustomPreset() end,
+						handler = function() options[MovementSpeedCS.mainDisplay].position.saveCustomPreset() end,
 					},
 					{
 						command = ns.chat.commands.reset,
 						description = function()
 							return ns.strings.chat.reset.description:gsub(
-								"#TYPE", ns.strings.options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].title
+								"#TYPE", ns.strings.options[MovementSpeedCS.mainDisplay].title
 							):gsub(
-								"#CUSTOM", wt.Color(options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].position.presetList[1].title, ns.colors.yellow[1])
+								"#CUSTOM", wt.Color(options[MovementSpeedCS.mainDisplay].position.presetList[1].title, ns.colors.yellow[1])
 							)
 						end,
-						handler = function() options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].position.resetCustomPreset() end,
+						handler = function() options[MovementSpeedCS.mainDisplay].position.resetCustomPreset() end,
 					},
 					{
 						command = ns.chat.commands.toggle,
-						description = function() return ns.strings.chat.toggle.description:gsub("#TYPE", ns.strings.options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].title):gsub(
-							"#HIDDEN", wt.Color(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].visibility.hidden and ns.strings.chat.toggle.hidden or ns.strings.chat.toggle.notHidden, ns.colors.yellow[1])
+						description = function() return ns.strings.chat.toggle.description:gsub("#TYPE", ns.strings.options[MovementSpeedCS.mainDisplay].title):gsub(
+							"#HIDDEN", wt.Color(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedCS.mainDisplay].visibility.hidden and ns.strings.chat.toggle.hidden or ns.strings.chat.toggle.notHidden, ns.colors.yellow[1])
 						) end,
 						handler = function()
-							options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].visibility.hidden.setData(not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].visibility.hidden, true)
+							options[MovementSpeedCS.mainDisplay].visibility.hidden.setData(not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedCS.mainDisplay].visibility.hidden, true)
 
 							return true
 						end,
-						success = function() return (MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].visibility.hidden and ns.strings.chat.toggle.hiding or ns.strings.chat.toggle.unhiding):gsub(
-							"#TYPE", ns.strings.options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].title
+						success = function() return (MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedCS.mainDisplay].visibility.hidden and ns.strings.chat.toggle.hiding or ns.strings.chat.toggle.unhiding):gsub(
+							"#TYPE", ns.strings.options[MovementSpeedCS.mainDisplay].title
 						) end,
 					},
 					{
 						command = ns.chat.commands.auto,
-						description = function() return ns.strings.chat.auto.description:gsub("#TYPE", ns.strings.options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].title):gsub(
-							"#STATE", wt.Color(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].visibility.autoHide and ns.strings.misc.enabled or ns.strings.misc.disabled, ns.colors.yellow[1])
+						description = function() return ns.strings.chat.auto.description:gsub("#TYPE", ns.strings.options[MovementSpeedCS.mainDisplay].title):gsub(
+							"#STATE", wt.Color(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedCS.mainDisplay].visibility.autoHide and ns.strings.misc.enabled or ns.strings.misc.disabled, ns.colors.yellow[1])
 						) end,
 						handler = function()
-							options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].visibility.autoHide.setData(not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].visibility.autoHide, true)
+							options[MovementSpeedCS.mainDisplay].visibility.autoHide.setData(not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedCS.mainDisplay].visibility.autoHide, true)
 
 							return true
 						end,
 						success = function()
 							return ns.strings.chat.auto.response:gsub(
-								"#TYPE", ns.strings.options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].title
+								"#TYPE", ns.strings.options[MovementSpeedCS.mainDisplay].title
 							):gsub(
-								"#STATE", wt.Color(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].visibility.autoHide and ns.strings.misc.enabled or ns.strings.misc.disabled, ns.colors.yellow[2])
+								"#STATE", wt.Color(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedCS.mainDisplay].visibility.autoHide and ns.strings.misc.enabled or ns.strings.misc.disabled, ns.colors.yellow[2])
 							)
 						end,
 					},
@@ -1690,9 +1731,9 @@ frames.main = wt.CreateFrame({
 						command = ns.chat.commands.size,
 						description = function()
 							return ns.strings.chat.size.description:gsub(
-								"#TYPE", ns.strings.options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].title
+								"#TYPE", ns.strings.options[MovementSpeedCS.mainDisplay].title
 							):gsub(
-								"#SIZE", wt.Color(ns.chat.commands.size .. " " .. ns.profileDefault[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].font.size, ns.colors.green[2])
+								"#SIZE", wt.Color(ns.chat.commands.size .. " " .. ns.profileDefault[MovementSpeedCS.mainDisplay].font.size, ns.colors.green[2])
 							)
 						end,
 						handler = function(_, p)
@@ -1700,32 +1741,32 @@ frames.main = wt.CreateFrame({
 
 							if not size then return false end
 
-							options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].font.size.setData(size, true)
+							options[MovementSpeedCS.mainDisplay].font.size.setData(size, true)
 
 							return true, size
 						end,
 						success = function(size) return ns.strings.chat.size.response:gsub(
-							"#TYPE", ns.strings.options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].title
+							"#TYPE", ns.strings.options[MovementSpeedCS.mainDisplay].title
 						):gsub("#VALUE", wt.Color(size, ns.colors.yellow[2])) end,
 						error = function() return ns.strings.chat.size.unchanged:gsub(
-							"#TYPE", ns.strings.options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].title
+							"#TYPE", ns.strings.options[MovementSpeedCS.mainDisplay].title
 						) end,
 						onError = function() print("    " .. wt.Color(ns.strings.chat.size.error:gsub(
-							"#SIZE", wt.Color(ns.chat.commands.size .. " " .. ns.profileDefault[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].font.size, ns.colors.green[2])
+							"#SIZE", wt.Color(ns.chat.commands.size .. " " .. ns.profileDefault[MovementSpeedCS.mainDisplay].font.size, ns.colors.green[2])
 						), ns.colors.yellow[2])) end,
 					},
 					{
 						command = ns.chat.commands.swap,
 						description = function() return ns.strings.chat.swap.description:gsub(
-							"#ACTIVE", wt.Color(ns.strings.options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].title, ns.colors.yellow[1])
+							"#ACTIVE", wt.Color(ns.strings.options[MovementSpeedCS.mainDisplay].title, ns.colors.yellow[1])
 						) end,
 						handler = function()
-							MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay = MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay == "playerSpeed" and "travelSpeed" or "playerSpeed"
+							MovementSpeedCS.mainDisplay = MovementSpeedCS.mainDisplay == "playerSpeed" and "travelSpeed" or "playerSpeed"
 
 							return true
 						end,
 						success = function() return ns.strings.chat.swap.response:gsub(
-							"#ACTIVE", wt.Color(ns.strings.options[MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.mainDisplay].title, ns.colors.yellow[2])
+							"#ACTIVE", wt.Color(ns.strings.options[MovementSpeedCS.mainDisplay].title, ns.colors.yellow[2])
 						) end,
 					},
 					{
