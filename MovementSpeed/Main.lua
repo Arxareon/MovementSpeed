@@ -842,7 +842,7 @@ local function CreateFontOptions(panel, display, category, key)
 					frames[display].text:SetText("")
 					frames[display].text:SetText(text)
 				end,
-				UpdateFontFamilyDropdownText = function()
+				UpdateFontFamilyDropdownText = not WidgetToolsDB.lite and function()
 					--Update the font of the dropdown toggle button label
 					local _, size, flags = options[display].font.family.toggle.label:GetFont()
 					options[display].font.family.toggle.label:SetFont(ns.fonts[options[display].font.family.getSelected() or 1].path, size, flags)
@@ -851,7 +851,7 @@ local function CreateFontOptions(panel, display, category, key)
 					local text = options[display].font.family.toggle.label:GetText()
 					options[display].font.family.toggle.label:SetText("")
 					options[display].font.family.toggle.label:SetText(text)
-				end,
+				end or nil,
 			},
 		},
 	})
@@ -1283,7 +1283,7 @@ local function CreateSpeedDisplayOptionsPage(display)
 				dataManagement = { category = ns.name .. displayName, },
 			})
 
-			_G[options[display].position.frame:GetName() .. "Description"]:SetWidth(328)
+			if options[display].position.frame.description then options[display].position.frame.description:SetWidth(328) end
 
 			wt.CreateCustomButton(wt.AddMissing({
 				parent = options[display].position.frame,

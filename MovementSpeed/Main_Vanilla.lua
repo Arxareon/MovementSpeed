@@ -653,7 +653,7 @@ local function CreateFontOptions(panel, category, key)
 					frames.playerSpeed.text:SetText("")
 					frames.playerSpeed.text:SetText(text)
 				end,
-				UpdateFontFamilyDropdownText = function()
+				UpdateFontFamilyDropdownText = not WidgetToolsDB.lite and function()
 					--Update the font of the dropdown toggle button label
 					local _, size, flags = options.playerSpeed.font.family.toggle.label:GetFont()
 					options.playerSpeed.font.family.toggle.label:SetFont(ns.fonts[options.playerSpeed.font.family.getSelected() or 1].path, size, flags)
@@ -662,7 +662,7 @@ local function CreateFontOptions(panel, category, key)
 					local text = options.playerSpeed.font.family.toggle.label:GetText()
 					options.playerSpeed.font.family.toggle.label:SetText("")
 					options.playerSpeed.font.family.toggle.label:SetText(text)
-				end,
+				end or nil,
 			},
 		},
 	})

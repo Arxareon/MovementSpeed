@@ -417,13 +417,12 @@ function wt.CreateReloadNotice(t)
 		parent = UIParent,
 		name = "WidgetToolsReloadNotice",
 		title = t.title or wt.strings.reload.title,
-		description = t.message or wt.strings.reload.description,
 		position = t.position or {
 			anchor = "TOPRIGHT",
 			offset = { x = -300, y = -100 }
 		},
 		keepInBounds = true,
-		size = { w = 240, h = 90 },
+		size = { w = 240, h = 102 },
 		frameStrata = "DIALOG",
 		keepOnTop = true,
 		background = { color = { a = 0.9 }, },
@@ -437,7 +436,17 @@ function wt.CreateReloadNotice(t)
 	--| Title & description
 
 	reloadFrame.title:SetPoint("TOPLEFT", 14, -14)
-	reloadFrame.description:SetPoint("TOPLEFT", _G[reloadFrame:GetName() .. "Title"], "BOTTOMLEFT", 0, -4)
+	wt.CreateText({
+		parent = reloadFrame,
+		name = "Description",
+		position = {
+			anchor = "TOPLEFT",
+			offset = { x = 14, y = -38 }
+		},
+		width = 214,
+		justify = { h = "LEFT", },
+		text = t.message or wt.strings.reload.description,
+	})
 
 	--[ Buttons ]
 
@@ -7526,8 +7535,10 @@ function wt. CreatePositionOptions(addon, t)
 
 		--[ Toggle ]
 
-		t.canvas:HookScript("OnShow", function() positioningVisualAids.show(t.frame, t.getData().position) end)
-		t.canvas:HookScript("OnHide", function() positioningVisualAids.frame:Hide() end)
+		if not WidgetToolsDB.lite then
+			t.canvas:HookScript("OnShow", function() positioningVisualAids.show(t.frame, t.getData().position) end)
+			t.canvas:HookScript("OnHide", function() positioningVisualAids.frame:Hide() end)
+		end
 
 		--[ Update Size ]
 

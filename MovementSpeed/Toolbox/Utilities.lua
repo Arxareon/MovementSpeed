@@ -1596,7 +1596,7 @@ function wt.RegisterChatCommands(addon, keywords, t)
 
 		if type(t.onWelcome) == "function" then t.onWelcome() end
 	end
-manager.welcome()
+
 	--Trigger a help command, listing all registered chat commands with their specified descriptions, calling their onHelp handlers
 	function manager.help()
 		print(wt.Color(wt.strings.chat.help.list:gsub("#ADDON", wt.Color(logo .. addonTitle, t.colors.title)), t.colors.content))

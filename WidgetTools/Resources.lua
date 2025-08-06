@@ -41,6 +41,10 @@ ns.changelog = {
 		"#H_#C_Changes_# & #F_Fixes_#:_#",
 		"The look of checkboxes & settings pages have been updated to match the new settings style.",
 		"Significant under the hood improvements & fixes and other smaller changes & fixes.",
+		"#V_Version 2.0.1_# • #F_Hotfix:_#",
+		"Welcome messages will no longer be spammed each time the interface loads.",
+		"Lite mode can now be enabled without errors.",
+		"Adjusted the appearance of the Reload notice window.",
 		"#H_If you encounter any issues, do not hesitate to report them! Try including when & how they occur, and which other addons are you using to give me the best chance of being able to reproduce & fix them. Try proving any LUA script error messages and if you know how, taint logs as well (when relevant). Thanks a lot for helping!_#",
 	},
 	{

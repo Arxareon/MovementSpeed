@@ -1,6 +1,6 @@
 ## Interface: 110200, 50500, 11507
 ## Title: Widget Tools
-## Version: 2.0
+## Version: 2.0.1
 ## X-Day: 6
 ## X-Month: 8
 ## X-Year: 2025

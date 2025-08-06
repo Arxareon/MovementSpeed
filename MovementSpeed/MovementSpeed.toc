@@ -1,6 +1,6 @@
 ## Interface: 110200, 50500, 11507
 ## Title: Movement Speed
-## Version: 3.0
+## Version: 3.0.1
 ## X-Day: 6
 ## X-Month: 8
 ## X-Year: 2025
