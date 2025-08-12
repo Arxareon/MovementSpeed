@@ -1020,7 +1020,7 @@ function wt.CreateContextMenu(t)
 			menu.rootDescription = rootDescription
 
 			--Adding items
-			if type(t.initialize) == "function" then t.initialize(rootDescription) end
+			if type(t.initialize) == "function" then t.initialize(menu) end
 		end
 	) end
 
@@ -1143,10 +1143,10 @@ function wt.CreateSubmenu(menu, t)
 
 	---@class contextSubmenu
 	---@field rootDescription rootDescription Container of menu elements (such as titles, widgets, dividers or other frames)
-	local submenu = { rootDescription = menu:CreateButton(t.title or "Submenu") }
+	local submenu = { rootDescription = menu.rootDescription:CreateButton(t.title or "Submenu") }
 
 	--Adding items
-	if type(t.initialize) == "function" then t.initialize(submenu.rootDescription) end
+	if type(t.initialize) == "function" then t.initialize(submenu) end
 
 	return submenu
 end
@@ -1165,7 +1165,7 @@ function wt.CreateMenuTextline(menu, t)
 	--[ Item Setup ]
 
 	---@class menuDivider
-	local textline = t.queue ~= true and menu:CreateTitle(t.text or "Title") or menu:QueueTitle(t.text or "Title")
+	local textline = t.queue ~= true and menu.rootDescription:CreateTitle(t.text or "Title") or menu.rootDescription:QueueTitle(t.text or "Title")
 
 	return textline
 end
@@ -1184,7 +1184,7 @@ function wt.CreateMenuDivider(menu, t)
 	--[ Item Setup ]
 
 	---@class menuDivider
-	local divider = t.queue ~= true and menu:CreateDivider() or menu:QueueDivider()
+	local divider = t.queue ~= true and menu.rootDescription:CreateDivider() or menu.rootDescription:QueueDivider()
 
 	return divider
 end
@@ -1203,7 +1203,7 @@ function wt.CreateMenuSpacer(menu, t)
 	--[ Item Setup ]
 
 	---@class menuSpacer
-	local spacer = t.queue ~= true and menu:CreateSpacer() or menu:QueueSpacer()
+	local spacer = t.queue ~= true and menu.rootDescription:CreateSpacer() or menu.rootDescription:QueueSpacer()
 
 	return spacer
 end
@@ -1222,7 +1222,7 @@ function wt.CreateMenuButton(menu, t)
 	--[ Frame Setup ]
 
 	---@class menuButton
-	local button = menu:CreateButton(t.title or "Button", t.action)
+	local button = menu.rootDescription:CreateButton(t.title or "Button", t.action)
 
 	return button
 end
@@ -6843,7 +6843,7 @@ function wt.CreateDataManagementPage(addon, t)
 
 				wt.RemoveEmpty(profileData, t.valueChecker)
 				wt.AddMissing(profileData, compareWith)
-				wt.RemoveMismatch(profileData, compareWith, nil, t.onRecovery)
+				wt.RemoveMismatch(profileData, compareWith, t.recoveryMap, t.onRecovery)
 			end
 
 			---Clean up a profile list table
@@ -7583,7 +7583,7 @@ function wt. CreatePositionOptions(addon, t)
 						wt.SetPosition(t.frame, panel.presetList[i].data.position, true)
 
 						--Update the storage
-						wt.ConvertToAbsolutePosition(t.frame)
+						-- wt.ConvertToAbsolutePosition(t.frame) --CHECK if needed
 						wt.CopyValues(t.getData().position, wt.PackPosition(t.frame:GetPoint()))
 
 						--Update the options widgets

@@ -392,15 +392,15 @@ end
 
 --[ Escape sequences ]
 
----Add coloring to a string via escape sequences
+---Create a colored string from the provided value via escape sequences
 ---***
----@param text string Text to add coloring to
+---@param value string|number Value to add coloring to
 ---@param color colorData Table containing the color values
 ---@return string
-function wt.Color(text, color)
+function wt.Color(value, color)
 	local r, g, b, a = wt.UnpackColor(color)
 
-	return WrapTextInColorCode(text, wt.ColorToHex(r, g, b, a, true, false))
+	return WrapTextInColorCode(value, wt.ColorToHex(r, g, b, a, true, false))
 end
 
 ---Create a markup texture string snippet via escape sequences based on the specified values
@@ -832,20 +832,21 @@ end
 ---***
 ---@param tableToCheck table Reference to the table to remove unused key, value pairs from
 ---@param tableToSample table Reference to the table to sample data from
----@param recoveryMap? table<string, recoveryData> Save removed data from matching key chains to the specified table under the specified key
---- - ***Example:*** String chain of keys pointing to the removed old data to be recovered from **tableToCheck**: `"keyOne[2].keyThree.keyFour[1]"`.
----@param onRecovery? fun(recoveredData: table): recoveryMap: table<string, recoveryData>|nil Function to call when removed data is to be recovered, providing a way to dynamically create a recovery map based on the recovered data, replacing **recoveryMap** if it was specified
+---@param recoveryMap? table<string, recoveryData>|fun(tableToCheck: table, recoveredData: recoveredData): recoveryMap: table<string, recoveryData>|nil Static map or function returning a dynamically creatable map for removed but recoverable data
+---@param onRecovery? fun(tableToCheck: table) Function called after the data has been has been recovered via the **recoveryMap**
 ---***
 ---@return table tableToCheck Reference to **tableToCheck** (it was already overwritten during the operation, no need for setting it again)
 function wt.RemoveMismatch(tableToCheck, tableToSample, recoveryMap, onRecovery)
 	local recoveredData = cleanTable(tableToCheck, tableToSample)
 
 	if next(recoveredData) then
-		if onRecovery then recoveryMap = onRecovery(tableToCheck, recoveredData) end
+		if type(recoveryMap) == "function" then recoveryMap = recoveryMap(tableToCheck, recoveredData) end
 
-		if recoveryMap then for key, value in pairs(recoveredData) do if recoveryMap[key] then for i = 1, #recoveryMap[key].saveTo do
+		if type(recoveryMap == "table") then for key, value in pairs(recoveredData) do if recoveryMap[key] then for i = 1, #recoveryMap[key].saveTo do
 			recoveryMap[key].saveTo[i][recoveryMap[key].saveKey] = recoveryMap[key].convertSave and recoveryMap[key].convertSave(value) or value
 		end end end end
+
+		if type(onRecovery) == "function" then onRecovery(tableToCheck) end
 	end
 
 	return tableToCheck

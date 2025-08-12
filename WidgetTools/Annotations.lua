@@ -134,6 +134,10 @@
 
 --[[ TABLE MANAGEMENT ]]
 
+---@class recoveredData
+---@field keyChain string Chain of keys that used to point to the removed data<ul><li>***Example:*** `"keyOne[2].keyThree.keyFour[1]"`.</li></ul>
+---@field data any Recoverable piece of removed data
+
 ---@class recoveryData
 ---@field saveTo table List of references to the tables to save the recovered piece of data to
 ---@field saveKey string|number Save the data under this kay within the specified recovery tables
@@ -790,7 +794,7 @@
 --| Constructors
 
 ---@class contextMenuCreationData_base
----@field initialize? fun(menu: rootDescription) This function will be called while setting up the menu to perform specific tasks like creating menu content items right away<hr><p>@*param* `menu` rootDescription ― Reference to the container of menu elements (such as titles, widgets, dividers or other frames) for menu items to be added to during initialization</p>
+---@field initialize? fun(menu: contextMenu|contextSubmenu) This function will be called while setting up the menu to perform specific tasks like creating menu content items right away<hr><p>@*param* `menu` contextMenu|contextSubmenu ― Reference to the container of menu elements (such as titles, widgets, dividers or other frames) for menu items to be added to during initialization</p>
 
 ---@class contextMenuCreationData : contextMenuCreationData_base
 ---@field parent AnyFrameObject? Reference to the frame to set as the parent | ***Default:*** UIParent *(opened at cursor position)*
@@ -819,6 +823,12 @@
 --[[ SETTINGS ]]
 
 --[ Settings Page ]
+
+---@class characterProfileData
+---@field activeProfile integer The index of the currently active profile | ***Default:*** 1
+
+---@class dataManagementSettingsData
+---@field compactBackup boolean Whether to skip including additional white spaces to the backup string for more readability
 
 --| Constructors
 
@@ -868,9 +878,12 @@
 ---@field title? string Text to be shown as the title of the settings page | ***Default:*** "Data Management"
 ---@field description? string Text to be shown as the description below the title of the settings page | ***Default:*** *describing profiles & backup*
 ---@field accountData profileStorage|table Reference to the account-bound SavedVariables addon database where profile data is to be stored<ul><li>***Note:*** A subtable will be created under the key **profiles** if it doesn't already exist, any other keys will be removed (any possible old data will be recovered and incorporated into the active profile data).</li></ul>
----@field characterData table Reference to the character-specific SavedVariablesPerCharacter addon database where selected profiles are to be specified<ul><li>***Note:*** An integer value will be created under the key **activeProfile** if it doesn't already exist.</li></ul>
----@field settingsData table Reference to the SavedVariables or SavedVariablesPerCharacter table where settings specifications are to be stored and loaded from<ul><li>***Note:*** The following key, value pairs will be used for storing settings data within this table:<ul><li>**compactBackup** boolean — Whether to skip including additional white spaces to the backup string for more readability</li></li></ul></ul>
+---@field characterData characterProfileData|table Reference to the character-specific SavedVariablesPerCharacter addon database where selected profiles are to be specified<ul><li>***Note:*** An integer value will be created under the key **activeProfile** if it doesn't already exist in this table.</li></ul>
+---@field settingsData dataManagementSettingsData|table Reference to the SavedVariables or SavedVariablesPerCharacter table where settings specifications are to be stored and loaded from<ul><li>***Note:*** A boolean value will be created under the key **compactBackup** if it didn't already exist in this table.</li></li></ul></ul>
 ---@field defaultsTable table A static table containing all default settings values to be cloned when creating a new profile
+---@field valueChecker? fun(key: number|string, value: any): boolean Helper function for validating values when checking profile data, returning true if the value is to be accepted as valid
+---@field recoveryMap? table<string, recoveryData>|fun(tableToCheck: table, recoveredData: recoveredData): recoveryMap: table<string, recoveryData>|nil Static map or function returning a dynamically creatable map for removed but recoverable data
+---@field onRecovery? fun(tableToCheck: table) Function called after the data has been has been recovered via the **recoveryMap**
 ---@field onProfilesLoaded? function Called during profiles initialization and data validation (with **t.onImportAllProfiles(...)** also being called later when profiles data is imported via user interaction through the backup all profiles box)
 ---@field onProfileActivated? fun(title: string, index: integer) Called after a profile was activated<ul><li>***Note:*** It will not be called during profiles initialization.</li></ul><hr><p>@*param* `title` string — The title of the profile</p><p>@*param* `index` integer — The index of the profile that was activated</p>
 ---@field onProfileCreated? fun(title: string, index: integer) Called after a new profile was created<hr><p>@*param* `title` string — The title of the new profile</p><p>@*param* `index` integer — The index of the new profile</p>
@@ -878,8 +891,6 @@
 ---@field onProfileReset? fun(title: string, index: integer) Called after the data of a profile was reset to defaults<hr><p>@*param* `title` string — The title of the profile</p><p>@*param* `index` integer — The index of the profile that was reset</p>
 ---@field onImport? fun(success: boolean, data: table) Called after a settings backup string import has been performed by the user loading data for the currently active profile<hr><p>@*param* `success` boolean — Whether the imported string was successfully processed</p><p>@*param* `data` table — The table containing the imported backup data</p>
 ---@field onImportAllProfiles? fun(success: boolean, data: table) Called after a settings backup string import has been performed by the user loading data for all profiles<ul><li>***Note:*** *t.onProfilesLoaded will also be called if the import was successful.</li></ul><hr><p>@*param* `success` boolean — Whether the imported string was successfully processed</p><p>@*param* `data` table — The table containing the imported backup data</p>
----@field valueChecker? fun(k: number|string, v: any): boolean Helper function for validating values when checking profile data, returning true if the value is to be accepted as valid
----@field onRecovery? fun(profileData: table, recoveredData: table): recoveryMap: table<string, recoveryData>|nil Function to call when removed data is to be recovered when checking profile data, providing a way to dynamically create a recovery map based on the recovered data<hr><p>@*param* `profileData` table — Reference to the profile data table being checked</p><p>@*param* `recoveredData` table — All removed recoverable data packed in a table</p><hr><p>@*return* `recoveryMap` table<string, recoveryData>|nil — Save removed profile data from matching key chains under the specified key when checking profile data<ul><li>***Example:*** String chain of keys pointing to the removed old data to be recovered from **profileData**: `"keyOne[2].keyThree.keyFour[1]"`.</li><li>***Note:*** Using the reference of **profileData** as the root table for **saveTo** in the recovery data specifications is recommended.</li></ul></p><p>@*param* `recoveredData` table — All removed recoverable data packed in a table</p>
 
 --[ Settings Category ]
 
