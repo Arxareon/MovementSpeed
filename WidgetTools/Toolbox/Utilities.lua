@@ -1075,7 +1075,7 @@ end
 ---***
 ---@param frame AnyFrameObject Reference to the frame to make movable/unmovable
 ---@param movable? boolean Whether to make the frame movable or unmovable | ***Default:*** false
----@param t? movabilityData When specified, set **frame** as movable, dynamically updating the position options widgets when it's moved by the user
+---@param t? movabilityData When specified, set **frame** as movable, dynamically updating the position settings widgets when it's moved by the user
 ---<hr><p></p>
 function wt.SetMovability(frame, movable, t)
 	if not frame.SetMovable then return end
@@ -1374,34 +1374,34 @@ function wt.AddDependencies(rules, setState)
 end
 
 
---[[ OPTIONS DATA MANAGEMENT ]]
+--[[ SETTINGS DATA MANAGEMENT ]]
 
---Options data management rule registry
----@class optionsRegistry
----@field rules table<string, optionsRule[]> Collection of rules describing where to save/load options data to/from, and what change handlers to call in the process linked to each specific options key under an addon
+--Settings data management rule registry
+---@class settingsRegistry
+---@field rules table<string, settingsRule[]> Collection of rules describing where to save/load settings data to/from, and what change handlers to call in the process linked to each specific settings category under an addon
 ---@field changeHandlers table<string, function> List of pairs of addon-specific unique keys and change handler scripts
-wt.optionsTable = { rules = {}, changeHandlers = {} }
+wt.settingsTable = { rules = {}, changeHandlers = {} }
 
----Add a connection between an options widget and a DB entry to the options data table linked to the specified options key under the specified addon for batched data handling
+---Register a settings data management entry for a settings widget to the settings data management registry for batched data handling
 ---***
 ---@param widget checkbox|radioButton|radioSelector|checkboxSelector|specialSelector|dropdownSelector|textbox|multilineEditbox|numericSlider|colorPicker Reference to the widget to be saved & loaded data to/from with defined **widget.loadData()** & **widget.saveData()** functions
----@param t optionsData Parameters are to be provided in this table
-function wt.AddOptionsRule(widget, t)
+---@param t settingsData Parameters are to be provided in this table
+function wt.AddSettingsDataManagementEntry(widget, t)
 	if not widget or not type(t) == "table" then return end
 
 	t.category = t.category or "WidgetTools"
 	t.key = t.key or ""
 	local key = t.category .. t.key
 
-	wt.optionsTable.rules[key] = wt.optionsTable.rules[key] or {}
+	wt.settingsTable.rules[key] = wt.settingsTable.rules[key] or {}
 
-	--Add the onChange handlers to options data management
-	if t.onChange then
+	--Add onChange handlers
+	if type(t.onChange) == "table" then
 		local newKeys = {}
 
 		for k, v in pairs(t.onChange) do if type(k) == "string" and type(v) == "function" then
 			--Store the function
-			wt.optionsTable.changeHandlers[t.category .. k] = v
+			wt.settingsTable.changeHandlers[t.category .. k] = v
 
 			--Remove the function definitions, save their keys
 			t.onChange[k] = nil
@@ -1412,109 +1412,129 @@ function wt.AddOptionsRule(widget, t)
 		for i = 1, #newKeys do table.insert(t.onChange, newKeys[i]) end
 	end
 
-	--Add the options data rules to the collection
-	if type(t.index) ~= "number" then table.insert(wt.optionsTable.rules[key], { widget = widget, onChange = t.onChange })
-	else table.insert(wt.optionsTable.rules[key], Clamp(wt.Round(t.index), 1, #wt.optionsTable.rules[key] + 1), { widget = widget, onChange = t.onChange }) end
+	--Add to the registry
+	if type(t.index) ~= "number" then table.insert(wt.settingsTable.rules[key], { widget = widget, onChange = t.onChange })
+	else table.insert(wt.settingsTable.rules[key], Clamp(wt.Round(t.index), 1, #wt.settingsTable.rules[key] + 1), { widget = widget, onChange = t.onChange }) end
 end
 
----Load all data from storage to the widgets specified in the options data list referenced by the specified options key under the specified addon by calling **[*widget*].loadData(...)** for each
+---Load all data from storage to the widgets specified in in the settings data management registry referenced by the specified settings category under the specified key by calling **[*widget*].loadData(...)** for each
 ---***
----@param category? string A unique string used for categorizing options data management rules & change handler scripts | ***Default:*** "WidgetTools" *(global rule)*
----@param key? string A unique string appended to **category** linking a subset of options data rules to be handled together | ***Default:*** "" *(category-wide rule)*
----@param handleChanges? boolean Whether to call **onChange** handlers or not | ***Default:*** false
-function wt.LoadOptionsData(category, key, handleChanges)
+---@param category? string A unique string used for categorizing settings data management rules & change handler scripts | ***Default:*** "WidgetTools" *(global rule)*
+---@param key? string A unique string appended to **category** linking a subset of settings data rules to be handled together | ***Default:*** "" *(category-wide rule)*
+---@param applyChanges? boolean If true, apply changes by calling all registered **onChange** handlers | ***Default:*** false
+function wt.LoadSettingsData(category, key, applyChanges)
 	category = category or "WidgetTools"
 	key = category .. (key or "")
 
-	if not wt.optionsTable.rules[key] then return end
+	if not wt.settingsTable.rules[key] then return end
 
-	if handleChanges then handleChanges = {} end
+	if applyChanges then applyChanges = {} end
 
-	for i = 1, #wt.optionsTable.rules[key] do
-		wt.optionsTable.rules[key][i].widget.loadData(false)
+	for i = 1, #wt.settingsTable.rules[key] do
+		wt.settingsTable.rules[key][i].widget.loadData(false)
 
 		--Register onChange handlers for call
-		if handleChanges and wt.optionsTable.rules[key][i].onChange then
-			for j = 1, #wt.optionsTable.rules[key][i].onChange do handleChanges[category .. wt.optionsTable.rules[key][i].onChange[j]] = true end
+		if applyChanges and type(wt.settingsTable.rules[key][i].onChange) == "table" then
+			for j = 1, #wt.settingsTable.rules[key][i].onChange do applyChanges[category .. wt.settingsTable.rules[key][i].onChange[j]] = true end
 		end
 	end
 
 	--Call registered onChange handlers
-	if handleChanges then for k in pairs(handleChanges) do wt.optionsTable.changeHandlers[k]() end end
+	if applyChanges then for k in pairs(applyChanges) do wt.settingsTable.changeHandlers[k]() end end
 end
 
----Save all data from the widgets to storage specified in the options data list referenced by the specified options key under the specified addon by calling **[*widget*].saveData(...)** for each
+---Save all data from the widgets to storage specified in in the settings data management registry referenced by the specified settings category under the specified key by calling **[*widget*].saveData(...)** for each
 ---***
----@param category? string A unique string used for categorizing options data management rules & change handler scripts | ***Default:*** "WidgetTools" *(global rule)*
----@param key? string A unique string appended to **category** linking a subset of options data rules to be handled together | ***Default:*** "" *(category-wide rule)*
-function wt.SaveOptionsData(category, key)
+---@param category? string A unique string used for categorizing settings data management rules & change handler scripts | ***Default:*** "WidgetTools" *(global rule)*
+---@param key? string A unique string appended to **category** linking a subset of settings data rules to be handled together | ***Default:*** "" *(category-wide rule)*
+function wt.SaveSettingsData(category, key)
 	key = (category or "WidgetTools") .. (key or "")
 
-	if not wt.optionsTable.rules[key] then return end
+	if not wt.settingsTable.rules[key] then return end
 
-	for i = 1, #wt.optionsTable.rules[key] do wt.optionsTable.rules[key][i].widget.saveData() end
+	for i = 1, #wt.settingsTable.rules[key] do wt.settingsTable.rules[key][i].widget.saveData() end
 end
 
----Set a data snapshot for each widget specified in the options data list referenced by the specified options key by under the specified addon calling **[*widget*].revertData()** for each
----***
----@param category? string A unique string used for categorizing options data management rules & change handler scripts | ***Default:*** "WidgetTools" *(global rule)*
----@param key? string A unique string appended to **category** linking a subset of options data rules to be handled together | ***Default:*** "" *(category-wide rule)*
-function wt.SnapshotOptionsData(category, key)
-	key = (category or "WidgetTools") .. (key or "")
-
-	if not wt.optionsTable.rules[key] then return end
-
-	for i = 1, #wt.optionsTable.rules[key] do wt.optionsTable.rules[key][i].widget.snapshotData() end
-end
-
----Set & load the stored data managed by each widget specified in the options data list referenced by the specified options key under the specified addon by calling **[*widget*].revertData()** for each
----***
----@param category? string A unique string used for categorizing options data management rules & change handler scripts | ***Default:*** "WidgetTools" *(global rule)*
----@param key? string A unique string appended to **category** linking a subset of options data rules to be handled together | ***Default:*** "" *(category-wide rule)*
-function wt.RevertOptionsData(category, key)
+---Call all **onChange** handlers registered in in the settings data management registry referenced by the specified settings category under the specified key
+---@param category? string A unique string used for categorizing settings data management rules & change handler scripts | ***Default:*** "WidgetTools" *(global rule)*
+---@param key? string A unique string appended to **category** linking a subset of settings data rules to be handled together | ***Default:*** "" *(category-wide rule)*
+function wt.ApplySettingsData(category, key)
 	category = category or "WidgetTools"
 	key = category .. (key or "")
 
-	if not wt.optionsTable.rules[key] then return end
+	if not wt.settingsTable.rules[key] then return end
 
-	local handleChanges = {}
+	local handlers = {}
 
-	for i = 1, #wt.optionsTable.rules[key] do
-		wt.optionsTable.rules[key][i].widget.revertData(false)
+	--Register onChange handlers for call
+	for i = 1, #wt.settingsTable.rules[key] do if type(wt.settingsTable.rules[key][i].onChange) == "table" then
+		for j = 1, #wt.settingsTable.rules[key][i].onChange do handlers[category .. wt.settingsTable.rules[key][i].onChange[j]] = true end
+	end end
+
+	--Call registered onChange handlers
+	if handlers then for k in pairs(handlers) do wt.settingsTable.changeHandlers[k]() end end
+end
+
+---Set a data snapshot for each widget specified in in the settings data management registry referenced by the specified settings category by under the specified key calling **[*widget*].revertData()** for each
+---***
+---@param category? string A unique string used for categorizing settings data management rules & change handler scripts | ***Default:*** "WidgetTools" *(global rule)*
+---@param key? string A unique string appended to **category** linking a subset of settings data rules to be handled together | ***Default:*** "" *(category-wide rule)*
+function wt.SnapshotSettingsData(category, key)
+	key = (category or "WidgetTools") .. (key or "")
+
+	if not wt.settingsTable.rules[key] then return end
+
+	for i = 1, #wt.settingsTable.rules[key] do wt.settingsTable.rules[key][i].widget.snapshotData() end
+end
+
+---Set & load the stored data managed by each widget specified in in the settings data management registry referenced by the specified settings category under the specified key by calling **[*widget*].revertData()** for each
+---***
+---@param category? string A unique string used for categorizing settings data management rules & change handler scripts | ***Default:*** "WidgetTools" *(global rule)*
+---@param key? string A unique string appended to **category** linking a subset of settings data rules to be handled together | ***Default:*** "" *(category-wide rule)*
+function wt.RevertSettingsData(category, key)
+	category = category or "WidgetTools"
+	key = category .. (key or "")
+
+	if not wt.settingsTable.rules[key] then return end
+
+	local applyChanges = {}
+
+	for i = 1, #wt.settingsTable.rules[key] do
+		wt.settingsTable.rules[key][i].widget.revertData(false)
 
 		--Register onChange handlers for call
-		for i = 1, #wt.optionsTable.rules[key] do if handleChanges and wt.optionsTable.rules[key][i].onChange then
-			for j = 1, #wt.optionsTable.rules[key][i].onChange do handleChanges[category .. wt.optionsTable.rules[key][i].onChange[j]] = true end
+		for i = 1, #wt.settingsTable.rules[key] do if applyChanges and type(wt.settingsTable.rules[key][i].onChange) == "table" then
+			for j = 1, #wt.settingsTable.rules[key][i].onChange do applyChanges[category .. wt.settingsTable.rules[key][i].onChange[j]] = true end
 		end end
 	end
 
 	--Call registered onChange handlers
-	if handleChanges then for k in pairs(handleChanges) do wt.optionsTable.changeHandlers[k]() end end
+	if applyChanges then for k in pairs(applyChanges) do wt.settingsTable.changeHandlers[k]() end end
 end
 
----Set & load the default data managed by each widget specified in the options data list referenced by the specified options key under the specified addon by calling **[*widget*].resetData()** for each
+---Set & load the default data managed by each widget specified in in the settings data management registry referenced by the specified settings category under the specified key by calling **[*widget*].resetData()** for each
 ---***
----@param category? string A unique string used for categorizing options data management rules & change handler scripts | ***Default:*** "WidgetTools" *(global rule)*
----@param key? string A unique string appended to **category** linking a subset of options data rules to be handled together | ***Default:*** "" *(category-wide rule)*
-function wt.ResetOptionsData(category, key)
+---@param category? string A unique string used for categorizing settings data management rules & change handler scripts | ***Default:*** "WidgetTools" *(global rule)*
+---@param key? string A unique string appended to **category** linking a subset of settings data rules to be handled together | ***Default:*** "" *(category-wide rule)*
+function wt.ResetSettingsData(category, key)
 	category = category or "WidgetTools"
 	key = category .. (key or "")
 
-	if not wt.optionsTable.rules[key] then return end
+	if not wt.settingsTable.rules[key] then return end
 
-	local handleChanges = {}
+	local applyChanges = {}
 
-	for i = 1, #wt.optionsTable.rules[key] do
-		wt.optionsTable.rules[key][i].widget.resetData(false)
+	for i = 1, #wt.settingsTable.rules[key] do
+		wt.settingsTable.rules[key][i].widget.resetData(false)
 
 		--Register onChange handlers for call
-		for i = 1, #wt.optionsTable.rules[key] do if handleChanges and wt.optionsTable.rules[key][i].onChange then
-			for j = 1, #wt.optionsTable.rules[key][i].onChange do handleChanges[category .. wt.optionsTable.rules[key][i].onChange[j]] = true end
+		for i = 1, #wt.settingsTable.rules[key] do if applyChanges and type(wt.settingsTable.rules[key][i].onChange) == "table" then
+			for j = 1, #wt.settingsTable.rules[key][i].onChange do applyChanges[category .. wt.settingsTable.rules[key][i].onChange[j]] = true end
 		end end
 	end
 
 	--Call registered onChange handlers
-	if handleChanges then for k in pairs(handleChanges) do wt.optionsTable.changeHandlers[k]() end end
+	if applyChanges then for k in pairs(applyChanges) do wt.settingsTable.changeHandlers[k]() end end
 end
 
 

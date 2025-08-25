@@ -6,7 +6,7 @@ local ns = select(2, ...)
 
 --[[ TOOLBOX ]]
 
-ns.WidgetToolboxVersion = "2.0"
+ns.WidgetToolboxVersion = "2.1"
 
 --| Check for the toolbox
 

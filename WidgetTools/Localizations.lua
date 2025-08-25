@@ -45,7 +45,6 @@ ns.localizations.enUS = {
 		},
 		dev = {
 			title = "Development Tools",
-			description = "Useful tools and nobs for developers.",
 			frameAttributes = {
 				enabled = {
 					label = "Resize Frame Attributes Table",
@@ -136,7 +135,6 @@ ns.localizations.ptBR = {
 		},
 		dev = {
 			title = "Ferramentas de Desenvolvimento",
-			description = "Ferramentas e opções úteis para desenvolvedores.",
 			frameAttributes = {
 				enabled = {
 					label = "Redimensionar Tabela de Atributos do Quadro",
@@ -227,7 +225,6 @@ ns.localizations.deDE = {
 		},
 		dev = {
 			title = "Entwicklertools",
-			description = "Nützliche Werkzeuge und Einstellungen für Entwickler.",
 			frameAttributes = {
 				enabled = {
 					label = "Größe der Frame-Attributtabelle anpassen",
@@ -318,7 +315,6 @@ ns.localizations.frFR = {
 		},
 		dev = {
 			title = "Outils de Développement",
-			description = "Outils et options utiles pour les développeurs.",
 			frameAttributes = {
 				enabled = {
 					label = "Redimensionner la Table des Attributs du Cadre",
@@ -409,7 +405,6 @@ ns.localizations.esES = {
 		},
 		dev = {
 			title = "Herramientas de Desarrollo",
-			description = "Herramientas y opciones útiles para desarrolladores.",
 			frameAttributes = {
 				enabled = {
 					label = "Redimensionar Tabla de Atributos del Marco",
@@ -500,7 +495,6 @@ ns.localizations.esMX = {
 		},
 		dev = {
 			title = "Herramientas de Desarrollo",
-			description = "Herramientas y opciones útiles para desarrolladores.",
 			frameAttributes = {
 				enabled = {
 					label = "Redimensionar Tabla de Atributos del Marco",
@@ -591,7 +585,6 @@ ns.localizations.itIT = {
 		},
 		dev = {
 			title = "Strumenti di Sviluppo",
-			description = "Strumenti e opzioni utili per sviluppatori.",
 			frameAttributes = {
 				enabled = {
 					label = "Ridimensiona Tabella Attributi Frame",
@@ -682,7 +675,6 @@ ns.localizations.koKR = {
 		},
 		dev = {
 			title = "개발 도구",
-			description = "개발자를 위한 유용한 도구와 옵션입니다.",
 			frameAttributes = {
 				enabled = {
 					label = "프레임 속성 테이블 크기 조정",
@@ -773,7 +765,6 @@ ns.localizations.zhTW = {
 		},
 		dev = {
 			title = "開發工具",
-			description = "開發者實用工具與選項。",
 			frameAttributes = {
 				enabled = {
 					label = "調整框架屬性表格大小",
@@ -864,7 +855,6 @@ ns.localizations.zhCN = {
 		},
 		dev = {
 			title = "开发工具",
-			description = "为开发者提供的实用工具和选项。",
 			frameAttributes = {
 				enabled = {
 					label = "调整框体属性表宽度",
@@ -955,7 +945,6 @@ ns.localizations.ruRU = {
 		},
 		dev = {
 			title = "Инструменты разработчика",
-			description = "Полезные инструменты и опции для разработчиков.",
 			frameAttributes = {
 				enabled = {
 					label = "Изменить размер таблицы атрибутов фрейма",

@@ -360,7 +360,7 @@ ns.textures = {
 --[[ DATA ]]
 
 ---Defaults
----@class MovementSpeedProfileData
+---@type MovementSpeedProfileData
 ns.profileDefault = {
 	customPreset = {
 		position = {

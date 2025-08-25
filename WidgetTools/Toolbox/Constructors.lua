@@ -145,7 +145,7 @@ function wt.UpdateTooltip(owner, tooltipData, clearLines, override)
 end
 
 ---Add default value and utility menu hint tooltip lines to widget tooltip tables
----@param t optionsFrame|tooltipDescribableObject Parameters are to be provided in this table
+---@param t settingsFrame|tooltipDescribableObject Parameters are to be provided in this table
 ---@param default? string Default value, formatted | ***Default:*** ""
 function wt.AddWidgetTooltipLines(t, default)
 	if type(t) ~= "table" or (t.showDefault == false and t.utilityMenu == false) or type(t.tooltip) ~= "table" then return end
@@ -1242,7 +1242,7 @@ function wt.CreateSettingsPage(addon, t)
 	t.name = t.name and t.name:gsub("%s+", "")
 	if type(t.dataManagement) == "table" then
 		t.dataManagement.category = t.dataManagement.category or addon
-		t.dataManagement.keys = type((t.dataManagement.keys or {})[1]) == "string" and t.dataManagement.keys or { t.name or "" }
+		t.dataManagement.keys = type((t.dataManagement.keys or {})[1]) == "string" and t.dataManagement.keys or { t.name or addon }
 	end
 	local width, height = 0, 0
 	local defaultsWarning
@@ -1250,7 +1250,7 @@ function wt.CreateSettingsPage(addon, t)
 	---@class settingsPage
 	---@field canvas? Frame The settings page main canvas frame
 	---@field category? table The registered settings category page
-	---@field content? Frame The content frame to house the options widgets or other page content
+	---@field content? Frame The content frame to house the settings widgets or other page content
 	---@field header? Frame The header frame containing the page title, description and icon
 	local page = {}
 
@@ -1294,56 +1294,66 @@ function wt.CreateSettingsPage(addon, t)
 		Settings.OpenToCategory(page.category:GetID())
 	end
 
-	--| Batched options data management
+	--| Batched settings data management
 
-	---Call to force save the options in this category page
+	---Force update all linked settings widgets in this category page
 	---***
-	---@param user? boolean Whether to mark the call as being the result of a user interaction | ***Default:*** false
+	---@param apply? boolean If true, apply changes by calling all registered **onChange** handlers | ***Default:*** false
+	---@param user? boolean If true, mark the call as being the result of a user interaction | ***Default:*** false
+	function page.load(apply, user)
+		--Update settings widgets
+		if t.autoLoad ~= false and type(t.dataManagement) == "table" then for i = 1, #t.dataManagement.keys do
+			wt.LoadSettingsData(t.dataManagement.category, t.dataManagement.keys[i], apply)
+			wt.SnapshotSettingsData(t.dataManagement.category, t.dataManagement.keys[i])
+		end end
+
+		--Call listener
+		if type(t.onLoad) == "function" then t.onLoad(user == true) end
+	end
+
+	---Force save all settings data of this category page from all linked widgets
+	---***
+	---@param user? boolean If true, mark the call as being the result of a user interaction | ***Default:*** false
 	function page.save(user)
 		--Retrieve data from settings widgets and commit to storage
 		if t.autoSave ~= false and type(t.dataManagement) == "table" then for i = 1, #t.dataManagement.keys do
-			wt.SaveOptionsData(t.dataManagement.category, t.dataManagement.keys[i])
+			wt.SaveSettingsData(t.dataManagement.category, t.dataManagement.keys[i])
 		end end
 
 		--Call listener
-		if t.onSave then t.onSave(user == true) end
+		if type(t.onSave) == "function" then t.onSave(user == true) end
 	end
 
-	---Call to force update the options widgets in this category page
+	---Apply settings data of this category page by calling all registered **onChange** handlers of all linked widgets
 	---***
-	---@param changes? boolean Whether to call **onChange** handlers or not | ***Default:*** false
-	---@param user? boolean Whether to mark the call as being the result of a user interaction | ***Default:*** false
-	function page.load(changes, user)
-		--Update settings widgets
-		if t.autoLoad ~= false and type(t.dataManagement) == "table" then for i = 1, #t.dataManagement.keys do
-			wt.LoadOptionsData(t.dataManagement.category, t.dataManagement.keys[i], changes)
-			wt.SnapshotOptionsData(t.dataManagement.category, t.dataManagement.keys[i])
-		end end
+	---@param user? boolean If true, mark the call as being the result of a user interaction | ***Default:*** false
+	function page.apply(user)
+		if type(t.dataManagement) == "table" then for i = 1, #t.dataManagement.keys do wt.ApplySettingsData(t.dataManagement.category, t.dataManagement.keys) end end
 
 		--Call listener
-		if t.onLoad then t.onLoad(user == true) end
+		if type(t.onApply) == "function" then t.onApply(user == true) end
 	end
 
-	---Call to cancel any changes made in this category page and reload all linked widget data
+	---Revert any changes made in this category page and reload all linked widget data
 	---***
-	---@param user? boolean Whether to mark the call as being the result of a user interaction | ***Default:*** false
+	---@param user? boolean If true, mark the call as being the result of a user interaction | ***Default:*** false
 	function page.cancel(user)
 		--Update settings widgets
-		if type(t.dataManagement) == "table" then for i = 1, #t.dataManagement.keys do wt.RevertOptionsData(t.dataManagement.category, t.dataManagement.keys[i]) end end
+		if type(t.dataManagement) == "table" then for i = 1, #t.dataManagement.keys do wt.RevertSettingsData(t.dataManagement.category, t.dataManagement.keys[i]) end end
 
 		--Call listener
-		if t.onCancel then t.onCancel(user == true) end
+		if type(t.onCancel) == "function" then t.onCancel(user == true) end
 	end
 
-	---Call to reset all options in this category page to their default values
+	---Reset all settings data of this category page to default values
 	---***
-	---@param user? boolean Whether to mark the call as being the result of a user interaction | ***Default:*** false
+	---@param user? boolean If true, mark the call as being the result of a user interaction | ***Default:*** false
 	function page.default(user)
 		--Update with default values
-		if type(t.dataManagement) == "table" then for i = 1, #t.dataManagement.keys do wt.ResetOptionsData(t.dataManagement.category, t.dataManagement.keys[i]) end end
+		if type(t.dataManagement) == "table" then for i = 1, #t.dataManagement.keys do wt.ResetSettingsData(t.dataManagement.category, t.dataManagement.keys[i]) end end
 
 		--Call listener
-		if t.onDefault then t.onDefault(user == true, false) end
+		if type(t.onDefault) == "function" then t.onDefault(user == true, false) end
 	end
 
 	--[ Settings Page ]
@@ -1496,7 +1506,7 @@ function wt.CreateSettingsPage(addon, t)
 	return page
 end
 
----Create an new Settings category with a parent page, its child pages, and set up shared options data management for them
+---Create an new Settings category with a parent page, its child pages, and set up shared settings data management for them
 ---***
 ---@param addon string The name of the addon's folder (the addon namespace, not its displayed title)
 ---@param parent settingsPageCreationData|settingsPage Settings page creation parameters to create, or reference to an existing *unregistered* settings page to set as the parent page for the new category
@@ -1517,22 +1527,22 @@ function wt.CreateSettingsCategory(addon, parent, pages, t)
 
 	--[ Utilities ]
 
-	--| Batched options data management
+	--| Batched settings data management
 
-	---Call to force update the options widgets for all pages in this category
+	---Force update the settings widgets for all pages in this category
 	---***
-	---@param changes? boolean Whether to call **onChange** handlers or not | ***Default:*** false
-	---@param user? boolean Whether to mark the call as being the result of a user interaction | ***Default:*** false
-	function category.load(changes, user)
-		for i = 1, #category.pages do category.pages[i].load(changes, user) end
+	---@param apply? boolean If true, apply changes by calling all registered **onChange** handlers | ***Default:*** false
+	---@param user? boolean If true, mark the call as being the result of a user interaction | ***Default:*** false
+	function category.load(apply, user)
+		for i = 1, #category.pages do category.pages[i].load(apply, user) end
 
 		--Call listener
 		if t.onLoad then t.onLoad(user == true) end
 	end
 
-	---Call to reset all options to their default values for all pages in this category
+	---Reset all settings data to their default values for all pages in this category
 	---***
-	---@param user? boolean Whether to mark the call as being the result of a user interaction | ***Default:*** false
+	---@param user? boolean If true, mark the call as being the result of a user interaction | ***Default:*** false
 	---@param callListeners? boolean If true, call the **onDefault** listeners (if set) of each individual category page separately | ***Default:*** true
 	function category.defaults(user, callListeners)
 		for i = 1, #category.pages do
@@ -1541,7 +1551,7 @@ function wt.CreateSettingsCategory(addon, parent, pages, t)
 
 			--Update with default values
 			if type(dataManagement) == "table" and type(dataManagement.keys) == "table" then for i = 1, #dataManagement.keys do
-				wt.ResetOptionsData(dataManagement.category, dataManagement.keys[i])
+				wt.ResetSettingsData(dataManagement.category, dataManagement.keys[i])
 			end end
 
 			--Call listeners
@@ -2063,7 +2073,7 @@ function wt.CreateToggle(t)
 		else
 			--Handle changes
 			if handleChanges and type(t.dataManagement) == "table" and type(t.dataManagement.onChange) == "table" then
-				for i = 1, #t.dataManagement.onChange do wt.optionsTable.changeHandlers[t.dataManagement.category .. t.dataManagement.onChange[i]]() end
+				for i = 1, #t.dataManagement.onChange do wt.settingsTable.changeHandlers[t.dataManagement.category .. t.dataManagement.onChange[i]]() end
 			end
 
 			if not silent then toggle.invoke.loaded(false) end
@@ -2129,7 +2139,7 @@ function wt.CreateToggle(t)
 
 		--Handle changes
 		if user and type(t.dataManagement) == "table" and type(t.dataManagement.onChange) == "table" then
-			for i = 1, #t.dataManagement.onChange do wt.optionsTable.changeHandlers[t.dataManagement.category .. t.dataManagement.onChange[i]]() end
+			for i = 1, #t.dataManagement.onChange do wt.settingsTable.changeHandlers[t.dataManagement.category .. t.dataManagement.onChange[i]]() end
 		end
 	end
 
@@ -2162,8 +2172,8 @@ function wt.CreateToggle(t)
 		if k == "_" then toggle.setListener._(v[i].event, v[i].handler, v[i].callIndex) else toggle.setListener[k](v[i].handler, v[i].callIndex) end
 	end end end end
 
-	--Register to options data management
-	if t.dataManagement then wt.AddOptionsRule(toggle, t.dataManagement) end
+	--Register to settings data management
+	if t.dataManagement then wt.AddSettingsDataManagementEntry(toggle, t.dataManagement) end
 
 	--Assign dependencies
 	if t.dependencies then wt.AddDependencies(t.dependencies, toggle.setEnabled) end
@@ -2884,7 +2894,7 @@ function wt.CreateSelector(t)
 
 			if not silent then selector.invoke.loaded(true) end
 		else
-			if handleChanges and type(t.dataManagement.onChange) == "table" then for i = 1, #t.dataManagement.onChange do wt.optionsTable.changeHandlers[t.dataManagement.category .. t.dataManagement.onChange[i]]() end end
+			if handleChanges and type(t.dataManagement.onChange) == "table" then for i = 1, #t.dataManagement.onChange do wt.settingsTable.changeHandlers[t.dataManagement.category .. t.dataManagement.onChange[i]]() end end
 
 			if not silent then selector.invoke.loaded(false) end
 		end
@@ -2950,7 +2960,7 @@ function wt.CreateSelector(t)
 
 		--Handle changes
 		if user and type(t.dataManagement) == "table" and type(t.dataManagement.onChange) == "table" then
-			for i = 1, #t.dataManagement.onChange do wt.optionsTable.changeHandlers[t.dataManagement.category .. t.dataManagement.onChange[i]]() end
+			for i = 1, #t.dataManagement.onChange do wt.settingsTable.changeHandlers[t.dataManagement.category .. t.dataManagement.onChange[i]]() end
 		end
 	end
 
@@ -2983,8 +2993,8 @@ function wt.CreateSelector(t)
 	--Register starting items
 	for i = 1, #t.items do setToggle(i) end
 
-	--Register to options data management
-	if t.dataManagement then wt.AddOptionsRule(selector, t.dataManagement) end
+	--Register to settings data management
+	if t.dataManagement then wt.AddSettingsDataManagementEntry(selector, t.dataManagement) end
 
 	--Assign dependencies
 	if t.dependencies then wt.AddDependencies(t.dependencies, selector.setEnabled) end
@@ -3133,7 +3143,7 @@ function wt.CreateSpecialSelector(itemset, t)
 
 			if not silent then selector.invoke.loaded(true) end
 		else
-			if handleChanges and type(t.dataManagement.onChange) == "table" then for i = 1, #t.dataManagement.onChange do wt.optionsTable.changeHandlers[t.dataManagement.category .. t.dataManagement.onChange[i]]() end end
+			if handleChanges and type(t.dataManagement.onChange) == "table" then for i = 1, #t.dataManagement.onChange do wt.settingsTable.changeHandlers[t.dataManagement.category .. t.dataManagement.onChange[i]]() end end
 
 			if not silent then selector.invoke.loaded(false) end
 		end
@@ -3199,7 +3209,7 @@ function wt.CreateSpecialSelector(itemset, t)
 
 		--Handle changes
 		if user and type(t.dataManagement) == "table" and type(t.dataManagement.onChange) == "table" then
-			for i = 1, #t.dataManagement.onChange do wt.optionsTable.changeHandlers[t.dataManagement.category .. t.dataManagement.onChange[i]]() end
+			for i = 1, #t.dataManagement.onChange do wt.settingsTable.changeHandlers[t.dataManagement.category .. t.dataManagement.onChange[i]]() end
 		end
 	end
 
@@ -3251,8 +3261,8 @@ function wt.CreateSpecialSelector(itemset, t)
 		selector.toggles[i].index = i
 	end end
 
-	--Register to options data management
-	if t.dataManagement then wt.AddOptionsRule(selector, t.dataManagement) end
+	--Register to settings data management
+	if t.dataManagement then wt.AddSettingsDataManagementEntry(selector, t.dataManagement) end
 
 	--Assign dependencies
 	if t.dependencies then wt.AddDependencies(t.dependencies, selector.setEnabled) end
@@ -3480,7 +3490,7 @@ function wt.CreateMultiselector(t)
 
 			if not silent then selector.invoke.loaded(true) end
 		else
-			if handleChanges and type(t.dataManagement.onChange) == "table" then for i = 1, #t.dataManagement.onChange do wt.optionsTable.changeHandlers[t.dataManagement.category .. t.dataManagement.onChange[i]]() end end
+			if handleChanges and type(t.dataManagement.onChange) == "table" then for i = 1, #t.dataManagement.onChange do wt.settingsTable.changeHandlers[t.dataManagement.category .. t.dataManagement.onChange[i]]() end end
 
 			if not silent then selector.invoke.loaded(false) end
 		end
@@ -3557,7 +3567,7 @@ function wt.CreateMultiselector(t)
 
 		--Handle changes
 		if user and type(t.dataManagement) == "table" and type(t.dataManagement.onChange) == "table" then
-			for i = 1, #t.dataManagement.onChange do wt.optionsTable.changeHandlers[t.dataManagement.category .. t.dataManagement.onChange[i]]() end
+			for i = 1, #t.dataManagement.onChange do wt.settingsTable.changeHandlers[t.dataManagement.category .. t.dataManagement.onChange[i]]() end
 		end
 	end
 
@@ -3591,7 +3601,7 @@ function wt.CreateMultiselector(t)
 
 		--Handle changes
 		if user and type(t.dataManagement) == "table" and type(t.dataManagement.onChange) == "table" then
-			for i = 1, #t.dataManagement.onChange do wt.optionsTable.changeHandlers[t.dataManagement.category .. t.dataManagement.onChange[i]]() end
+			for i = 1, #t.dataManagement.onChange do wt.settingsTable.changeHandlers[t.dataManagement.category .. t.dataManagement.onChange[i]]() end
 		end
 	end
 
@@ -3624,8 +3634,8 @@ function wt.CreateMultiselector(t)
 	--Register starting items
 	for i = 1, #t.items do setToggle(t.items[i], i) end
 
-	--Register to options data management
-	if t.dataManagement then wt.AddOptionsRule(selector, t.dataManagement) end
+	--Register to settings data management
+	if t.dataManagement then wt.AddSettingsDataManagementEntry(selector, t.dataManagement) end
 
 	--Assign dependencies
 	if t.dependencies then wt.AddDependencies(t.dependencies, selector.setEnabled) end
@@ -3723,6 +3733,8 @@ function wt.CreateRadioSelector(t, widget)
 
 	---@class radioSelector : selector
 	---@field toggles? selectorRadioButton[] The list of radio button widgets linked together in this selector
+	---@field frame Frame
+	---@field label FontString
 	local selector = widget and widget.isType and (widget.isType("Selector") or widget.isType("SpecialSelector")) and widget or wt.CreateSelector(t)
 
 	if WidgetToolsDB.lite and t.lite ~= false then return selector end
@@ -3862,6 +3874,8 @@ function wt.CreateCheckboxSelector(t, widget)
 
 	---@class checkboxSelector : multiselector
 	---@field toggles? selectorCheckbox[] The list of checkbox widgets linked together in this selector
+	---@field frame Frame
+	---@field label FontString
 	local selector = widget and widget.isType and widget.isType("Multiselector") and widget or wt.CreateMultiselector(t)
 
 	if WidgetToolsDB.lite and t.lite ~= false then return selector end
@@ -4553,7 +4567,7 @@ function wt.CreateTextbox(t)
 		else
 			--Handle changes
 			if handleChanges and type(t.dataManagement) == "table" and type(t.dataManagement.onChange) == "table" then
-				for i = 1, #t.dataManagement.onChange do wt.optionsTable.changeHandlers[t.dataManagement.category .. t.dataManagement.onChange[i]]() end
+				for i = 1, #t.dataManagement.onChange do wt.settingsTable.changeHandlers[t.dataManagement.category .. t.dataManagement.onChange[i]]() end
 			end
 
 			if not silent then textbox.invoke.loaded(false) end
@@ -4617,7 +4631,7 @@ function wt.CreateTextbox(t)
 
 		--Handle changes
 		if user and type(t.dataManagement) == "table" and type(t.dataManagement.onChange) == "table" then
-			for i = 1, #t.dataManagement.onChange do wt.optionsTable.changeHandlers[t.dataManagement.category .. t.dataManagement.onChange[i]]() end
+			for i = 1, #t.dataManagement.onChange do wt.settingsTable.changeHandlers[t.dataManagement.category .. t.dataManagement.onChange[i]]() end
 		end
 	end
 
@@ -4644,8 +4658,8 @@ function wt.CreateTextbox(t)
 		if k == "_" then textbox.setListener._(v[i].event, v[i].handler, v[i].callIndex) else textbox.setListener[k](v[i].handler, v[i].callIndex) end
 	end end end end
 
-	--Register to options data management
-	if t.dataManagement then wt.AddOptionsRule(textbox, t.dataManagement) end
+	--Register to settings data management
+	if t.dataManagement then wt.AddSettingsDataManagementEntry(textbox, t.dataManagement) end
 
 	--Assign dependencies
 	if t.dependencies then wt.AddDependencies(t.dependencies, textbox.setEnabled) end
@@ -5275,7 +5289,7 @@ function wt.CreateNumeric(t)
 		else
 			--Handle changes
 			if handleChanges and type(t.dataManagement) == "table" and type(t.dataManagement.onChange) == "table" then
-				for i = 1, #t.dataManagement.onChange do wt.optionsTable.changeHandlers[t.dataManagement.category .. t.dataManagement.onChange[i]]() end
+				for i = 1, #t.dataManagement.onChange do wt.settingsTable.changeHandlers[t.dataManagement.category .. t.dataManagement.onChange[i]]() end
 			end
 
 			if not silent then numeric.invoke.loaded(false) end
@@ -5337,7 +5351,7 @@ function wt.CreateNumeric(t)
 
 		--Handle changes
 		if user and type(t.dataManagement) == "table" and type(t.dataManagement.onChange) == "table" then
-			for i = 1, #t.dataManagement.onChange do wt.optionsTable.changeHandlers[t.dataManagement.category .. t.dataManagement.onChange[i]]() end
+			for i = 1, #t.dataManagement.onChange do wt.settingsTable.changeHandlers[t.dataManagement.category .. t.dataManagement.onChange[i]]() end
 		end
 	end
 
@@ -5402,8 +5416,8 @@ function wt.CreateNumeric(t)
 		if k == "_" then numeric.setListener._(v[i].event, v[i].handler, v[i].callIndex) else numeric.setListener[k](v[i].handler, v[i].callIndex) end
 	end end end end
 
-	--Register to options data management
-	if t.dataManagement then wt.AddOptionsRule(numeric, t.dataManagement) end
+	--Register to settings data management
+	if t.dataManagement then wt.AddSettingsDataManagementEntry(numeric, t.dataManagement) end
 
 	--Assign dependencies
 	if t.dependencies then wt.AddDependencies(t.dependencies, numeric.setEnabled) end
@@ -5906,7 +5920,7 @@ function wt.CreateColorPicker(t)
 		else
 			--Handle changes
 			if handleChanges and type(t.dataManagement) == "table" and type(t.dataManagement.onChange) == "table" then
-				for i = 1, #t.dataManagement.onChange do wt.optionsTable.changeHandlers[t.dataManagement.category .. t.dataManagement.onChange[i]]() end
+				for i = 1, #t.dataManagement.onChange do wt.settingsTable.changeHandlers[t.dataManagement.category .. t.dataManagement.onChange[i]]() end
 			end
 
 			if not silent then colorPicker.invoke.loaded(false) end
@@ -5974,7 +5988,7 @@ function wt.CreateColorPicker(t)
 
 		--Handle changes
 		if user and type(t.dataManagement) == "table" and type(t.dataManagement.onChange) == "table" then
-			for i = 1, #t.dataManagement.onChange do wt.optionsTable.changeHandlers[t.dataManagement.category .. t.dataManagement.onChange[i]]() end
+			for i = 1, #t.dataManagement.onChange do wt.settingsTable.changeHandlers[t.dataManagement.category .. t.dataManagement.onChange[i]]() end
 		end
 	end
 
@@ -6050,8 +6064,8 @@ function wt.CreateColorPicker(t)
 		if k == "_" then colorPicker.setListener._(v[i].event, v[i].handler, v[i].callIndex) else colorPicker.setListener[k](v[i].handler, v[i].callIndex) end
 	end end end end
 
-	--Register to options data management
-	if t.dataManagement then wt.AddOptionsRule(colorPicker, t.dataManagement) end
+	--Register to settings data management
+	if t.dataManagement then wt.AddSettingsDataManagementEntry(colorPicker, t.dataManagement) end
 
 	--Assign dependencies
 	if t.dependencies then wt.AddDependencies(t.dependencies, colorPicker.setEnabled) end
@@ -6344,7 +6358,7 @@ end
 ---@param addon string The name of the addon's folder (the addon namespace, not its displayed title)
 ---@param t? aboutPageCreationData Parameters are to be provided in this table
 ---***
----@return settingsPage|nil aboutPage Table containing references to the options canvas [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame), category page and utility functions
+---@return settingsPage|nil aboutPage Table containing references to the canvas [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame), category page and utility functions
 function wt.CreateAboutPage(addon, t)
 	if not addon or not C_AddOns.IsAddOnLoaded(addon) then return end
 
@@ -6737,7 +6751,7 @@ end
 ---@param addon string The name of the addon's folder (the addon namespace, not its displayed title)
 ---@param t dataManagementPageCreationData Parameters are to be provided in this table
 ---***
----@return dataManagementPage|nil profilesPage Table containing references to the settings page, options widgets grouped in subtables and utility functions by category, or, if required parameters are missing, no settings page will be created and the returned value will be nil
+---@return dataManagementPage|nil profilesPage Table containing references to the settings page, settings widgets grouped in subtables and utility functions by category, or, if required parameters are missing, no settings page will be created and the returned value will be nil
 ---@return boolean|nil firstLoad True, if **t.accountData.profiles** did not exist yet, or nil if **dataManagementPage** is also nil
 ---@return boolean|nil newCharacter True, if **t.characterData.activeProfile** did not exist yet, or nil if **dataManagementPage** is also nil
 function wt.CreateDataManagementPage(addon, t)
@@ -7443,12 +7457,12 @@ end
 
 local positioningVisualAids = {}
 
----Create and set up position options for a specified frame within a panel frame
+---Create and set up position management for a specified frame within a panel frame
 ---***
 ---@param addon string The name of the addon's folder (the addon namespace, not its displayed title)
----@param t positionOptionsCreationData Parameters are to be provided in this table
+---@param t positionManagementCreationData Parameters are to be provided in this table
 ---***
----@return positionPanel|nil table Components of the options panel wrapped in a table
+---@return positionPanel|nil table Components of the settings panel wrapped in a table
 function wt. CreatePositionOptions(addon, t)
 	if not addon or not C_AddOns.IsAddOnLoaded(addon) or not type(t) == "table" then return end
 
@@ -7583,10 +7597,9 @@ function wt. CreatePositionOptions(addon, t)
 						wt.SetPosition(t.frame, panel.presetList[i].data.position, true)
 
 						--Update the storage
-						-- wt.ConvertToAbsolutePosition(t.frame) --CHECK if needed
 						wt.CopyValues(t.getData().position, wt.PackPosition(t.frame:GetPoint()))
 
-						--Update the options widgets
+						--Update the settings widgets
 						panel.position.anchor.loadData(false)
 						panel.position.relativePoint.loadData(false)
 						-- panel.position.relativeTo.loadData(false)
@@ -7598,7 +7611,7 @@ function wt. CreatePositionOptions(addon, t)
 					if panel.presetList[i].data.keepInBounds ~= nil then
 						t.frame:SetClampedToScreen(panel.presetList[i].data.keepInBounds) --Update the frame
 						t.getData().keepInBounds = panel.presetList[i].data.keepInBounds --Update the storage
-						if panel.position.keepInBounds then panel.position.keepInBounds.loadData(false) end --Update the options widget
+						if panel.position.keepInBounds then panel.position.keepInBounds.loadData(false) end --Update the settings widget
 					end
 
 					--Screen Layer
@@ -7607,21 +7620,21 @@ function wt. CreatePositionOptions(addon, t)
 						if panel.presetList[i].data.layer.strata then
 							t.frame:SetFrameStrata(panel.presetList[i].data.layer.strata) --Update the frame
 							t.getData().layer.strata = panel.presetList[i].data.layer.strata --Update the storage
-							if panel.layer.strata then panel.layer.strata.loadData(false) end --Update the options widget
+							if panel.layer.strata then panel.layer.strata.loadData(false) end --Update the settings widget
 						end
 
 						--Keep on top
 						if panel.presetList[i].data.layer.keepOnTop ~= nil then
 							t.frame:SetToplevel(panel.presetList[i].data.layer.keepOnTop) --Update the frame
 							t.getData().layer.keepOnTop = panel.presetList[i].data.layer.keepOnTop --Update the storage
-							if panel.layer.keepOnTop then panel.layer.keepOnTop.loadData(false) end --Update the options widget
+							if panel.layer.keepOnTop then panel.layer.keepOnTop.loadData(false) end --Update the settings widget
 						end
 
 						--Frame level
 						if panel.presetList[i].data.layer.level then
 							t.frame:SetFrameLevel(panel.presetList[i].data.layer.level) --Update the frame
 							t.getData().layer.level = panel.presetList[i].data.layer.level --Update the storage
-							if panel.layer.level then panel.layer.level.loadData(false) end --Update the options widget
+							if panel.layer.level then panel.layer.level.loadData(false) end --Update the settings widget
 						end
 					end
 
@@ -7641,7 +7654,7 @@ function wt. CreatePositionOptions(addon, t)
 				function panel.applyPreset(i)
 					if not i or i < 1 or i > #panel.presetList then return false end
 
-					--Apply the preset data to the frame & update the options widgets
+					--Apply the preset data to the frame & update the settings widgets
 					applyPreset(nil, i)
 
 					return true
@@ -7991,7 +8004,7 @@ function wt. CreatePositionOptions(addon, t)
 					--Update the storage
 					wt.CopyValues(t.getData().position, wt.PackPosition(t.frame:GetPoint()))
 
-					--Update the options widgets
+					--Update the settings widgets
 					panel.position.anchor.loadData(false)
 					panel.position.relativePoint.loadData(false)
 					-- panel.position.relativeTo.loadData(false)

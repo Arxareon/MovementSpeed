@@ -38,7 +38,7 @@ $source = Join-Path $source "\[addon]\*"
 $destination = Get-Content -Path $pathFile
 $destination = Join-Path $destination "\[client]\Interface\Addons\[addon]\"
 
-<# Clear the directories & Copy the files #>
+<# Clear the directories & copy the files #>
 
 foreach ($addon in $addons) {
 	foreach ($client in $clients) {

@@ -1,135 +1,130 @@
 --[[ MISC ]]
 
 ---@alias ModifierKey
----|"CTRL"
----|"SHIFT"
----|"ALT"
----|"LCTRL"
----|"RCTRL"
----|"LSHIFT"
----|"RSHIFT"
----|"LALT"
----|"RALT"
----|"any"
-
----@alias FontFlags
----|"MONOCHROME"
----|"OUTLINE"
----|"THICK"
+---| "CTRL"
+---| "SHIFT"
+---| "ALT"
+---| "LCTRL"
+---| "RCTRL"
+---| "LSHIFT"
+---| "RSHIFT"
+---| "LALT"
+---| "RALT"
+---| "any"
 
 ---@alias AnyFrameObject
----|Frame
----|Button
----|CheckButton
----|EditBox
----|Slider
----|Texture
----|FontString
+---| Frame
+---| Button
+---| CheckButton
+---| EditBox
+---| Slider
+---| Texture
+---| FontString
 
 ---@alias AnyScriptType
----|"OnLoad"
----|"OnShow"
----|"OnHide"
----|"OnEnter"
----|"OnLeave"
----|"OnMouseDown"
----|"OnMouseUp"
----|"OnMouseWheel"
----|"OnAttributeChanged"
----|"OnSizeChanged"
----|"OnEvent"
----|"OnUpdate"
----|"OnDragStart"
----|"OnDragStop"
----|"OnReceiveDrag"
----|"PreClick"
----|"OnClick"
----|"PostClick"
----|"OnDoubleClick"
----|"OnValueChanged"
----|"OnMinMaxChanged"
----|"OnUpdateModel"
----|"OnModelCleared"
----|"OnModelLoaded"
----|"OnAnimStarted"
----|"OnAnimFinished"
----|"OnEnterPressed"
----|"OnEscapePressed"
----|"OnSpacePressed"
----|"OnTabPressed"
----|"OnTextChanged"
----|"OnTextSet"
----|"OnCursorChanged"
----|"OnInputLanguageChanged"
----|"OnEditFocusGained"
----|"OnEditFocusLost"
----|"OnHorizontalScroll"
----|"OnVerticalScroll"
----|"OnScrollRangeChanged"
----|"OnCharComposition"
----|"OnChar"
----|"OnKeyDown"
----|"OnKeyUp"
----|"OnGamePadButtonDown"
----|"OnGamePadButtonUp"
----|"OnGamePadStick"
----|"OnColorSelect"
----|"OnHyperlinkEnter"
----|"OnHyperlinkLeave"
----|"OnHyperlinkClick"
----|"OnMessageScrollChanged"
----|"OnMovieFinished"
----|"OnMovieShowSubtitle"
----|"OnMovieHideSubtitle"
----|"OnTooltipSetDefaultAnchor"
----|"OnTooltipCleared"
----|"OnTooltipAddMoney"
----|"OnTooltipSetUnit"
----|"OnTooltipSetItem"
----|"OnTooltipSetSpell"
----|"OnTooltipSetQuest"
----|"OnTooltipSetAchievement"
----|"OnTooltipSetFramestack"
----|"OnTooltipSetEquipmentSet"
----|"OnEnable"
----|"OnDisable"
----|"OnArrowPressed"
----|"OnExternalLink"
----|"OnButtonUpdate"
----|"OnError"
----|"OnDressModel"
----|"OnCooldownDone"
----|"OnPanFinished"
----|"OnUiMapChanged"
----|"OnRequestNewSize"
+---| "OnLoad"
+---| "OnShow"
+---| "OnHide"
+---| "OnEnter"
+---| "OnLeave"
+---| "OnMouseDown"
+---| "OnMouseUp"
+---| "OnMouseWheel"
+---| "OnAttributeChanged"
+---| "OnSizeChanged"
+---| "OnEvent"
+---| "OnUpdate"
+---| "OnDragStart"
+---| "OnDragStop"
+---| "OnReceiveDrag"
+---| "PreClick"
+---| "OnClick"
+---| "PostClick"
+---| "OnDoubleClick"
+---| "OnValueChanged"
+---| "OnMinMaxChanged"
+---| "OnUpdateModel"
+---| "OnModelCleared"
+---| "OnModelLoaded"
+---| "OnAnimStarted"
+---| "OnAnimFinished"
+---| "OnEnterPressed"
+---| "OnEscapePressed"
+---| "OnSpacePressed"
+---| "OnTabPressed"
+---| "OnTextChanged"
+---| "OnTextSet"
+---| "OnCursorChanged"
+---| "OnInputLanguageChanged"
+---| "OnEditFocusGained"
+---| "OnEditFocusLost"
+---| "OnHorizontalScroll"
+---| "OnVerticalScroll"
+---| "OnScrollRangeChanged"
+---| "OnCharComposition"
+---| "OnChar"
+---| "OnKeyDown"
+---| "OnKeyUp"
+---| "OnGamePadButtonDown"
+---| "OnGamePadButtonUp"
+---| "OnGamePadStick"
+---| "OnColorSelect"
+---| "OnHyperlinkEnter"
+---| "OnHyperlinkLeave"
+---| "OnHyperlinkClick"
+---| "OnMessageScrollChanged"
+---| "OnMovieFinished"
+---| "OnMovieShowSubtitle"
+---| "OnMovieHideSubtitle"
+---| "OnTooltipSetDefaultAnchor"
+---| "OnTooltipCleared"
+---| "OnTooltipAddMoney"
+---| "OnTooltipSetUnit"
+---| "OnTooltipSetItem"
+---| "OnTooltipSetSpell"
+---| "OnTooltipSetQuest"
+---| "OnTooltipSetAchievement"
+---| "OnTooltipSetFramestack"
+---| "OnTooltipSetEquipmentSet"
+---| "OnEnable"
+---| "OnDisable"
+---| "OnArrowPressed"
+---| "OnExternalLink"
+---| "OnButtonUpdate"
+---| "OnError"
+---| "OnDressModel"
+---| "OnCooldownDone"
+---| "OnPanFinished"
+---| "OnUiMapChanged"
+---| "OnRequestNewSize"
 
 ---@alias ExtendedHyperlinkType
----|HyperlinkType
----|"addon"
----|"mawpower"
+---| HyperlinkType
+---| "addon"
+---| "mawpower"
 
 ---@class attributeEventData
 ---@field name string
 ---@field handler fun(...: any)
 
 ---@alias WidgetTypeName
----|"SettingsPage"
----|"DataManagementPage"
----|"ActionButton"
----|"Toggle"
----|"Selector"
----|"Multiselector"
----|"Textbox"
----|"Numeric"
----|"ColorPicker"
+---| "SettingsPage"
+---| "DataManagementPage"
+---| "ActionButton"
+---| "Toggle"
+---| "Selector"
+---| "Multiselector"
+---| "Textbox"
+---| "Numeric"
+---| "ColorPicker"
 
 ---@alias AnyWidgetType
----|actionButton
----|toggle
----|selector
----|textbox
----|numeric
----|colorPicker
+---| actionButton
+---| toggle
+---| selector
+---| textbox
+---| numeric
+---| colorPicker
 
 
 --[[ TABLE MANAGEMENT ]]
@@ -210,7 +205,7 @@
 ---@field initialize? fun(container?: Frame, width: number, height: number, name?: string) This function will be called while setting up the container frame to perform specific tasks like creating content child frames right away<hr><p>@*param* `container`? AnyFrameObject ― Reference to the frame to be set as the parent for child objects created during initialization (nil if **WidgetToolsDB.lite** is true)</p><p>@*param* `width` number The current width of the container frame (0 if **WidgetToolsDB.lite** is true)</p><p>@*param* `height` number The current height of the container frame (0 if **WidgetToolsDB.lite** is true)</p><p>@*param* `name`? string The name parameter of the container specified at construction</p>
 
 ---@class initializableOptionsContainer : initializableContainer
----@field initialize? fun(container?: Frame, width: number, height: number, category?: string, keys?: string[], name?: string) This function will be called while setting up the container frame to perform specific tasks like creating content child frames right away<hr><p>@*param* `container`? AnyFrameObject ― Reference to the frame to be set as the parent for child objects created during initialization (nil if **WidgetToolsDB.lite** is true)</p><p>@*param* `width` number The current width of the container frame (0 if **WidgetToolsDB.lite** is true)</p><p>@*param* `height` number The current height of the container frame (0 if **WidgetToolsDB.lite** is true)</p><p>@*param* `category`? string A unique string used for categorizing options data management rules & change handler scripts</p><p>@*param* `keys`? string[] A list of unique strings appended to **category** linking a subset of options data rules to be handled together in the specified order</p><p>@*param* `name`? string The name parameter of the container specified at construction</p>
+---@field initialize? fun(container?: Frame, width: number, height: number, category?: string, keys?: string[], name?: string) This function will be called while setting up the container frame to perform specific tasks like creating content child frames right away<hr><p>@*param* `container`? AnyFrameObject ― Reference to the frame to be set as the parent for child objects created during initialization (nil if **WidgetToolsDB.lite** is true)</p><p>@*param* `width` number The current width of the container frame (0 if **WidgetToolsDB.lite** is true)</p><p>@*param* `height` number The current height of the container frame (0 if **WidgetToolsDB.lite** is true)</p><p>@*param* `category`? string A unique string used for categorizing settings data management rules & change handler scripts</p><p>@*param* `keys`? string[] A list of unique strings appended to **category** linking a subset of settings data rules to be handled together in the specified order</p><p>@*param* `name`? string The name parameter of the container specified at construction</p>
 
 ---@class arrangementRules
 ---@field newRow? boolean Place the frame into a new row within its container instead of adding it to a specified row | ***Default:*** true
@@ -309,7 +304,7 @@
 ---@class fontData
 ---@field path string Path to the font file relative to the WoW client directory<ul><li>***Note:*** The use of `/` as separator is recommended (Example: Interface/AddOns/AddonNameKey/Fonts/Font.ttf), otherwise use `\\`.</li><li>***Note:*** **File format:** Font files must be in TTF or OTF format.</li></ul>
 ---@field size number The default display size of the new font object
----@field style TBFFlags|FontFlags Comma separated string of font styling flags
+---@field style TBFFlags Comma separated string of font styling flags
 
 ---@class fontCreationData
 ---@field name string A unique identifier name to set for the hew font object to be accessed by and referred to later<ul><li>***Note:*** If a font object with that name already exists, it will *not* be overwritten and its reference key will be returned.</li><li>***Example:*** Access the reference to the font object created via the globals table: `local customFont = _G["CustomFontName"]`.</li></ul>
@@ -537,10 +532,10 @@
 --[[ CHAT CONTROL ]]
 
 ---@alias chatCommandColorNames
----|"title"
----|"content"
----|"command"
----|"description"
+---| "title"
+---| "content"
+---| "command"
+---| "description"
 
 ---@class chatCommandColors
 ---@field title colorData Color for the addon title used for branding chat messages
@@ -626,32 +621,32 @@
 ---@field dependencies? dependencyRule[] Automatically enable or disable the widget based on the set of rules described in subtables
 
 
---[[ OPTIONS DATA MANAGEMENT ]]
+--[[ SETTINGS DATA MANAGEMENT ]]
 
----@class optionsRule
+---@class settingsRule
 ---@field widget checkbox|radioButton|radioSelector|checkboxSelector|specialSelector|dropdownSelector|textbox|multilineEditbox|numericSlider|colorPicker Reference to the widget to be saved & loaded data to/from with defined **loadData** and **saveData** functions
----@field onChange? string[] List of keys referencing functions to be called after the value of **widget** was changed by the user or via options data management
+---@field onChange? string[] List of keys referencing functions to be called after the value of **widget** was changed by the user or via settings data management
 
----@class optionsData
----@field category? string A unique string used for categorizing options data management rules & change handler scripts | ***Default:*** "WidgetTools" *(register as a global rule)*
----@field key? string A unique string appended to **category** linking a subset of options data rules to be handled together | ***Default:*** "" *(category-wide rule)*
----@field index? integer Set when to place this widget in the execution order when saving or loading batched options data | ***Default:*** *placed at the end of the current list*
----@field onChange? table<string|integer, function|string> table<string|integer, function|string> List of new or already defined functions to call after the value of the widget was changed by the user or via options data management<ul><li>**[*key*]**? string|integer ― A unique string appended to **category** to point to a newly defined function to be added to options data management or just the index of the next function name | ***Default:*** *next assigned index*</li><li>**[*value*]** function|string ― The new function to register under its unique key, or the key of an already existing function</li><ul><li>***Note:*** Function definitions will be replaced by key references when they are registered to options data management. Functions registered under duplicate keys are overwritten.</li></ul></ul>
+---@class settingsData
+---@field category? string A unique string used for categorizing settings data management rules & change handler scripts | ***Default:*** "WidgetTools" *(register as a global rule)*
+---@field key? string A unique string appended to **category** linking a subset of settings data rules to be handled together | ***Default:*** "" *(category-wide rule)*
+---@field index? integer Set when to place this widget in the execution order when saving or loading batched settings data | ***Default:*** *placed at the end of the current list*
+---@field onChange? table<string|integer, function|string> table<string|integer, function|string> List of new or already defined functions to call after the value of the widget was changed by the user or via settings data management<ul><li>**[*key*]**? string|integer ― A unique string appended to **category** to point to a newly defined function to be added to settings data management or just the index of the next function name | ***Default:*** *next assigned index*</li><li>**[*value*]** function|string ― The new function to register under its unique key, or the key of an already existing function</li><ul><li>***Note:*** Function definitions will be replaced by key references when they are registered to settings data management. Functions registered under duplicate keys are overwritten.</li></ul></ul>
 
----@class optionsData_collection
----@field category? string A unique string used for categorizing options data management rules & change handler scripts | ***Default:*** **addon**
----@field keys? string[] An ordered list of unique strings appended to **category** linking a subset of options data rules to be handled together in the specified order via this settings category page | ***Default:*** { **t.name** or "" }
+---@class settingsData_collection
+---@field category? string A unique string used for categorizing settings data management rules & change handler scripts | ***Default:*** **addon**
+---@field keys? string[] An ordered list of unique strings appended to **category** linking a subset of settings data rules to be handled together in the specified order via this settings category page | ***Default:*** { **t.name** }
 
----@class optionsWidget
----@field dataManagement? optionsData If set, register this widget to options data management for batched data saving & loading and handling data changes
+---@class settingsWidget
+---@field dataManagement? settingsData If set, register this widget to settings data management for batched data saving & loading and handling data changes
 ---@field instantSave? boolean Immediately commit the data to storage whenever it's changed via the widget | ***Default:*** true<ul><li>***Note:*** Any unsaved data will be saved when ***WidgetToolbox*.SaveOptionsData(...)** is executed.</li></ul>
 
----@class optionsCategory
----@field dataManagement? optionsData_collection If set, register this settings page to options data management for batched data saving & loading and handling data changes of all linked widgets
+---@class settingsCategoryData
+---@field dataManagement? settingsData_collection If set, register this settings page to settings data management for batched data saving & loading and handling data changes of all linked widgets
 
----@class optionsFrame
+---@class settingsFrame
 ---@field showDefault? boolean If true, show the default value of the widget in its tooltip | ***Default:*** true
----@field utilityMenu? boolean If true, assign a context menu to the options widget frame to allow for quickly resetting changes or the default value | ***Default:*** true
+---@field utilityMenu? boolean If true, assign a context menu to the settings widget frame to allow for quickly resetting changes or the default value | ***Default:*** true
 
 
 --[[ POPUP ]]
@@ -854,18 +849,19 @@
 ---@field static? boolean If true, disable the "Restore Defaults" & "Revert Changes" buttons | ***Default:*** false
 
 ---@class settingsPageEvents
----@field onLoad? fun(user: boolean) Called after the data of the options widgets linked to this page has been loaded from storage<hr><p>@*param* `user` boolean — Marking whether the call is due to a user interaction or not</p>
----@field onSave? fun(user: boolean) Called after the data of the options widgets linked to this page has been committed to storage<hr><p>@*param* `user` boolean — Marking whether the call is due to a user interaction or not</p>
+---@field onLoad? fun(user: boolean) Called after the data of the settings widgets linked to this page has been loaded from storage<hr><p>@*param* `user` boolean — Marking whether the call is due to a user interaction or not</p>
+---@field onSave? fun(user: boolean) Called after the data of the settings widgets linked to this page has been committed to storage<hr><p>@*param* `user` boolean — Marking whether the call is due to a user interaction or not</p>
+---@field onApply? fun(user: boolean) Called after the data of the settings widgets linked to this page has been applied by calling change handlers<hr><p>@*param* `user` boolean — Marking whether the call is due to a user interaction or not</p>
 ---@field onCancel? fun(user: boolean) Called after the changes are scrapped (for instance when the custom "Revert Changes" button is clicked)<hr><p>@*param* `user` boolean — Marking whether the call is due to a user interaction or not</p>
----@field onDefault? fun(user: boolean, category: boolean) Called after options data handled by this settings page has been restored to default values (for example when the "Accept" or "These Settings" - affecting this settings category page only - is clicked in the dialogue opened by clicking on the "Restore Defaults" button)<hr><p>@*param* `user` boolean — Marking whether the call is due to a user interaction or not</p><p>@*param* `category` boolean — Marking whether the call is through **[*optionsCategory*].defaults(...)** or not (or example when "All Settings" have been clicked)</p>
+---@field onDefault? fun(user: boolean, category: boolean) Called after settings data handled by this settings page has been restored to default values (for example when the "Accept" or "These Settings" - affecting this settings category page only - is clicked in the dialogue opened by clicking on the "Restore Defaults" button)<hr><p>@*param* `user` boolean — Marking whether the call is due to a user interaction or not</p><p>@*param* `category` boolean — Marking whether the call is through **[*settingsCategory*].defaults(...)** or not (or example when "All Settings" have been clicked)</p>
 
----@class settingsPageCreationData : settingsPageCreationData_base, describableObject, optionsCategory, settingsPageEvents, initializableOptionsContainer, liteObject
+---@class settingsPageCreationData : settingsPageCreationData_base, describableObject, settingsCategoryData, settingsPageEvents, initializableOptionsContainer, liteObject
 ---@field append? boolean When setting the name of the settings category page, append **t.name** after **addon** | ***Default:*** true if **t.name** ~= nil
 ---@field icon? string Path to the texture file to use as the icon of this settings page | ***Default:*** *the addon's logo specified in its TOC file with the "IconTexture" tag*
 ---@field titleIcon? boolean Append **t.icon** to the title of the button of the setting page in the AddOns list of the Settings window as well | ***Default:*** true if **t.register == true**
 ---@field scroll? settingsPageScrollData If set, make the canvas frame scrollable by creating a [ScrollFrame](https://wowpedia.fandom.com/wiki/UIOBJECT_ScrollFrame) as its child
----@field autoSave? boolean If true, automatically save the values of all widgets registered for options data management under options keys listed in **t.dataManagement.keys**, committing their data to storage via ***WidgetToolbox*.SaveOptionsData(...)** | ***Default:*** true if **t.dataManagement.keys** ~= nil<ul><li>***Note:*** If **t.dataManagement.keys** is not set, the automatic load will not be executed even if this is set to true.</li></ul>
----@field autoLoad? boolean If true, automatically load all data to the widgets registered for options data management under options keys listed in **t.dataManagement.keys** from storage via ***WidgetToolbox*.LoadOptionsData(...)** | ***Default:*** true if **t.dataManagement.keys** ~= nil<ul><li>***Note:*** If **t.dataManagement.keys** is not set, the automatic load will not be executed even if this is set to true.</li></ul>
+---@field autoSave? boolean If true, automatically save the values of all widgets registered for settings data management under settings keys listed in **t.dataManagement.keys**, committing their data to storage via ***WidgetToolbox*.SaveOptionsData(...)** | ***Default:*** true if **t.dataManagement.keys** ~= nil<ul><li>***Note:*** If **t.dataManagement.keys** is not set, the automatic load will not be executed even if this is set to true.</li></ul>
+---@field autoLoad? boolean If true, automatically load all data to the widgets registered for settings data management under settings keys listed in **t.dataManagement.keys** from storage via ***WidgetToolbox*.LoadOptionsData(...)** | ***Default:*** true if **t.dataManagement.keys** ~= nil<ul><li>***Note:*** If **t.dataManagement.keys** is not set, the automatic load will not be executed even if this is set to true.</li></ul>
 ---@field arrangement? arrangementData_settingsPage If set, arrange the content added to the container frame during initialization into stacked rows based on the specifications provided in this table
 
 ---@class aboutPageCreationData : settingsPageCreationData_base
@@ -879,7 +875,7 @@
 ---@field description? string Text to be shown as the description below the title of the settings page | ***Default:*** *describing profiles & backup*
 ---@field accountData profileStorage|table Reference to the account-bound SavedVariables addon database where profile data is to be stored<ul><li>***Note:*** A subtable will be created under the key **profiles** if it doesn't already exist, any other keys will be removed (any possible old data will be recovered and incorporated into the active profile data).</li></ul>
 ---@field characterData characterProfileData|table Reference to the character-specific SavedVariablesPerCharacter addon database where selected profiles are to be specified<ul><li>***Note:*** An integer value will be created under the key **activeProfile** if it doesn't already exist in this table.</li></ul>
----@field settingsData dataManagementSettingsData|table Reference to the SavedVariables or SavedVariablesPerCharacter table where settings specifications are to be stored and loaded from<ul><li>***Note:*** A boolean value will be created under the key **compactBackup** if it didn't already exist in this table.</li></li></ul></ul>
+---@field settingsData dataManagementSettingsData|table Reference to the SavedVariables or SavedVariablesPerCharacter table where settings specifications are to be stored and loaded from<ul><li>***Note:*** A boolean value will be created under the key **compactBackup** if it didn't already exist in this table.</li></ul>
 ---@field defaultsTable table A static table containing all default settings values to be cloned when creating a new profile
 ---@field valueChecker? fun(key: number|string, value: any): boolean Helper function for validating values when checking profile data, returning true if the value is to be accepted as valid
 ---@field recoveryMap? table<string, recoveryData>|fun(tableToCheck: table, recoveredData: recoveredData): recoveryMap: table<string, recoveryData>|nil Static map or function returning a dynamically creatable map for removed but recoverable data
@@ -895,8 +891,8 @@
 --[ Settings Category ]
 
 ---@class settingsCategoryCreationData
----@field onLoad? fun(user: boolean) Called after the data of the options widgets linked to all pages of this settings category has been loaded from storage<hr><p>@*param* `user` boolean — Marking whether the call is due to a user interaction or not</p>
----@field onDefaults? fun(user: boolean) Called after options data handled by all pages of this settings category has been restored to default values (for example when the "All Settings" option is clicked in the dialogue opened by clicking on the "Restore Defaults" button)<hr><p>@*param* `user` boolean — Marking whether the call is due to a user interaction or not</p>
+---@field onLoad? fun(user: boolean) Called after the data of the settings widgets linked to all pages of this settings category has been loaded from storage<hr><p>@*param* `user` boolean — Marking whether the call is due to a user interaction or not</p>
+---@field onDefaults? fun(user: boolean) Called after settings data handled by all pages of this settings category has been restored to default values (for example when the "All Settings" option is clicked in the dialogue opened by clicking on the "Restore Defaults" button)<hr><p>@*param* `user` boolean — Marking whether the call is due to a user interaction or not</p>
 
 
 --[[ WIDGETS ]]
@@ -910,25 +906,25 @@
 --[ Button ]
 
 ---@alias ButtonType
----|actionButton
----|simpleButton
----|customButton
+---| actionButton
+---| simpleButton
+---| customButton
 
 ---@alias ButtonEventTag
----|"enabled"
----|"trigger"
----|string
+---| "enabled"
+---| "trigger"
+---| string
 
 --| Event handlers
 
 ---@alias ButtonEventHandler_enabled
----|fun(self: ButtonType, state: boolean) Called when an "enabled" event is invoked after **button.setEnabled(...)** was called<hr><p>@*param* `self` ButtonType ― Reference to the widget</p><p>@*param* `state` boolean ― True if the widget is enabled</p>
+---| fun(self: ButtonType, state: boolean) Called when an "enabled" event is invoked after **button.setEnabled(...)** was called<hr><p>@*param* `self` ButtonType ― Reference to the widget</p><p>@*param* `state` boolean ― True if the widget is enabled</p>
 
 ---@alias ButtonEventHandler_trigger
----|fun(self: ButtonType) Called when a "trigger" event is invoked after **button.trigger(...)** was called<hr><p>@*param* `self` ButtonType ― Reference to the widget</p><p>@*param* `user` boolean ― True if the event was invoked by an action taken by the user</p>
+---| fun(self: ButtonType) Called when a "trigger" event is invoked after **button.trigger(...)** was called<hr><p>@*param* `self` ButtonType ― Reference to the widget</p><p>@*param* `user` boolean ― True if the event was invoked by an action taken by the user</p>
 
 ---@alias ButtonEventHandler_any
----|fun(self: ButtonType, ...: any) Called when a custom event is invoked<hr><p>@*param* `self` ButtonType ― Reference to the widget</p><p>@*param* `...` any — Any leftover arguments</p>
+---| fun(self: ButtonType, ...: any) Called when a custom event is invoked<hr><p>@*param* `self` ButtonType ― Reference to the widget</p><p>@*param* `...` any — Any leftover arguments</p>
 
 --| Parameters
 
@@ -971,32 +967,32 @@
 --[ Toggle ]
 
 ---@alias ToggleType
----|toggle
----|checkbox
----|radioButton
+---| toggle
+---| checkbox
+---| radioButton
 
 ---@alias ToggleEventTag
----|"enabled"
----|"loaded"
----|"toggled"
----|string
+---| "enabled"
+---| "loaded"
+---| "toggled"
+---| string
 
 --| Event handlers
 
 ---@alias ToggleEventHandler_enabled
----|fun(self: ToggleType, state: boolean) Called when an "enabled" event is invoked after **toggle.setEnabled(...)** was called<hr><p>@*param* `self` ToggleType ― Reference to the button widget</p><p>@*param* `state` boolean ― True if the widget is enabled</p>
+---| fun(self: ToggleType, state: boolean) Called when an "enabled" event is invoked after **toggle.setEnabled(...)** was called<hr><p>@*param* `self` ToggleType ― Reference to the button widget</p><p>@*param* `state` boolean ― True if the widget is enabled</p>
 
 ---@alias ToggleEventHandler_loaded
----|fun(self: ToggleType, success: boolean) Called when an "loaded" event is invoked after the data of this widget has been loaded from storage<hr><p>@*param* `self` ToggleType ― Reference to the widget</p><p>@*param* `success` boolean ― True if data was returned by **t.getData()** and it was loaded to the widget</p>
+---| fun(self: ToggleType, success: boolean) Called when an "loaded" event is invoked after the data of this widget has been loaded from storage<hr><p>@*param* `self` ToggleType ― Reference to the widget</p><p>@*param* `success` boolean ― True if data was returned by **t.getData()** and it was loaded to the widget</p>
 
 ---@alias ToggleEventHandler_saved
----|fun(self: ToggleType, success: boolean) Called when an "saved" event is invoked after the data of this widget has been saved to storage<hr><p>@*param* `self` ToggleType ― Reference to the widget</p><p>@*param* `success` boolean ― True if data was committed successfully via **t.saveData(...)**</p>
+---| fun(self: ToggleType, success: boolean) Called when an "saved" event is invoked after the data of this widget has been saved to storage<hr><p>@*param* `self` ToggleType ― Reference to the widget</p><p>@*param* `success` boolean ― True if data was committed successfully via **t.saveData(...)**</p>
 
 ---@alias ToggleEventHandler_toggled
----|fun(self: ToggleType, state: boolean, user: boolean) Called when an "toggled" event is invoked after **toggle.setState(...)** was called<hr><p>@*param* `self` ToggleType ― Reference to the toggle widget</p><p>@*param* `state` boolean ― True if the widget is enabled</p><p>@*param* `user` boolean ― True if the event was invoked by an action taken by the user</p>
+---| fun(self: ToggleType, state: boolean, user: boolean) Called when an "toggled" event is invoked after **toggle.setState(...)** was called<hr><p>@*param* `self` ToggleType ― Reference to the toggle widget</p><p>@*param* `state` boolean ― True if the widget is enabled</p><p>@*param* `user` boolean ― True if the event was invoked by an action taken by the user</p>
 
 ---@alias ToggleEventHandler_any
----|fun(self: ToggleType, ...: any) Called when a custom event is invoked<hr><p>@*param* `self` ToggleType ― Reference to the widget</p><p>@*param* `...` any — Any leftover arguments</p>
+---| fun(self: ToggleType, ...: any) Called when a custom event is invoked<hr><p>@*param* `self` ToggleType ― Reference to the widget</p><p>@*param* `...` any — Any leftover arguments</p>
 
 --| Parameters
 
@@ -1032,14 +1028,14 @@
 
 --| Constructors
 
----@class toggleCreationData : togglableObject, optionsWidget
+---@class toggleCreationData : togglableObject, settingsWidget
 ---@field listeners? toggleEventListeners Table of key, value pairs of custom widget event tags and functions to assign as event handlers to call on trigger
 ---@field getData? fun(): state: boolean|nil Called to (if needed, modify and) load the widget data from storage<hr><p>@*return* `state` boolean|nil | ***Default:*** false</p>
 ---@field saveData? fun(state: boolean) Called to (if needed, modify and) save the widget data to storage<hr><p>@*param* `state` boolean</p>
 ---@field value? boolean The starting state of the widget to set during initialization | ***Default:*** **t.getData()** or **t.default** if invalid
 ---@field default? boolean Default value of the widget | ***Default:*** false
 
----@class checkboxCreationData : toggleCreationData, labeledChildObject, tooltipDescribableObject, arrangeableObject, positionableObject, visibleObject_base, liteObject, optionsFrame
+---@class checkboxCreationData : toggleCreationData, labeledChildObject, tooltipDescribableObject, arrangeableObject, positionableObject, visibleObject_base, liteObject, settingsFrame
 ---@field name? string Unique string used to set the frame name | ***Default:*** "Toggle"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
 ---@field size? sizeData_checkbox
 ---@field font? labelFontOptions List of the [Font](https://wowpedia.fandom.com/wiki/UIOBJECT_Font) object names to be used for the label | ***Default:*** *normal sized default Blizzard UI fonts*<ul><li>***Note:*** A new font object (or a modified copy of an existing one) can be created via ***WidgetToolbox*.CreateFont(...)** (even within this table definition).</li></ul>
@@ -1053,103 +1049,103 @@
 --[ Selector ]
 
 ---@alias SelectorType
----|selector
----|radioSelector
----|dropdownSelector
+---| selector
+---| radioSelector
+---| dropdownSelector
 
 ---@alias SpecialSelectorType
----|selector
----|specialSelector
+---| selector
+---| specialSelector
 
 ---@alias SpecialSelectorEventTag
----|"enabled"
----|"loaded"
----|"selected"
----|string
+---| "enabled"
+---| "loaded"
+---| "selected"
+---| string
 
 ---@alias MultiselectorType
----|multiselector
----|checkboxSelector
+---| multiselector
+---| checkboxSelector
 
 ---@alias SelectorEventTag
----|SpecialSelectorEventTag
----|"updated"
+---| SpecialSelectorEventTag
+---| "updated"
 
 ---@alias MultiselectorEventTag
----|SelectorEventTag
----|"limited"
+---| SelectorEventTag
+---| "limited"
 
 ---@alias DropdownSelectorEventTag
----|SelectorEventTag
----|"open"
+---| SelectorEventTag
+---| "open"
 
 ---@alias SpecialSelectorItemset
----|"anchor" Using the set of [AnchorPoint](https://warcraft.wiki.gg/wiki/Anchors) items
----|"justifyH" Using the set of horizontal text alignment items (JustifyH)
----|"justifyV" Using the set of vertical text alignment items (JustifyV)
----|"frameStrata" Using the set of [FrameStrata](https://warcraft.wiki.gg/wiki/Frame_Strata) items (excluding "WORLD")
+---| "anchor" Using the set of [AnchorPoint](https://warcraft.wiki.gg/wiki/Anchors) items
+---| "justifyH" Using the set of horizontal text alignment items (JustifyH)
+---| "justifyV" Using the set of vertical text alignment items (JustifyV)
+---| "frameStrata" Using the set of [FrameStrata](https://warcraft.wiki.gg/wiki/Frame_Strata) items (excluding "WORLD")
 
 --| Event handlers
 
 ---@alias SelectorEventHandler_enabled
----|fun(self: SelectorType, state: boolean) Called when an "enabled" event is invoked after **selector.setEnabled(...)** was called<hr><p>@*param* `self` SelectorType ― Reference to the selector widget</p><p>@*param* `state` boolean ― True if the widget is enabled</p>
+---| fun(self: SelectorType, state: boolean) Called when an "enabled" event is invoked after **selector.setEnabled(...)** was called<hr><p>@*param* `self` SelectorType ― Reference to the selector widget</p><p>@*param* `state` boolean ― True if the widget is enabled</p>
 
 ---@alias SelectorEventHandler_loaded
----|fun(self: SelectorType, success: boolean) Called when an "loaded" event is invoked after the data of this widget has been loaded from storage<hr><p>@*param* `self` SelectorType ― Reference to the selector widget</p><p>@*param* `success` boolean ― True if data was returned by **t.getData()** and it was loaded to the widget</p>
+---| fun(self: SelectorType, success: boolean) Called when an "loaded" event is invoked after the data of this widget has been loaded from storage<hr><p>@*param* `self` SelectorType ― Reference to the selector widget</p><p>@*param* `success` boolean ― True if data was returned by **t.getData()** and it was loaded to the widget</p>
 
 ---@alias SelectorEventHandler_saved
----|fun(self: SelectorType, success: boolean) Called when an "saved" event is invoked after the data of this widget has been saved to storage<hr><p>@*param* `self` SelectorType ― Reference to the selector widget</p><p>@*param* `success` boolean ― True if data was committed successfully via **t.saveData(...)**</p>
+---| fun(self: SelectorType, success: boolean) Called when an "saved" event is invoked after the data of this widget has been saved to storage<hr><p>@*param* `self` SelectorType ― Reference to the selector widget</p><p>@*param* `success` boolean ― True if data was committed successfully via **t.saveData(...)**</p>
 
 ---@alias SelectorEventHandler_selected
----|fun(self: SelectorType, selected?: integer, user: boolean) Called when an "selected" event is invoked after **selector.setSelected(...)** was called or an option was clicked or cleared<hr><p>@*param* `self` SelectorType ― Reference to the selector widget</p><p>@*param* `selected` integer ― The index of the currently selected item</p><p>@*param* `user` boolean ― True if the event was invoked by an action taken by the user</p>
+---| fun(self: SelectorType, selected?: integer, user: boolean) Called when an "selected" event is invoked after **selector.setSelected(...)** was called or an option was clicked or cleared<hr><p>@*param* `self` SelectorType ― Reference to the selector widget</p><p>@*param* `selected` integer ― The index of the currently selected item</p><p>@*param* `user` boolean ― True if the event was invoked by an action taken by the user</p>
 
 ---@alias SelectorEventHandler_updated
----|fun(self: SelectorType) Called when an "updated" event is invoked after **selector.updatedItems(...)** was called<hr><p>@*param* `self` SelectorType ― Reference to the selector widget</p>
+---| fun(self: SelectorType) Called when an "updated" event is invoked after **selector.updatedItems(...)** was called<hr><p>@*param* `self` SelectorType ― Reference to the selector widget</p>
 
 ---@alias SelectorEventHandler_added
----|fun(self: SelectorType, toggle: toggle) Called when a new toggle item is added to the selector via **selector.updatedItems(...)**<hr><p>@*param* `self` SelectorType ― Reference to the selector widget</p><p>@*param* `toggle` toggle ― Reference to the toggle widget added to the selector</p>
+---| fun(self: SelectorType, toggle: toggle) Called when a new toggle item is added to the selector via **selector.updatedItems(...)**<hr><p>@*param* `self` SelectorType ― Reference to the selector widget</p><p>@*param* `toggle` toggle ― Reference to the toggle widget added to the selector</p>
 
 ---@alias SelectorEventHandler_any
----|fun(self: SelectorType, ...: any) Called when a custom event is invoked<hr><p>@*param* `self` SelectorType ― Reference to the widget</p><p>@*param* `...` any — Any leftover arguments</p>
+---| fun(self: SelectorType, ...: any) Called when a custom event is invoked<hr><p>@*param* `self` SelectorType ― Reference to the widget</p><p>@*param* `...` any — Any leftover arguments</p>
 
 ---@alias SpecialSelectorEventHandler_enabled
----|fun(self: SpecialSelectorType, state: boolean) Called when an "enabled" event is invoked after **selector.setEnabled(...)** was called<hr><p>@*param* `self` SelectorType ― Reference to the selector widget</p><p>@*param* `state` boolean ― True if the widget is enabled</p>
+---| fun(self: SpecialSelectorType, state: boolean) Called when an "enabled" event is invoked after **selector.setEnabled(...)** was called<hr><p>@*param* `self` SelectorType ― Reference to the selector widget</p><p>@*param* `state` boolean ― True if the widget is enabled</p>
 
 ---@alias SpecialSelectorEventHandler_loaded
----|fun(self: SpecialSelectorType, success: boolean) Called when an "loaded" event is invoked after the data of this widget has been loaded from storage<hr><p>@*param* `self` SelectorType ― Reference to the selector widget</p><p>@*param* `success` boolean ― True if data was returned by **t.getData()** and it was loaded to the widget</p>
+---| fun(self: SpecialSelectorType, success: boolean) Called when an "loaded" event is invoked after the data of this widget has been loaded from storage<hr><p>@*param* `self` SelectorType ― Reference to the selector widget</p><p>@*param* `success` boolean ― True if data was returned by **t.getData()** and it was loaded to the widget</p>
 
 ---@alias SpecialSelectorEventHandler_saved
----|fun(self: SpecialSelectorType, success: boolean) Called when an "saved" event is invoked after the data of this widget has been saved to storage<hr><p>@*param* `self` SelectorType ― Reference to the selector widget</p><p>@*param* `success` boolean ― True if data was committed successfully via **t.saveData(...)**</p>
+---| fun(self: SpecialSelectorType, success: boolean) Called when an "saved" event is invoked after the data of this widget has been saved to storage<hr><p>@*param* `self` SelectorType ― Reference to the selector widget</p><p>@*param* `success` boolean ― True if data was committed successfully via **t.saveData(...)**</p>
 
 ---@alias SpecialSelectorEventHandler_selected
----|fun(self: SpecialSelectorType, selected?: FramePoint|JustifyHorizontal|JustifyVertical|FrameStrata, user: boolean) Called when an "selected" event is invoked after **selector.setSelected(...)** was called or an option was clicked or cleared<hr><p>@*param* `self` SelectorType ― Reference to the selector widget</p><p>@*param* `selected` AnchorPoint|JustifyH|JustifyV|FrameStrata ― The currently selected value</p><p>@*param* `user` boolean ― True if the event was invoked by an action taken by the user</p>
+---| fun(self: SpecialSelectorType, selected?: FramePoint|JustifyHorizontal|JustifyVertical|FrameStrata, user: boolean) Called when an "selected" event is invoked after **selector.setSelected(...)** was called or an option was clicked or cleared<hr><p>@*param* `self` SelectorType ― Reference to the selector widget</p><p>@*param* `selected` AnchorPoint|JustifyH|JustifyV|FrameStrata ― The currently selected value</p><p>@*param* `user` boolean ― True if the event was invoked by an action taken by the user</p>
 
 ---@alias SpecialSelectorEventHandler_any
----|fun(self: SpecialSelectorType, ...: any) Called when a custom event is invoked<hr><p>@*param* `self` SpecialSelectorType ― Reference to the widget</p><p>@*param* `...` any — Any leftover arguments</p>
+---| fun(self: SpecialSelectorType, ...: any) Called when a custom event is invoked<hr><p>@*param* `self` SpecialSelectorType ― Reference to the widget</p><p>@*param* `...` any — Any leftover arguments</p>
 
 ---@alias MultiselectorEventHandler_enabled
----|fun(self: MultiselectorType, state: boolean) Called when an "enabled" event is invoked after **selector.setEnabled(...)** was called<hr><p>@*param* `self` MultiselectorType ― Reference to the selector widget</p><p>@*param* `state` boolean ― True if the widget is enabled</p>
+---| fun(self: MultiselectorType, state: boolean) Called when an "enabled" event is invoked after **selector.setEnabled(...)** was called<hr><p>@*param* `self` MultiselectorType ― Reference to the selector widget</p><p>@*param* `state` boolean ― True if the widget is enabled</p>
 
 ---@alias MultiselectorEventHandler_loaded
----|fun(self: MultiselectorType, success: boolean) Called when an "loaded" event is invoked after the data of this widget has been loaded from storage<hr><p>@*param* `self` MultiselectorType ― Reference to the selector widget</p><p>@*param* `success` boolean ― True if data was returned by **t.getData()** and it was loaded to the widget</p>
+---| fun(self: MultiselectorType, success: boolean) Called when an "loaded" event is invoked after the data of this widget has been loaded from storage<hr><p>@*param* `self` MultiselectorType ― Reference to the selector widget</p><p>@*param* `success` boolean ― True if data was returned by **t.getData()** and it was loaded to the widget</p>
 
 ---@alias MultiselectorEventHandler_saved
----|fun(self: MultiselectorType, success: boolean) Called when an "saved" event is invoked after the data of this widget has been saved to storage<hr><p>@*param* `self` MultiselectorType ― Reference to the selector widget</p><p>@*param* `success` boolean ― True if data was committed successfully via **t.saveData(...)**</p>
+---| fun(self: MultiselectorType, success: boolean) Called when an "saved" event is invoked after the data of this widget has been saved to storage<hr><p>@*param* `self` MultiselectorType ― Reference to the selector widget</p><p>@*param* `success` boolean ― True if data was committed successfully via **t.saveData(...)**</p>
 
 ---@alias MultiselectorEventHandler_selected
----|fun(self: MultiselectorType, selections: boolean[], user: boolean) Called when an "selected" event is invoked after **selector.setSelected(...)** was called or an option was clicked or cleared<hr><p>@*param* `self` MultiselectorType ― Reference to the selector widget</p><p>@*param* `selections` boolean[] ― Indexed list of the current item states</p><p>@*param* `user` boolean ― True if the event was invoked by an action taken by the user</p>
+---| fun(self: MultiselectorType, selections: boolean[], user: boolean) Called when an "selected" event is invoked after **selector.setSelected(...)** was called or an option was clicked or cleared<hr><p>@*param* `self` MultiselectorType ― Reference to the selector widget</p><p>@*param* `selections` boolean[] ― Indexed list of the current item states</p><p>@*param* `user` boolean ― True if the event was invoked by an action taken by the user</p>
 
 ---@alias MultiselectorEventHandler_updated
----|fun(self: MultiselectorType) Called when an "updated" event is invoked after **selector.updatedItems(...)** was called<hr><p>@*param* `self` MultiselectorType ― Reference to the selector widget</p>
+---| fun(self: MultiselectorType) Called when an "updated" event is invoked after **selector.updatedItems(...)** was called<hr><p>@*param* `self` MultiselectorType ― Reference to the selector widget</p>
 
 ---@alias MultiselectorEventHandler_added
----|fun(self: MultiselectorType, toggle: toggle) Called when a new toggle item is added to the selector via **selector.updatedItems(...)**<hr><p>@*param* `self` MultiselectorType ― Reference to the selector widget</p><p>@*param* `toggle` toggle ― Reference to the toggle widget added to the selector</p>
+---| fun(self: MultiselectorType, toggle: toggle) Called when a new toggle item is added to the selector via **selector.updatedItems(...)**<hr><p>@*param* `self` MultiselectorType ― Reference to the selector widget</p><p>@*param* `toggle` toggle ― Reference to the toggle widget added to the selector</p>
 
 ---@alias MultiselectorEventHandler_limited
----|fun(self: MultiselectorType, min: boolean, max: boolean, passed: boolean) Called when a "limited" event is invoked after a limit update occurs<hr><p>@*param* `self` MultiselectorType ― Reference to the selector widget</p><p>@*param* `min` boolean ― True, if the number of selected items is equal to lower than the specified lower limit</p><p>@*param* `max` boolean ― True, if the number of selected items is equal to higher than the specified upper limit</p><p>@*param* `passed` boolean ― True, if the number of selected items is below or over the specified lower or upper limit</p>
+---| fun(self: MultiselectorType, min: boolean, max: boolean, passed: boolean) Called when a "limited" event is invoked after a limit update occurs<hr><p>@*param* `self` MultiselectorType ― Reference to the selector widget</p><p>@*param* `min` boolean ― True, if the number of selected items is equal to lower than the specified lower limit</p><p>@*param* `max` boolean ― True, if the number of selected items is equal to higher than the specified upper limit</p><p>@*param* `passed` boolean ― True, if the number of selected items is below or over the specified lower or upper limit</p>
 
 ---@alias MultiselectorEventHandler_any
----|fun(self: MultiselectorType, ...: any) Called when a custom event is invoked<hr><p>@*param* `self` MultiselectorType ― Reference to the widget</p><p>@*param* `...` any — Any leftover arguments</p>
+---| fun(self: MultiselectorType, ...: any) Called when a custom event is invoked<hr><p>@*param* `self` MultiselectorType ― Reference to the widget</p><p>@*param* `...` any — Any leftover arguments</p>
 
 --| Data value types
 
@@ -1256,7 +1252,7 @@
 ---@class selectorCreationData_base
 ---@field clearable? boolean If true, the value of the selector input should be clearable and allowed to be set to nil | ***Default:*** false
 
----@class selectorCreationData : togglableObject, optionsWidget, selectorCreationData_base
+---@class selectorCreationData : togglableObject, settingsWidget, selectorCreationData_base
 ---@field items? (selectorItem|toggle)[] Table containing subtables with data used to create item widgets, or already existing toggles
 ---@field listeners? selectorEventListeners Table of key, value pairs of custom widget event tags and functions to assign as event handlers to call on trigger
 ---@field getData? fun(): selected: integer|nil Called to (if needed, modify and) load the widget data from storage<hr><p>@*return* `selected` integer|nil | ***Default:*** nil *(no selection)*</p>
@@ -1264,14 +1260,14 @@
 ---@field value? integer The index of the item to be set as selected during initialization | ***Default:*** **t.getData()** or **t.default** if invalid or 1 if **t.clearable** is false
 ---@field default? integer Default value of the widget | ***Default:*** 1 or nil *(no selection)* if **t.clearable** is true
 
----@class specialSelectorCreationData : togglableObject, optionsWidget, selectorCreationData_base
+---@class specialSelectorCreationData : togglableObject, settingsWidget, selectorCreationData_base
 ---@field listeners? specialSelectorEventListeners Table of key, value pairs of custom widget event tags and functions to assign as event handlers to call on trigger
 ---@field getData? fun(): value: integer|FramePoint|JustifyHorizontal|JustifyVertical|FrameStrata|nil Called to (if needed, modify and) load the widget data from storage<hr><p>@*return* `value` integer|AnchorPoint|JustifyH|JustifyV|FrameStrata|nil — The index or the value of the item to be set as selected ***Default:*** nil *(no selection)*</p>
 ---@field saveData? fun(value?: FramePoint|JustifyHorizontal|JustifyVertical|FrameStrata) Called to (if needed, modify and) save the widget data to storage<hr><p>@*param* `value`? AnchorPoint|JustifyH|JustifyV|FrameStrata</p>
 ---@field value? integer|FramePoint|JustifyHorizontal|JustifyVertical|FrameStrata The item to be set as selected during initialization | ***Default:*** **t.getData()** or **t.default** if invalid or *option 1* if **t.clearable** is false
 ---@field default? integer|FramePoint|JustifyHorizontal|JustifyVertical|FrameStrata Default value of the widget | ***Default:*** *option 1* or nil *(no selection)* if **t.clearable** is true
 
----@class multiselectorCreationData : togglableObject, optionsWidget
+---@class multiselectorCreationData : togglableObject, settingsWidget
 ---@field items? (selectorItem|toggle)[] Table containing subtables with data used to create item widgets, or already existing toggles
 ---@field limits? limitValues Parameters to specify the limits of the number of selectable items
 ---@field listeners? multiselectorEventListeners Table of key, value pairs of custom widget event tags and functions to assign as event handlers to call on trigger
@@ -1284,7 +1280,7 @@
 ---@field name? string Unique string used to set the frame name | ***Default:*** "Selector"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
 ---@field events? table<ScriptFrame, fun(...: any)|attributeEventData> Table of key, value pairs of the names of script event handlers to be set for the selector frame and the functions to assign as event handlers called when they trigger
 
----@class radioSelectorCreationData_base : optionsFrame
+---@class radioSelectorCreationData_base : settingsFrame
 ---@field clearable? boolean If true, the selector input should be clearable by right clicking on its radio buttons, setting the selected value to nil | ***Default:*** false
 
 ---@class radioSelectorCreationData : selectorCreationData, selectorFrameCreationData, radioSelectorCreationData_base
@@ -1295,13 +1291,13 @@
 
 ---@class specialRadioSelectorCreationData : specialSelectorCreationData, selectorFrameCreationData, radioSelectorCreationData_base
 
----@class checkboxSelectorCreationData : multiselectorCreationData, selectorFrameCreationData, optionsFrame
+---@class checkboxSelectorCreationData : multiselectorCreationData, selectorFrameCreationData, settingsFrame
 ---@field width? number The height is dynamically set to fit all items (and the title if set), the width may be specified | ***Default:*** *dynamically set to fit all columns of items* or **t.label** and 160 or 0 *(whichever is greater)*<ul><li>***Note:*** The width of each individual item will be set to **t.width** if **t.columns** is 1 and **t.width** is specified.</li></ul>
 ---@field items? (selectorItem|selectorCheckbox)[] Table containing subtables with data used to create item widgets, or already existing checkboxes
 ---@field labels? boolean Whether or not to add the labels to the right of each newly created widget item | ***Default:*** true
 ---@field columns? integer Arrange the newly created widget items in a grid with the specified number of columns instead of a vertical list | ***Default:*** 1
 
----@class dropdownSelectorCreationData : radioSelectorCreationData, widgetWidthValue, optionsFrame
+---@class dropdownSelectorCreationData : radioSelectorCreationData, widgetWidthValue, settingsFrame
 ---@field name? string Unique string used to set the frame name | ***Default:*** "Dropdown"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
 ---@field text? string The default text to display on the dropdown when no item is selected | ***Default:*** ""
 ---@field autoClose? boolean Close the dropdown menu after an item is selected by the user | ***Default:*** true
@@ -1310,33 +1306,33 @@
 --[ Textbox ]
 
 ---@alias TextboxType
----|textbox
----|singleLineEditbox
----|customSingleLineEditbox
----|multilineEditbox
+---| textbox
+---| singleLineEditbox
+---| customSingleLineEditbox
+---| multilineEditbox
 
 ---@alias TextboxEventTag
----|"enabled"
----|"loaded"
----|"changed"
----|string
+---| "enabled"
+---| "loaded"
+---| "changed"
+---| string
 
 --| Event handlers
 
 ---@alias TextboxEventHandler_enabled
----|fun(self: TextboxType, state: boolean) Called when an "enabled" event is invoked after **textbox.setEnabled(...)** was called<hr><p>@*param* `self` TextboxType ― Reference to the button widget</p><p>@*param* `state` boolean ― True if the widget is enabled</p>
+---| fun(self: TextboxType, state: boolean) Called when an "enabled" event is invoked after **textbox.setEnabled(...)** was called<hr><p>@*param* `self` TextboxType ― Reference to the button widget</p><p>@*param* `state` boolean ― True if the widget is enabled</p>
 
 ---@alias TextboxEventHandler_loaded
----|fun(self: TextboxType, success: boolean) Called when an "loaded" event is invoked after the data of this widget has been loaded from storage<hr><p>@*param* `self` TextboxType ― Reference to the widget</p><p>@*param* `success` boolean ― True if data was returned by **t.getData()** and it was loaded to the widget</p>
+---| fun(self: TextboxType, success: boolean) Called when an "loaded" event is invoked after the data of this widget has been loaded from storage<hr><p>@*param* `self` TextboxType ― Reference to the widget</p><p>@*param* `success` boolean ― True if data was returned by **t.getData()** and it was loaded to the widget</p>
 
 ---@alias TextboxEventHandler_saved
----|fun(self: TextboxType, success: boolean) Called when an "saved" event is invoked after the data of this widget has been saved to storage<hr><p>@*param* `self` TextboxType ― Reference to the widget</p><p>@*param* `success` boolean ― True if data was committed successfully via **t.saveData(...)**</p>
+---| fun(self: TextboxType, success: boolean) Called when an "saved" event is invoked after the data of this widget has been saved to storage<hr><p>@*param* `self` TextboxType ― Reference to the widget</p><p>@*param* `success` boolean ― True if data was committed successfully via **t.saveData(...)**</p>
 
 ---@alias TextboxEventHandler_changed
----|fun(self: TextboxType, text: string, user: boolean) Called when an "changed" event is invoked after **textbox.setText(...)** was called<hr><p>@*param* `self` TextboxType ― Reference to the toggle widget</p><p>@*param* `text` string ― The current value of the widget</p><p>@*param* `user` boolean ― True if the event was invoked by an action taken by the user</p>
+---| fun(self: TextboxType, text: string, user: boolean) Called when an "changed" event is invoked after **textbox.setText(...)** was called<hr><p>@*param* `self` TextboxType ― Reference to the toggle widget</p><p>@*param* `text` string ― The current value of the widget</p><p>@*param* `user` boolean ― True if the event was invoked by an action taken by the user</p>
 
 ---@alias TextboxEventHandler_any
----|fun(self: TextboxType, ...: any) Called when a custom event is invoked<hr><p>@*param* `self` TextboxType ― Reference to the widget</p><p>@*param* `...` any — Any leftover arguments</p>
+---| fun(self: TextboxType, ...: any) Called when a custom event is invoked<hr><p>@*param* `self` TextboxType ― Reference to the widget</p><p>@*param* `...` any — Any leftover arguments</p>
 
 --| Parameters
 
@@ -1372,7 +1368,7 @@
 
 --| Constructors
 
----@class textboxCreationData : togglableObject, optionsWidget
+---@class textboxCreationData : togglableObject, settingsWidget
 ---@field color? colorData Apply the specified color to all text in the editbox (overriding all font objects set in **t.font**)
 ---@field listeners? textboxEventListeners Table of key, value pairs of custom widget event tags and functions to assign as event handlers to call on trigger
 ---@field getData? fun(): text: string|nil Called to (if needed, modify and) load the widget data from storage<hr><p>@*return* `text` string|nil | ***Default:*** "" *(empty string)*</p>
@@ -1380,7 +1376,7 @@
 ---@field value? string The starting text to be set during initialization | ***Default:*** **t.getData()** or **t.default** if invalid
 ---@field default? string Default value of the widget | ***Default:*** "" *(empty string)*
 
----@class editboxCreationData : textboxCreationData, labeledChildObject, tooltipDescribableObject, arrangeableObject, positionableObject, visibleObject_base, liteObject, optionsFrame
+---@class editboxCreationData : textboxCreationData, labeledChildObject, tooltipDescribableObject, arrangeableObject, positionableObject, visibleObject_base, liteObject, settingsFrame
 ---@field name? string Unique string used to set the frame name | ***Default:*** "Textbox"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
 ---@field size? sizeData_editbox
 ---@field insets? insetData Table containing padding values by which to offset the position of the text in the editbox
@@ -1394,7 +1390,7 @@
 ---@field resetCursor? boolean If true, set the cursor position to the beginning of the string after setting the text via **textbox.setText(...)** | ***Default:*** true
 ---@field events? table<ScriptEditBox, fun(...: any)|attributeEventData> Table of key, value pairs of the names of script event handlers to be set for the editbox frame and the functions to assign as event handlers called when they trigger<ul><li>***Note:*** "[OnChar](https://wowpedia.fandom.com/wiki/UIHANDLER_OnChar)" will be called with custom parameters:<p>@*param* `self` AnyFrameObject ― Reference to the editbox frame</p><p>@*param* `char` string ― The UTF-8 character that was typed</p><p>@*param* `text` string ― The text typed into the editbox</p></li><li>***Note:*** "[OnTextChanged](https://wowpedia.fandom.com/wiki/UIHANDLER_OnTextChanged)" will be called with custom parameters:<p>@*param* `self` AnyFrameObject ― Reference to the editbox frame</p><p>@*param* `text` string ― The text typed into the editbox</p><p>@*param* `user` string ― True if the value was changed by the user, false if it was done programmatically</p></li><li>***Note:*** "[OnEnterPressed](https://wowpedia.fandom.com/wiki/UIHANDLER_OnEnterPressed)" will be called with custom parameters:<p>@*param* `self` AnyFrameObject ― Reference to the editbox frame</p><p>@*param* `text` string ― The text typed into the editbox</p></li></ul>
 ---@field onLoad? fun(self: textbox|multilineEditbox, text?: string) Function to be be called after the data of this widget has been loaded (when settings are opened or changes/defaults are reset)<hr><p>@*param* `self` textbox|multilineTextbox ― Reference to the widget</p><hr><p>@*param* `text`? string ― The loaded value</p>
----@field onSave? fun(self: textbox|multilineEditbox, data?: any) Function to be be called on options data update (after the data of this widget has been saved to storage)<hr><p>@*param* `self` textbox|multilineTextbox ― Reference to the widget</p><hr><p>@*param* `data`? any ― The saved value | ***Default:*** *the current value of the widget*</p>
+---@field onSave? fun(self: textbox|multilineEditbox, data?: any) Function to be be called on settings data update (after the data of this widget has been saved to storage)<hr><p>@*param* `self` textbox|multilineTextbox ― Reference to the widget</p><hr><p>@*param* `data`? any ― The saved value | ***Default:*** *the current value of the widget*</p>
 
 ---@class customEditboxCreationData : editboxCreationData, customizableObject
 
@@ -1418,39 +1414,39 @@
 --[ Numeric ]
 
 ---@alias NumericType
----|numeric
----|numericSlider
+---| numeric
+---| numericSlider
 
 ---@alias NumericEventTag
----|"enabled"
----|"loaded"
----|"changed"
----|"min"
----|"max"
----|string
+---| "enabled"
+---| "loaded"
+---| "changed"
+---| "min"
+---| "max"
+---| string
 
 --| Event handlers
 
 ---@alias NumericEventHandler_enabled
----|fun(self: NumericType, state: boolean) Called when an "enabled" event is invoked after **numeric.setEnabled(...)** was called<hr><p>@*param* `self` NumericType ― Reference to the button widget</p><p>@*param* `state` boolean ― True if the widget is enabled</p>
+---| fun(self: NumericType, state: boolean) Called when an "enabled" event is invoked after **numeric.setEnabled(...)** was called<hr><p>@*param* `self` NumericType ― Reference to the button widget</p><p>@*param* `state` boolean ― True if the widget is enabled</p>
 
 ---@alias NumericEventHandler_loaded
----|fun(self: NumericType, success: boolean) Called when an "loaded" event is invoked after the data of this widget has been loaded from storage<hr><p>@*param* `self` NumericType ― Reference to the widget</p><p>@*param* `success` boolean ― True if data was returned by **t.getData()** and it was loaded to the widget</p>
+---| fun(self: NumericType, success: boolean) Called when an "loaded" event is invoked after the data of this widget has been loaded from storage<hr><p>@*param* `self` NumericType ― Reference to the widget</p><p>@*param* `success` boolean ― True if data was returned by **t.getData()** and it was loaded to the widget</p>
 
 ---@alias NumericEventHandler_saved
----|fun(self: NumericType, success: boolean) Called when an "saved" event is invoked after the data of this widget has been saved to storage<hr><p>@*param* `self` NumericType ― Reference to the widget</p><p>@*param* `success` boolean ― True if data was committed successfully via **t.saveData(...)**</p>
+---| fun(self: NumericType, success: boolean) Called when an "saved" event is invoked after the data of this widget has been saved to storage<hr><p>@*param* `self` NumericType ― Reference to the widget</p><p>@*param* `success` boolean ― True if data was committed successfully via **t.saveData(...)**</p>
 
 ---@alias NumericEventHandler_changed
----|fun(self: NumericType, number: number, user: boolean) Called when an "changed" event is invoked after **numeric.setNumber(...)** was called<hr><p>@*param* `self` NumericType ― Reference to the toggle widget</p><p>@*param* `number` number ― The current value of the widget</p><p>@*param* `user` boolean ― True if the event was invoked by an action taken by the user</p>
+---| fun(self: NumericType, number: number, user: boolean) Called when an "changed" event is invoked after **numeric.setNumber(...)** was called<hr><p>@*param* `self` NumericType ― Reference to the toggle widget</p><p>@*param* `number` number ― The current value of the widget</p><p>@*param* `user` boolean ― True if the event was invoked by an action taken by the user</p>
 
 ---@alias NumericEventHandler_min
----|fun(self: NumericType, limitMin: number) Called when an "min" event is invoked after **numeric.setMin(...)** was called<hr><p>@*param* `self` NumericType ― Reference to the toggle widget</p><p>@*param* `limitMin` number ― The current lower limit of the number value of the widget</p>
+---| fun(self: NumericType, limitMin: number) Called when an "min" event is invoked after **numeric.setMin(...)** was called<hr><p>@*param* `self` NumericType ― Reference to the toggle widget</p><p>@*param* `limitMin` number ― The current lower limit of the number value of the widget</p>
 
 ---@alias NumericEventHandler_max
----|fun(self: NumericType, limitMax: number) Called when an "max" event is invoked after **numeric.setMax(...)** was called<hr><p>@*param* `self` NumericType ― Reference to the toggle widget</p><p>@*param* `limitMax` number ― The current upper limit of the number value of the widget</p>
+---| fun(self: NumericType, limitMax: number) Called when an "max" event is invoked after **numeric.setMax(...)** was called<hr><p>@*param* `self` NumericType ― Reference to the toggle widget</p><p>@*param* `limitMax` number ― The current upper limit of the number value of the widget</p>
 
 ---@alias NumericEventHandler_any
----|fun(self: NumericType, ...: any) Called when a custom event is invoked<hr><p>@*param* `self` NumericType ― Reference to the widget</p><p>@*param* `...` any — Any leftover arguments</p>
+---| fun(self: NumericType, ...: any) Called when a custom event is invoked<hr><p>@*param* `self` NumericType ― Reference to the widget</p><p>@*param* `...` any — Any leftover arguments</p>
 
 --| Parameters
 
@@ -1486,7 +1482,7 @@
 
 --| Constructors
 
----@class numericCreationData : togglableObject, optionsWidget
+---@class numericCreationData : togglableObject, settingsWidget
 ---@field fractional? integer If the value is fractional, display this many decimal digits | ***Default:*** *the most amount of digits present in the fractional part of* **t.min**, **t.max** *or* **t.increment**
 ---@field min? number Lower numeric value limit | ***Range:*** (any, **t.max**) | ***Default:*** 0
 ---@field max? number Upper numeric value limit | ***Range:*** (**t.min**, any) | ***Default:*** 100
@@ -1499,7 +1495,7 @@
 ---@field value? number The starting value of the widget to set during initialization | ***Default:*** **t.getData()** or **t.default** if invalid
 ---@field default? number Default value of the widget | ***Default:*** **t.min**
 
----@class numericSliderCreationData : numericCreationData, labeledChildObject, tooltipDescribableObject, arrangeableObject, positionableObject, widgetWidthValue, visibleObject_base, liteObject, optionsFrame
+---@class numericSliderCreationData : numericCreationData, labeledChildObject, tooltipDescribableObject, arrangeableObject, positionableObject, widgetWidthValue, visibleObject_base, liteObject, settingsFrame
 ---@field name? string Unique string used to set the frame name | ***Default:*** "Slider"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
 ---@field valueBox? boolean Whether or not should the slider have an [EditBox](https://wowpedia.fandom.com/wiki/UIOBJECT_EditBox) as a child to manually enter a precise value to move the slider to | ***Default:*** true
 ---@field sideButtons? boolean Whether or not to add increase/decrease buttons next to the slider to change the value by the increment set in **t.step** | ***Default:*** true
@@ -1508,32 +1504,32 @@
 --[ Color Picker ]
 
 ---@alias ColorPickerType
----|colorPicker
----|colorPickerFrame
+---| colorPicker
+---| colorPickerFrame
 
 ---@alias ColorPickerEventTag
----|"enabled"
----|"loaded"
----|"saved"
----|"colored"
----|string
+---| "enabled"
+---| "loaded"
+---| "saved"
+---| "colored"
+---| string
 
 --| Event handlers
 
 ---@alias ColorPickerEventHandler_enabled
----|fun(self: ColorPickerType, state: boolean) Called when an "enabled" event is invoked after **colorPicker.setEnabled(...)** was called<hr><p>@*param* `self` ColorPickerType ― Reference to the button widget</p><p>@*param* `state` boolean ― True if the widget is enabled</p>
+---| fun(self: ColorPickerType, state: boolean) Called when an "enabled" event is invoked after **colorPicker.setEnabled(...)** was called<hr><p>@*param* `self` ColorPickerType ― Reference to the button widget</p><p>@*param* `state` boolean ― True if the widget is enabled</p>
 
 ---@alias ColorPickerEventHandler_loaded
----|fun(self: ColorPickerType, success: boolean) Called when an "loaded" event is invoked after the data of this widget has been loaded from storage<hr><p>@*param* `self` ColorPickerType ― Reference to the widget</p><p>@*param* `success` boolean ― True if data was returned by **t.getData()** and it was loaded to the widget</p>
+---| fun(self: ColorPickerType, success: boolean) Called when an "loaded" event is invoked after the data of this widget has been loaded from storage<hr><p>@*param* `self` ColorPickerType ― Reference to the widget</p><p>@*param* `success` boolean ― True if data was returned by **t.getData()** and it was loaded to the widget</p>
 
 ---@alias ColorPickerEventHandler_saved
----|fun(self: ColorPickerType, success: boolean) Called when an "saved" event is invoked after the data of this widget has been saved to storage<hr><p>@*param* `self` ColorPickerType ― Reference to the widget</p><p>@*param* `success` boolean ― True if data was committed successfully via **t.saveData(...)**</p>
+---| fun(self: ColorPickerType, success: boolean) Called when an "saved" event is invoked after the data of this widget has been saved to storage<hr><p>@*param* `self` ColorPickerType ― Reference to the widget</p><p>@*param* `success` boolean ― True if data was committed successfully via **t.saveData(...)**</p>
 
 ---@alias ColorPickerEventHandler_colored
----|fun(self: ColorPickerType, color: colorData, user: boolean) Called when an "colored" event is invoked after **colorPicker.setColor(...)** was called<hr><p>@*param* `self` ColorPickerType ― Reference to the toggle widget</p><p>@*param* `number` number ― The current value of the widget</p><p>@*param* `user` boolean ― True if the event was invoked by an action taken by the user</p>
+---| fun(self: ColorPickerType, color: colorData, user: boolean) Called when an "colored" event is invoked after **colorPicker.setColor(...)** was called<hr><p>@*param* `self` ColorPickerType ― Reference to the toggle widget</p><p>@*param* `number` number ― The current value of the widget</p><p>@*param* `user` boolean ― True if the event was invoked by an action taken by the user</p>
 
 ---@alias ColorPickerEventHandler_any
----|fun(self: ColorPickerType, ...: any) Called when a custom event is invoked<hr><p>@*param* `self` ColorPickerType ― Reference to the widget</p><p>@*param* `...` any — Any leftover arguments</p>
+---| fun(self: ColorPickerType, ...: any) Called when a custom event is invoked<hr><p>@*param* `self` ColorPickerType ― Reference to the widget</p><p>@*param* `...` any — Any leftover arguments</p>
 
 --| Parameters
 
@@ -1561,7 +1557,7 @@
 
 --| Constructors
 
----@class colorPickerCreationData : togglableObject, optionsWidget
+---@class colorPickerCreationData : togglableObject, settingsWidget
 ---@field listeners? colorPickerEventListeners Table of key, value pairs of custom widget event tags and functions to assign as event handlers to call on trigger
 ---@field onCancel? function The function to be called when the color change is cancelled (after calling **t.onColorUpdate**)
 ---@field getData? fun(): color: optionalColorData|nil Called to (if needed, modify and) load the widget data from storage<hr><p>@*return* `color` optionalColorData|nil | ***Default:*** { r = 1, g = 1, b = 1, a = 1 } *(white)*</p>
@@ -1569,7 +1565,7 @@
 ---@field value? colorData_whiteDefault Values to use as the starting color set during initialization | ***Default:*** **t.getData()** or **t.default** if invalid<ul><li>***Note:*** If the alpha start value was not set, configure the color picker to handle RBG values exclusively instead of the full RGBA.</li></ul>
 ---@field default? colorData Default value of the widget | ***Default:*** { r = 1, g = 1, b = 1, a = 1 } *(white)*
 
----@class colorPickerFrameCreationData : colorPickerCreationData, labeledChildObject, tooltipDescribableObject, arrangeableObject, positionableObject, visibleObject_base, liteObject, optionsFrame
+---@class colorPickerFrameCreationData : colorPickerCreationData, labeledChildObject, tooltipDescribableObject, arrangeableObject, positionableObject, visibleObject_base, liteObject, settingsFrame
 ---@field name? string Unique string used to set the frame name | ***Default:*** "Color Picker"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
 ---@field width? number The height is defaulted to 36, the width may be specified | ***Default:*** 120
 ---@field events? table<ScriptFrame, fun(...: any)|attributeEventData> Table of key, value pairs of the names of script event handlers to be set for the color picker frame and the functions to assign as event handlers called when they trigger
@@ -1577,40 +1573,43 @@
 
 --[[ POSITION OPTIONS ]]
 
+---@class positionOptionsSettingsData
+---@field keepInPlace boolean If true, don't move **frame** when changing the anchor, update the offset values instead.
+
 ---@class widgetLayerOptions
 ---@field strata? FrameStrata Strata to pin the frame to
 ---@field level? integer The level of the frame to appear in within the specified strata
 ---@field keepOnTop? boolean Whether to raise the frame level on mouse interaction | ***Default:*** false
 
----@class presetData
+---@class positionPresetData
 ---@field position positionData Table of parameters to call **frame**:[SetPoint(...)](https://wowpedia.fandom.com/wiki/API_ScriptRegionResizing_SetPoint) with
 ---@field keepInBounds? boolean Whether to keep the frame within screen bounds whenever it's moved | ***Default:*** false
 ---@field layer? widgetLayerOptions Table containing the screen layer parameters of the frame
 
----@class presetItemData
+---@class positionPresetItemData
 ---@field title string Text to represent the item within the dropdown frame
 ---@field tooltip? presetTooltipTextData List of text lines to be added to the tooltip of the item in the dropdown displayed when mousing over it or the menu toggle button
----@field onSelect? function The function to be called when the dropdown item is selected before the specific preset is applied<ul><li>***Note:*** A custom [OnAttributeChanged](https://wowpedia.fandom.com/wiki/UIHANDLER_OnAttributeChanged) event will be invoked whenever an item is selected *(see* ***WidgetToolbox*.CreateDropdown(...)***)*.</li></ul>
----@field data? presetData Table containing the preset data to be modified by the position options widgets and applied to **frame** on demand
+---@field onSelect? function The function to be called when the dropdown item is selected before the specific preset is applied
+---@field data? positionPresetData Table containing the preset data to be modified by the position settings widgets and applied to **frame** on demand
 
----@class customPresetData
+---@class customPositionPresetData
 ---@field index? integer Index of the custom preset modifiable by the user | ***Default:*** 1
----@field getData fun(): table Return a reference to the table within the SavedVariables(PerCharacter) addon database where the custom preset data is committed to when the custom preset is saved
----@field defaultsTable table Reference to the table containing the default custom preset values<ul><li>***Note:*** The defaults table should contain values under matching keys to the values within *t.presets.custom.getData()*.</li></ul>
+---@field getData fun(): positionPresetData Return a reference to the table within the SavedVariables(PerCharacter) addon database where the custom preset data is committed to when the custom preset is saved
+---@field defaultsTable positionPresetData Reference to the table containing the default custom preset values<ul>
 ---@field onSave? function Called after saving the custom preset
 ---@field onReset? function Called after resetting the custom preset before it is applied
 
 ---@class presetItemList
----@field items presetItemData[] Table containing the dropdown items described within subtables
----@field onPreset? fun(index?: integer) Called after a preset is selected and applied via the dropdown widget or by calling **applyPreset**<hr><p>@*param* `index`? integer — The index of the currently selected item</p><hr><ul><li>***Note:*** A custom [OnAttributeChanged](https://wowpedia.fandom.com/wiki/UIHANDLER_OnAttributeChanged) event will also be invoked whenever an item is selected *(see* ***WidgetToolbox*.CreateDropdown(...)***)*.</li></ul>
----@field custom? customPresetData When set, add widgets to manage a user-modifiable custom preset
+---@field items positionPresetItemData[] Table containing the dropdown items described within subtables
+---@field onPreset? fun(index?: integer) Called after a preset is selected and applied via the dropdown widget or by calling **applyPreset**
+---@field custom? customPositionPresetData When set, add widgets to manage a user-modifiable custom preset
 
 ---@class movabilityData_positioning : movabilityData
 ---@field modifier? ModifierKey The specific (or any) modifier key required to be pressed down to move **frame** (if **frame** has the "OnUpdate" script defined) | ***Default:*** "SHIFT"<ul><li>***Note:*** Used to determine the specific modifier check to use. Example: when set to "any" [IsModifierKeyDown](https://wowpedia.fandom.com/wiki/API_IsModifierKeyDown) is used.</li></ul>
 
----@class optionsData_position
----@field category? string A unique string used for categorizing options data management rules & change handler scripts | ***Default:*** **addon**
----@field key? string A unique string appended to **category** linking a subset of options data rules to be handled together | ***Default:*** "Position"
+---@class settingsData_position
+---@field category? string A unique string used for categorizing settings data management rules & change handler scripts | ***Default:*** **addon**
+---@field key? string A unique string appended to **category** linking a subset of settings data rules to be handled together | ***Default:*** "Position"
 
 ---@class positionOptionsData
 ---@field position positionData Parameters to call [Region:SetPoint(...)](https://wowpedia.fandom.com/wiki/API_ScriptRegionResizing_SetPoint) with
@@ -1618,22 +1617,22 @@
 ---@field keepInBounds boolean When set, add a toggle for a value used for **t.frame**:[SetClampedToScreen(...)](https://wowpedia.fandom.com/wiki/API_Frame_SetClampedToScreen)
 ---@field keepOnTop boolean When set, add a toggle for a value used for **t.frame**:[SetToplevel(...)](https://wowpedia.fandom.com/wiki/API_Frame_SetToplevel)
 
----@class positionOptionsCreationData
+---@class positionManagementCreationData
 ---@field canvas Frame The canvas frame child item of an existing settings category page to add the position panel to
----@field frame AnyFrameObject Reference to the frame to create the position options for
----@field frameName string Include this string in the tooltips and descriptions of options widgets when referring to **t.frame**
----@field presets? presetItemList Reference to the table containing **t.frame** position presets to be managed by options widgets added when set
----@field setMovable? movabilityData_positioning When specified, set **t.frame** as movable, dynamically updating the position options widgets when it's moved by the user
+---@field frame AnyFrameObject Reference to the frame to create the position settings for
+---@field frameName string Include this string in the tooltips and descriptions of settings widgets when referring to **t.frame**
+---@field presets? presetItemList Reference to the table containing **t.frame** position presets to be managed by settings widgets added when set
+---@field setMovable? movabilityData_positioning When specified, set **t.frame** as movable, dynamically updating the position settings widgets when it's moved by the user
 ---@field dependencies? dependencyRule[] Automatically disable or enable all widgets in the new panel based on the rules described in subtables
 ---@field getData fun(): table: positionOptionsData Return a reference to the table within a SavedVariables(PerCharacter) addon database where data is committed to when **t.frame** was successfully moved
 ---@field defaultsTable table Reference to the table containing the default values<ul><li>***Note:*** The defaults table should contain values under matching keys to the values within *t.getData()*.</li></ul>
----@field settingsData table Reference to the SavedVariables or SavedVariablesPerCharacter table where settings specifications are to be stored and loaded from<ul><li>***Note:*** The following key, value pairs will be used for storing settings data within this table:<ul><li>**keepInPlace** — If true, don't move **frame** when changing the anchor, update the offset values instead.</li></li></ul></ul>
----@field dataManagement? optionsData_position Register the positioning widgets to options data management linked with the specified key under the specified category
----@field onChangePosition? function Function to call after the value of **panel.position.anchor**, **panel.position.relativeTo**, **panel.position.relativePoint**, **panel.position.offset.x** or **panel.position.offset.y** was changed by the user or via options data management before the base onChange handler is called built-in to the functionality of the position options panel template updating the position of **t.frame**
----@field onChangeKeepInBounds? function Function to call after the value of **panel.position.keepInBounds** was changed by the user or via options data management before the base onChange handlers are called built-in to the functionality of the position options panel template updating **t.frame**
----@field onChangeStrata? function Function to call after the value of **panel.layer.strata** was changed by the user or via options data management before the base onChange handlers are called built-in to the functionality of the position options panel template updating **t.frame**
----@field onChangeLevel? function Function to call after the value of **panel.layer.level** was changed by the user or via options data management before the base onChange handlers are called built-in to the functionality of the position options panel template updating **t.frame**
----@field onChangeKeepOnTop? function Function to call after the value of **panel.layer.keepOnTop** was changed by the user or via options data management before the base onChange handlers are called built-in to the functionality of the position options panel template updating **t.frame**
+---@field settingsData positionOptionsSettingsData|table Reference to the SavedVariables or SavedVariablesPerCharacter table where settings specifications are to be stored and loaded from<ul><li>***Note:*** A boolean value will be created under the key **keepInPlace** if it didn't already exist in this table.</li></ul>
+---@field dataManagement? settingsData_position Register the positioning widgets to settings data management linked with the specified key under the specified category
+---@field onChangePosition? function Function to call after the value of **panel.position.anchor**, **panel.position.relativeTo**, **panel.position.relativePoint**, **panel.position.offset.x** or **panel.position.offset.y** was changed by the user or via settings data management before the base onChange handler is called built-in to the functionality of the position settings panel template updating the position of **t.frame**
+---@field onChangeKeepInBounds? function Function to call after the value of **panel.position.keepInBounds** was changed by the user or via settings data management before the base onChange handlers are called built-in to the functionality of the position settings panel template updating **t.frame**
+---@field onChangeStrata? function Function to call after the value of **panel.layer.strata** was changed by the user or via settings data management before the base onChange handlers are called built-in to the functionality of the position settings panel template updating **t.frame**
+---@field onChangeLevel? function Function to call after the value of **panel.layer.level** was changed by the user or via settings data management before the base onChange handlers are called built-in to the functionality of the position settings panel template updating **t.frame**
+---@field onChangeKeepOnTop? function Function to call after the value of **panel.layer.keepOnTop** was changed by the user or via settings data management before the base onChange handlers are called built-in to the functionality of the position settings panel template updating **t.frame**
 
 
 --[[ ADDON COMPARTMENT ]]
