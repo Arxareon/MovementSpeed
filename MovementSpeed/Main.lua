@@ -307,9 +307,9 @@ local function SetDisplayValues(display, displayData)
 
 	--Font & text
 	display.text:SetFont(displayData.font.family, displayData.font.size, "OUTLINE")
-	display.text:SetTextColor(wt.UnpackColor(displayData.font.valueColoring and ns.colors.grey[2] or displayData.font.color))
 	display.text:SetJustifyH(displayData.font.alignment)
 	wt.SetPosition(display.text, { anchor = displayData.font.alignment, })
+	display.text:SetTextColor(wt.UnpackColor(displayData.font.valueColoring and ns.colors.grey[2] or displayData.font.color))
 end
 
 --| Tooltip content

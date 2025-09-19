@@ -104,6 +104,10 @@ ns.localizations.enUS = {
 					label = "Font Size",
 					tooltip = "Set the size of the displayed text.",
 				},
+				alignment = {
+					label = "Text Alignment",
+					tooltip = "Select the horizontal alignment of the text inside the speed display.",
+				},
 				valueColoring = {
 					label = "Individual Value Coloring",
 					tooltip = "Color the speed values in the display with the default #ADDON color palette.",
@@ -111,10 +115,6 @@ ns.localizations.enUS = {
 				color = {
 					label = "Font Color",
 					tooltip = "The color of the entire speed value text when the #VALUE_COLORING option is turned off.",
-				},
-				alignment = {
-					label = "Text Alignment",
-					tooltip = "Select the horizontal alignment of the text inside the speed display.",
 				},
 			},
 			background = {
@@ -357,6 +357,10 @@ ns.localizations.ptBR = {
 					label = "Tamanho da Fonte",
 					tooltip = "Defina o tamanho do texto exibido.",
 				},
+				alignment = {
+					label = "Alinhamento do Texto",
+					tooltip = "Selecione o alinhamento horizontal do texto dentro da exibição de velocidade.",
+				},
 				valueColoring = {
 					label = "Coloração Individual de Valores",
 					tooltip = "Colore os valores de velocidade na exibição com a paleta de cores padrão do #ADDON.",
@@ -364,10 +368,6 @@ ns.localizations.ptBR = {
 				color = {
 					label = "Cor da Fonte",
 					tooltip = "A cor de todo o texto do valor de velocidade quando a opção #VALUE_COLORING está desativada.",
-				},
-				alignment = {
-					label = "Alinhamento do Texto",
-					tooltip = "Selecione o alinhamento horizontal do texto dentro da exibição de velocidade.",
 				},
 			},
 			background = {
@@ -610,6 +610,10 @@ ns.localizations.deDE = {
 					label = "Schriftgröße",
 					tooltip = "Lege die Größe des angezeigten Textes fest.",
 				},
+				alignment = {
+					label = "Textausrichtung",
+					tooltip = "Wähle die horizontale Ausrichtung des Textes in der Geschwindigkeitsanzeige.",
+				},
 				valueColoring = {
 					label = "Individuelle Wertfarbe",
 					tooltip = "Färbe die Geschwindigkeitswerte in der Anzeige mit der Standardfarbpalette von #ADDON.",
@@ -617,10 +621,6 @@ ns.localizations.deDE = {
 				color = {
 					label = "Schriftfarbe",
 					tooltip = "Die Farbe des gesamten Geschwindigkeitswert-Textes, wenn die Option #VALUE_COLORING deaktiviert ist.",
-				},
-				alignment = {
-					label = "Textausrichtung",
-					tooltip = "Wähle die horizontale Ausrichtung des Textes in der Geschwindigkeitsanzeige.",
 				},
 			},
 			background = {
@@ -863,6 +863,10 @@ ns.localizations.frFR = {
 					label = "Taille de la police",
 					tooltip = "Définissez la taille du texte affiché.",
 				},
+				alignment = {
+					label = "Alignement du texte",
+					tooltip = "Sélectionnez l'alignement horizontal du texte dans l'affichage de la vitesse.",
+				},
 				valueColoring = {
 					label = "Coloration individuelle des valeurs",
 					tooltip = "Colorer les valeurs de vitesse dans l'affichage avec la palette de couleurs par défaut de #ADDON.",
@@ -870,10 +874,6 @@ ns.localizations.frFR = {
 				color = {
 					label = "Couleur de la police",
 					tooltip = "La couleur de tout le texte de la valeur de vitesse lorsque l'option #VALUE_COLORING est désactivée.",
-				},
-				alignment = {
-					label = "Alignement du texte",
-					tooltip = "Sélectionnez l'alignement horizontal du texte dans l'affichage de la vitesse.",
 				},
 			},
 			background = {
@@ -1116,6 +1116,10 @@ ns.localizations.esES = {
 					label = "Tamaño de fuente",
 					tooltip = "Establece el tamaño del texto mostrado.",
 				},
+				alignment = {
+					label = "Alineación de texto",
+					tooltip = "Selecciona la alineación horizontal del texto dentro de la visualización de velocidad.",
+				},
 				valueColoring = {
 					label = "Coloreado individual de valores",
 					tooltip = "Colorea los valores de velocidad en la visualización con la paleta de colores predeterminada de #ADDON.",
@@ -1123,10 +1127,6 @@ ns.localizations.esES = {
 				color = {
 					label = "Color de fuente",
 					tooltip = "El color de todo el texto del valor de velocidad cuando la opción #VALUE_COLORING está desactivada.",
-				},
-				alignment = {
-					label = "Alineación de texto",
-					tooltip = "Selecciona la alineación horizontal del texto dentro de la visualización de velocidad.",
 				},
 			},
 			background = {
@@ -1369,6 +1369,10 @@ ns.localizations.esMX = {
 					label = "Tamaño de fuente",
 					tooltip = "Establece el tamaño del texto mostrado.",
 				},
+				alignment = {
+					label = "Alineación de texto",
+					tooltip = "Selecciona la alineación horizontal del texto dentro de la visualización de velocidad.",
+				},
 				valueColoring = {
 					label = "Coloreado individual de valores",
 					tooltip = "Colorea los valores de velocidad en la visualización con la paleta de colores predeterminada de #ADDON.",
@@ -1376,10 +1380,6 @@ ns.localizations.esMX = {
 				color = {
 					label = "Color de fuente",
 					tooltip = "El color de todo el texto del valor de velocidad cuando la opción #VALUE_COLORING está desactivada.",
-				},
-				alignment = {
-					label = "Alineación de texto",
-					tooltip = "Selecciona la alineación horizontal del texto dentro de la visualización de velocidad.",
 				},
 			},
 			background = {
@@ -1622,6 +1622,10 @@ ns.localizations.itIT = {
 					label = "Dimensione Font",
 					tooltip = "Imposta la dimensione del testo visualizzato.",
 				},
+				alignment = {
+					label = "Allineamento Testo",
+					tooltip = "Seleziona l'allineamento orizzontale del testo all'interno della visualizzazione della velocità.",
+				},
 				valueColoring = {
 					label = "Colorazione Valori Individuali",
 					tooltip = "Colora i valori della velocità nella visualizzazione con la palette di colori predefinita di #ADDON.",
@@ -1629,10 +1633,6 @@ ns.localizations.itIT = {
 				color = {
 					label = "Colore Font",
 					tooltip = "Il colore dell'intero testo del valore della velocità quando l'opzione #VALUE_COLORING è disattivata.",
-				},
-				alignment = {
-					label = "Allineamento Testo",
-					tooltip = "Seleziona l'allineamento orizzontale del testo all'interno della visualizzazione della velocità.",
 				},
 			},
 			background = {
@@ -1875,6 +1875,10 @@ ns.localizations.koKR = {
 					label = "글꼴 크기",
 					tooltip = "표시되는 텍스트의 크기를 설정하세요.",
 				},
+				alignment = {
+					label = "텍스트 정렬",
+					tooltip = "속도 표시 내 텍스트의 수평 정렬을 선택하세요.",
+				},
 				valueColoring = {
 					label = "개별 값 색상",
 					tooltip = "표시에 #ADDON 기본 색상 팔레트로 속도 값을 색칠합니다.",
@@ -1882,10 +1886,6 @@ ns.localizations.koKR = {
 				color = {
 					label = "글꼴 색상",
 					tooltip = "#VALUE_COLORING 옵션이 꺼져 있을 때 전체 속도 값 텍스트의 색상입니다.",
-				},
-				alignment = {
-					label = "텍스트 정렬",
-					tooltip = "속도 표시 내 텍스트의 수평 정렬을 선택하세요.",
 				},
 			},
 			background = {
@@ -2128,6 +2128,10 @@ ns.localizations.zhTW = {
 					label = "字型大小",
 					tooltip = "設定顯示文字的大小。",
 				},
+				alignment = {
+					label = "文字對齊",
+					tooltip = "選擇速度顯示內文字的水平對齊方式。",
+				},
 				valueColoring = {
 					label = "個別數值著色",
 					tooltip = "以#ADDON預設配色為顯示中的速度數值著色。",
@@ -2135,10 +2139,6 @@ ns.localizations.zhTW = {
 				color = {
 					label = "字型顏色",
 					tooltip = "關閉#VALUE_COLORING選項時整個速度數值文字的顏色。",
-				},
-				alignment = {
-					label = "文字對齊",
-					tooltip = "選擇速度顯示內文字的水平對齊方式。",
 				},
 			},
 			background = {
@@ -2381,6 +2381,10 @@ ns.localizations.zhCN = {
 					label = "字体大小",
 					tooltip = "设置显示文本的大小。",
 				},
+				alignment = {
+					label = "文本对齐",
+					tooltip = "选择速度显示内文本的水平对齐方式。",
+				},
 				valueColoring = {
 					label = "单独数值着色",
 					tooltip = "使用#ADDON默认配色方案为显示中的速度数值着色。",
@@ -2388,10 +2392,6 @@ ns.localizations.zhCN = {
 				color = {
 					label = "字体颜色",
 					tooltip = "关闭#VALUE_COLORING选项时整个速度数值文本的颜色。",
-				},
-				alignment = {
-					label = "文本对齐",
-					tooltip = "选择速度显示内文本的水平对齐方式。",
 				},
 			},
 			background = {
@@ -2634,6 +2634,10 @@ ns.localizations.ruRU = {
 					label = "Размер шрифта",
 					tooltip = "Установите размер отображаемого текста.",
 				},
+				alignment = {
+					label = "Выравнивание текста",
+					tooltip = "Выберите горизонтальное выравнивание текста внутри отображения скорости.",
+				},
 				valueColoring = {
 					label = "Индивидуальная окраска значений",
 					tooltip = "Окрашивать значения скорости в отображении с помощью стандартной цветовой палитры #ADDON.",
@@ -2641,10 +2645,6 @@ ns.localizations.ruRU = {
 				color = {
 					label = "Цвет шрифта",
 					tooltip = "Цвет всего текста значения скорости, если опция #VALUE_COLORING выключена.",
-				},
-				alignment = {
-					label = "Выравнивание текста",
-					tooltip = "Выберите горизонтальное выравнивание текста внутри отображения скорости.",
 				},
 			},
 			background = {

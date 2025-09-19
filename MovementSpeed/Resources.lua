@@ -402,9 +402,9 @@ ns.profileDefault = {
 		font = {
 			family = ns.fonts[1].path,
 			size = 11,
+			alignment = "CENTER",
 			valueColoring = true,
 			color = { r = 1, g = 1, b = 1, a = 1 },
-			alignment = "CENTER",
 		},
 		background = {
 			visible = false,
