@@ -180,7 +180,7 @@
 ---@field offset? offsetData
 
 ---@class positionableObject
----@field position? positionData Parameters to call [Region:SetPoint(...)](https://wowpedia.fandom.com/wiki/API_ScriptRegionResizing_SetPoint) with | ***Default:*** "TOPLEFT"
+---@field position? positionData Tabe of parameters to call [Region:SetPoint(...)](https://wowpedia.fandom.com/wiki/API_ScriptRegionResizing_SetPoint) with | ***Default:*** "TOPLEFT"
 
 ---@class positionableScreenObject : positionableObject
 ---@field keepInBounds? boolean Whether to keep the frame within screen bounds whenever it's moved | ***Default:*** false
@@ -275,8 +275,6 @@
 
 ---@class colorData : rgbData_base, alpha_opaqueDefault
 
----@class optionalColorData : rgbData_base, alpha_opaqueDefault
-
 ---@class colorData_whiteDefault : colorData
 ---@field r? number Red | ***Range:*** (0, 1) | ***Default:*** 1
 ---@field g? number Green | ***Range:*** (0, 1) | ***Default:*** 1
@@ -312,7 +310,7 @@
 ---@field font? fontData Table containing font properties used for [SetFont](https://wowpedia.fandom.com/wiki/API_FontInstance_SetFont) (overriding **t.template**)
 ---@field color? colorData_whiteDefault Apply the specified color to the font (overriding **t.template**)
 ---@field spacing? number Set the character spacing of the text using this font (overriding **t.template**) | ***Default:*** 0
----@field shadow? { offset: offsetData, color: colorData_blackDefault} Set a text shadow with the following parameters (overriding **t.template**)
+---@field shadow? { offset: offsetData, color: colorData_blackDefault } Set a text shadow with the following parameters (overriding **t.template**)
 ---@field justify? justifyData_centered Set the justification of the text using font (overriding **t.template**)
 ---@field wrap? boolean Whether or not to allow the text lines using this font to wrap (overriding **t.template**) | ***Default:*** true
 
@@ -447,7 +445,7 @@
 ---@field events? table<ScriptRegion, fun(...: any)|attributeEventData> Table of key, value pairs of the names of script event handlers to be set for the texture object and the functions to assign as event handlers called when they trigger
 
 ---@class textureUpdateData
----@field position? positionData Parameters to call [Region:SetPoint(...)](https://wowpedia.fandom.com/wiki/API_ScriptRegionResizing_SetPoint) with | ***Default:*** **t.position**
+---@field position? positionData Tabe of parameters to call [Region:SetPoint(...)](https://wowpedia.fandom.com/wiki/API_ScriptRegionResizing_SetPoint) with | ***Default:*** **t.position**
 ---@field size? sizeData | ***Default:*** **t.size**
 ---@field path? string Path to the specific texture file relative to the root directory of the specific WoW client | ***Default:*** **t.path**<ul><li>***Note:*** The use of `/` as separator is recommended (Example: Interface/AddOns/AddonNameKey/Textures/TextureImage.tga), otherwise use `\\`.</li><li>***Note:*** **File format:** Texture files must be in JPEG (no transparency, not recommended), PNG, TGA or BLP format.</li><li>***Note:*** **Size:** Texture files must have powers of 2 dimensions to be handled by the WoW client.</li></ul>
 ---@field layer? DrawLayer | ***Default:*** **t.layer**
@@ -577,7 +575,7 @@
 ---@field tooltip? GameTooltip Reference to the tooltip frame to set up | ***Default:*** *default WidgetTools custom tooltip*
 ---@field anchor TooltipAnchor [GameTooltip anchor](https://wowpedia.fandom.com/wiki/API_GameTooltip_SetOwner#Arguments)
 ---@field offset? offsetData Values to offset the position of **tooltipData.tooltip** by
----@field position? positionData_base Parameters to call [Region:SetPoint(...)](https://wowpedia.fandom.com/wiki/API_ScriptRegionResizing_SetPoint) with when the tooltip is not automatically positioned via **t.anchor** | ***Default:*** "TOPLEFT" if **tooltipData.anchor** == "ANCHOR_NONE"<ul><li>***Note:*** **t.offset** will be used when calling [Region:SetPoint(...)](https://wowpedia.fandom.com/wiki/API_ScriptRegionResizing_SetPoint) as well.</li></ul>
+---@field position? positionData_base Tabe of parameters to call [Region:SetPoint(...)](https://wowpedia.fandom.com/wiki/API_ScriptRegionResizing_SetPoint) with when the tooltip is not automatically positioned via **t.anchor** | ***Default:*** "TOPLEFT" if **tooltipData.anchor** == "ANCHOR_NONE"<ul><li>***Note:*** **t.offset** will be used when calling [Region:SetPoint(...)](https://wowpedia.fandom.com/wiki/API_ScriptRegionResizing_SetPoint) as well.</li></ul>
 ---@field flipColors? boolean Flip the default color values of the title and the text lines | ***Default:*** false
 
 ---@class tooltipUpdateData
@@ -585,7 +583,7 @@
 ---@field lines? tooltipLineData[] Table containing the lists of parameters for the text lines after the title | ***Default:*** **owner.tooltipData.lines**
 ---@field tooltip? GameTooltip Reference to the tooltip frame to set up | ***Default:*** **owner.tooltipData.tooltip**
 ---@field offset? offsetData Values to offset the position of **tooltipData.tooltip** by | ***Default:*** **owner.tooltipData.offset**
----@field position? positionData_base Parameters to call [Region:SetPoint(...)](https://wowpedia.fandom.com/wiki/API_ScriptRegionResizing_SetPoint) with when the tooltip is not automatically positioned via **t.anchor** | ***Default:*** **owner.tooltipData.position**
+---@field position? positionData_base Tabe of parameters to call [Region:SetPoint(...)](https://wowpedia.fandom.com/wiki/API_ScriptRegionResizing_SetPoint) with when the tooltip is not automatically positioned via **t.anchor** | ***Default:*** **owner.tooltipData.position**
 ---@field flipColors? boolean Flip the default color values of the title and the text lines | ***Default:*** **owner.tooltipData.flipColors**
 ---@field anchor? TooltipAnchor [GameTooltip anchor](https://wowpedia.fandom.com/wiki/API_GameTooltip_SetOwner#Arguments) | ***Default:*** **owner.tooltipData.anchor**
 
@@ -683,7 +681,7 @@
 ---@class reloadFrameData
 ---@field title? string Text to be shown as the title of the reload notice | ***Default:*** "Pending Changes" *(when the language is set to English)*
 ---@field message? string Text to be shown as the message of the reload notice | ***Default:*** "Reload the interface to apply the pending changes." *(when the language is set to English)*
----@field position? reloadFramePositionData Parameters to call [Region:SetPoint(...)](https://wowpedia.fandom.com/wiki/API_ScriptRegionResizing_SetPoint) with | ***Default:*** "TOPRIGHT", -300, -80
+---@field position? reloadFramePositionData Tabe of parameters to call [Region:SetPoint(...)](https://wowpedia.fandom.com/wiki/API_ScriptRegionResizing_SetPoint) with | ***Default:*** "TOPRIGHT", -300, -80
 
 
 --[[ LITE MODE ]]
@@ -1560,7 +1558,7 @@
 ---@class colorPickerCreationData : togglableObject, settingsWidget
 ---@field listeners? colorPickerEventListeners Table of key, value pairs of custom widget event tags and functions to assign as event handlers to call on trigger
 ---@field onCancel? function The function to be called when the color change is cancelled (after calling **t.onColorUpdate**)
----@field getData? fun(): color: optionalColorData|nil Called to (if needed, modify and) load the widget data from storage<hr><p>@*return* `color` optionalColorData|nil | ***Default:*** { r = 1, g = 1, b = 1, a = 1 } *(white)*</p>
+---@field getData? fun(): color: colorData|nil Called to (if needed, modify and) load the widget data from storage<hr><p>@*return* `color` colorData|nil | ***Default:*** { r = 1, g = 1, b = 1, a = 1 } *(white)*</p>
 ---@field saveData? fun(color: colorData) Called to (if needed, modify and) save the widget data to storage<hr><p>@*param* `color` colorData</p>
 ---@field value? colorData_whiteDefault Values to use as the starting color set during initialization | ***Default:*** **t.getData()** or **t.default** if invalid<ul><li>***Note:*** If the alpha start value was not set, configure the color picker to handle RBG values exclusively instead of the full RGBA.</li></ul>
 ---@field default? colorData Default value of the widget | ***Default:*** { r = 1, g = 1, b = 1, a = 1 } *(white)*
@@ -1611,12 +1609,6 @@
 ---@field category? string A unique string used for categorizing settings data management rules & change handler scripts | ***Default:*** **addon**
 ---@field key? string A unique string appended to **category** linking a subset of settings data rules to be handled together | ***Default:*** "Position"
 
----@class positionOptionsData
----@field position positionData Parameters to call [Region:SetPoint(...)](https://wowpedia.fandom.com/wiki/API_ScriptRegionResizing_SetPoint) with
----@field strata FrameStrata Used for **t.frame**:[SetFrameStrata(...)](https://wowpedia.fandom.com/wiki/API_Frame_SetFrameStrata)
----@field keepInBounds boolean When set, add a toggle for a value used for **t.frame**:[SetClampedToScreen(...)](https://wowpedia.fandom.com/wiki/API_Frame_SetClampedToScreen)
----@field keepOnTop boolean When set, add a toggle for a value used for **t.frame**:[SetToplevel(...)](https://wowpedia.fandom.com/wiki/API_Frame_SetToplevel)
-
 ---@class positionManagementCreationData
 ---@field canvas Frame The canvas frame child item of an existing settings category page to add the position panel to
 ---@field frame AnyFrameObject Reference to the frame to create the position settings for
@@ -1624,7 +1616,7 @@
 ---@field presets? presetItemList Reference to the table containing **t.frame** position presets to be managed by settings widgets added when set
 ---@field setMovable? movabilityData_positioning When specified, set **t.frame** as movable, dynamically updating the position settings widgets when it's moved by the user
 ---@field dependencies? dependencyRule[] Automatically disable or enable all widgets in the new panel based on the rules described in subtables
----@field getData fun(): table: positionOptionsData Return a reference to the table within a SavedVariables(PerCharacter) addon database where data is committed to when **t.frame** was successfully moved
+---@field getData fun(): table: positionPresetData Return a reference to the table within a SavedVariables(PerCharacter) addon database where data is committed to when **t.frame** was successfully moved
 ---@field defaultsTable table Reference to the table containing the default values<ul><li>***Note:*** The defaults table should contain values under matching keys to the values within *t.getData()*.</li></ul>
 ---@field settingsData positionOptionsSettingsData|table Reference to the SavedVariables or SavedVariablesPerCharacter table where settings specifications are to be stored and loaded from<ul><li>***Note:*** A boolean value will be created under the key **keepInPlace** if it didn't already exist in this table.</li></ul>
 ---@field dataManagement? settingsData_position Register the positioning widgets to settings data management linked with the specified key under the specified category

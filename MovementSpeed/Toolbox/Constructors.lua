@@ -5976,7 +5976,7 @@ function wt.CreateColorPicker(t)
 
 	---Set the managed color values
 	---***
-	---@param color? optionalColorData ***Default:*** { r = 1, g = 1, b = 1, a = 1 } *(white)*
+	---@param color? colorData ***Default:*** { r = 1, g = 1, b = 1, a = 1 } *(white)*
 	---@param user? boolean Whether to flag the call as a result of a user interaction calling registered listeners | ***Default:*** false
 	---@param silent? boolean If false, invoke a "colored" event and call registered listeners | ***Default:*** false
 	function colorPicker.setColor(color, user, silent)
