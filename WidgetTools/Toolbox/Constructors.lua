@@ -40,7 +40,7 @@ end
 
 ---Set up a GameTooltip for a frame to be toggled on hover
 ---***
----@param owner AnyFrameObject Owner frame the tooltip to be shown for
+---@param owner AnyFrameObject|tooltipDescribedObject Owner frame the tooltip to be shown for
 --- - ***Note:*** A custom property named **tooltipData** will be added to **owner** with the value of the **tooltipData** parameter provided here.
 --- - ***Note:*** If **owner** doesn't have a **tooltipData** property, no tooltip will be shown.
 ---@param tooltipData tooltipData The tooltip parameters are to be provided in this table
@@ -79,7 +79,7 @@ end
 
 ---Update and show a GameTooltip already set up to be toggled for a frame
 ---***
----@param owner Frame Owner frame the tooltip to be shown for
+---@param owner AnyFrameObject|tooltipDescribedObject Owner frame the tooltip to be shown for
 --- - ***Note:*** If **owner** doesn't have a **tooltipData** property, no tooltip will be shown.
 ---@param tooltipData? tooltipUpdateData The tooltip parameters are to be provided in this table | ***Default:*** **owner.tooltipData**
 ---@param clearLines? boolean Replace **owner.tooltipData.lines** with **tooltipData.lines** instead of adjusting existing values | ***Default:*** true if **tooltipData.lines** ~= nil
@@ -89,7 +89,7 @@ function wt.UpdateTooltip(owner, tooltipData, clearLines, override)
 
 	--| Update the tooltip data
 
-	tooltipData = tooltipData or {}
+	tooltipData = {type(tooltipData) == "table" and tooltipData or {}}
 
 	if clearLines ~= false and tooltipData.lines then owner.tooltipData.lines = wt.Clone(tooltipData.lines) end
 	tooltipData = wt.AddMissing(tooltipData, owner.tooltipData)
@@ -145,7 +145,7 @@ function wt.UpdateTooltip(owner, tooltipData, clearLines, override)
 end
 
 ---Add default value and utility menu hint tooltip lines to widget tooltip tables
----@param t settingsFrame|tooltipDescribableObject Parameters are to be provided in this table
+---@param t settingsFrame|tooltipDescribableWidget Parameters are to be provided in this table
 ---@param default? string Default value, formatted | ***Default:*** ""
 function wt.AddWidgetTooltipLines(t, default)
 	if type(t) ~= "table" or (t.showDefault == false and t.utilityMenu == false) or type(t.tooltip) ~= "table" then return end
@@ -227,7 +227,7 @@ end
 ---@return string key The unique identifier key created for this popup in the global **StaticPopupDialogs** table used as the parameter when calling [StaticPopup_Show()](https://warcraft.wiki.gg/wiki/API_StaticPopup_Show) or [StaticPopup_Hide()](https://warcraft.wiki.gg/wiki/API_StaticPopup_Hide)
 function wt.RegisterPopupDialog(addon, key, t)
 	t = t or {}
-	key = addon:upper() .. "_" .. (type(key) == "string" and key:gsub("%s+", "_"):upper() or "DIALOG")
+	key = (addon or "WidgetTools"):upper() .. "_" .. (type(key) == "string" and key:gsub("%s+", "_"):upper() or "DIALOG")
 
 	StaticPopupDialogs[key] = {
 		text = t.text or "",
@@ -337,6 +337,7 @@ function wt.CreatePopupInputBox(t)
 
 			--[ Textbox ]
 
+			---@type singleLineEditbox|textbox
 			customPopupInputBoxFrame.textbox = wt.CreateEditbox({
 				parent = panel,
 				name = "TextInputBox",
@@ -540,12 +541,11 @@ end
 
 ---Create a [FontString](https://warcraft.wiki.gg/wiki/UIOBJECT_FontString) with the specified parameters
 ---***
----@param t textCreationData Parameters are to be provided in this table
----@return FontString|nil text
+---@param t? textCreationData Parameters are to be provided in this table
+---@return FontString text
 function wt.CreateText(t)
-	t = t or {}
-
-	if not t.parent then return end
+    t = t or {}
+	t.parent = wt.IsFrame(t.parent) and t.parent or CreateFrame("Frame")
 
 	local text = t.parent:CreateFontString((t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "Text"), t.layer, t.font and t.font or "GameFontNormal")
 
@@ -603,6 +603,7 @@ function wt.AddDescription(t)
 	if not t.title then return end
 
 	local parent = t.title:GetParent()
+
 	t.justify = t.justify or "LEFT"
 	local anchor = t.justify ~= "RIGHT" and "LEFT" or "RIGHT"
 	local relativePoint = t.justify ~= "RIGHT" and "RIGHT" or "LEFT"
@@ -788,7 +789,7 @@ function wt.CreateFrame(t)
 
 	--[ Frame Setup ]
 
-	local name = t.name and ((t.append ~= false and t.parent and t.parent~= UIParent and t.parent:GetName() or "") .. t.name:gsub("%s+", "")) or nil
+	local name = t.name and ((t.append ~= false and t.parent and t.parent ~= UIParent and t.parent:GetName() or "") .. t.name:gsub("%s+", "")) or nil
 	local template = t.customizable and (BackdropTemplateMixin and "BackdropTemplate") or nil
 
 	local frame = CreateFrame("Frame", name, t.parent, template)
@@ -913,7 +914,7 @@ function wt.CreatePanel(t)
 
 	--[ Frame Setup ]
 
-	local name = (t.append ~= false and t.parent and t.parent~= UIParent and t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "Panel")
+	local name = (t.append ~= false and t.parent and t.parent ~= UIParent and t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "Panel")
 
 	---@class panel : Frame
 	---@field title? FontString Reference to the title textline appearing above the panel
@@ -1248,7 +1249,7 @@ function wt.CreateSettingsPage(addon, t)
 	local defaultsWarning
 
 	---@class settingsPage
-	---@field canvas? Frame The settings page main canvas frame
+	---@field canvas? canvasFrame|Frame The settings page main canvas frame
 	---@field category? table The registered settings category page
 	---@field content? Frame The content frame to house the settings widgets or other page content
 	---@field header? Frame The header frame containing the page title, description and icon
@@ -1328,7 +1329,7 @@ function wt.CreateSettingsPage(addon, t)
 	---***
 	---@param user? boolean If true, mark the call as being the result of a user interaction | ***Default:*** false
 	function page.apply(user)
-		if type(t.dataManagement) == "table" then for i = 1, #t.dataManagement.keys do wt.ApplySettingsData(t.dataManagement.category, t.dataManagement.keys) end end
+		if type(t.dataManagement) == "table" then for i = 1, #t.dataManagement.keys do wt.ApplySettingsData(t.dataManagement.category, t.dataManagement.keys[i]) end end
 
 		--Call listener
 		if type(t.onApply) == "function" then t.onApply(user == true) end
@@ -1493,10 +1494,10 @@ function wt.CreateSettingsPage(addon, t)
 
 	--Add content, performs tasks
 	if type(t.initialize) == "function" then
-		t.initialize(page.scroller or page.content, width, height, (t.dataManagement or {}).category, (t.dataManagement or {}).keys, t.name or addon)
+		t.initialize(page.content, width, height, (t.dataManagement or {}).category, (t.dataManagement or {}).keys, t.name or addon)
 
 		--Arrange content
-		if t.arrangement and page.content then wt.ArrangeContent(page.scroller or page.content, wt.AddMissing(t.arrangement, {
+		if t.arrangement and page.content then wt.ArrangeContent(page.content, wt.AddMissing(t.arrangement, {
 			margins = { l = 10, r = 10, t = 54, b = 10 },
 			gaps = 54,
 			resize = t.scroll ~= nil
@@ -1747,8 +1748,8 @@ end
 --| GUI
 
 ---Set the parameters of a GUI button widget frame
----@param button simpleButton
----@param t simpleButtonCreationData
+---@param button simpleButton|customButton
+---@param t simpleButtonCreationData|customButtonCreationData
 ---@param name string
 ---@param title string
 ---@param useHighlight boolean
@@ -1773,33 +1774,6 @@ local function setUpButtonFrame(button, t, name, title, useHighlight)
 	if t.frameStrata then button.frame:SetFrameStrata(t.frameStrata) end
 	if t.frameLevel then button.frame:SetFrameLevel(t.frameLevel) end
 	if t.keepOnTop then button.frame:SetToplevel(t.keepOnTop) end
-
-	--[ Getters & Setters ]
-
-	---Modify the tooltip set for the button with this to make sure it works even when the button is disabled
-	---***
-	---@param tooltip? widgetTooltipTextData List of text lines to set as the tooltip of the button | ***Default:*** **t.tooltip** or *no changes will be made*
-	function button.setTooltip(tooltip)
-		tooltip = tooltip or t.tooltip
-
-		if not tooltip then return end
-
-		--Create a trigger to show the tooltip when the button is disabled
-		if not button.hoverTarget then
-			button.hoverTarget = CreateFrame("Frame", name .. "HoverTarget", button.frame)
-			button.hoverTarget:SetPoint("TOPLEFT")
-			button.hoverTarget:SetSize(button.frame:GetSize())
-			button.hoverTarget:Hide()
-		end
-
-		--Set the tooltip
-		wt.AddTooltip(button.frame, {
-			title = tooltip.title or title,
-			lines = tooltip.lines,
-			anchor = "ANCHOR_TOPLEFT",
-			offset = { x = 20, },
-		}, { triggers = { button.hoverTarget, }, })
-	end
 
 	--[ Events ]
 
@@ -1861,7 +1835,7 @@ end
 function wt.CreateSimpleButton(t, widget)
 	t = t or {}
 
-	---@class simpleButton : actionButton
+    ---@class simpleButton : actionButton
 	local button = widget and widget.isType and widget.isType("ActionButton") and widget or wt.CreateActionButton(t)
 
 	if WidgetToolsDB.lite and t.lite ~= false then return button end
@@ -1870,7 +1844,7 @@ function wt.CreateSimpleButton(t, widget)
 
 	local name = (t.append ~= false and t.parent and t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "Button")
 
-	button.frame = CreateFrame("Button", name, t.parent, "UIPanelButtonTemplate")
+    button.frame = CreateFrame("Button", name, t.parent, "UIPanelButtonTemplate")
 
 	--| Label
 
@@ -1901,7 +1875,34 @@ function wt.CreateSimpleButton(t, widget)
 		button.label:SetText(title)
 	else _G[name .. "Text"]:Hide() end
 
-	--| Shared setup
+	--[ Getters & Setters ]
+
+	---Modify the tooltip set for the button with this to make sure it works even when the button is disabled
+	---***
+	---@param tooltip? widgetTooltipTextData List of text lines to set as the tooltip of the button | ***Default:*** **t.tooltip** or *no changes will be made*
+	function button.setTooltip(tooltip)
+		tooltip = tooltip or t.tooltip
+
+		if not tooltip then return end
+
+		--Create a trigger to show the tooltip when the button is disabled
+		if not button.hoverTarget then
+			button.hoverTarget = CreateFrame("Frame", name .. "HoverTarget", button.frame)
+			button.hoverTarget:SetPoint("TOPLEFT")
+			button.hoverTarget:SetSize(button.frame:GetSize())
+			button.hoverTarget:Hide()
+		end
+
+		--Set the tooltip
+		wt.AddTooltip(button.frame, {
+			title = tooltip.title or title,
+			lines = tooltip.lines,
+			anchor = "ANCHOR_TOPLEFT",
+			offset = { x = 20, },
+		}, { triggers = { button.hoverTarget, }, })
+	end
+
+	--[ Initialization ]
 
 	setUpButtonFrame(button, t, name, title, useHighlight)
 
@@ -1953,7 +1954,34 @@ function wt.CreateCustomButton(t, widget)
 
 	wt.SetBackdrop(button.frame, t.backdrop, t.backdropUpdates)
 
-	--| Shared setup
+	--[ Getters & Setters ]
+
+	---Modify the tooltip set for the button with this to make sure it works even when the button is disabled
+	---***
+	---@param tooltip? widgetTooltipTextData List of text lines to set as the tooltip of the button | ***Default:*** **t.tooltip** or *no changes will be made*
+	function button.setTooltip(tooltip)
+		tooltip = tooltip or t.tooltip
+
+		if not tooltip then return end
+
+		--Create a trigger to show the tooltip when the button is disabled
+		if not button.hoverTarget then
+			button.hoverTarget = CreateFrame("Frame", name .. "HoverTarget", button.frame)
+			button.hoverTarget:SetPoint("TOPLEFT")
+			button.hoverTarget:SetSize(button.frame:GetSize())
+			button.hoverTarget:Hide()
+		end
+
+		--Set the tooltip
+		wt.AddTooltip(button.frame, {
+			title = tooltip.title or title,
+			lines = tooltip.lines,
+			anchor = "ANCHOR_TOPLEFT",
+			offset = { x = 20, },
+		}, { triggers = { button.hoverTarget, }, })
+	end
+
+	--[ Initialization ]
 
 	setUpButtonFrame(button, t, name, title, true)
 
@@ -2203,7 +2231,7 @@ function wt.CreateCheckbox(t, widget)
 
 	--[ Frame Setup ]
 
-	local name = (t.append ~= false and t.parent and t.parent~= UIParent and t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "Toggle")
+	local name = (t.append ~= false and t.parent and t.parent ~= UIParent and t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "Toggle")
 
 	toggle.frame = CreateFrame("Frame", name, t.parent)
 	toggle.button = CreateFrame("CheckButton", name .. "Checkbox", toggle.frame, "SettingsCheckboxTemplate")
@@ -2462,7 +2490,7 @@ function wt.CreateClassicCheckbox(t, widget)
 
 	--[ Frame Setup ]
 
-	local name = (t.append ~= false and t.parent and t.parent~= UIParent and t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "Toggle")
+	local name = (t.append ~= false and t.parent and t.parent ~= UIParent and t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "Toggle")
 
 	--Click target
 	toggle.frame = CreateFrame("Frame", name, t.parent)
@@ -2565,7 +2593,7 @@ function wt.CreateRadioButton(t, widget)
 
 	--[ Frame Setup ]
 
-	local name = (t.append ~= false and t.parent and t.parent~= UIParent and t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "Toggle")
+	local name = (t.append ~= false and t.parent and t.parent ~= UIParent and t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "Toggle")
 
 	--Click target
 	toggle.frame = CreateFrame("Frame", name, t.parent)
@@ -3743,7 +3771,7 @@ function wt.CreateRadioSelector(t, widget)
 
 	--| Shared setup
 
-	local name = (t.append ~= false and t.parent and t.parent~= UIParent and t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "Selector")
+	local name = (t.append ~= false and t.parent and t.parent ~= UIParent and t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "Selector")
 	local title = t.title or t.name or "Selector"
 
 	setUpSelectorFrame(selector, t, name, title)
@@ -3884,7 +3912,7 @@ function wt.CreateCheckboxSelector(t, widget)
 
 	--| Shared setup
 
-	local name = (t.append ~= false and t.parent and t.parent~= UIParent and t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "Selector")
+	local name = (t.append ~= false and t.parent and t.parent ~= UIParent and t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "Selector")
 	local title = t.title or t.name or "Selector"
 
 	setUpSelectorFrame(selector, t, name, title)
@@ -4024,7 +4052,7 @@ function wt.CreateDropdownSelector(t, widget)
 
 	--[ Frame Setup ]
 
-	local name = (t.append ~= false and t.parent and t.parent~= UIParent and t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "Drorpdown")
+	local name = (t.append ~= false and t.parent and t.parent ~= UIParent and t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "Drorpdown")
 
 	selector.dropdown = CreateFrame("Frame", name, t.parent)
 
@@ -4848,7 +4876,7 @@ function wt.CreateEditbox(t, widget)
 
 	--[ Frame Setup ]
 
-	local name = (t.append ~= false and t.parent and t.parent~= UIParent and t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "Textbox")
+	local name = (t.append ~= false and t.parent and t.parent ~= UIParent and t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "Textbox")
 	local custom = t.customizable and (BackdropTemplateMixin and "BackdropTemplate") or nil
 
 	textbox.frame = CreateFrame("Frame", name, t.parent)
@@ -4886,7 +4914,7 @@ function wt.CreateCustomEditbox(t, widget)
 
 	--[ Frame Setup ]
 
-	local name = (t.append ~= false and t.parent and t.parent~= UIParent and t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "Textbox")
+	local name = (t.append ~= false and t.parent and t.parent ~= UIParent and t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "Textbox")
 
 	textbox.frame = CreateFrame("Frame", name, t.parent)
 	textbox.editbox = CreateFrame("EditBox", name .. "EditBox", textbox.frame, BackdropTemplateMixin and "BackdropTemplate")
@@ -4933,7 +4961,7 @@ function wt.CreateMultilineEditbox(t, widget)
 
 	--[ Frame Setup ]
 
-	local name = (t.append ~= false and t.parent and t.parent~= UIParent and t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "Textbox")
+	local name = (t.append ~= false and t.parent and t.parent ~= UIParent and t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "Textbox")
 
 	textbox.frame = CreateFrame("Frame", name, t.parent)
 	textbox.scrollFrame = CreateFrame("ScrollFrame", name .. "ScrollFrame", textbox.frame, ScrollControllerMixin and "InputScrollFrameTemplate")
@@ -5068,7 +5096,7 @@ function wt.CreateCopybox(t)
 
 		--[ Frame Setup ]
 
-		local name = (t.append ~= false and t.parent and t.parent~= UIParent and t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "Copybox")
+		local name = (t.append ~= false and t.parent and t.parent ~= UIParent and t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "Copybox")
 
 		copybox.frame = CreateFrame("Frame", name, t.parent)
 
@@ -5446,7 +5474,7 @@ function wt.CreateNumericSlider(t, widget)
 
 	--[ Frame Setup ]
 
-	local name = (t.append ~= false and t.parent and t.parent~= UIParent and t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "Slider")
+	local name = (t.append ~= false and t.parent and t.parent ~= UIParent and t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "Slider")
 
 	numeric.frame = CreateFrame("Frame", name, t.parent)
 	numeric.slider = CreateFrame("Slider", name .. "Frame", numeric.frame, "OptionsSliderTemplate")
@@ -6094,7 +6122,7 @@ function wt.CreateColorPickerFrame(t, widget)
 
 	--[ Frame Setup ]
 
-	local name = (t.append ~= false and t.parent and t.parent~= UIParent and t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "ColorPicker")
+	local name = (t.append ~= false and t.parent and t.parent ~= UIParent and t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "ColorPicker")
 
 	colorPicker.frame = CreateFrame("Frame", name, t.parent)
 
@@ -6909,7 +6937,7 @@ function wt.CreateDataManagementPage(addon, t)
 				if not activateProfile(index) then return false end
 
 				--Update dropdown selection
-				if dataManagement.profiles then dataManagement.profiles.apply.setText(index) end
+				if dataManagement.profiles then dataManagement.profiles.apply.setText(tostring(index)) end
 
 				return true
 			end

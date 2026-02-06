@@ -14,16 +14,6 @@ local wt = ns.WidgetToolbox
 
 --[[ GENERAL ]]
 
----Check if a table is a frame (or a backdrop object)
----@param t table
----***
----@return boolean|string # If **t** is recognized as a [FrameScriptObject](https://warcraft.wiki.gg/wiki/UIOBJECT_FrameScriptObject), return true, or, return the frame name if named or the debug name if unnamed but recognized as a UI [Object](https://warcraft.wiki.gg/wiki/UIOBJECT_Object) with a parent, otherwise, return false
-function wt.IsFrame(t)
-	if type(t) ~= "table" then return false end
-
-	return t.GetObjectType and t.IsObjectType and (t.GetName and t:GetName() or t.GetParent and t:GetParent() and t.GetDebugName and t:GetDebugName() or true) or false
-end
-
 ---Get the sorted key, value pairs of a table ([Documentation: Sort](https://www.lua.org/pil/19.3.html))
 ---***
 ---@param t table Table to be sorted (in an ascending order and/or alphabetically, based on the `<` operator)
@@ -377,7 +367,7 @@ function wt.Thousands(value, decimals, round, trim)
 	value = round == false and value or wt.Round(value, decimals)
 	local sign = value < 0 and "-" or ""
 	local fraction = math.abs(value) % 1
-	local integer = math.abs(value) - fraction
+	local integer = tostring(math.abs(value) - fraction)
 	local decimalText = tostring(fraction):sub(3, (decimals or 0) + 2)
 	local leftover
 
@@ -592,9 +582,9 @@ local hyperlinkHandlers = {}
 ---Register a function to handle custom hyperlink clicks
 ---***
 ---@param addon string The name of the addon's folder (the addon namespace, not its displayed title)
----@param type? string Unique custom hyperlink type key used to identify the specific handler function | ***Default:*** "-"
+---@param linkType? string Unique custom hyperlink type key used to identify the specific handler function | ***Default:*** "-"
 ---@param handler fun(...) Function to be called with the list of content data strings carried by the hyperlink returned one by one when clicking on a hyperlink text created via ***WidgetToolbox*.CustomHyperlink(...)**
-function wt.SetHyperlinkHandler(addon, type, handler)
+function wt.SetHyperlinkHandler(addon, linkType, handler)
 	if not addon or type(handler) ~= "function" then return end
 
 	---Call the handler function if it has been registered
@@ -614,15 +604,15 @@ function wt.SetHyperlinkHandler(addon, type, handler)
 
 			callHandler(addonID, handlerID, payload)
 		end) else EventRegistry:RegisterCallback("SetItemRef", function(_, ...)
-			local linkType, addonID, handlerID, payload = strsplit(":", ..., 4)
+			local type, addonID, handlerID, payload = strsplit(":", ..., 4)
 
-			if linkType == "addon" then callHandler(addonID, handlerID, payload) end
+			if type == "addon" then callHandler(addonID, handlerID, payload) end
 		end) end
 	end
 
 	--Add the hyperlink handler function to the registry
 	if not hyperlinkHandlers[addon] then hyperlinkHandlers[addon] = {} end
-	hyperlinkHandlers[addon][type or "-"] = handler
+	hyperlinkHandlers[addon][linkType or "-"] = handler
 end
 
 
@@ -770,8 +760,8 @@ end
 
 ---Remove unused or outdated data from a table while comparing it to another table and assemble the list of removed keys
 ---***
----@param tableToCheck table Reference to the table to remove unused key, value pairs from
----@param tableToSample table Reference to the table to sample data from
+---@param tableToCheck table|nil Reference to the table to remove unused key, value pairs from
+---@param tableToSample table|nil Reference to the table to sample data from
 ---@param recoveredData? table
 ---@param recoveredKey? string
 ---***
@@ -842,9 +832,11 @@ function wt.RemoveMismatch(tableToCheck, tableToSample, recoveryMap, onRecovery)
 	if next(recoveredData) then
 		if type(recoveryMap) == "function" then recoveryMap = recoveryMap(tableToCheck, recoveredData) end
 
-		if type(recoveryMap == "table") then for key, value in pairs(recoveredData) do if recoveryMap[key] then for i = 1, #recoveryMap[key].saveTo do
-			recoveryMap[key].saveTo[i][recoveryMap[key].saveKey] = recoveryMap[key].convertSave and recoveryMap[key].convertSave(value) or value
-		end end end end
+		if type(recoveryMap) == "table" then for key, value in pairs(recoveredData) do
+			if recoveryMap[key] then for i = 1, #recoveryMap[key].saveTo do
+				recoveryMap[key].saveTo[i][recoveryMap[key].saveKey] = recoveryMap[key].convertSave and recoveryMap[key].convertSave(value) or value
+			end end
+		end end
 
 		if type(onRecovery) == "function" then onRecovery(tableToCheck) end
 	end
@@ -853,10 +845,21 @@ function wt.RemoveMismatch(tableToCheck, tableToSample, recoveryMap, onRecovery)
 end
 
 
---[[ FRAME SETUP ]]
+--[[ FRAME MANAGEMENT ]]
 
 --Used for a transitional step to avoid anchor family connections during safe frame positioning
 local positioningAid
+
+---Check if a table is a frame (or a backdrop object)
+---@param t table
+---***
+---@return boolean|string # If **t** is recognized as a [FrameScriptObject](https://warcraft.wiki.gg/wiki/UIOBJECT_FrameScriptObject), return true, or, return the frame name if named or the debug name if unnamed but recognized as a UI [Object](https://warcraft.wiki.gg/wiki/UIOBJECT_Object) with a parent, otherwise, return false
+function wt.IsFrame(t)
+	if type(t) ~= "table" then return false end
+
+	return t.GetObjectType and t.IsObjectType and
+	(t.GetName and t:GetName() or t.GetParent and t:GetParent() and t.GetDebugName and t:GetDebugName() or true) or false
+end
 
 ---Set the position and anchoring of a frame when it is unknown which parameters will be nil
 ---***
@@ -981,7 +984,12 @@ function wt.ArrangeContent(container, t)
 	end
 	t.gaps = t.gaps or 8
 	local flipper = t.flip and -1 or 1
-	local height = t.margins.t
+    local height = t.margins.t
+
+    ---@class arrangedFrame
+    ---@field arrangementInfo? arrangementRules These parameters specify how to position the panel within its parent container frame during automatic content arrangement
+
+	---@type (arrangedFrame|Frame)[]
 	local frames = { container:GetChildren() }
 
 	--Assemble the arrangement descriptions
@@ -1085,24 +1093,30 @@ function wt.SetMovability(frame, movable, t)
 	t.triggers = t.triggers or { frame }
 	if t.cursor == nil then t.cursor = t.modifier ~= nil end
 	local modifier = t.modifier and wt.GetModifierChecker(t.modifier) or nil
-	local position, hadEvent
+	local position
 
 	frame:SetMovable(movable)
 
-	if movable then
+    if movable then
+		local hadEvent, isMoving
+
 		position = wt.PackPosition(frame:GetPoint())
 
+		--Toggle movement cursor
 		if modifier then
 			hadEvent = frame:IsEventRegistered("MODIFIER_STATE_CHANGED")
 
 			frame:HookScript("OnEvent", function(_, event, key, down) if event == "MODIFIER_STATE_CHANGED" and key:find(t.modifier) then
 				if down > 0 then SetCursor("Interface/Cursor/ui-cursor-move.crosshair") else SetCursor(nil) end
 			end end)
-			end
+		end
 
 		for i = 1, #t.triggers do
-			t.triggers[i]:EnableMouse(true)
+            t.triggers[i]:EnableMouse(true)
 
+			--| Cursor
+
+			--Set movement cursor
 			t.triggers[i]:HookScript("OnEnter", function()
 				if not t.cursor or not frame:IsMovable() then return end
 
@@ -1113,6 +1127,7 @@ function wt.SetMovability(frame, movable, t)
 				end
 			end)
 
+			--Reset cursor
 			t.triggers[i]:HookScript("OnLeave", function()
 				if not t.cursor or not frame:IsMovable() then return end
 
@@ -1121,8 +1136,11 @@ function wt.SetMovability(frame, movable, t)
 				if modifier and not hadEvent then frame:UnregisterEvent("MODIFIER_STATE_CHANGED") end
 			end)
 
+
+            --| Movement
+
 			t.triggers[i]:HookScript("OnMouseDown", function()
-				if not frame:IsMovable() or frame.isMoving then return end
+				if not frame:IsMovable() or isMoving then return end
 				if modifier and not modifier() then return end
 
 				--Store position
@@ -1130,7 +1148,7 @@ function wt.SetMovability(frame, movable, t)
 
 				--Start moving
 				frame:StartMoving()
-				frame.isMoving = true
+				isMoving = true
 				if (t.events or {}).onStart then t.events.onStart() end
 
 				--| Start the movement updates
@@ -1144,7 +1162,7 @@ function wt.SetMovability(frame, movable, t)
 
 						--Cancel when the modifier key is released
 						frame:StopMovingOrSizing()
-						frame.isMoving = false
+						isMoving = false
 						if (t.events or {}).onCancel then t.events.onCancel() end
 
 						--Reset the position
@@ -1157,11 +1175,11 @@ function wt.SetMovability(frame, movable, t)
 			end)
 
 			t.triggers[i]:HookScript("OnMouseUp", function()
-				if not frame:IsMovable() or not frame.isMoving then return end
+				if not frame:IsMovable() or not isMoving then return end
 
 				--Stop moving
 				frame:StopMovingOrSizing()
-				frame.isMoving = false
+				isMoving = false
 				if (t.events or {}).onStop then t.events.onStop() end
 
 				--Stop the movement updates
@@ -1169,11 +1187,11 @@ function wt.SetMovability(frame, movable, t)
 			end)
 
 			t.triggers[i]:HookScript("OnHide", function()
-				if not frame:IsMovable() or not frame.isMoving then return end
+				if not frame:IsMovable() or not isMoving then return end
 
 				--Cancel moving
 				frame:StopMovingOrSizing()
-				frame.isMoving = false
+				isMoving = false
 				if (t.events or {}).onCancel then t.events.onCancel() end
 
 				--Reset the position
@@ -1196,7 +1214,7 @@ end
 
 ---Set the backdrop of a frame with BackdropTemplate with the specified parameters
 ---***
----@param frame AnyFrameObject Reference to the frame to set the backdrop of
+---@param frame backdropFrame|AnyFrameObject Reference to the frame to set the backdrop of
 --- - ***Note:*** The template of **frame** must have been set as: `BackdropTemplateMixin and "BackdropTemplate"`.
 ---@param backdrop? backdropData Parameters to set the custom backdrop with | ***Default:*** nil *(remove the backdrop)*
 ---@param updates? table<AnyScriptType, backdropUpdateRule> Table of key, value pairs containing the list of events to set listeners for assigned to **updates[*key*].frame**, linking backdrop changes to it, modifying the specified parameters on trigger
@@ -1209,7 +1227,7 @@ function wt.SetBackdrop(frame, backdrop, updates)
 	---@param t? backdropData
 	local function setBackdrop(t)
 		if not t then
-			frame:SetBackdrop(nil)
+			frame:ClearBackdrop()
 
 			return
 		end
@@ -1421,7 +1439,7 @@ end
 ---***
 ---@param category? string A unique string used for categorizing settings data management rules & change handler scripts | ***Default:*** "WidgetTools" *(global rule)*
 ---@param key? string A unique string appended to **category** linking a subset of settings data rules to be handled together | ***Default:*** "" *(category-wide rule)*
----@param applyChanges? boolean If true, apply changes by calling all registered **onChange** handlers | ***Default:*** false
+---@param applyChanges? any If not nil, apply changes by calling all registered **onChange** handlers | ***Default:*** nil
 function wt.LoadSettingsData(category, key, applyChanges)
 	category = category or "WidgetTools"
 	key = category .. (key or "")
@@ -1668,7 +1686,7 @@ function wt.RegisterChatCommands(addon, keywords, t)
 				end
 			end
 
-			if t.commands[i].help then manager.help(t.listHelpCommands) end
+			if t.commands[i].help then manager.help() end
 
 			return true
 		end end

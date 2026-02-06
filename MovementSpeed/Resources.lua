@@ -36,6 +36,12 @@ ns.chat = {
 --Changelog
 ns.changelog = {
 	{
+		"#V_Version 3.1_# #H_(21/1/2026)_#",
+		"#C_Changes:_#",
+		"Added Midnight 12.0, Mists of Pandaria 5.5.3, The Burning Crusade 2.5.5 & Classic 1.15.8 support.",
+		"Under the hood improvements.",
+	},
+	{
 		"#V_Version 3.0_# #H_(8/6/2025)_#",
 		"#N_New:_#",
 		"Added Mists of Pandaria Classic 5.5.0, The War Within 11.2 support & Classic 1.15.7.",
