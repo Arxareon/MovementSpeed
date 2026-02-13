@@ -1,8 +1,8 @@
-## Interface: 120000, 50503, 20505, 11508
+## Interface: 120001, 50503, 20505, 11508
 ## Title: Movement Speed
 ## Version: 3.1
-## X-Day: 21
-## X-Month: 1
+## X-Day: 13
+## X-Month: 2
 ## X-Year: 2026
 ## Category: HUDs
 ## Notes: View your movement speed in customizable displays and of other characters in mouseover tooltips with fast updates.

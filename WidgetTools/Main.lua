@@ -606,7 +606,7 @@ function WidgetTools.frame:PLAYER_LOGIN()
 	}, { lines = {
 		{ text = ns.strings.about.version:gsub("#VERSION", WrapTextInColorCode(C_AddOns.GetAddOnMetadata(ns.name, "Version") or "?", "FFFFFFFF")), },
 		{ text = ns.strings.about.date:gsub(
-			"#DATE", WrapTextInColorCode(ns.strings.date:gsub(
+			"#DATE", WrapTextInColorCode(wt.strings.date:gsub(
 				"#DAY", C_AddOns.GetAddOnMetadata(ns.name, "X-Day") or "?"
 			):gsub(
 				"#MONTH", C_AddOns.GetAddOnMetadata(ns.name, "X-Month") or "?"

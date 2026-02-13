@@ -1,8 +1,8 @@
-## Interface: 120000, 50503, 20505, 11508
+## Interface: 120001, 50503, 20505, 11508
 ## Title: Widget Tools
 ## Version: 2.1
-## X-Day: 21
-## X-Month: 1
+## X-Day: 13
+## X-Month: 2
 ## X-Year: 2026
 ## Category: Development Tools
 ## Notes: Responsible for doing the heavy lifting for other addons built with it in the background & provides extra development tools.

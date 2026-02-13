@@ -1040,7 +1040,7 @@ local function CreateSpeedDisplayOptionsPage(display)
 								MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].visibility,
 								MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[otherDisplay].visibility
 							)
-							wt.LoadOptionsData(category, key, true)
+							wt.LoadSettingsData(category, key, true)
 						end,
 						dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
 					}, copyButtonData))
@@ -1195,7 +1195,7 @@ local function CreateSpeedDisplayOptionsPage(display)
 						MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].position,
 						MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[otherDisplay].position
 					)
-					wt.LoadOptionsData(category, keys[5], true)
+					wt.LoadSettingsData(category, keys[5], true)
 				end,
 				dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
 			}, copyButtonData))
@@ -1218,7 +1218,7 @@ local function CreateSpeedDisplayOptionsPage(display)
 								MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].update,
 								MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[otherDisplay].update
 							)
-							wt.LoadOptionsData(category, key, true)
+							wt.LoadSettingsData(category, key, true)
 						end,
 						dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
 					}, copyButtonData))
@@ -1243,7 +1243,7 @@ local function CreateSpeedDisplayOptionsPage(display)
 								MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].value,
 								MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[otherDisplay].value
 							)
-							wt.LoadOptionsData(category, key, true)
+							wt.LoadSettingsData(category, key, true)
 						end,
 						dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
 					}, copyButtonData))
@@ -1268,7 +1268,7 @@ local function CreateSpeedDisplayOptionsPage(display)
 								MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].font,
 								MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[otherDisplay].font
 							)
-							wt.LoadOptionsData(category, key, true)
+							wt.LoadSettingsData(category, key, true)
 						end,
 						dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
 					}, copyButtonData))
@@ -1293,7 +1293,7 @@ local function CreateSpeedDisplayOptionsPage(display)
 								MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].background,
 								MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[otherDisplay].background
 							)
-							wt.LoadOptionsData(category, key, true)
+							wt.LoadSettingsData(category, key, true)
 						end,
 						dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
 					}, copyButtonData))
@@ -1433,8 +1433,9 @@ ns.tooltip = wt.CreateGameTooltip(ns.name)
 
 ---Set up the speed display context menu
 ---@param display displayType
-local function CreateContextMenu(display)
-	wt.CreateContextMenu({ parent = frames[display].display, initialize = function(menu)
+local function CreateContextMenu(display) wt.CreateContextMenu({
+	triggers = { { frame = frames[display].display, }, },
+	initialize = function(menu)
 		wt.CreateMenuTextline(menu, { text = ns.title, })
 		wt.CreateSubmenu(menu, { title = ns.strings.misc.options, initialize = function(optionsMenu)
 			wt.CreateMenuButton(optionsMenu, {
@@ -1469,8 +1470,8 @@ local function CreateContextMenu(display)
 				action = function() options[display].position.applyPreset(i) end,
 			}) end
 		end })
-	end, })
-end
+	end
+}) end
 
 --Create main addon frame & displays
 frames.main = wt.CreateFrame({
@@ -1873,7 +1874,7 @@ frames.main = wt.CreateFrame({
 			customizable = true,
 			events = { OnUpdate = function(self)
 				--Update the tooltip
-				if self:IsMouseOver() and ns.tooltip:IsVisible() then wt.UpdateTooltip(self, { lines = GetPlayerSpeedTooltipLines("playerSpeed"), }) end
+				if self:IsMouseOver() and ns.tooltip:IsVisible() then wt.UpdateTooltip(self, { lines = GetPlayerSpeedTooltipLines(), }) end
 			end, },
 			initialize = function(display, _, height)
 				--Tooltip
@@ -1907,7 +1908,7 @@ frames.main = wt.CreateFrame({
 			customizable = true,
 			events = { OnUpdate = function(self)
 				--Update the tooltip
-				if self:IsMouseOver() and ns.tooltip:IsVisible() then wt.UpdateTooltip(self, { lines = GetTravelSpeedTooltipLines("travelSpeed"), }) end
+				if self:IsMouseOver() and ns.tooltip:IsVisible() then wt.UpdateTooltip(self, { lines = GetTravelSpeedTooltipLines(), }) end
 			end, },
 			initialize = function(display, _ , height)
 				--Tooltip

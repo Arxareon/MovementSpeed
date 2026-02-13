@@ -17,7 +17,6 @@ local wt = ns.WidgetToolbox
 wt.localizations = {}
 
 --TODO: verity AI translations (from enUS)
---TODO: adjust the date formats for the translated languages
 
 --# flags will be replaced by text or number values via code
 --\n represents the newline character

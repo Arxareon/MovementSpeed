@@ -700,13 +700,13 @@ end
 ---@param targetTable table Reference to the table to copy the values to
 ---@param tableToCopy table Reference to the table to copy the values from
 ---***
----@return table|nil targetTable Reference to **targetTable** (the values were already overwritten during the operation, no need to set it again)
+---@return table targetTable Reference to **targetTable** (the values were already overwritten during the operation, no need to set it again)
 function wt.CopyValues(targetTable, tableToCopy)
-	if type(tableToCopy) ~= "table" or type(targetTable) ~= "table" or wt.IsFrame(tableToCopy) or wt.IsFrame(targetTable) then return end
-	if next(targetTable) == nil then return end
+	if type(tableToCopy) ~= "table" or type(targetTable) ~= "table" or wt.IsFrame(tableToCopy) or wt.IsFrame(targetTable) then return targetTable end
+	if next(targetTable) == nil then return targetTable end
 
 	for k, v in pairs(targetTable) do
-		if tableToCopy[k] == nil then return end
+		if tableToCopy[k] == nil then return targetTable end
 
 		if type(v) == "table" then wt.CopyValues(v, tableToCopy[k]) else targetTable[k] = tableToCopy[k] end
 	end
@@ -719,9 +719,9 @@ end
 ---@param tableToCheck table Reference to the table to prune
 ---@param valueChecker? fun(k: number|string, v: any): boolean Helper function for validating values, returning true if the value is to be accepted as valid
 ---***
----@return table|nil tableToCheck Reference to **tableToCheck** (it was already overwritten during the operation, no need for setting it again)
+---@return table tableToCheck Reference to **tableToCheck** (it was already overwritten during the operation, no need for setting it again)
 function wt.RemoveEmpty(tableToCheck, valueChecker)
-	if type(tableToCheck) ~= "table" or wt.IsFrame(tableToCheck) then return end
+	if type(tableToCheck) ~= "table" or wt.IsFrame(tableToCheck) then return tableToCheck end
 
 	for k, v in pairs(tableToCheck) do
 		if type(v) == "table" then
@@ -737,14 +737,14 @@ function wt.RemoveEmpty(tableToCheck, valueChecker)
 	return tableToCheck
 end
 
----Compare two tables to check for and fill in missing data from one to the other (missing data will be cloned, breaking table references)
+---Compare two tables and clone any missing data from one to the other
 ---***
 ---@param tableToCheck table|any Reference to the table to fill in missing data to (it will be turned into an empty table first if its type is not already "table")
 ---@param tableToSample table Reference to the table to sample data from
 ---***
----@return table|nil tableToCheck Reference to **tableToCheck** (it was already updated during the operation, no need for setting it again)
+---@return table tableToCheck Reference to **tableToCheck** (it was already updated during the operation, no need for setting it again)
 function wt.AddMissing(tableToCheck, tableToSample)
-	if not (type(tableToSample) == "table" and next(tableToSample) ~= nil) then return end
+	if not (type(tableToSample) == "table" and next(tableToSample) ~= nil) then return tableToCheck end
 
 	if wt.IsFrame(tableToSample) then tableToCheck = tableToSample else
 		for k, v in pairs(tableToSample) do
@@ -842,6 +842,14 @@ function wt.RemoveMismatch(tableToCheck, tableToSample, recoveryMap, onRecovery)
 	end
 
 	return tableToCheck
+end
+
+---Copy all values at matching keys and clone any missing data from a reference to the target table
+---@param targetTable table Reference to the table to copy the values to
+---@param tableToSample table Reference to the table to sample data from
+function wt.FillValues(targetTable, tableToSample)
+    --TODO finish
+	--REPLACE wt.CopyValues(wt.AddMissing( with wt.FillValues
 end
 
 

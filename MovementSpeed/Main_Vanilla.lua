@@ -14,7 +14,7 @@ local frames = {
 }
 
 local options = {
-	main = {},
+	about = {},
 	playerSpeed = {
 		visibility = {},
 		update = {},
@@ -73,21 +73,6 @@ end
 
 --[ Data Management ]
 
----Check the validity of the provided key value pair
----@param key string
----@param value any
----@return boolean
-local function CheckValidity(key, value)
-	if type(value) == "number" then
-		--Non-negative
-		if key == "size" then return value > 0 end
-		--Range constraint: 0 - 1
-		if key == "r" or key == "g" or key == "b" or key == "a" then return value >= 0 and value <= 1 end
-		--Corrupt Anchor Points
-		if key == "anchor" then return false end
-	end return true
-end
-
 ---Convert an old speed value type to the new multi-selector table value
 ---@param value integer
 local function ConvertOldValueType(value)
@@ -97,81 +82,6 @@ local function ConvertOldValueType(value)
 		value == 1 or value == 2,
 		false
 	} end
-end
-
-local function GetRecoveryMap(data)
-	return {
-		["preset.point"] = { saveTo = { data.customPreset.position, }, saveKey = "anchor", },
-		["customPreset.position.point"] = { saveTo = { data.customPreset.position, }, saveKey = "anchor", },
-		["preset.offsetX"] = { saveTo = { data.customPreset.position.offset, }, saveKey = "x", },
-		["preset.offsetY"] = { saveTo = { data.customPreset.position.offset, }, saveKey = "y", },
-		["position.point"] = { saveTo = { data.playerSpeed.position, data.travelSpeed.position, }, saveKey = "anchor", },
-		["speedDisplay.position.point"] = { saveTo = { data.playerSpeed.position, data.travelSpeed.position, }, saveKey = "anchor", },
-		["speedDisplay.position.anchor"] = { saveTo = { data.playerSpeed.position, data.travelSpeed.position, }, saveKey = "anchor", },
-		["position.offset.x"] = { saveTo = { data.playerSpeed.position.offset, data.travelSpeed.position.offset, }, saveKey = "x", },
-		["speedDisplay.position.offset.x"] = { saveTo = { data.playerSpeed.position.offset, data.travelSpeed.position.offset, }, saveKey = "x", },
-		["position.offset.y"] = { saveTo = { data.playerSpeed.position.offset, data.travelSpeed.position.offset, }, saveKey = "y", },
-		["speedDisplay.position.offset.y"] = { saveTo = { data.playerSpeed.position.offset, data.travelSpeed.position.offset, }, saveKey = "y", },
-		["visibility.frameStrata"] = { saveTo = { data.playerSpeed.layer, data.travelSpeed.layer, }, saveKey = "strata", },
-		["appearance.frameStrata"] = { saveTo = { data.playerSpeed.layer, data.travelSpeed.layer, }, saveKey = "strata", },
-		["speedDisplay.visibility.frameStrata"] = { saveTo = { data.playerSpeed.layer, data.travelSpeed.layer, }, saveKey = "strata", },
-		["speedDisplay.layer.strata"] = { saveTo = { data.playerSpeed.layer, data.travelSpeed.layer, }, saveKey = "strata", },
-		["visibility.backdrop"] = { saveTo = { data.playerSpeed.background, data.travelSpeed.background, }, saveKey = "visible", },
-		["appearance.backdrop.visible"] = { saveTo = { data.playerSpeed.background, data.travelSpeed.background, }, saveKey = "visible", },
-		["speedDisplay.background.visible"] = { saveTo = { data.playerSpeed.background, data.travelSpeed.background, }, saveKey = "visible", },
-		["appearance.backdrop.color.r"] = { saveTo = { data.playerSpeed.background.colors.bg, data.travelSpeed.background.colors.bg, }, saveKey = "r", },
-		["speedDisplay.background.colors.bg.r"] = { saveTo = { data.playerSpeed.background.colors.bg, data.travelSpeed.background.colors.bg, }, saveKey = "r", },
-		["appearance.backdrop.color.g"] = { saveTo = { data.playerSpeed.background.colors.bg, data.travelSpeed.background.colors.bg, }, saveKey = "g", },
-		["speedDisplay.background.colors.bg.g"] = { saveTo = { data.playerSpeed.background.colors.bg, data.travelSpeed.background.colors.bg, }, saveKey = "g", },
-		["appearance.backdrop.color.b"] = { saveTo = { data.playerSpeed.background.colors.bg, data.travelSpeed.background.colors.bg, }, saveKey = "b", },
-		["speedDisplay.background.colors.bg.b"] = { saveTo = { data.playerSpeed.background.colors.bg, data.travelSpeed.background.colors.bg, }, saveKey = "b", },
-		["appearance.backdrop.color.a"] = { saveTo = { data.playerSpeed.background.colors.bg, data.travelSpeed.background.colors.bg, }, saveKey = "a", },
-		["speedDisplay.background.colors.bg.a"] = { saveTo = { data.playerSpeed.background.colors.bg, data.travelSpeed.background.colors.bg, }, saveKey = "a", },
-		["fontSize"] = { saveTo = { data.playerSpeed.font, data.travelSpeed.font, }, saveKey = "size", },
-		["font.size"] = { saveTo = { data.playerSpeed.font, data.travelSpeed.font, }, saveKey = "size", },
-		["speedDisplay.text.font.size"] = { saveTo = { data.playerSpeed.font, data.travelSpeed.font, }, saveKey = "size", },
-		["speedDisplay.font.size"] = { saveTo = { data.playerSpeed.font, data.travelSpeed.font, }, saveKey = "size", },
-		["font.family"] = { saveTo = { data.playerSpeed.font, data.travelSpeed.font, }, saveKey = "family", },
-		["speedDisplay.text.font.family"] = { saveTo = { data.playerSpeed.font, data.travelSpeed.font, }, saveKey = "family", },
-		["speedDisplay.font.family"] = { saveTo = { data.playerSpeed.font, data.travelSpeed.font, }, saveKey = "family", },
-		["font.color.r"] = { saveTo = { data.playerSpeed.font.color, data.travelSpeed.font.color, }, saveKey = "r", },
-		["speedDisplay.text.font.color.r"] = { saveTo = { data.playerSpeed.font.color, data.travelSpeed.font.color, }, saveKey = "r", },
-		["speedDisplay.font.color.r"] = { saveTo = { data.playerSpeed.font.color, data.travelSpeed.font.color, }, saveKey = "r", },
-		["font.color.g"] = { saveTo = { data.playerSpeed.font.color, data.travelSpeed.font.color, }, saveKey = "g", },
-		["speedDisplay.text.font.color.g"] = { saveTo = { data.playerSpeed.font.color, data.travelSpeed.font.color, }, saveKey = "g", },
-		["speedDisplay.font.color.g"] = { saveTo = { data.playerSpeed.font.color, data.travelSpeed.font.color, }, saveKey = "g", },
-		["font.color.b"] = { saveTo = { data.playerSpeed.font.color, data.travelSpeed.font.color, }, saveKey = "b", },
-		["speedDisplay.text.font.color.b"] = { saveTo = { data.playerSpeed.font.color, data.travelSpeed.font.color, }, saveKey = "b", },
-		["speedDisplay.font.color.b"] = { saveTo = { data.playerSpeed.font.color, data.travelSpeed.font.color, }, saveKey = "b", },
-		["font.color.a"] = { saveTo = { data.playerSpeed.font.color, data.travelSpeed.font.color, }, saveKey = "a", },
-		["speedDisplay.text.font.color.a"] = { saveTo = { data.playerSpeed.font.color, data.travelSpeed.font.color, }, saveKey = "a", },
-		["speedDisplay.font.color.a"] = { saveTo = { data.playerSpeed.font.color, data.travelSpeed.font.color, }, saveKey = "a", },
-		["speedDisplay.font.text.valueType"] = { saveTo = { data.playerSpeed.value, data.travelSpeed.value, }, saveKey = "units", convertSave = ConvertOldValueType },
-		["speedDisplay.value.type"] = { saveTo = { data.playerSpeed.value, data.travelSpeed.value, }, saveKey = "units", convertSave = ConvertOldValueType },
-		["speedDisplay.value.units[1]"] = { saveTo = { data.playerSpeed.value, data.travelSpeed.value.units, }, saveKey = 1, },
-		["speedDisplay.value.units[2]"] = { saveTo = { data.playerSpeed.value, data.travelSpeed.value.units, }, saveKey = 2, },
-		["speedDisplay.value.units[3]"] = { saveTo = { data.playerSpeed.value, data.travelSpeed.value.units, }, saveKey = 3, },
-		["speedDisplay.font.text.decimals"] = { saveTo = { data.playerSpeed.value, data.travelSpeed.value, }, saveKey = "fractionals", },
-		["speedDisplay.value.decimals"] = { saveTo = { data.playerSpeed.value, data.travelSpeed.value, }, saveKey = "fractionals", },
-		["speedDisplay.value.fractionals"] = { saveTo = { data.playerSpeed.value, data.travelSpeed.value, }, saveKey = "fractionals", },
-		["speedDisplay.font.text.noTrim"] = { saveTo = { data.playerSpeed.value, data.travelSpeed.value, }, saveKey = "zeros", },
-		["speedDisplay.value.noTrim"] = { saveTo = { data.playerSpeed.value, data.travelSpeed.value, }, saveKey = "zeros", },
-		["playerSpeed.enabled"] = { saveTo = { data.playerSpeed.visibility, }, saveKey = "hidden", convertSave = function(value) return not value end },
-		["playerSpeed.throttle"] = { saveTo = { data.playerSpeed.update, }, saveKey = "throttle" },
-		["playerSpeed.frequency"] = { saveTo = { data.playerSpeed.update, }, saveKey = "frequency" },
-		["travelSpeed.enabled"] = { saveTo = { data.travelSpeed.visibility, }, saveKey = "hidden", convertSave = function(value) return not value end },
-		["travelSpeed.throttle"] = { saveTo = { data.travelSpeed.update, }, saveKey = "throttle" },
-		["travelSpeed.frequency"] = { saveTo = { data.travelSpeed.update, }, saveKey = "frequency" },
-		["targetSpeed.tooltip.enabled"] = { saveTo = { data.targetSpeed, }, saveKey = "enabled", },
-		["targetSpeed.tooltip.text.valueType"] = { saveTo = { data.targetSpeed.value, }, saveKey = "units", convertSave = ConvertOldValueType },
-		["targetSpeed.value.type"] = { saveTo = { data.targetSpeed.value, }, saveKey = "units", convertSave = ConvertOldValueType },
-		["targetSpeed.tooltip.text.decimals"] = { saveTo = { data.targetSpeed.value, }, saveKey = "fractionals", },
-		["targetSpeed.value.decimals"] = { saveTo = { data.targetSpeed.value, }, saveKey = "fractionals", },
-		["targetSpeed.tooltip.text.noTrim"] = { saveTo = { data.targetSpeed.value, }, saveKey = "zeros", },
-		["targetSpeed.value.noTrim"] = { saveTo = { data.targetSpeed.value, }, saveKey = "zeros", },
-		["visibility.hidden"] = { saveTo = { data.playerSpeed.visibility, }, saveKey = "hidden", },
-		["appearance.hidden"] = { saveTo = { data.playerSpeed.visibility, }, saveKey = "hidden", },
-	}
 end
 
 --[ Chat Control ]
@@ -515,10 +425,10 @@ local function CreateUpdateOptions(panel, category, key)
 		dataManagement = {
 			category = category,
 			key = key,
-			onChange = { RefreshSpeedUpdates = function()
-				StopSpeedDisplayUpdates()
-				StartSpeedDisplayUpdates()
-			end },
+			-- onChange = { RefreshSpeedUpdates = function() --CHECK if needed
+			-- 	StopSpeedDisplayUpdates(display)
+			-- 	StartSpeedDisplayUpdates(display)
+			-- end },
 		},
 	})
 
@@ -544,7 +454,7 @@ local function CreateUpdateOptions(panel, category, key)
 		dataManagement = {
 			category = category,
 			key = key,
-			onChange = { "RefreshSpeedUpdates", },
+			-- onChange = { "RefreshSpeedUpdates", }, --CHECK if needed
 		},
 	})
 end
@@ -615,8 +525,10 @@ local function CreateSpeedValueOptions(panel, category, key)
 	})
 end
 local function CreateFontOptions(panel, category, key)
-	--Dropdown: Font family
+	--| Font family
+
 	local fontItems = {}
+
 	for i = 1, #ns.fonts do
 		fontItems[i] = {}
 		fontItems[i].title = ns.fonts[i].name
@@ -630,6 +542,7 @@ local function CreateFontOptions(panel, category, key)
 			} or nil),
 		}
 	end
+
 	---@type selector|dropdownSelector
 	options.playerSpeed.font.family = wt.CreateDropdownSelector({
 		parent = panel,
@@ -666,11 +579,14 @@ local function CreateFontOptions(panel, category, key)
 			},
 		},
 	})
+
 	--Update the font of the dropdown items
 	if options.playerSpeed.font.family.frame then for i = 1, #options.playerSpeed.font.family.toggles do if options.playerSpeed.font.family.toggles[i].label then
 		local _, size, flags = options.playerSpeed.font.family.toggles[i].label:GetFont()
 		options.playerSpeed.font.family.toggles[i].label:SetFont(ns.fonts[i].path, size, flags)
 	end end end
+
+	--| Font size
 
 	---@type numeric|numericSlider
 	options.playerSpeed.font.size = wt.CreateNumericSlider({
@@ -697,6 +613,8 @@ local function CreateFontOptions(panel, category, key)
 		},
 	})
 
+	--| Alignment
+
 	---@type specialSelector|specialRadioSelector
 	options.playerSpeed.font.alignment = wt.CreateSpecialRadioSelector("justifyH", {
 		parent = panel,
@@ -718,6 +636,8 @@ local function CreateFontOptions(panel, category, key)
 			end, },
 		},
 	})
+
+	--| Value coloring
 
 	---@type toggle|checkbox
 	options.playerSpeed.font.valueColoring = wt.CreateCheckbox({
@@ -743,6 +663,8 @@ local function CreateFontOptions(panel, category, key)
 			},
 		},
 	})
+
+	--| Font color
 
 	---@type colorPicker|colorPickerFrame
 	options.playerSpeed.font.color = wt.CreateColorPickerFrame({
@@ -913,8 +835,6 @@ local function CreateSpeedDisplayOptionsPage()
 						},
 					},
 					onPreset = function(i)
-						wt.ConvertToAbsolutePosition(frames.playerSpeed.display)
-
 						--Make sure the speed display is visible
 						options.playerSpeed.visibility.hidden.setData(false)
 
@@ -1017,8 +937,6 @@ local function CreateTargetSpeedOptionsPage()
 		name = "TargetSpeed",
 		title = ns.strings.options.targetSpeed.title,
 		description = ns.strings.options.targetSpeed.description:gsub("#ADDON", ns.title),
-		logo = ns.textures.logo,
-		storage = { { storageTable = MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.targetSpeed, defaultsTable = ns.profileDefault.targetSpeed, }, },
 		dataManagement = {},
 		onDefault = function()
 			chatCommands.print(ns.strings.chat.default.responseCategory:gsub(
@@ -1137,14 +1055,15 @@ local firstLoad, newCharacter
 ns.tooltip = wt.CreateGameTooltip(ns.name)
 
 --Set up the speed display context menu
-local function CreateContextMenu()
-	wt.CreateContextMenu({ parent = frames.playerSpeed.display, initialize = function(menu)
+local function CreateContextMenu(display) wt.CreateContextMenu({
+	triggers = { { frame = frames.playerSpeed.display, }, },
+	initialize = function(menu)
 		wt.CreateMenuTextline(menu, { text = ns.title, })
 		wt.CreateSubmenu(menu, { title = ns.strings.misc.options, initialize = function(optionsMenu)
 			wt.CreateMenuButton(optionsMenu, {
 				title = wt.GetStrings("about").title,
 				tooltip = { lines = { { text = ns.strings.options.main.description:gsub("#ADDON", ns.title), }, } },
-				action = options.main.page.open,
+				action = options.about.page.open,
 			})
 			wt.CreateMenuButton(optionsMenu, {
 				title = ns.strings.options.speedDisplay.title:gsub("#TYPE", ns.strings.options.playerSpeed.title),
@@ -1168,8 +1087,8 @@ local function CreateContextMenu()
 				action = function() options.playerSpeed.position.applyPreset(i) end,
 			}) end
 		end })
-	end, })
-end
+	end
+}) end
 
 --Create main addon frame & display
 frames.main = wt.CreateFrame({
@@ -1183,11 +1102,18 @@ frames.main = wt.CreateFrame({
 
 			--[ Data ]
 
+			---@type MovementSpeedDB
 			MovementSpeedDB = MovementSpeedDB or {}
+
+			---@type MovementSpeedDBC
 			MovementSpeedDBC = MovementSpeedDBC or {}
+
+			---@type MovementSpeedCS
 			MovementSpeedCS = wt.AddMissing(MovementSpeedCS or {}, {
 				compactBackup = true,
 				playerSpeed = { keepInPlace = true, },
+				travelSpeed = { keepInPlace = true, },
+				mainDisplay = "playerSpeed",
 			})
 
 			--| Initialize data management
@@ -1198,6 +1124,88 @@ frames.main = wt.CreateFrame({
 				characterData = MovementSpeedDBC,
 				settingsData = MovementSpeedCS,
 				defaultsTable = ns.profileDefault,
+				valueChecker = function(key, value)
+					if type(value) == "number" then
+						--Non-negative
+						if key == "size" then return value > 0 end
+						--Range constraint: 0 - 1
+						if key == "r" or key == "g" or key == "b" or key == "a" then return value >= 0 and value <= 1 end
+						--Corrupt Anchor Points
+						if key == "anchor" then return false end
+					end return true
+				end,
+				recoveryMap = function(data) return {
+					["preset.point"] = { saveTo = { data.customPreset.position, }, saveKey = "anchor", },
+					["customPreset.position.point"] = { saveTo = { data.customPreset.position, }, saveKey = "anchor", },
+					["preset.offsetX"] = { saveTo = { data.customPreset.position.offset, }, saveKey = "x", },
+					["preset.offsetY"] = { saveTo = { data.customPreset.position.offset, }, saveKey = "y", },
+					["position.point"] = { saveTo = { data.playerSpeed.position, data.travelSpeed.position, }, saveKey = "anchor", },
+					["speedDisplay.position.point"] = { saveTo = { data.playerSpeed.position, data.travelSpeed.position, }, saveKey = "anchor", },
+					["speedDisplay.position.anchor"] = { saveTo = { data.playerSpeed.position, data.travelSpeed.position, }, saveKey = "anchor", },
+					["position.offset.x"] = { saveTo = { data.playerSpeed.position.offset, data.travelSpeed.position.offset, }, saveKey = "x", },
+					["speedDisplay.position.offset.x"] = { saveTo = { data.playerSpeed.position.offset, data.travelSpeed.position.offset, }, saveKey = "x", },
+					["position.offset.y"] = { saveTo = { data.playerSpeed.position.offset, data.travelSpeed.position.offset, }, saveKey = "y", },
+					["speedDisplay.position.offset.y"] = { saveTo = { data.playerSpeed.position.offset, data.travelSpeed.position.offset, }, saveKey = "y", },
+					["visibility.frameStrata"] = { saveTo = { data.playerSpeed.layer, data.travelSpeed.layer, }, saveKey = "strata", },
+					["appearance.frameStrata"] = { saveTo = { data.playerSpeed.layer, data.travelSpeed.layer, }, saveKey = "strata", },
+					["speedDisplay.visibility.frameStrata"] = { saveTo = { data.playerSpeed.layer, data.travelSpeed.layer, }, saveKey = "strata", },
+					["speedDisplay.layer.strata"] = { saveTo = { data.playerSpeed.layer, data.travelSpeed.layer, }, saveKey = "strata", },
+					["visibility.backdrop"] = { saveTo = { data.playerSpeed.background, data.travelSpeed.background, }, saveKey = "visible", },
+					["appearance.backdrop.visible"] = { saveTo = { data.playerSpeed.background, data.travelSpeed.background, }, saveKey = "visible", },
+					["speedDisplay.background.visible"] = { saveTo = { data.playerSpeed.background, data.travelSpeed.background, }, saveKey = "visible", },
+					["appearance.backdrop.color.r"] = { saveTo = { data.playerSpeed.background.colors.bg, data.travelSpeed.background.colors.bg, }, saveKey = "r", },
+					["speedDisplay.background.colors.bg.r"] = { saveTo = { data.playerSpeed.background.colors.bg, data.travelSpeed.background.colors.bg, }, saveKey = "r", },
+					["appearance.backdrop.color.g"] = { saveTo = { data.playerSpeed.background.colors.bg, data.travelSpeed.background.colors.bg, }, saveKey = "g", },
+					["speedDisplay.background.colors.bg.g"] = { saveTo = { data.playerSpeed.background.colors.bg, data.travelSpeed.background.colors.bg, }, saveKey = "g", },
+					["appearance.backdrop.color.b"] = { saveTo = { data.playerSpeed.background.colors.bg, data.travelSpeed.background.colors.bg, }, saveKey = "b", },
+					["speedDisplay.background.colors.bg.b"] = { saveTo = { data.playerSpeed.background.colors.bg, data.travelSpeed.background.colors.bg, }, saveKey = "b", },
+					["appearance.backdrop.color.a"] = { saveTo = { data.playerSpeed.background.colors.bg, data.travelSpeed.background.colors.bg, }, saveKey = "a", },
+					["speedDisplay.background.colors.bg.a"] = { saveTo = { data.playerSpeed.background.colors.bg, data.travelSpeed.background.colors.bg, }, saveKey = "a", },
+					["fontSize"] = { saveTo = { data.playerSpeed.font, data.travelSpeed.font, }, saveKey = "size", },
+					["font.size"] = { saveTo = { data.playerSpeed.font, data.travelSpeed.font, }, saveKey = "size", },
+					["speedDisplay.text.font.size"] = { saveTo = { data.playerSpeed.font, data.travelSpeed.font, }, saveKey = "size", },
+					["speedDisplay.font.size"] = { saveTo = { data.playerSpeed.font, data.travelSpeed.font, }, saveKey = "size", },
+					["font.family"] = { saveTo = { data.playerSpeed.font, data.travelSpeed.font, }, saveKey = "family", },
+					["speedDisplay.text.font.family"] = { saveTo = { data.playerSpeed.font, data.travelSpeed.font, }, saveKey = "family", },
+					["speedDisplay.font.family"] = { saveTo = { data.playerSpeed.font, data.travelSpeed.font, }, saveKey = "family", },
+					["font.color.r"] = { saveTo = { data.playerSpeed.font.color, data.travelSpeed.font.color, }, saveKey = "r", },
+					["speedDisplay.text.font.color.r"] = { saveTo = { data.playerSpeed.font.color, data.travelSpeed.font.color, }, saveKey = "r", },
+					["speedDisplay.font.color.r"] = { saveTo = { data.playerSpeed.font.color, data.travelSpeed.font.color, }, saveKey = "r", },
+					["font.color.g"] = { saveTo = { data.playerSpeed.font.color, data.travelSpeed.font.color, }, saveKey = "g", },
+					["speedDisplay.text.font.color.g"] = { saveTo = { data.playerSpeed.font.color, data.travelSpeed.font.color, }, saveKey = "g", },
+					["speedDisplay.font.color.g"] = { saveTo = { data.playerSpeed.font.color, data.travelSpeed.font.color, }, saveKey = "g", },
+					["font.color.b"] = { saveTo = { data.playerSpeed.font.color, data.travelSpeed.font.color, }, saveKey = "b", },
+					["speedDisplay.text.font.color.b"] = { saveTo = { data.playerSpeed.font.color, data.travelSpeed.font.color, }, saveKey = "b", },
+					["speedDisplay.font.color.b"] = { saveTo = { data.playerSpeed.font.color, data.travelSpeed.font.color, }, saveKey = "b", },
+					["font.color.a"] = { saveTo = { data.playerSpeed.font.color, data.travelSpeed.font.color, }, saveKey = "a", },
+					["speedDisplay.text.font.color.a"] = { saveTo = { data.playerSpeed.font.color, data.travelSpeed.font.color, }, saveKey = "a", },
+					["speedDisplay.font.color.a"] = { saveTo = { data.playerSpeed.font.color, data.travelSpeed.font.color, }, saveKey = "a", },
+					["speedDisplay.font.text.valueType"] = { saveTo = { data.playerSpeed.value, data.travelSpeed.value, }, saveKey = "units", convertSave = ConvertOldValueType },
+					["speedDisplay.value.type"] = { saveTo = { data.playerSpeed.value, data.travelSpeed.value, }, saveKey = "units", convertSave = ConvertOldValueType },
+					["speedDisplay.value.units[1]"] = { saveTo = { data.playerSpeed.value, data.travelSpeed.value.units, }, saveKey = 1, },
+					["speedDisplay.value.units[2]"] = { saveTo = { data.playerSpeed.value, data.travelSpeed.value.units, }, saveKey = 2, },
+					["speedDisplay.value.units[3]"] = { saveTo = { data.playerSpeed.value, data.travelSpeed.value.units, }, saveKey = 3, },
+					["speedDisplay.font.text.decimals"] = { saveTo = { data.playerSpeed.value, data.travelSpeed.value, }, saveKey = "fractionals", },
+					["speedDisplay.value.decimals"] = { saveTo = { data.playerSpeed.value, data.travelSpeed.value, }, saveKey = "fractionals", },
+					["speedDisplay.value.fractionals"] = { saveTo = { data.playerSpeed.value, data.travelSpeed.value, }, saveKey = "fractionals", },
+					["speedDisplay.font.text.noTrim"] = { saveTo = { data.playerSpeed.value, data.travelSpeed.value, }, saveKey = "zeros", },
+					["speedDisplay.value.noTrim"] = { saveTo = { data.playerSpeed.value, data.travelSpeed.value, }, saveKey = "zeros", },
+					["playerSpeed.enabled"] = { saveTo = { data.playerSpeed.visibility, }, saveKey = "hidden", convertSave = function(value) return not value end },
+					["playerSpeed.throttle"] = { saveTo = { data.playerSpeed.update, }, saveKey = "throttle" },
+					["playerSpeed.frequency"] = { saveTo = { data.playerSpeed.update, }, saveKey = "frequency" },
+					["travelSpeed.enabled"] = { saveTo = { data.travelSpeed.visibility, }, saveKey = "hidden", convertSave = function(value) return not value end },
+					["travelSpeed.throttle"] = { saveTo = { data.travelSpeed.update, }, saveKey = "throttle" },
+					["travelSpeed.frequency"] = { saveTo = { data.travelSpeed.update, }, saveKey = "frequency" },
+					["targetSpeed.tooltip.enabled"] = { saveTo = { data.targetSpeed, }, saveKey = "enabled", },
+					["targetSpeed.tooltip.text.valueType"] = { saveTo = { data.targetSpeed.value, }, saveKey = "units", convertSave = ConvertOldValueType },
+					["targetSpeed.value.type"] = { saveTo = { data.targetSpeed.value, }, saveKey = "units", convertSave = ConvertOldValueType },
+					["targetSpeed.tooltip.text.decimals"] = { saveTo = { data.targetSpeed.value, }, saveKey = "fractionals", },
+					["targetSpeed.value.decimals"] = { saveTo = { data.targetSpeed.value, }, saveKey = "fractionals", },
+					["targetSpeed.tooltip.text.noTrim"] = { saveTo = { data.targetSpeed.value, }, saveKey = "zeros", },
+					["targetSpeed.value.noTrim"] = { saveTo = { data.targetSpeed.value, }, saveKey = "zeros", },
+					["visibility.hidden"] = { saveTo = { data.playerSpeed.visibility, }, saveKey = "hidden", },
+					["appearance.hidden"] = { saveTo = { data.playerSpeed.visibility, }, saveKey = "hidden", },
+				} end,
 				onProfileActivated = function(title)
 					--Update the interface options
 					options.playerSpeed.page.load(true)
@@ -1215,19 +1223,17 @@ frames.main = wt.CreateFrame({
 					options.dataManagement.page.load(true)
 				else chatCommands.print(wt.GetStrings("backup").error) end end,
 				onImportAllProfiles = function(success) if not success then chatCommands.print(wt.GetStrings("backup").error) end end,
-				valueChecker = CheckValidity,
-				onRecovery = GetRecoveryMap,
 			})
 
 			--[ Settings Setup ]
 
-			options.main.page = wt.CreateAboutPage(ns.name, {
+			options.about.page = wt.CreateAboutPage(ns.name, {
 				name = "Main",
 				description = ns.strings.options.main.description:gsub("#ADDON", ns.title),
 				changelog = ns.changelog
 			})
 
-			options.pageManager = wt.CreateSettingsCategory(ns.name, options.main.page, {
+			options.pageManager = wt.CreateSettingsCategory(ns.name, options.about.page, {
 				CreateSpeedDisplayOptionsPage(),
 				CreateTargetSpeedOptionsPage(),
 				options.dataManagement.page
@@ -1240,7 +1246,7 @@ frames.main = wt.CreateFrame({
 					{
 						command = ns.chat.commands.options,
 						description = ns.strings.chat.options.description:gsub("#ADDON", ns.title),
-						handler = options.main.page.open,
+						handler = options.about.page.open,
 					},
 					{
 						command = ns.chat.commands.preset,
@@ -1284,7 +1290,7 @@ frames.main = wt.CreateFrame({
 							"#HIDDEN", wt.Color(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.visibility.hidden and ns.strings.chat.toggle.hidden or ns.strings.chat.toggle.notHidden, ns.colors.yellow[1])
 						) end,
 						handler = function()
-							options.playerSpeed.visibility.hidden.setData(not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.visibility.hidden, true)
+							options.playerSpeed.visibility.hidden.setData(not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.visibility.hidden)
 
 							return true
 						end,
@@ -1298,7 +1304,7 @@ frames.main = wt.CreateFrame({
 							"#STATE", wt.Color(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.visibility.autoHide and ns.strings.misc.enabled or ns.strings.misc.disabled, ns.colors.yellow[1])
 						) end,
 						handler = function()
-							options.playerSpeed.visibility.autoHide.setData(not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.visibility.autoHide, true)
+							options.playerSpeed.visibility.autoHide.setData(not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.visibility.autoHide)
 
 							return true
 						end,
@@ -1320,7 +1326,7 @@ frames.main = wt.CreateFrame({
 
 							if not size then return false end
 
-							options.playerSpeed.font.size.setData(size, true)
+							options.playerSpeed.font.size.setData(size)
 
 							return true, size
 						end,
@@ -1365,14 +1371,6 @@ frames.main = wt.CreateFrame({
 						command = "hi",
 						hidden = true,
 						handler = function(manager) manager.welcome() end,
-					},
-					{
-						command = "delete",
-						hidden = true,
-						handler = function()
-							MovementSpeedDB = nil
-							ReloadUI()
-						end,
 					},
 				},
 				colors = {
@@ -1422,13 +1420,13 @@ frames.main = wt.CreateFrame({
 		OnShow = function() if not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.visibility.hidden then frames.playerSpeed.display:Show() end end,
 		OnHide = function() frames.playerSpeed.display:Hide() end
 	},
-	initialize = function(frame)
+	initialize = function(frame, _, _, name)
 
 		--| Player Speed
 
 		frames.playerSpeed.display = wt.CreateFrame({
 			parent = UIParent,
-			name = ns.name .. "PlayerSpeed",
+			name = name .. "PlayerSpeed",
 			customizable = true,
 			events = { OnUpdate = function(self)
 				--Update the tooltip

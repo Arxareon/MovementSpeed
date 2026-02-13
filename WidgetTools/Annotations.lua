@@ -328,6 +328,7 @@
 
 ---@class labelFontOptions
 ---@field normal? string Name of the font to be used when the widget is in its regular state | ***Default:*** "GameFontHighlight"
+---@field highlight? string Name of the font to be used when the widget is in a highlighted state | ***Default:*** "GameFontNormal"
 ---@field disabled? string Name of the font to be used when the widget is disabled | ***Default:*** "GameFontDisable"
 
 ---@class labelFontOptions_highlight
@@ -442,7 +443,7 @@
 ---@field color? colorData Apply the specified color to the texture
 ---@field edges? edgeCoordinates Edge coordinate offsets
 ---@field vertices? vertexCoordinates Vertex coordinate offsets<ul><li>***Note:*** Setting texture coordinate offsets is exclusive between edges and vertices. If set, **t.edges** will be used first ignoring **t.vertices**.</li></ul>
----@field events? table<ScriptRegion, fun(...: any)|attributeEventData> Table of key, value pairs of the names of script event handlers to be set for the texture object and the functions to assign as event handlers called when they trigger
+---@field events? table<ScriptType, fun(...: any)|attributeEventData> Table of key, value pairs of the names of script event handlers to be set for the texture object and the functions to assign as event handlers called when they trigger
 
 ---@class textureUpdateData
 ---@field position? positionData Table of parameters to call [Region:SetPoint(...)](https://wowpedia.fandom.com/wiki/API_ScriptRegionResizing_SetPoint) with | ***Default:*** **t.position**
@@ -578,7 +579,7 @@
 ---@field tooltip? GameTooltip Reference to the tooltip frame to set up | ***Default:*** *default WidgetTools custom tooltip*
 ---@field anchor TooltipAnchor [GameTooltip anchor](https://wowpedia.fandom.com/wiki/API_GameTooltip_SetOwner#Arguments)
 ---@field offset? offsetData Values to offset the position of **tooltipData.tooltip** by
----@field position? positionData_base Table of parameters to call [Region:SetPoint(...)](https://wowpedia.fandom.com/wiki/API_ScriptRegionResizing_SetPoint) with when the tooltip is not automatically positioned via **t.anchor** | ***Default:*** "TOPLEFT" if **tooltipData.anchor** == "ANCHOR_NONE"<ul><li>***Note:*** **t.offset** will be used when calling [Region:SetPoint(...)](https://wowpedia.fandom.com/wiki/API_ScriptRegionResizing_SetPoint) as well.</li></ul>
+---@field position? positionData_base|positionData Table of parameters to call [Region:SetPoint(...)](https://wowpedia.fandom.com/wiki/API_ScriptRegionResizing_SetPoint) with when the tooltip is not automatically positioned via **t.anchor** | ***Default:*** "TOPLEFT" if **tooltipData.anchor** == "ANCHOR_NONE"<ul><li>***Note:*** **t.offset** will be used when calling [Region:SetPoint(...)](https://wowpedia.fandom.com/wiki/API_ScriptRegionResizing_SetPoint) as well.</li></ul>
 ---@field flipColors? boolean Flip the default color values of the title and the text lines | ***Default:*** false
 
 ---@class tooltipUpdateData
@@ -586,7 +587,7 @@
 ---@field lines? tooltipLineData[] Table containing the lists of parameters for the text lines after the title | ***Default:*** **owner.tooltipData.lines**
 ---@field tooltip? GameTooltip Reference to the tooltip frame to set up | ***Default:*** **owner.tooltipData.tooltip**
 ---@field offset? offsetData Values to offset the position of **tooltipData.tooltip** by | ***Default:*** **owner.tooltipData.offset**
----@field position? positionData_base Table of parameters to call [Region:SetPoint(...)](https://wowpedia.fandom.com/wiki/API_ScriptRegionResizing_SetPoint) with when the tooltip is not automatically positioned via **t.anchor** | ***Default:*** **owner.tooltipData.position**
+---@field position? positionData_base|positionData Table of parameters to call [Region:SetPoint(...)](https://wowpedia.fandom.com/wiki/API_ScriptRegionResizing_SetPoint) with when the tooltip is not automatically positioned via **t.anchor** | ***Default:*** **owner.tooltipData.position**
 ---@field flipColors? boolean Flip the default color values of the title and the text lines | ***Default:*** **owner.tooltipData.flipColors**
 ---@field anchor? TooltipAnchor [GameTooltip anchor](https://wowpedia.fandom.com/wiki/API_GameTooltip_SetOwner#Arguments) | ***Default:*** **owner.tooltipData.anchor**
 
@@ -706,7 +707,7 @@
 ---@field name? string Unique string used to set the name of the new frame | ***Default:*** nil *(anonymous frame)*<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
 ---@field append? boolean When setting the name, append **t.name** to the name of **t.parent** instead | ***Default:*** true if **t.name** ~= nil and **t.parent** ~= nil and **t.parent** ~= UIParent
 ---@field customizable? boolean Create the frame with `BackdropTemplateMixin and "BackdropTemplate"` to be easily customizable | ***Default:*** false<ul><li>***Note:*** You may use ***WidgetToolbox*.SetBackdrop(...)** to set up the backdrop quickly.</li></ul>
----@field size? sizeData_zeroDefault ***Default:*** *no size*<ul><li>***Note:*** Omitting or setting either value to 0 will result in the frame being invisible and not getting placed on the screen.</li></ul>
+---@field size? sizeData_zeroDefault|sizeData ***Default:*** *no size*<ul><li>***Note:*** Omitting or setting either value to 0 will result in the frame being invisible and not getting placed on the screen.</li></ul>
 ---@field events? table<ScriptFrame, fun(...: any)|attributeEventData> Table of key, value pairs of the names of script event handlers to be set for the frame and the functions to assign as event handlers called when they trigger<ul><li>***Note:*** "[OnEvent](https://wowpedia.fandom.com/wiki/UIHANDLER_OnEvent)" handlers specified here will not be set. Handler functions for specific global events should be specified in the **t.onEvent** table.</li></ul>
 ---@field onEvent? table<WowEvent, fun(self: Frame, ...: any)> Table of key, value pairs that holds global event tags & their corresponding event handlers to be registered for the frame<ul><li>***Note:*** You may want to include [Frame:UnregisterEvent(...)](https://wowpedia.fandom.com/wiki/API_Frame_UnregisterEvent) to prevent the handler function to be executed again.</li><li>***Example:*** "[ADDON_LOADED](https://wowpedia.fandom.com/wiki/ADDON_LOADED)" is fired repeatedly after each addon. To call the handler only after one specified addon is loaded, you may check the parameter the handler is called with. It's a good idea to unregister the event to prevent repeated calling for every other addon after the specified one has been loaded already.<pre>```function(self, addon)```<br>&#9;```if addon ~= "AddonNameSpace" then return end --Replace "AddonNameSpace" with the namespace of the specific addon to watch```<br>&#9;```self:UnregisterEvent("ADDON_LOADED")```<br>&#9;```--Do something```<br>```end```</pre></li></ul>
 
@@ -721,8 +722,8 @@
 
 ---@class scrollFrameCreationData : childObject, positionableObject, initializableContainer, scrollSpeedData
 ---@field name? string Unique string used to append to the name of **t.parent** when setting the names of the name of the scroll parent and its scrollable child frame | ***Default:*** "Scroller" *(for the scrollable child frame)*<ul><li>***Note:*** Space characters will be removed when used for setting the frame names.</li></ul>
----@field size? sizeData_parentDefault ***Default:*** **t.parent** and *size of the parent frame* or *no size*
----@field scrollSize? sizeData_scroll ***Default:*** *size of the parent frame*
+---@field size? sizeData_parentDefault|sizeData ***Default:*** **t.parent** and *size of the parent frame* or *no size*
+---@field scrollSize? sizeData_scroll|sizeData ***Default:*** *size of the parent frame*
 
 --[ Panel ]
 
@@ -772,15 +773,13 @@
 
 ---@class panelCreationData : labeledChildObject, describableObject, positionableScreenObject, arrangeableObject, visibleObject_base, backdropData, initializableContainer, liteObject
 ---@field name? string Unique string used to set the frame name | ***Default:*** "Panel"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
----@field size? sizeData_panel
+---@field size? sizeData_panel|sizeData
 ---@field background? backdropBackgroundData_panel Table containing the parameters used for the background
 ---@field border? backdropBorderData_panel Table containing the parameters used for the border
 ---@field events? table<ScriptFrame, fun(...: any)|attributeEventData> Table of key, value pairs of the names of script event handlers to be set for the panel and the functions to assign as event handlers called when they trigger
 ---@field initialize? fun(container?: panel, width: number, height: number, name?: string) This function will be called while setting up the container frame to perform specific tasks like creating content child frames right away<hr><p>@*param* `container`? panel ― Reference to the frame to be set as the parent for child objects created during initialization (nil if **WidgetToolsDB.lite** is true)</p><p>@*param* `width` number The current width of the container frame (0 if **WidgetToolsDB.lite** is true)</p><p>@*param* `height` number The current height of the container frame (0 if **WidgetToolsDB.lite** is true)</p><p>@*param* `name`? string The name parameter of the container specified at construction</p>
 
 --[ Context Menu ]
-
----@class rootDescription
 
 --| Parameters
 
@@ -791,17 +790,20 @@
 ---@field w? number Width | ***Default:*** 180
 ---@field h? number Height | ***Default:*** 26
 
+---@class contextMenuTriggerData
+---@field frame AnyFrameObject? Reference to the frame to set as a trigger | ***Default:*** UIParent *(opened at cursor position)*
+---@field rightClick? boolean If true, create and open the context menu via a right-click mouse click event on **frame** | ***Default:*** true
+---@field leftClick? boolean If true, create and open the context menu via a left-click mouse click event on **frame** | ***Default:*** false
+---@field hover? boolean If true, create and open the context menu via a mouse hover event on **frame** | ***Default:*** false
+---@field condition? fun(action: "click"|"hover"|nil): boolean Function to call and evaluate before creating and opening the menu: if the returned value is not true, don't open the menu
+
 --| Constructors
 
 ---@class contextMenuCreationData_base
 ---@field initialize? fun(menu: contextMenu|contextSubmenu) This function will be called while setting up the menu to perform specific tasks like creating menu content items right away<hr><p>@*param* `menu` contextMenu|contextSubmenu ― Reference to the container of menu elements (such as titles, widgets, dividers or other frames) for menu items to be added to during initialization</p>
 
 ---@class contextMenuCreationData : contextMenuCreationData_base
----@field parent AnyFrameObject? Reference to the frame to set as the parent | ***Default:*** UIParent *(opened at cursor position)*
----@field rightClickMenu? boolean If true, create and open the context menu via a right-click mouse click event on **parent** | ***Default:*** true
----@field leftClickMenu? boolean If true, create and open the context menu via a left-click mouse click event on **parent** | ***Default:*** false
----@field hoverMenu? boolean If true, create and open the context menu via a mouse hover event on **parent** | ***Default:*** false
----@field condition? fun(): boolean Function to call and evaluate before creating and opening the menu: if the returned value is not true, don't open the menu
+---@field triggers? contextMenuTriggerData[] List of trigger frames and behavior to link to toggle the context menu
 
 ---@class contextSubmenuCreationData : contextMenuCreationData_base
 ---@field title? string Text to be shown on the opener button item representing the submenu within the parent menu | ***Default:*** "Submenu"
@@ -816,7 +818,7 @@
 ---@class popupMenuCreationData : labeledChildObject, tooltipDescribableWidget, positionableScreenObject, arrangeableObject, visibleObject_base, contextMenuCreationData_base
 ---@field parent? AnyFrameObject Reference to the frame to set as the parent of the new frame | ***Default:*** nil *(parentless frame)*<ul><li>***Note:*** You may use [Region:SetParent(...)](https://wowpedia.fandom.com/wiki/API_ScriptRegion_SetParent) to set the parent frame later.</li></ul>
 ---@field name? string Unique string used to set the frame name | ***Default:*** "PopupMenu"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
----@field size? sizeData_menuButton
+---@field size? sizeData_menuButton|sizeData
 ---@field events? table<ScriptFrame, fun(...: any)|attributeEventData> Table of key, value pairs of the names of script event handlers to be set for the frame and the functions to assign as event handlers called when they trigger<ul><li>***Note:*** "[OnEvent](https://wowpedia.fandom.com/wiki/UIHANDLER_OnEvent)" handlers specified here will not be set. Handler functions for specific global events should be specified in the **t.onEvent** table.</li></ul>
 ---@field onEvent? table<WowEvent, fun(self: Frame, ...: any)> Table of key, value pairs that holds global event tags & their corresponding event handlers to be registered for the frame<ul><li>***Note:*** You may want to include [Frame:UnregisterEvent(...)](https://wowpedia.fandom.com/wiki/API_Frame_UnregisterEvent) to prevent the handler function to be executed again.</li><li>***Example:*** "[ADDON_LOADED](https://wowpedia.fandom.com/wiki/ADDON_LOADED)" is fired repeatedly after each addon. To call the handler only after one specified addon is loaded, you may check the parameter the handler is called with. It's a good idea to unregister the event to prevent repeated calling for every other addon after the specified one has been loaded already.<pre>```function(self, addon)```<br>&#9;```if addon ~= "AddonNameSpace" then return end --Replace "AddonNameSpace" with the namespace of the specific addon to watch```<br>&#9;```self:UnregisterEvent("ADDON_LOADED")```<br>&#9;```--Do something```<br>```end```</pre></li></ul>
 
@@ -968,7 +970,7 @@
 ---@class simpleButtonCreationData : actionButtonCreationData, labeledChildObject, tooltipDescribableWidget, arrangeableObject, positionableObject, visibleObject_base, buttonScriptEvents, liteObject
 ---@field name? string Unique string used to set the frame name | ***Default:*** "Button"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
 ---@field titleOffset? offsetData Offset the position of the label of the button
----@field size? sizeData_button
+---@field size? sizeData_button|sizeData
 ---@field font? labelFontOptions_highlight List of the [Font](https://wowpedia.fandom.com/wiki/UIOBJECT_Font) object names to be used for the label | ***Default:*** *normal sized default Blizzard UI fonts*<ul><li>***Note:*** A new font object (or a modified copy of an existing one) can be created via ***WidgetToolbox*.CreateFont(...)** (even within this table definition).</li></ul>
 
 ---@class customButtonCreationData : simpleButtonCreationData, customizableObject
@@ -1047,12 +1049,12 @@
 
 ---@class checkboxCreationData : toggleCreationData, labeledChildObject, tooltipDescribableWidget, arrangeableObject, positionableObject, visibleObject_base, liteObject, settingsFrame
 ---@field name? string Unique string used to set the frame name | ***Default:*** "Toggle"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
----@field size? sizeData_checkbox
+---@field size? sizeData_checkbox|sizeData
 ---@field font? labelFontOptions List of the [Font](https://wowpedia.fandom.com/wiki/UIOBJECT_Font) object names to be used for the label | ***Default:*** *normal sized default Blizzard UI fonts*<ul><li>***Note:*** A new font object (or a modified copy of an existing one) can be created via ***WidgetToolbox*.CreateFont(...)** (even within this table definition).</li></ul>
 ---@field events? table<ScriptButton, fun(self: checkbox, state: boolean, button?: string, down?: boolean)|fun(...: any)|attributeEventData> Table of key, value pairs of the names of script event handlers to be set for the checkbox and the functions to assign as event handlers called when they trigger<ul><li>***Note:*** "[OnClick](https://wowpedia.fandom.com/wiki/UIHANDLER_OnClick)" will be called with custom parameters:<hr><p>@*param* `self` AnyFrameObject ― Reference to the toggle frame</p><p>@*param* `state` boolean ― The checked state of the toggle frame</p><p>@*param* `button`? string — Which button caused the click | ***Default:*** "LeftButton"</p><p>@*param* `down`? boolean — Whether the event happened on button press (down) or release (up) | ***Default:*** false</p></li></ul>
 
 ---@class radioButtonCreationData : checkboxCreationData
----@field size? sizeData_radioButton
+---@field size? sizeData_radioButton|sizeData
 ---@field clearable? boolean Whether this radio button should be clearable by right clicking on it or not | ***Default:*** false<ul><li>***Note:*** The radio button will be registered for "RightButtonUp" triggers to call "[OnClick](https://wowpedia.fandom.com/wiki/UIHANDLER_OnClick)" events with **button** = "RightButton".</li></ul>
 ---@field events? table<ScriptButton, fun(self: radioButton, state: boolean, button?: string, down?: boolean)|fun(...: any)|attributeEventData> Table of key, value pairs of the names of script event handlers to be set for the radio button and the functions to assign as event handlers called when they trigger<ul><li>***Note:*** "[OnClick](https://wowpedia.fandom.com/wiki/UIHANDLER_OnClick)" will be called with custom parameters:<hr><p>@*param* `self` AnyFrameObject ― Reference to the toggle frame</p><p>@*param* `state` boolean ― The checked state of the toggle frame</p><p>@*param* `button`? string — Which button caused the click | ***Default:*** "LeftButton"</p><p>@*param* `down`? boolean — Whether the event happened on button press (down) or release (up) | ***Default:*** false</p></li></ul>
 
@@ -1172,7 +1174,7 @@
 
 ---@class selectorItem
 ---@field title? string Text to be shown on the right of the item to represent the item within the selector frame (if **t.labels** is true)
----@field tooltip? itemTooltipTextData List of text lines to be added to the tooltip of the item displayed when mousing over the frame
+---@field tooltip? itemTooltipTextData|widgetTooltipTextData List of text lines to be added to the tooltip of the item displayed when mousing over the frame
 ---@field onSelect? function The function to be called when the item is selected by the user
 
 ---@class limitValues
@@ -1263,7 +1265,7 @@
 ---@field clearable? boolean If true, the value of the selector input should be clearable and allowed to be set to nil | ***Default:*** false
 
 ---@class selectorCreationData : togglableObject, settingsWidget, selectorCreationData_base
----@field items? (selectorItem|toggle)[] Table containing subtables with data used to create item widgets, or already existing toggles
+---@field items? (selectorItem|toggle|selectorToggle)[] Table containing subtables with data used to create item widgets, or already existing toggles
 ---@field listeners? selectorEventListeners Table of key, value pairs of custom widget event tags and functions to assign as event handlers to call on trigger
 ---@field getData? fun(): selected: integer|nil Called to (if needed, modify and) load the widget data from storage<hr><p>@*return* `selected` integer|nil | ***Default:*** nil *(no selection)*</p>
 ---@field saveData? fun(selected?: integer) Called to (if needed, modify and) save the widget data to storage<hr><p>@*param* `selected`? integer</p>
@@ -1388,7 +1390,7 @@
 
 ---@class editboxCreationData : textboxCreationData, labeledChildObject, tooltipDescribableWidget, arrangeableObject, positionableObject, visibleObject_base, liteObject, settingsFrame
 ---@field name? string Unique string used to set the frame name | ***Default:*** "Textbox"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
----@field size? sizeData_editbox
+---@field size? sizeData_editbox|sizeData
 ---@field insets? insetData Table containing padding values by which to offset the position of the text in the editbox
 ---@field font? labelFontOptions_editbox List of the [Font](https://wowpedia.fandom.com/wiki/UIOBJECT_Font) object names to be used for the label<ul><li>***Note:*** A new font object (or a modified copy of an existing one) can be created via ***WidgetToolbox*.CreateFont(...)** (even within this table definition).</li></ul>
 ---@field justify? justifyData_left Set the justification of the text (overriding all font objects set in **t.font**)
@@ -1412,7 +1414,7 @@
 
 ---@class copyboxCreationData : labeledChildObject, tooltipDescribableWidget, arrangeableObject, positionableObject, visibleObject_base, liteObject
 ---@field name? string Unique string used to set the frame name | ***Default:*** "Copybox"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
----@field size? sizeData_editbox
+---@field size? sizeData_editbox|sizeData
 ---@field layer? DrawLayer
 ---@field font? string Name of the [Font](https://wowpedia.fandom.com/wiki/UIOBJECT_Font) object to be used for the [FontString](https://wowpedia.fandom.com/wiki/UIOBJECT_FontString) | ***Default:*** "GameFontNormalSmall"<ul><li>***Note:*** A new font object (or a modified copy of an existing one) can be created via ***WidgetToolbox*.CreateFont(...)** (even within this table definition).</li></ul>
 ---@field color? colorData Apply the specified color to the text (overriding **t.font**)
