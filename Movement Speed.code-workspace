@@ -69,6 +69,7 @@
 		"Lua.diagnostics.disable": [
 			"assign-type-mismatch"
 		],
-		"Lua.type.weakUnionCheck": true
+		"Lua.type.weakUnionCheck": true,
+		"todo-tree.tree.scanMode": "current file"
 	}
 }

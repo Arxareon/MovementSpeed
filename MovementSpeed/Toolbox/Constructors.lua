@@ -5036,6 +5036,7 @@ function wt.CreateMultilineEditbox(t, widget)
 	textbox.frame:SetSize(t.size.w, t.size.h)
 	textbox.scrollFrame:SetSize(t.size.w - 10, scrollFrameHeight)
 	textbox.scrollFrame.ScrollBar:SetHeight(scrollFrameHeight - 4)
+	textbox.scrollFrame.EditBox:SetWidth(textbox.scrollFrame:GetWidth())
 
 	--| Label
 

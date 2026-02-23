@@ -30,6 +30,11 @@ ns.chat = {
 --Changelog
 ns.changelog = {
 	{
+		"#V_Version 2.2_# #H_(13/2/2026)_#",
+		"#F_Hotfix:_#",
+		"Text in editboxes will once again be properly sized to fit the width of the boxes.",
+	},
+	{
 		"#V_Version 2.1_# #H_(13/2/2026)_#",
 		"#N_Updates:_#",
 		"Added Midnight 12.0.1, Mists of Pandaria 5.5.3, The Burning Crusade 2.5.5 & Classic 1.15.8 support.",

@@ -485,6 +485,7 @@ local function EnableTargetSpeedUpdates()
 	--Start mouseover Target Speed updates
 	TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Unit, function(tooltip)
 		if not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.targetSpeed.enabled then return end
+		if IsInInstance() and not UnitIsFriend("player", "mouseover") then return end
 
 		frames.targetSpeed:SetScript("OnUpdate", function()
 			if UnitName("mouseover") == nil then return end
@@ -1335,7 +1336,10 @@ local function CreateTargetSpeedOptionsPage()
 						parent = panel,
 						name = "Enabled",
 						title = ns.strings.options.targetSpeed.mouseover.enabled.label,
-						tooltip = { lines = { { text = ns.strings.options.targetSpeed.mouseover.enabled.tooltip:gsub("#ADDON", ns.title), }, } },
+						tooltip = { lines = {
+							{ text = ns.strings.options.targetSpeed.mouseover.enabled.tooltip:gsub("#ADDON", ns.title), },
+							{ text = "\n" .. ns.strings.options.targetSpeed.mouseover.enabled.instance, color = { r = 0.92, g = 0.34, b = 0.23 }, },
+						} },
 						arrange = {},
 						getData = function() return MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.targetSpeed.enabled end,
 						saveData = function(state) MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.targetSpeed.enabled = state end,

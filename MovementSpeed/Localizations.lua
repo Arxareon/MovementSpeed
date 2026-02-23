@@ -148,7 +148,8 @@ ns.localizations.enUS = {
 				title = "Inspect Tooltip",
 				enabled = {
 					label = "Enable Integration",
-					tooltip = "Enable or disable the #ADDON integration within the mouseover target inspect tooltip."
+					tooltip = "Enable or disable the #ADDON integration within the mouseover target inspect tooltip.",
+					instance = "Not available for enemy targets while in an instance.",
 				},
 			},
 		},
@@ -401,7 +402,8 @@ ns.localizations.ptBR = {
 				title = "Tooltip de Inspeção",
 				enabled = {
 					label = "Ativar Integração",
-					tooltip = "Ative ou desative a integração do #ADDON no tooltip de inspeção do alvo ao passar o mouse."
+					tooltip = "Ative ou desative a integração do #ADDON no tooltip de inspeção do alvo ao passar o mouse.",
+					instance = "Não disponível para alvos inimigos enquanto estiver em uma instância.",
 				},
 			},
 		},
@@ -654,7 +656,8 @@ ns.localizations.deDE = {
 				title = "Inspektions-Tooltip",
 				enabled = {
 					label = "Integration aktivieren",
-					tooltip = "Aktiviere oder deaktiviere die #ADDON-Integration im Mouseover-Inspektions-Tooltip."
+					tooltip = "Aktiviere oder deaktiviere die #ADDON-Integration im Mouseover-Inspektions-Tooltip.",
+					instance = "Für feindliche Ziele in einer Instanz nicht verfügbar.",
 				},
 			},
 		},
@@ -907,7 +910,8 @@ ns.localizations.frFR = {
 				title = "Tooltip d'inspection",
 				enabled = {
 					label = "Activer l'intégration",
-					tooltip = "Activer ou désactiver l'intégration #ADDON dans le tooltip d'inspection de la cible au survol."
+					tooltip = "Activer ou désactiver l'intégration #ADDON dans le tooltip d'inspection de la cible au survol.",
+					instance = "Indisponible pour les cibles ennemies lorsque vous êtes dans une instance.",
 				},
 			},
 		},
@@ -1160,7 +1164,8 @@ ns.localizations.esES = {
 				title = "Tooltip de inspección",
 				enabled = {
 					label = "Activar integración",
-					tooltip = "Activa o desactiva la integración de #ADDON en el tooltip de inspección del objetivo al pasar el ratón."
+					tooltip = "Activa o desactiva la integración de #ADDON en el tooltip de inspección del objetivo al pasar el ratón.",
+					instance = "No disponible para objetivos enemigos mientras estés en una instancia.",
 				},
 			},
 		},
@@ -1413,7 +1418,8 @@ ns.localizations.esMX = {
 				title = "Tooltip de inspección",
 				enabled = {
 					label = "Activar integración",
-					tooltip = "Activa o desactiva la integración de #ADDON en el tooltip de inspección del objetivo al pasar el mouse."
+					tooltip = "Activa o desactiva la integración de #ADDON en el tooltip de inspección del objetivo al pasar el mouse.",
+					instance = "No disponible para objetivos enemigos mientras estás en una instancia.",
 				},
 			},
 		},
@@ -1666,7 +1672,8 @@ ns.localizations.itIT = {
 				title = "Tooltip Ispezione",
 				enabled = {
 					label = "Abilita Integrazione",
-					tooltip = "Abilita o disabilita l'integrazione di #ADDON nel tooltip di ispezione del bersaglio al passaggio del mouse."
+					tooltip = "Abilita o disabilita l'integrazione di #ADDON nel tooltip di ispezione del bersaglio al passaggio del mouse.",
+					instance = "Non disponibile per i bersagli nemici mentre sei in un'istanza.",
 				},
 			},
 		},
@@ -1919,7 +1926,8 @@ ns.localizations.koKR = {
 				title = "툴팁 검사",
 				enabled = {
 					label = "통합 활성화",
-					tooltip = "마우스오버 대상 검사 툴팁에서 #ADDON 통합을 켜거나 끕니다."
+					tooltip = "마우스오버 대상 검사 툴팁에서 #ADDON 통합을 켜거나 끕니다.",
+					instance = "인스턴스 지역에 있는 동안 적 대상에게는 사용할 수 없습니다.",
 				},
 			},
 		},
@@ -2172,7 +2180,8 @@ ns.localizations.zhTW = {
 				title = "檢查提示",
 				enabled = {
 					label = "啟用整合",
-					tooltip = "啟用或停用#ADDON於滑鼠懸停目標檢查提示的整合。"
+					tooltip = "啟用或停用#ADDON於滑鼠懸停目標檢查提示的整合。",
+					instance = "在副本中時無法對敵方目標使用。",
 				},
 			},
 		},
@@ -2425,7 +2434,8 @@ ns.localizations.zhCN = {
 				title = "检查提示",
 				enabled = {
 					label = "启用集成",
-					tooltip = "启用或禁用#ADDON在鼠标悬停目标检查提示中的集成。"
+					tooltip = "启用或禁用#ADDON在鼠标悬停目标检查提示中的集成。",
+					instance = "在副本中时无法对敌方目标使用。",
 				},
 			},
 		},
@@ -2678,7 +2688,8 @@ ns.localizations.ruRU = {
 				title = "Подсказка инспекции",
 				enabled = {
 					label = "Включить интеграцию",
-					tooltip = "Включить или выключить интеграцию #ADDON в подсказке инспекции цели при наведении мыши."
+					tooltip = "Включить или выключить интеграцию #ADDON в подсказке инспекции цели при наведении мыши.",
+					instance = "Недоступно для вражеских целей, пока вы находитесь в подземелье.",
 				},
 			},
 		},

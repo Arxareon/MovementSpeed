@@ -307,7 +307,7 @@ local function EnableTargetSpeedUpdates()
 	targetSpeedEnabled = true
 
 	--Start mouseover Target Speed updates
-	TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Unit, function(tooltip)
+	GameTooltip:HookScript("OnTooltipSetUnit", function(tooltip)
 		if not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.targetSpeed.enabled then return end
 
 		frames.targetSpeed:SetScript("OnUpdate", function()

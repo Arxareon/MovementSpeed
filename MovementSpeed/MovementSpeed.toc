@@ -1,7 +1,7 @@
 ## Interface: 120001, 50503, 20505, 11508
 ## Title: Movement Speed
-## Version: 3.1
-## X-Day: 13
+## Version: 3.2
+## X-Day: 23
 ## X-Month: 2
 ## X-Year: 2026
 ## Category: HUDs
@@ -25,5 +25,5 @@ Toolbox\Resources.lua
 Toolbox\Utilities.lua
 Toolbox\Constructors.lua
 Main.lua [AllowLoadGameType mainline]
-Main_Classic.lua [AllowLoadGameType classic]
-Main_Vanilla.lua [AllowLoadGameType vanilla]
+Main_Classic.lua [AllowLoadGameType Wrath, Cata, Mists]
+Main_Vanilla.lua [AllowLoadGameType Vanilla, TBC]

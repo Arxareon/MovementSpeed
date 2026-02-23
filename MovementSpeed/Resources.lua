@@ -36,6 +36,11 @@ ns.chat = {
 --Changelog
 ns.changelog = {
 	{
+		"#V_Version 3.2_# #H_(23/2/2026)_#",
+		"#F_Hotfix:_#",
+		"The Target Speed mouseover feature will no longer cause problems when mousing over an enemy while in an instance in Midnight.\n#H_Due to the new combat restrictions imposed on addons, this feature can no longer work on enemies while in an instance._#",
+	},
+	{
 		"#V_Version 3.1_# #H_(13/2/2026)_#",
 		"#C_Changes:_#",
 		"Added Midnight 12.0.1, Mists of Pandaria 5.5.3, The Burning Crusade 2.5.5 & Classic 1.15.8 support.",
