@@ -29,6 +29,14 @@
 ---@field fractionals integer Number of fractional digits to show
 ---@field zeros boolean Show trailing zeros
 
+---@class speedColorList : textColorData_base
+---@field yards colorData
+---@field percent colorData
+---@field coords colorData
+
+---@class displayFontData : fontOptionsData
+---@field colors speedColorList
+
 --| Speed Display
 
 ---@class displayData : positionPresetData
@@ -47,13 +55,6 @@
 ---@field autoHide boolean The display auto-hides when not moving
 ---@field statusNotice boolean Print a visibility notice in chat on load
 
----@class displayFontData
----@field family string Path to font to use
----@field size integer Font size in pixels
----@field alignment JustifyHorizontal Horizontal text alignment
----@field valueColoring boolean Auto-color speed text by speed value types ignoring font color set
----@field color colorData Base text color (overwritten by value coloring if enabled)
-
 ---@class displayBackgroundColorData
 ---@field bg colorData Background texture color
 ---@field border colorData Border texture color
@@ -64,9 +65,13 @@
 
 --| Target Speed
 
+---@class tooltipFontData
+---@field colors speedColorList
+
 ---@class targetSpeedData
 ---@field enabled boolean
 ---@field value speedValueData
+---@field font tooltipFontData
 
 
 --[[ MISC ]]

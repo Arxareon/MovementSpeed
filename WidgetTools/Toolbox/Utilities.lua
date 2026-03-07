@@ -88,7 +88,7 @@ end
 ---@param object any Object to dump out
 ---@param name? string A name to print out | ***Default:*** *the dumped object will not be named* | ***Default:*** true
 ---@param depth? integer How many levels of subtables to print out (root level: 0) | ***Default:*** *full depth*
----@param blockrule? fun(key: integer|string): boolean Manually filter further exploring subtables under specific keys, skipping it if the value returned is true
+---@param blockrule? fun(key: integer|string): boolean Manually filter further exploring subtables under specific keys, skipping it if the value returned is true<ul><li>***Note:*** *The code examples below are only visible in the full function annotations, not the parameter annotations.*</li></ul>
 --- - ***Example:*** **Match:** Skip a specific matching key
 --- 	```
 --- 	function(key) return key == "skip_key" end
@@ -119,8 +119,7 @@ end
 --- 	```
 ---@param digTables? boolean If true, explore and dump the non-subtable values of table objects | ***Default:*** true
 ---@param digFrames? boolean If true, explore and dump the insides of objects recognized as frames | ***Default:*** false
----@param linesPerMessage? integer Print the specified number of output lines in a single chat message to be able to display more message history and allow faster scrolling | ***Default:*** 2
---- - ***Note:*** Set to 0 to print all lines in a single message.
+---@param linesPerMessage? integer Print the specified number of output lines in a single chat message to be able to display more message history and allow faster scrolling | ***Default:*** 2<ul><li>***Note:*** Set to 0 to print all lines in a single message.</li></ul>
 function wt.Dump(object, name, blockrule, depth, digTables, digFrames, linesPerMessage)
 	--| Get the output lines
 
@@ -148,11 +147,9 @@ end
 
 ---Access a Blizzard modifier key down checking function via a modifier key string
 ---***
----@param modifier ModifierKey Which checker function to get
---- - ***Note:*** When set to "any" [IsModifierKeyDown()](https://warcraft.wiki.gg/wiki/API_IsModifierKeyDown) is used, otherwise the corresponding key down checker is returned.
+---@param modifier ModifierKey Which checker function to get<ul><li>***Note:*** When set to "any" [IsModifierKeyDown()](https://warcraft.wiki.gg/wiki/API_IsModifierKeyDown) is used, otherwise the corresponding key down checker is returned.</li></ul>
 ---***
----@return boolean|fun(): isDown: boolean checker Checks if the **modifier** key is currently being pressed down, returning true
---- - ***Note:*** Always returns true when an invalid **modifier** string was provided.
+---@return boolean|fun(): isDown: boolean checker Checks if the **modifier** key is currently being pressed down, returning true<ul><li>***Note:*** Always returns true when an invalid **modifier** string was provided.</li></ul>
 ---***
 ---<p></p>
 function wt.GetModifierChecker(modifier)
@@ -249,11 +246,8 @@ end
 ---***
 ---@param t? positionData Table containing parameters to call [Region:SetPoint(...)](https://warcraft.wiki.gg/wiki/API_ScriptRegionResizing_SetPoint) with
 ---***
----@return FramePoint anchor ***Default:*** "TOPLEFT"
---- - ***Note:*** Default to "TOPLEFT" when an invalid input is provided.
----@return AnyFrameObject|nil relativeTo ***Default:*** "nil" *(anchor relative to screen dimensions)*
---- - ***Note:*** When omitting the value by providing nil, instead of the string "nil", anchoring will use the parent region (if possible, otherwise the default behavior of anchoring relative to the screen dimensions will be used).
---- - ***Note:*** Default to nil when an invalid frame name is provided.
+---@return FramePoint anchor ***Default:*** "TOPLEFT"<ul><li>***Note:*** Default to "TOPLEFT" when an invalid input is provided.</li></ul>
+---@return AnyFrameObject|nil relativeTo ***Default:*** "nil" *(anchor relative to screen dimensions)*<ul><li>***Note:*** When omitting the value by providing nil, instead of the string "nil", anchoring will use the parent region (if possible, otherwise the default behavior of anchoring relative to the screen dimensions will be used).</li><li>***Note:*** Default to nil when an invalid frame name is provided.</li></ul>
 ---@return FramePoint? relativePoint
 ---@return number|nil offsetX ***Default:*** 0
 ---@return number|nil offsetY ***Default:*** 0
@@ -278,9 +272,9 @@ end
 
 ---Return a table constructed from color values
 ---***
----@param red? number ***Range:*** (0, 1) | ***Default:*** 1
----@param green? number ***Range:*** (0, 1) | ***Default:*** 1
----@param blue? number ***Range:*** (0, 1) | ***Default:*** 1
+---@param red? number Red | ***Range:*** (0, 1) | ***Default:*** 1
+---@param green? number Green | ***Range:*** (0, 1) | ***Default:*** 1
+---@param blue? number Blue | ***Range:*** (0, 1) | ***Default:*** 1
 ---@param alpha? number Opacity | ***Range:*** (0, 1) | ***Default:*** 1
 ---***
 ---@return colorData # Table containing the color values
@@ -290,57 +284,41 @@ end
 
 ---Returns the color values found in a table
 ---***
----@param t colorData Table containing the color values
+---@param color? colorData|colorRGBA Table containing the color values | ***Default:*** *opaque white*
 ---@param alpha? boolean Specify whether to return the full RGBA set or just the RGB values | ***Default:*** true
 ---***
----@return number r
---- - ***Note:*** Default to 1 when an invalid input is provided or **t.r** is not set.
----@return number g
---- - ***Note:*** Default to 1 when an invalid or input is provided or **t.g** is not set.
----@return number b
---- - ***Note:*** Default to 1 when an invalid input is provided or **t.b** is not set.
----@return number|nil a
---- - ***Note:*** Default to 1 when an invalid input is provided or **t.a** is not set.
-function wt.UnpackColor(t, alpha)
-	if type(t) ~= "table" then return 1, 1, 1, 1 end
-	if alpha ~= false then return t.r or 1, t.g or 1, t.b or 1, t.a or 1 else return t.r, t.g, t.b end
+---@return number r Red | ***Range:*** (0, 1)<ul><li>***Note:*** Default to 1 when an invalid input is provided or **color.r** is not set.</li></ul>
+---@return number g Green | ***Range:*** (0, 1)<ul><li>***Note:*** Default to 1 when an invalid or input is provided or **color.g** is not set.</li></ul>
+---@return number b Blue | ***Range:*** (0, 1)<ul><li>***Note:*** Default to 1 when an invalid input is provided or **color.b** is not set.</li></ul>
+---@return number|nil a Opacity | ***Range:*** (0, 1)<ul><li>***Note:*** Default to 1 when an invalid input is provided or **color.a** is not set.</li></ul>
+function wt.UnpackColor(color, alpha)
+	if type(color) ~= "table" then return 1, 1, 1, 1 end
+	if alpha ~= false then return color.r or 1, color.g or 1, color.b or 1, color.a or 1 else return color.r, color.g, color.b end
 end
 
 ---Convert RGB(A) color values in Range: (0, 1) to HEX color code
 ---***
----@param r number Red | ***Range:*** (0, 1)
----@param g number Green | ***Range:*** (0, 1)
----@param b number Blue | ***Range:*** (0, 1)
----@param a? number Alpha | ***Range:*** (0, 1) | ***Default:*** *no alpha*
+---@param color colorData|colorRGBA The RGB(A) color data with all channels in Range: (0, 1)
 ---@param alphaFirst? boolean Put the alpha value first: ARGB output instead of RGBA | ***Default:*** false
 ---@param hashtag? boolean Whether to add a "#" to the beginning of the color description | ***Default:*** true
 ---***
----@return string hex Color code in HEX format
---- - ***Examples:***
---- 	- **RGB:** "#2266BB"
---- 	- **RGBA:** "#2266BBAA"
-function wt.ColorToHex(r, g, b, a, alphaFirst, hashtag)
+---@return string hex Color code in HEX format<ul><li>***Examples:***<ul><li>**RGB:** "#2266BB"</li><li>**RGBA:** "#2266BBAA"</li></ul></li></ul>
+function wt.ColorToHex(color, alphaFirst, hashtag)
 	local hex = hashtag ~= false and "#" or ""
-	if a and alphaFirst then hex = hex .. string.format("%02x", math.ceil(a * 255)) end
-	hex = hex .. string.format("%02x", math.ceil(r * 255)) .. string.format("%02x", math.ceil(g * 255)) .. string.format("%02x", math.ceil(b * 255))
-	if a and not alphaFirst then hex = hex .. string.format("%02x", math.ceil(a * 255)) end
+	if color.a and alphaFirst then hex = hex .. string.format("%02x", math.ceil(color.a * 255)) end
+	hex = hex .. string.format("%02x", math.ceil(color.r * 255)) .. string.format("%02x", math.ceil(color.g * 255)) .. string.format("%02x", math.ceil(color.b * 255))
+	if color.a and not alphaFirst then hex = hex .. string.format("%02x", math.ceil(color.a * 255)) end
 
 	return hex:upper()
 end
 
 ---Convert a HEX color code into RGB or RGBA in Range: (0, 1)
 ---***
----@param hex string String in HEX color code format
---- - ***Examples:***
---- 	- **RGB:** "#2266BB" (where the "#" is optional)
---- 	- **RGBA:** "#2266BBAA" (where the "#" is optional)
+---@param hex string String in HEX color code format<ul><li>***Examples:***<ul><li>**RGB:** "#2266BB" (where the "#" is optional)</li><li>**RGBA:** "#2266BBAA" (where the "#" is optional)</li></ul></li></ul>
 ---***
----@return number r Red | ***Range:*** (0, 1)
---- - ***Note:*** Default to 1 when an invalid input is provided.
----@return number g Green  | ***Range:*** (0, 1)
---- - ***Note:*** Default to 1 when an invalid input is provided.
----@return number b Blue | ***Range:*** (0, 1)
---- - ***Note:*** Default to 1 when an invalid input is provided.
+---@return number r Red | ***Range:*** (0, 1)<ul><li>***Note:*** Default to 1 when an invalid input is provided.</li></ul>
+---@return number g Green  | ***Range:*** (0, 1)<ul><li>***Note:*** Default to 1 when an invalid input is provided.</li></ul>
+---@return number b Blue | ***Range:*** (0, 1)<ul><li>***Note:*** Default to 1 when an invalid input is provided.</li></ul>
 ---@return number|nil a Alpha | ***Range:*** (0, 1)
 function wt.HexToColor(hex)
 	hex = hex:gsub("#", "")
@@ -351,6 +329,20 @@ function wt.HexToColor(hex)
 	local b = tonumber(hex:sub(5, 6), 16) / 255
 
 	if hex:len() == 8 then return r, g, b, tonumber(hex:sub(7, 8), 16) / 255 else return r, g, b end
+end
+
+---Brighten the RGB values of a color by an exponent
+---@param color colorData|colorRGBA Table containing the color values
+---@param exponent? number ***Default:*** 0.55
+---@return colorData color Table containing the powered color values
+function wt.BrightenColor(color, exponent)
+	exponent = exponent or 0.55
+
+	color.r = color.r ^ exponent
+	color.g = color.g ^ exponent
+	color.b = color.b ^ exponent
+
+	return color
 end
 
 
@@ -382,16 +374,7 @@ end
 
 --[ Escape sequences ]
 
----Create a colored string from the provided value via escape sequences
----***
----@param value string|number Value to add coloring to
----@param color colorData Table containing the color values
----@return string
-function wt.Color(value, color)
-	local r, g, b, a = wt.UnpackColor(color)
-
-	return WrapTextInColorCode(value, wt.ColorToHex(r, g, b, a, true, false))
-end
+wt.Color = WrapTextInColor
 
 ---Create a markup texture string snippet via escape sequences based on the specified values
 ---@param path string Path to the specific texture file relative to the root directory of the specific WoW client<ul><li>***Note:*** The use of `/` as separator is recommended (Example: Interface/AddOns/AddonNameKey/Textures/TextureImage.tga), otherwise use `\\`.</li><li>***Note:*** **File format:** Texture files must be in JPEG (no transparency, not recommended), PNG, TGA or BLP format.</li><li>***Note:*** **Size:** Texture files must have powers of 2 dimensions to be handled by the WoW client.</li></ul>
@@ -504,18 +487,8 @@ end
 
 ---Get an assembled & fully formatted string of a specifically assembled changelog table
 ---***
----@param changelog { [table[]] : string[] } String arrays nested in subtables representing a version containing the raw changelog data, lines of text with formatting directives included
---- - ***Note:*** The first line in version tables is expected to be the title containing the version number and/or the date of release.
---- - ***Note:*** Version tables are expected to be listed in descending order by date of release (latest release first).
---- - ***Examples:***
---- 	- **Title formatting - version title:** `#V_`*Title text*`_#` (*it will appear as:* • Title text)
---- 	- **Color formatting - highlighted text:** `#H_`*text to be colored*`_#` (*it will be colored white*)
---- 	- **Color formatting - new updates:** `#N_`*text to be colored*`_#` (*it will be colored with:* #FF66EE66)
---- 	- **Color formatting - fixes:** `#F_`*text to be colored*`_#` (*it will be colored with:* #FFEE4444)
---- 	- **Color formatting - changes:** `#C_`*text to be colored*`_#` (*it will be colored with:* #FF8888EE)
---- 	- **Color formatting - note:** `#O_`*text to be colored*`_#` (*it will be colored with:* #FFEEEE66)
----@param latest? boolean Whether to get the update notes of the latest version or the entire changelog | ***Default:*** false
---- - ***Note:*** If true, the first line (expected to be the title containing the version number and/or release date) of the of the last version table will be omitted from the final formatted text returned, only including the update notes themselves.
+---@param changelog { [table[]] : string[] } String arrays nested in subtables representing a version containing the raw changelog data, lines of text with formatting directives included<ul><li>***Note:*** The first line in version tables is expected to be the title containing the version number and/or the date of release.</li><li>***Note:*** Version tables are expected to be listed in descending order by date of release (latest release first).</li><li>***Examples:***<ul><li>**Title formatting - version title:** `#V_`*Title text*`_#` (*it will appear as:* • Title text)</li><li>**Color formatting - highlighted text:** `#H_`*text to be colored*`_#` (*it will be colored white*)</li><li>**Color formatting - new updates:** `#N_`*text to be colored*`_#` (*it will be colored with:* #FF66EE66)</li><li>**Color formatting - fixes:** `#F_`*text to be colored*`_#` (*it will be colored with:* #FFEE4444)</li><li>**Color formatting - changes:** `#C_`*text to be colored*`_#` (*it will be colored with:* #FF8888EE)</li><li>**Color formatting - note:** `#O_`*text to be colored*`_#` (*it will be colored with:* #FFEEEE66)</li></ul></li></ul>
+---@param latest? boolean Whether to get the update notes of the latest version or the entire changelog | ***Default:*** false<ul><li>***Note:*** If true, the first line (expected to be the title containing the version number and/or release date) of the of the last version table will be omitted from the final formatted text returned, only including the update notes themselves.</li></ul>
 ---@return string c
 function wt.FormatChangelog(changelog, latest)
 	--Colors
@@ -618,18 +591,23 @@ end
 
 --[[ TABLE MANAGEMENT ]]
 
----Make a new deep copy (not reference) of an object (non-frame table)
----***
----@param object any Reference to the object to create a copy of
----***
----@return any copy Returns **object** if it's not a table or if it is a frame reference
-function wt.Clone(object)
-	if type(object) ~= "table" or wt.IsFrame(object) then return object end
+---Get the unique internal runtime ID of the table
+---@param t table Reference to the table to get the ID of
+---@return string # Return empty string of t is not a table
+function wt.GetID(t)
+	if type(t) ~= "table" then return "" else return tostring(t):sub(8) end
+end
 
-	local copy = {}
-	for k, v in pairs(object) do copy[k] = wt.Clone(v) end
+---Get the index of a matching value in the array provided
+---@param array any[] Array to search
+---@param value any The value to find
+---@return integer|nil index
+function wt.FindIndex(array, value)
+	if type(array) ~= "table" then return nil end
 
-	return copy
+	for i = 1, #wt.fonts do if wt.fonts[i].path == value then return i end end
+
+	return nil
 end
 
 ---Find and return the value at the first matching key via a deep search
@@ -672,13 +650,18 @@ function wt.FindKeyByValue(tableToCheck, valueToFind)
 	return nil
 end
 
----Get a copy of the strings table or a subtable/value at the specified key used by this WidgetToolbox
+---Make a new deep copy (not reference) of an object (non-frame table)
 ---***
----@param key any Get the strings subtable/value at this key
+---@param object any Reference to the object to create a copy of
 ---***
----@return table|string|nil # nil if **key** is specified but no match was found
-function wt.GetStrings(key)
-	return wt.Clone(wt.FindValueByKey(wt.strings, key))
+---@return any copy Returns **object** if it's not a table or if it is a frame reference
+function wt.Clone(object)
+	if type(object) ~= "table" or wt.IsFrame(object) then return object end
+
+	local copy = {}
+	for k, v in pairs(object) do copy[k] = wt.Clone(v) end
+
+	return copy
 end
 
 ---Merge a table to another table, deep copying all its values over under new integer keys
@@ -848,8 +831,29 @@ end
 ---@param targetTable table Reference to the table to copy the values to
 ---@param tableToSample table Reference to the table to sample data from
 function wt.FillValues(targetTable, tableToSample)
-    --TODO finish
-	--REPLACE wt.CopyValues(wt.AddMissing( with wt.FillValues
+	if type(targetTable) ~= "table" then return tableToSample end
+
+	return wt.CopyValues(wt.AddMissing(targetTable, tableToSample), tableToSample) --REPLACE with combined code
+end
+
+---Align all keys in a table to a reference table, filling missing values and removing mismatched or invalid pairs
+---@param targetTable table Reference to the table to get into alignment with the sample
+---@param tableToSample table Reference to the table to sample keys & data from
+function wt.HarmonizeData(targetTable, tableToSample)
+	if type(targetTable) ~= "table" then return tableToSample end
+
+	return wt.FillValues(wt.RemoveMismatch(wt.RemoveEmpty(targetTable), tableToSample), tableToSample) --REPLACE with combined code
+end
+
+
+--[[ WIDGET MANAGEMENT ]]
+
+---Check if a variable is a recognizable WidgetTools custom table
+---@param t any
+---***
+---@return boolean|AnyTypeName # Return the type name of the object if recognized, false if not
+function wt.IsWidget(t)
+	return type(t) == "table" and t.isType and t.getType and t.getType() or false
 end
 
 
@@ -858,15 +862,14 @@ end
 --Used for a transitional step to avoid anchor family connections during safe frame positioning
 local positioningAid
 
----Check if a table is a frame (or a backdrop object)
----@param t table
+---Check if a variable is a frame (or a backdrop object)
+---@param t any
 ---***
 ---@return boolean|string # If **t** is recognized as a [FrameScriptObject](https://warcraft.wiki.gg/wiki/UIOBJECT_FrameScriptObject), return true, or, return the frame name if named or the debug name if unnamed but recognized as a UI [Object](https://warcraft.wiki.gg/wiki/UIOBJECT_Object) with a parent, otherwise, return false
 function wt.IsFrame(t)
 	if type(t) ~= "table" then return false end
 
-	return t.GetObjectType and t.IsObjectType and
-	(t.GetName and t:GetName() or t.GetParent and t:GetParent() and t.GetDebugName and t:GetDebugName() or true) or false
+	return t.GetObjectType and t.IsObjectType and (t.GetName and t:GetName() or t.GetParent and t:GetParent() and t.GetDebugName and t:GetDebugName() or true) or false
 end
 
 ---Set the position and anchoring of a frame when it is unknown which parameters will be nil
@@ -992,10 +995,10 @@ function wt.ArrangeContent(container, t)
 	end
 	t.gaps = t.gaps or 8
 	local flipper = t.flip and -1 or 1
-    local height = t.margins.t
+	local height = t.margins.t
 
-    ---@class arrangedFrame
-    ---@field arrangementInfo? arrangementRules These parameters specify how to position the panel within its parent container frame during automatic content arrangement
+	---@class arrangedFrame
+	---@field arrangementInfo? arrangementRules These parameters specify how to position the panel within its parent container frame during automatic content arrangement
 
 	---@type (arrangedFrame|Frame)[]
 	local frames = { container:GetChildren() }
@@ -1006,22 +1009,17 @@ function wt.ArrangeContent(container, t)
 
 		--Check the child frames for descriptions
 		for i = 1, #frames do if frames[i].arrangementInfo then
-			--Add the description to the list
-			if frames[i].arrangementInfo.newRow ~= false or #t.order == 0 then
-				--To be placed in a new row
-				table.insert(t.order, { i })
-			else
+			if frames[i].arrangementInfo.newRow ~= false or #t.order == 0 then table.insert(t.order, { i })
+			elseif t.margins.l + t.margins.r + #t.order * t.gaps + frames[i]:GetWidth() >= container:GetWidth() then table.insert(t.order, { i }) else
 				--Assign row
-				local rowCount = #t.order
 				frames[i].arrangementInfo.row = frames[i].arrangementInfo.row and (
-					frames[i].arrangementInfo.row < rowCount and frames[i].arrangementInfo.row
-				) or rowCount
+					frames[i].arrangementInfo.row < #t.order and frames[i].arrangementInfo.row
+				) or #t.order
 
 				--Assign column
-				local columnCount = #t.order[frames[i].arrangementInfo.row or 1]
 				frames[i].arrangementInfo.column = frames[i].arrangementInfo.column and (
-					frames[i].arrangementInfo.column <= columnCount and frames[i].arrangementInfo.column
-				) or columnCount + 1
+					frames[i].arrangementInfo.column <= #t.order[frames[i].arrangementInfo.row or 1] and frames[i].arrangementInfo.column
+				) or #t.order[frames[i].arrangementInfo.row or 1] + 1
 
 				--To be place in the specified spot
 				table.insert(t.order[frames[i].arrangementInfo.row], frames[i].arrangementInfo.column, i)
@@ -1105,7 +1103,7 @@ function wt.SetMovability(frame, movable, t)
 
 	frame:SetMovable(movable)
 
-    if movable then
+	if movable then
 		local hadEvent, isMoving
 
 		position = wt.PackPosition(frame:GetPoint())
@@ -1120,7 +1118,7 @@ function wt.SetMovability(frame, movable, t)
 		end
 
 		for i = 1, #t.triggers do
-            t.triggers[i]:EnableMouse(true)
+			t.triggers[i]:EnableMouse(true)
 
 			--| Cursor
 
@@ -1145,7 +1143,7 @@ function wt.SetMovability(frame, movable, t)
 			end)
 
 
-            --| Movement
+			--| Movement
 
 			t.triggers[i]:HookScript("OnMouseDown", function()
 				if not frame:IsMovable() or isMoving then return end
@@ -1222,11 +1220,9 @@ end
 
 ---Set the backdrop of a frame with BackdropTemplate with the specified parameters
 ---***
----@param frame backdropFrame|AnyFrameObject Reference to the frame to set the backdrop of
---- - ***Note:*** The template of **frame** must have been set as: `BackdropTemplateMixin and "BackdropTemplate"`.
+---@param frame backdropFrame|AnyFrameObject Reference to the frame to set the backdrop of<ul><li>***Note:*** The template of **frame** must have been set as: `BackdropTemplateMixin and "BackdropTemplate"`.</li></ul>
 ---@param backdrop? backdropData Parameters to set the custom backdrop with | ***Default:*** nil *(remove the backdrop)*
----@param updates? table<AnyScriptType, backdropUpdateRule> Table of key, value pairs containing the list of events to set listeners for assigned to **updates[*key*].frame**, linking backdrop changes to it, modifying the specified parameters on trigger
---- - ***Note:*** All update rules are additive, calling ***WidgetToolbox*.SetBackdrop(...)** multiple times with **updates** specified *will not* override previously set update rules. The base **backdrop** values used for these old rules *will not* change by setting a new backdrop via ***WidgetToolbox*.SetBackdrop(...)** either!
+---@param updates? table<AnyScriptType, backdropUpdateRule> Table of key, value pairs containing the list of events to set listeners for assigned to **updates[*key*].frame**, linking backdrop changes to it, modifying the specified parameters on trigger<ul><li>***Note:*** All update rules are additive, calling ***WidgetToolbox*.SetBackdrop(...)** multiple times with **updates** specified *will not* override previously set update rules. The base **backdrop** values used for these old rules *will not* change by setting a new backdrop via ***WidgetToolbox*.SetBackdrop(...)** either!</li></ul>
 function wt.SetBackdrop(frame, backdrop, updates)
 	if not frame.SetBackdrop then return end
 
@@ -1333,6 +1329,40 @@ function wt.SetBackdrop(frame, backdrop, updates)
 	end end
 end
 
+---Assign dependency rule listeners from a defined a ruleset
+---***
+---@param rules dependencyRule[] Indexed table containing the dependency rules to add
+---@param setState fun(state: boolean) Function to call to set the state of the frame, enabling it on a true, or disabling it on a false input
+function wt.AddDependencies(rules, setState)
+	if not type(rules) == "table" or not type(setState) == "function" then return end
+
+	--Update utility
+	local setter = function() setState(wt.CheckDependencies(rules)) end
+
+	--Set listeners
+	for i = 1, #rules do if rules[i].frame then
+		local t
+
+		if wt.IsFrame(rules[i].frame) then t = rules[i].frame:GetObjectType() else
+			t = wt.IsWidget(rules[i].frame)
+
+			--Watch value load events
+			if t then rules[i].frame.setListener.loaded(function(_, success) if success then setter() end end) end
+		end
+
+		--Watch value change events
+		if t == "CheckButton" then rules[i].frame:HookScript("OnClick", setter)
+		elseif t == "EditBox" then rules[i].frame:HookScript("OnTextChanged", setter)
+		elseif t == "Slider" then rules[i].frame:HookScript("OnValueChanged", setter)
+		elseif t == "Toggle" then rules[i].frame.setListener.toggled(setter)
+		elseif t == "Selector" or t == "Multiselector" or t == "SpecialSelector" then rules[i].frame.setListener.selected(setter)
+		elseif t == "Textbox" or t == "Numeric" then rules[i].frame.setListener.changed(setter) end
+	end end
+
+	--Initialize state
+	setter()
+end
+
 ---Check and evaluate all dependencies in a ruleset
 ---***
 ---@param rules dependencyRule[] Indexed table containing the dependency rules to check
@@ -1364,39 +1394,189 @@ function wt.CheckDependencies(rules)
 	return state
 end
 
----Assign dependency rule listeners from a defined a ruleset
+
+--[[ TOOLTIP MANAGEMENT ]]
+
+--Default reusable tooltip frame
+local defaultTooltip
+
+---Tooltip data registry
+---@type AnyTooltipData[]
+local tooltipData = {}
+
+---Register tooltip data and set up a GameTooltip for a frame to be toggled on hover
 ---***
----@param rules dependencyRule[] Indexed table containing the dependency rules to add
----@param setState fun(state: boolean) Function to call to set the state of the frame, enabling it on a true, or disabling it on a false input
-function wt.AddDependencies(rules, setState)
-	if not type(rules) == "table" or not type(setState) == "function" then return end
+---@param owner AnyFrameObject Owner frame the tooltip to be registered for<ul><li>***Note:*** If tooltip data for **owner** has already been added to the registry, it will be fully overwritten with **t**.</li><ul><li>***Note:*** Duplicate triggers may still be added if **duplicate** is set to true.</li></ul></li></ul>
+---@param t? tooltipData The tooltip parameters are to be provided in this table
+---@param toggle? tooltipToggleData Additional toggle rule parameters are to be provided in this table
+---@param duplicate? boolean If true, execute even if tooltip data has already been registered for **owner**, potentially adding duplicate toggle triggers, or, automatically call ***WidgetToolbox*.UpdateTooltipData(...)** instead to avoid this | ***Default:*** false
+---***
+---@return tooltipData|nil # Reference to the tooltip data table registered for **owner** to display the tooltip info by<ul><li>***Note:*** Default to nil when **owner** was invalid.</li></ul>
+function wt.AddTooltip(owner, t, toggle, duplicate)
+	if not wt.IsFrame(owner) then return nil end
 
-	--Update utility
-	local setter = function() setState(wt.CheckDependencies(rules)) end
+	--| Register tooltip data
 
-	--Set listeners
-	for i = 1, #rules do if rules[i].frame then
-		if wt.IsFrame(rules[i].frame) then --Base Blizzard frames
-			--Watch value change events
-			if rules[i].frame:IsObjectType("CheckButton") then rules[i].frame:HookScript("OnClick", setter)
-			elseif rules[i].frame:IsObjectType("EditBox") then rules[i].frame:HookScript("OnTextChanged", setter)
-			elseif rules[i].frame:IsObjectType("Slider") then rules[i].frame:HookScript("OnValueChanged", setter)
-			end
-		elseif rules[i].frame.isType then --Custom WidgetTools widgets
-			--Watch value load events
-			rules[i].frame.setListener.loaded(function(_, success) if success then setter() end end)
+	local id = wt.GetID(owner)
 
-			--Watch value change events
-			if rules[i].frame.isType("Toggle") then rules[i].frame.setListener.toggled(setter)
-			elseif rules[i].frame.isType("Selector") or rules[i].frame.isType("Multiselector") or rules[i].frame.isType("SpecialSelector") then
-				rules[i].frame.setListener.selected(setter)
-			elseif rules[i].frame.isType("Textbox") or rules[i].frame.isType("Numeric") then rules[i].frame.setListener.changed(setter)
-			end
+	if duplicate ~= true and type(tooltipData[id]) == "table" then return wt.UpdateTooltipData(owner, t) end
+
+	tooltipData[id] = type(t) == "table" and t or {}
+
+	--Tooltip frame
+	if not tooltipData[id].tooltip or not (wt.IsFrame(tooltipData[id].tooltip) and tooltipData[id].tooltip:IsObjectType("GameTooltip")) then
+		--Create the default reusable tooltip
+		if not defaultTooltip then
+			defaultTooltip = CreateFrame("GameTooltip", ns.name .. ns.WidgetToolboxVersion .. "GameTooltip", nil, "GameTooltipTemplate")
+
+			--| Visibility
+
+			defaultTooltip:SetFrameStrata("TOOLTIP")
+			defaultTooltip:SetScale(UIParent:GetScale())
+
+			--| Title
+
+			_G[defaultTooltip:GetName() .. "TextLeft" .. 1]:SetFontObject("GameFontNormalMed1")
+			_G[defaultTooltip:GetName() .. "TextRight" .. 1]:SetFontObject("GameFontNormalMed1")
 		end
-	end end
 
-	--Initialize state
-	setter()
+		tooltipData[id].tooltip = defaultTooltip
+	end
+
+	--Position
+	tooltipData[id].position = tooltipData[id].position or {}
+	tooltipData[id].position.offset = tooltipData[id].offset or {}
+	if not tooltipData[id].anchor then tooltipData[id].anchor = "ANCHOR_CURSOR" end
+
+	--Title
+	if type(tooltipData[id].title) ~= "string" then tooltipData[id].title = owner:GetName() or tostring(wt.GetID(owner)) end
+
+	--| Toggle events
+
+	toggle = type(toggle) == "table" and toggle or {}
+	toggle.triggers = type(toggle.triggers) == "table" and toggle.triggers or {}
+
+	table.insert(toggle.triggers, owner)
+
+	for i = 1, #toggle.triggers do
+		--Show tooltip
+		if toggle.triggers[i] ~= owner and toggle.replace == false then
+			toggle.triggers[i]:HookScript("OnEnter", function()
+				if type(tooltipData[id]) == "table" then if not tooltipData[id].tooltip:IsVisible() then wt.UpdateTooltip(owner) end end
+			end)
+		else toggle.triggers[i]:HookScript("OnEnter", function() wt.UpdateTooltip(owner) end) end
+
+		--Hide tooltip
+		if toggle.triggers[i] ~= owner and toggle.checkParent ~= false then
+			toggle.triggers[i]:HookScript("OnLeave", function()
+				if not owner:IsMouseOver() then if type(tooltipData[id]) == "table" then tooltipData[id].tooltip:Hide() end end
+			end)
+		else toggle.triggers[i]:HookScript("OnLeave", function() if type(tooltipData[id]) == "table" then tooltipData[id].tooltip:Hide() end end) end
+	end
+
+	--| Hide with owner
+
+	owner:HookScript("OnHide", function() if type(tooltipData[id]) == "table" then tooltipData[id].tooltip:Hide() end end)
+
+	return tooltipData[id]
+end
+
+---Update and show a GameTooltip already set up to be toggled for a frame
+---***
+---@param owner AnyFrameObject Owner frame the tooltip to be updated for<ul><li>***Note:*** If no entry has been registered for **owner** in the tooltip data registry via ***WidgetToolbox*.AddTooltip(...)** yet, no tooltip will be shown.</li></ul>
+---@param t? tooltipUpdateData|tooltipData Use this set of parameters to update the tooltip for **owner** with | ***Default:*** *(fill values from the data in the registry)*
+function wt.UpdateTooltip(owner, t)
+	if not wt.IsFrame(owner) then return end
+
+	--| Verify the tooltip data
+
+	local id = wt.GetID(owner)
+
+	if type(t) ~= "table" then if type(tooltipData[id]) == "table" then t = tooltipData[id] else return end end
+
+	--| Position
+
+	if t.anchor == "ANCHOR_NONE" then
+		t.tooltip:SetOwner(owner, t.anchor)
+		wt.SetPosition(t.tooltip, t.position)
+	else t.tooltip:SetOwner(owner, t.anchor, t.position.offset.x or 0, t.position.offset.y or 0) end
+
+	--| Title
+
+	local titleColor = t.flipColors and wt.colors.normal or wt.colors.highlight
+
+	t.tooltip:AddLine(t.title, titleColor.r, titleColor.g, titleColor.b, true)
+
+	--| Textlines
+
+	if type(t.lines) == "table" then
+		for i = 1, #t.lines do
+
+			--| Set FontString
+
+			local left = t.tooltip:GetName() .. "TextLeft" .. i + 1
+			local right = t.tooltip:GetName() .. "TextRight" .. i + 1
+			local font = t.lines[i].font or "GameTooltipText"
+
+			if not _G[left] or not _G[right] then
+				t.tooltip:AddFontStrings(t.tooltip:CreateFontString(left, nil, font), t.tooltip:CreateFontString(right, nil, font))
+			end
+
+			_G[left]:SetFontObject(font)
+			_G[left]:SetJustifyH("LEFT")
+			_G[right]:SetFontObject(font)
+			_G[right]:SetJustifyH("RIGHT")
+
+			--| Add textline
+
+			local color = t.lines[i].color or (t.flipColors and wt.colors.highlight or wt.colors.normal)
+
+			t.tooltip:AddLine(t.lines[i].text, color.r, color.g, color.b, t.lines[i].wrap ~= false)
+		end
+	end
+
+	--| Display the tooltip
+
+	t.tooltip:Show()
+	t.tooltip:SetScale(UIParent:GetScale())
+end
+
+---Update the tooltip data values stored in the registry for a frame
+---@param owner AnyFrameObject Owner frame the tooltip data to be updated for<ul><li>***Note:*** If no entry has been registered for **owner** in the tooltip data registry via ***WidgetToolbox*.AddTooltip(...)** yet, no data will be changed.</li></ul>
+---@param t tooltipUpdateData|tooltipData The parameters to update the tooltip with are to be provided in this table | ***Default:*** *(fill values from the data in the registry)*
+---@param replaceLines? boolean Replace the full set of lines in the registry with **t.lines** instead of just adjusting the values of existing lines and adding new ones to delete any unused lines | ***Default:*** type(**t.lines**) == "table"
+---@return tooltipData|nil # Reference to the tooltip data table registered for **owner** to display the tooltip info by<ul><li>***Note:*** Default to nil when **owner** was invalid or tooltip data did not exist for it in the registry.</li></ul>
+function wt.UpdateTooltipData(owner, t, replaceLines)
+	if not wt.IsFrame(owner) or type(t) ~= "table" then return nil end
+
+	--| Update the tooltip data
+
+	local id = wt.GetID(owner)
+
+	if type(tooltipData[id]) ~= "table" then return nil end
+
+	local tooltip = wt.IsFrame(t.tooltip) and t.tooltip:IsObjectType("GameTooltip") and t.tooltip or defaultTooltip
+	t.tooltip = nil
+
+	--Clear textlines
+	if replaceLines ~= false then wt.RemoveMismatch(tooltipData[id].lines, t.lines) end
+
+	tooltipData[id] = wt.FillValues(tooltipData[id], t)
+
+	--| Fill defaults
+
+	--Tooltip frame
+	tooltipData[id].tooltip = tooltip
+
+	--Position
+	tooltipData[id].position = tooltipData[id].position or {}
+	tooltipData[id].position.offset = tooltipData[id].offset or {}
+	if not tooltipData[id].anchor then tooltipData[id].anchor = "ANCHOR_CURSOR" end
+
+	--Title
+	if type(tooltipData[id].title) ~= "string" then tooltipData[id].title = owner:GetName() or tostring(wt.GetID(owner)) end
+
+	return tooltipData[id]
 end
 
 
@@ -1406,20 +1586,22 @@ end
 ---@class settingsRegistry
 ---@field rules table<string, settingsRule[]> Collection of rules describing where to save/load settings data to/from, and what change handlers to call in the process linked to each specific settings category under an addon
 ---@field changeHandlers table<string, function> List of pairs of addon-specific unique keys and change handler scripts
-wt.settingsTable = { rules = {}, changeHandlers = {} }
+local settingsData = { rules = {}, changeHandlers = {} }
 
 ---Register a settings data management entry for a settings widget to the settings data management registry for batched data handling
 ---***
----@param widget checkbox|radioButton|radioSelector|checkboxSelector|specialSelector|dropdownSelector|textbox|multilineEditbox|numericSlider|colorPicker Reference to the widget to be saved & loaded data to/from with defined **widget.loadData()** & **widget.saveData()** functions
+---@param widget AnyWidgetType|AnyGUIWidgetType Reference to the widget to be saved & loaded data to/from with defined **widget.loadData()** & **widget.saveData()** functions
 ---@param t settingsData Parameters are to be provided in this table
+---***
+---@return integer|nil index The index for the new entry for **widget** where it ended up in the settings data management registry<ul><li>***Note:*** Default to nil when **widget** or **t** was invalid.</li></ul>
 function wt.AddSettingsDataManagementEntry(widget, t)
-	if not widget or not type(t) == "table" then return end
+	if not wt.IsWidget(widget) or not type(t) == "table" then return nil end
 
 	t.category = t.category or "WidgetTools"
 	t.key = t.key or ""
 	local key = t.category .. t.key
 
-	wt.settingsTable.rules[key] = wt.settingsTable.rules[key] or {}
+	settingsData.rules[key] = settingsData.rules[key] or {}
 
 	--Add onChange handlers
 	if type(t.onChange) == "table" then
@@ -1427,7 +1609,7 @@ function wt.AddSettingsDataManagementEntry(widget, t)
 
 		for k, v in pairs(t.onChange) do if type(k) == "string" and type(v) == "function" then
 			--Store the function
-			wt.settingsTable.changeHandlers[t.category .. k] = v
+			settingsData.changeHandlers[t.category .. k] = v
 
 			--Remove the function definitions, save their keys
 			t.onChange[k] = nil
@@ -1438,82 +1620,85 @@ function wt.AddSettingsDataManagementEntry(widget, t)
 		for i = 1, #newKeys do table.insert(t.onChange, newKeys[i]) end
 	end
 
+	t.index = type(t.index) == "number" and Clamp(wt.Round(t.index), 1, #settingsData.rules[key] + 1) or #settingsData.rules[key] + 1
+
 	--Add to the registry
-	if type(t.index) ~= "number" then table.insert(wt.settingsTable.rules[key], { widget = widget, onChange = t.onChange })
-	else table.insert(wt.settingsTable.rules[key], Clamp(wt.Round(t.index), 1, #wt.settingsTable.rules[key] + 1), { widget = widget, onChange = t.onChange }) end
+	table.insert(settingsData.rules[key], t.index, { widget = widget, onChange = t.onChange })
+
+	return t.index
 end
 
----Load all data from storage to the widgets specified in in the settings data management registry referenced by the specified settings category under the specified key by calling **[*widget*].loadData(...)** for each
+---Load all data from storage to the widgets specified in the settings data management registry in the specified **category** under the specified **key** by calling **[*widget*].loadData(...)** for each
 ---***
 ---@param category? string A unique string used for categorizing settings data management rules & change handler scripts | ***Default:*** "WidgetTools" *(global rule)*
 ---@param key? string A unique string appended to **category** linking a subset of settings data rules to be handled together | ***Default:*** "" *(category-wide rule)*
----@param applyChanges? any If not nil, apply changes by calling all registered **onChange** handlers | ***Default:*** nil
-function wt.LoadSettingsData(category, key, applyChanges)
+---@param handleChanges? boolean If true, also call all registered change handlers | ***Default:*** false
+function wt.LoadSettingsData(category, key, handleChanges)
 	category = category or "WidgetTools"
 	key = category .. (key or "")
 
-	if not wt.settingsTable.rules[key] then return end
+	if not settingsData.rules[key] then return end
 
-	if applyChanges then applyChanges = {} end
+	local changeHandlers = handleChanges == true and {} or nil
 
-	for i = 1, #wt.settingsTable.rules[key] do
-		wt.settingsTable.rules[key][i].widget.loadData(false)
+	for i = 1, #settingsData.rules[key] do
+		settingsData.rules[key][i].widget.loadData(false)
 
 		--Register onChange handlers for call
-		if applyChanges and type(wt.settingsTable.rules[key][i].onChange) == "table" then
-			for j = 1, #wt.settingsTable.rules[key][i].onChange do applyChanges[category .. wt.settingsTable.rules[key][i].onChange[j]] = true end
+		if changeHandlers and type(settingsData.rules[key][i].onChange) == "table" then
+			for j = 1, #settingsData.rules[key][i].onChange do changeHandlers[category .. settingsData.rules[key][i].onChange[j]] = true end
 		end
 	end
 
 	--Call registered onChange handlers
-	if applyChanges then for k in pairs(applyChanges) do wt.settingsTable.changeHandlers[k]() end end
+	if changeHandlers then for k in pairs(changeHandlers) do settingsData.changeHandlers[k]() end end
 end
 
----Save all data from the widgets to storage specified in in the settings data management registry referenced by the specified settings category under the specified key by calling **[*widget*].saveData(...)** for each
+---Save all data from the widgets to storage specified in the settings data management registry in the specified **category** under the specified **key** by calling **[*widget*].saveData(...)** for each
 ---***
 ---@param category? string A unique string used for categorizing settings data management rules & change handler scripts | ***Default:*** "WidgetTools" *(global rule)*
 ---@param key? string A unique string appended to **category** linking a subset of settings data rules to be handled together | ***Default:*** "" *(category-wide rule)*
 function wt.SaveSettingsData(category, key)
 	key = (category or "WidgetTools") .. (key or "")
 
-	if not wt.settingsTable.rules[key] then return end
+	if not settingsData.rules[key] then return end
 
-	for i = 1, #wt.settingsTable.rules[key] do wt.settingsTable.rules[key][i].widget.saveData() end
+	for i = 1, #settingsData.rules[key] do settingsData.rules[key][i].widget.saveData() end
 end
 
----Call all **onChange** handlers registered in in the settings data management registry referenced by the specified settings category under the specified key
+---Call all **onChange** handlers registered in the settings data management registry in the specified **category** under the specified **key**
 ---@param category? string A unique string used for categorizing settings data management rules & change handler scripts | ***Default:*** "WidgetTools" *(global rule)*
 ---@param key? string A unique string appended to **category** linking a subset of settings data rules to be handled together | ***Default:*** "" *(category-wide rule)*
 function wt.ApplySettingsData(category, key)
 	category = category or "WidgetTools"
 	key = category .. (key or "")
 
-	if not wt.settingsTable.rules[key] then return end
+	if not settingsData.rules[key] then return end
 
 	local handlers = {}
 
 	--Register onChange handlers for call
-	for i = 1, #wt.settingsTable.rules[key] do if type(wt.settingsTable.rules[key][i].onChange) == "table" then
-		for j = 1, #wt.settingsTable.rules[key][i].onChange do handlers[category .. wt.settingsTable.rules[key][i].onChange[j]] = true end
+	for i = 1, #settingsData.rules[key] do if type(settingsData.rules[key][i].onChange) == "table" then
+		for j = 1, #settingsData.rules[key][i].onChange do handlers[category .. settingsData.rules[key][i].onChange[j]] = true end
 	end end
 
 	--Call registered onChange handlers
-	if handlers then for k in pairs(handlers) do wt.settingsTable.changeHandlers[k]() end end
+	if handlers then for k in pairs(handlers) do settingsData.changeHandlers[k]() end end
 end
 
----Set a data snapshot for each widget specified in in the settings data management registry referenced by the specified settings category by under the specified key calling **[*widget*].revertData()** for each
+---Set a data snapshot for each widget specified in the settings data management registry in the specified **category** under the specified **key** calling **[*widget*].revertData()** for each
 ---***
 ---@param category? string A unique string used for categorizing settings data management rules & change handler scripts | ***Default:*** "WidgetTools" *(global rule)*
 ---@param key? string A unique string appended to **category** linking a subset of settings data rules to be handled together | ***Default:*** "" *(category-wide rule)*
 function wt.SnapshotSettingsData(category, key)
 	key = (category or "WidgetTools") .. (key or "")
 
-	if not wt.settingsTable.rules[key] then return end
+	if not settingsData.rules[key] then return end
 
-	for i = 1, #wt.settingsTable.rules[key] do wt.settingsTable.rules[key][i].widget.snapshotData() end
+	for i = 1, #settingsData.rules[key] do settingsData.rules[key][i].widget.snapshotData() end
 end
 
----Set & load the stored data managed by each widget specified in in the settings data management registry referenced by the specified settings category under the specified key by calling **[*widget*].revertData()** for each
+---Set & load the stored data managed by each widget specified in the settings data management registry in the specified **category** under the specified **key** by calling **[*widget*].revertData()** for each
 ---***
 ---@param category? string A unique string used for categorizing settings data management rules & change handler scripts | ***Default:*** "WidgetTools" *(global rule)*
 ---@param key? string A unique string appended to **category** linking a subset of settings data rules to be handled together | ***Default:*** "" *(category-wide rule)*
@@ -1521,24 +1706,24 @@ function wt.RevertSettingsData(category, key)
 	category = category or "WidgetTools"
 	key = category .. (key or "")
 
-	if not wt.settingsTable.rules[key] then return end
+	if not settingsData.rules[key] then return end
 
 	local applyChanges = {}
 
-	for i = 1, #wt.settingsTable.rules[key] do
-		wt.settingsTable.rules[key][i].widget.revertData(false)
+	for i = 1, #settingsData.rules[key] do
+		settingsData.rules[key][i].widget.revertData(false)
 
 		--Register onChange handlers for call
-		for i = 1, #wt.settingsTable.rules[key] do if applyChanges and type(wt.settingsTable.rules[key][i].onChange) == "table" then
-			for j = 1, #wt.settingsTable.rules[key][i].onChange do applyChanges[category .. wt.settingsTable.rules[key][i].onChange[j]] = true end
+		for j = 1, #settingsData.rules[key] do if applyChanges and type(settingsData.rules[key][j].onChange) == "table" then
+			for k = 1, #settingsData.rules[key][j].onChange do applyChanges[category .. settingsData.rules[key][j].onChange[k]] = true end
 		end end
 	end
 
 	--Call registered onChange handlers
-	if applyChanges then for k in pairs(applyChanges) do wt.settingsTable.changeHandlers[k]() end end
+	if applyChanges then for k in pairs(applyChanges) do settingsData.changeHandlers[k]() end end
 end
 
----Set & load the default data managed by each widget specified in in the settings data management registry referenced by the specified settings category under the specified key by calling **[*widget*].resetData()** for each
+---Set & load the default data managed by each widget specified in the settings data management registry in the specified **category** under the specified **key** by calling **[*widget*].resetData()** for each
 ---***
 ---@param category? string A unique string used for categorizing settings data management rules & change handler scripts | ***Default:*** "WidgetTools" *(global rule)*
 ---@param key? string A unique string appended to **category** linking a subset of settings data rules to be handled together | ***Default:*** "" *(category-wide rule)*
@@ -1546,21 +1731,35 @@ function wt.ResetSettingsData(category, key)
 	category = category or "WidgetTools"
 	key = category .. (key or "")
 
-	if not wt.settingsTable.rules[key] then return end
+	if not settingsData.rules[key] then return end
 
 	local applyChanges = {}
 
-	for i = 1, #wt.settingsTable.rules[key] do
-		wt.settingsTable.rules[key][i].widget.resetData(false)
+	for i = 1, #settingsData.rules[key] do
+		settingsData.rules[key][i].widget.resetData(false)
 
 		--Register onChange handlers for call
-		for i = 1, #wt.settingsTable.rules[key] do if applyChanges and type(wt.settingsTable.rules[key][i].onChange) == "table" then
-			for j = 1, #wt.settingsTable.rules[key][i].onChange do applyChanges[category .. wt.settingsTable.rules[key][i].onChange[j]] = true end
+		for j = 1, #settingsData.rules[key] do if applyChanges and type(settingsData.rules[key][j].onChange) == "table" then
+			for k = 1, #settingsData.rules[key][j].onChange do applyChanges[category .. settingsData.rules[key][j].onChange[k]] = true end
 		end end
 	end
 
 	--Call registered onChange handlers
-	if applyChanges then for k in pairs(applyChanges) do wt.settingsTable.changeHandlers[k]() end end
+	if applyChanges then for k in pairs(applyChanges) do settingsData.changeHandlers[k]() end end
+end
+
+---Handle changes for widgets in the settings data management registry in the specified **category** under the specified **key** by calling **[*widget*].onChange()** for each
+---@param index integer Filter the call of change handlers to only include the list under the specified index not each list in the specified **category** under the specified **key**
+---@param category? string A unique string used for categorizing settings data management rules & change handler scripts | ***Default:*** "WidgetTools" *(global rule)*
+---@param key? string A unique string appended to **category** linking a subset of settings data rules to be handled together | ***Default:*** "" *(category-wide rule)*
+function wt.HandleWidgetChanges(index, category, key)
+	category = category or "WidgetTools"
+	key = category .. (key or "")
+
+	if type(settingsData.rules[key]) ~= "table" or type(settingsData.rules[key][index]) ~= "table" or type(settingsData.rules[key][index].onChange) ~= "table" then return end
+
+	--Call registered onChange handlers
+	for i = 1, #settingsData.rules[key][index].onChange do settingsData.changeHandlers[category .. settingsData.rules[key][index].onChange[i]]() end
 end
 
 
@@ -1587,7 +1786,7 @@ function wt.RegisterSettingsPage(page, parent, icon)
 end
 
 
---[[ Chat Control ]]
+--[[ CHAT CONTROL ]]
 
 ---Register a list of chat keywords and related commands for use
 ---***
@@ -1620,8 +1819,8 @@ function wt.RegisterChatCommands(addon, keywords, t)
 	---Print out a formatted chat message
 	---@param message string Message content
 	---@param title? string Title to start the message with | ***Default:*** *(**addon** title)*<ul><li>***Note:*** If "IconTexture" is specified in the TOC file of **addon**, a logo will also be included at the start of the message.</li></ul>
-	---@param contentColor? chatCommandColorNames|colorData ***Default:*** "content"
-	---@param titleColor? chatCommandColorNames|colorData ***Default:*** "title"
+	---@param contentColor? chatCommandColorNames|colorData|colorRGBA ***Default:*** "content"
+	---@param titleColor? chatCommandColorNames|colorData|colorRGBA ***Default:*** "title"
 	function manager.print(message, title, titleColor, contentColor)
 		title = type(title) == "string" or branding
 		titleColor = type(titleColor) == "table" and titleColor or t.colors[type(titleColor) == "string" and titleColor or "title"]
@@ -1718,4 +1917,105 @@ function wt.RegisterChatCommands(addon, keywords, t)
 	end
 
 	return manager
+end
+
+
+--[[ ADDON COMPARTMENT ]]
+
+---Set up the [Addon Compartment](https://warcraft.wiki.gg/wiki/Addon_compartment#Automatic_registration) functionality by registering global functions for call
+---***
+---@param addon string The name of the addon's folder (the addon namespace, not its displayed title)
+---@param calls? addonCompartmentFunctions Functions to call wrapped in a table<ul><li>***Note:*** `AddonCompartmentFunc`, `AddonCompartmentFuncOnEnter` and/or `AddonCompartmentFuncOnLeave` must be set in the specified **addon**'s TOC file to enable this functionality, defining the names of the global functions to be set for call.</li></ul>
+---@param tooltip? addonCompartmentTooltipData|tooltipData List of text lines to be added to the tooltip of the addon compartment button displayed when mousing over it<ul><li>***Note:*** Both `AddonCompartmentFuncOnEnter` and `AddonCompartmentFuncOnLeave` must be set in the specified **addon**'s TOC file to enable this functionality, defining the names of the global functions to be overloaded.</li></ul>
+function wt.SetUpAddonCompartment(addon, calls, tooltip)
+	if not addon or not C_AddOns.IsAddOnLoaded(addon) then return end
+
+	calls = calls or {}
+
+	local onClickName = C_AddOns.GetAddOnMetadata(addon, "AddonCompartmentFunc")
+	local onEnterName = C_AddOns.GetAddOnMetadata(addon, "AddonCompartmentFuncOnEnter")
+	local onLeaveName = C_AddOns.GetAddOnMetadata(addon, "AddonCompartmentFuncOnLeave")
+
+	if onClickName and calls.onClick then _G[onClickName] = calls.onClick end
+
+	if tooltip and onEnterName and onLeaveName then
+		if not tooltip.tooltip then tooltip.tooltip = defaultTooltip end
+		tooltip.title = tooltip.title or C_AddOns.GetAddOnMetadata(addon, "Title")
+		tooltip.anchor = "ANCHOR_BOTTOMRIGHT"
+
+		_G[onEnterName] = function(addonNamespace, frame)
+			local id = wt.GetID(frame)
+			if type(tooltipData[id]) ~= "table" then tooltipData[id] = tooltip end
+
+			--Call handler
+			if calls.onEnter then calls.onEnter(addonNamespace, frame) end
+
+			--Show tooltip
+			wt.UpdateTooltip(frame)
+		end
+
+		_G[onLeaveName] = function(addonNamespace, frame)
+			--Call handler
+			if calls.onLeave then calls.onLeave(addonNamespace, frame) end
+
+			--Hide tooltip
+			local id = wt.GetID(frame)
+			if type(tooltipData[id]) == "table" and tooltipData[id].tooltip then tooltipData[id].tooltip:Hide() end
+		end
+	else
+		if onEnterName and calls.onEnter then _G[onEnterName] = calls.onEnter end
+		if onLeaveName and calls.onLeave then _G[onLeaveName] = calls.onLeave end
+	end
+end
+
+
+--[[ POPUP MANAGEMENT ]]
+
+---Create a popup dialog with an accept function and cancel button
+---***
+---@param addon? string The name of the addon's folder (the addon namespace, not its displayed title) | ***Default:*** "WidgetTools" *(register as global)*
+---@param key? string Unique string appended to **addon** to be used as the identifier key in the global **StaticPopupDialogs** table | ***Default:*** "DIALOG"<ul><li>***Note:*** Dialog data registered under existing keys will be overwritten.</li><li>***Note:*** Space characters will be replaced with "_".</li></ul>
+---@param t? popupDialogData Parameters are to be provided in this table
+---***
+---@return string key The unique identifier key created for this popup in the global **StaticPopupDialogs** table used as the parameter when calling [StaticPopup_Show()](https://warcraft.wiki.gg/wiki/API_StaticPopup_Show) or [StaticPopup_Hide()](https://warcraft.wiki.gg/wiki/API_StaticPopup_Hide)
+function wt.RegisterPopupDialog(addon, key, t)
+	t = type(t) == "table" and t or {}
+	key = (addon or "WidgetTools"):upper() .. "_" .. (type(key) == "string" and key:gsub("%s+", "_"):upper() or "DIALOG")
+
+	StaticPopupDialogs[key] = {
+		text = t.text or "",
+		button1 = t.accept or ACCEPT,
+		button2 = t.cancel or CANCEL,
+		button3 = t.alt,
+		OnAccept = t.onAccept,
+		OnCancel = t.onCancel,
+		OnAlt = t.onAlt,
+		timeout = 0,
+		whileDead = true,
+		hideOnEscape = true,
+		preferredIndex = STATICPOPUPS_NUMDIALOGS
+	}
+
+	return key
+end
+
+---Update already existing popup dialog data
+---***
+---@param key string The unique identifier key representing the defaults warning popup dialog in the global **StaticPopupDialogs** table, and used as the parameter when calling [StaticPopup_Show()](https://warcraft.wiki.gg/wiki/API_StaticPopup_Show) or [StaticPopup_Hide()](https://warcraft.wiki.gg/wiki/API_StaticPopup_Hide)
+---@param t? popupDialogData Parameters are to be provided in this table
+---@return string|nil key The unique identifier key created for this popup in the global **StaticPopupDialogs** table used as the parameter when calling [StaticPopup_Show()](https://warcraft.wiki.gg/wiki/API_StaticPopup_Show) or [StaticPopup_Hide()](https://warcraft.wiki.gg/wiki/API_StaticPopup_Hide), or nil if no popup has been registered with the provided **key**
+function wt.UpdatePopupDialog(key, t)
+	if not StaticPopupDialogs[key] then return end
+
+	t = type(t) == "table" and t or {}
+
+	if t.text then StaticPopupDialogs[key].text = t.text end
+	if t.accept then StaticPopupDialogs[key].button1 = t.accept end
+	if t.cancel then StaticPopupDialogs[key].button2 = t.cancel end
+	if t.alt then StaticPopupDialogs[key].button3 = t.alt end
+	if t.onAccept then StaticPopupDialogs[key].OnAccept = t.onAccept end
+	if t.onCancel then StaticPopupDialogs[key].OnCancel = t.onCancel end
+	if t.onAlt then StaticPopupDialogs[key].OnAlt = t.onAlt end
+
+	return key
 end

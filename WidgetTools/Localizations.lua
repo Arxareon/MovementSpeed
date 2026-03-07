@@ -4,14 +4,13 @@
 local ns = select(2, ...)
 
 
---[[ LOCALIZATIONS (WoW locales: https://warcraft.wiki.gg/wiki/API_GetLocale#Values) ]]
+--[[ LOCALIZATIONS ]]
 
+--List of localization tables for [WoW locales](https://warcraft.wiki.gg/wiki/API_GetLocale#Values)
 ns.localizations = {}
 
---TODO: verity AI translations (from enUS)
-
---# flags will be replaced by text or number values via code
---\n represents the newline character
+--NOTE: #FLAGS will be replaced by text or number values via code; \n represents the newline character
+--CHECK AI translations (from enUS)
 
 --[ English ]
 

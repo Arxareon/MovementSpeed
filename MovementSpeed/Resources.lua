@@ -36,6 +36,15 @@ ns.chat = {
 --Changelog
 ns.changelog = {
 	{
+		"#V_Version 3.3_# #H_(5/3/2026)_#",
+		"#N_New:_#",
+		"Added new speed display text coloring options, now the speed value type coloring can be fully customized.",
+		"#C_Changes:_#",
+		"Removed the Value Coloring toggle option, now value coloring is enabled at all times by default but now each value color can be freely specified.",
+		"Font files have been moved to Widget Tools addon, Movement Speed is built on. #H_The CUSTOM.ttf font file to be replaced when using the custom font family option can now be found in the WidgetTools/Fonts folder._#",
+		"Under the hood improvements.",
+	},
+	{
 		"#V_Version 3.2_# #H_(23/2/2026)_#",
 		"#F_Hotfix:_#",
 		"The Target Speed mouseover feature will no longer cause problems when mousing over an enemy while in an instance in Midnight.\n#H_Due to the new combat restrictions imposed on addons, this feature can no longer work on enemies while in an instance._#",
@@ -317,9 +326,6 @@ ns.strings.options.speedDisplay.copy.tooltip = ns.strings.options.speedDisplay.c
 ns.strings.options.speedDisplay.update.throttle.tooltip = ns.strings.options.speedDisplay.update.throttle.tooltip:gsub(
 	"#FREQUENCY", ns.strings.options.speedDisplay.update.frequency.label
 )
-ns.strings.options.speedDisplay.font.color.tooltip = ns.strings.options.speedDisplay.font.color.tooltip:gsub(
-	"#VALUE_COLORING", ns.strings.options.speedDisplay.font.valueColoring.label
-)
 
 --| Cleanup
 
@@ -346,20 +352,6 @@ ns.colors = {
 		{ r = 0.33, g = 0.69, b = 0.91 },
 		{ r = 0.62, g = 0.83, b = 0.96 },
 	},
-}
-
---Fonts
-ns.fonts = {
-	{ name = ns.strings.misc.default, path = STANDARD_TEXT_FONT:gsub("\\", "/"), widthRatio = 1 },
-	{ name = "Arbutus Slab", path = ns.root .. "Fonts/ArbutusSlab.ttf", widthRatio = 1.07 },
-	{ name = "Caesar Dressing", path = ns.root .. "Fonts/CaesarDressing.ttf", widthRatio = 0.84 },
-	{ name = "Germania One", path = ns.root .. "Fonts/GermaniaOne.ttf", widthRatio = 0.86 },
-	{ name = "Mitr", path = ns.root .. "Fonts/Mitr.ttf", widthRatio = 1.07 },
-	{ name = "Oxanium", path = ns.root .. "Fonts/Oxanium.ttf", widthRatio = 0.94 },
-	{ name = "Pattaya", path = ns.root .. "Fonts/Pattaya.ttf", widthRatio = 0.87 },
-	{ name = "Reem Kufi", path = ns.root .. "Fonts/ReemKufi.ttf", widthRatio = 0.92 },
-	{ name = "Source Code Pro", path = ns.root .. "Fonts/SourceCodePro.ttf", widthRatio = 1.11 },
-	{ name = ns.strings.misc.custom, path = ns.root .. "Fonts/CUSTOM.ttf", widthRatio = 1.2 },
 }
 
 --Textures
@@ -411,11 +403,15 @@ ns.profileDefault = {
 			zeros = false,
 		},
 		font = {
-			family = ns.fonts[1].path,
+			path = STANDARD_TEXT_FONT:gsub("\\", "/"),
 			size = 11,
 			alignment = "CENTER",
-			valueColoring = true,
-			color = { r = 1, g = 1, b = 1, a = 1 },
+			colors = {
+				base = { r = 0.7, g = 0.7, b = 0.7 },
+				percent = { r = 0.56, g = 0.91, b = 0.49 },
+				yards = { r = 1, g = 0.98, b = 0.60 },
+				coords = { r = 0.62, g = 0.83, b = 0.96 },
+			},
 		},
 		background = {
 			visible = false,
@@ -451,11 +447,15 @@ ns.profileDefault = {
 			zeros = false,
 		},
 		font = {
-			family = ns.fonts[1].path,
+			path = STANDARD_TEXT_FONT:gsub("\\", "/"),
 			size = 11,
-			valueColoring = true,
-			color = { r = 1, g = 1, b = 1, a = 1 },
 			alignment = "CENTER",
+			colors = {
+				base = { r = 0.7, g = 0.7, b = 0.7 },
+				percent = { r = 0.56, g = 0.91, b = 0.49 },
+				yards = { r = 1, g = 0.98, b = 0.60 },
+				coords = { r = 0.62, g = 0.83, b = 0.96 },
+			},
 		},
 		background = {
 			visible = false,
@@ -469,8 +469,16 @@ ns.profileDefault = {
 		enabled = true,
 		value = {
 			units = { true, true, false },
-			fractionals = 0,
+			fractionals = 1,
 			zeros = false,
+		},
+		font = {
+			colors = {
+				base = { r = 0.7, g = 0.7, b = 0.7 },
+				percent = { r = 0.56, g = 0.91, b = 0.49 },
+				yards = { r = 1, g = 0.98, b = 0.60 },
+				coords = { r = 0.62, g = 0.83, b = 0.96 },
+			},
 		},
 	},
 }

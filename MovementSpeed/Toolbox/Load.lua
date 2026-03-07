@@ -6,7 +6,7 @@ local ns = select(2, ...)
 
 --[[ TOOLBOX ]]
 
-ns.WidgetToolboxVersion = "2.1"
+ns.WidgetToolboxVersion = "2.3"
 
 --| Check for the toolbox
 
@@ -20,12 +20,12 @@ ns.WidgetToolbox = {}
 
 ns.WidgetToolboxInitialization = true
 
-WidgetTools.frame:RegisterEvent("ADDON_LOADED")
+WidgetTools.loaderFrame:RegisterEvent("ADDON_LOADED")
 
-function WidgetTools.frame:ADDON_LOADED(addon)
+function WidgetTools.loaderFrame:ADDON_LOADED(addon)
 	if addon ~= ns.name then return end
 
-	WidgetTools.frame:UnregisterEvent("ADDON_LOADED")
+	WidgetTools.loaderFrame:UnregisterEvent("ADDON_LOADED")
 
 	ns.WidgetToolbox = WidgetTools.RegisterToolbox(ns.name, ns.WidgetToolboxVersion, ns.WidgetToolbox)
 end

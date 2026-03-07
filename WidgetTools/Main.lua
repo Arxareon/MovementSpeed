@@ -37,15 +37,15 @@ end
 --[[ INITIALIZATION ]]
 
 --Initialization frame
-WidgetTools.frame = CreateFrame("Frame", ns.name .. "InitializationFrame")
+WidgetTools.loaderFrame = CreateFrame("Frame", ns.name .. "InitializationFrame")
 
 --Event handler
-WidgetTools.frame:SetScript("OnEvent", function(self, event, ...) return self[event] and self[event](self, ...) end)
+WidgetTools.loaderFrame:SetScript("OnEvent", function(self, event, ...) return self[event] and self[event](self, ...) end)
 
-WidgetTools.frame:RegisterEvent("PLAYER_LOGIN")
+WidgetTools.loaderFrame:RegisterEvent("PLAYER_LOGIN")
 
-function WidgetTools.frame:PLAYER_LOGIN()
-	WidgetTools.frame:UnregisterEvent("PLAYER_LOGIN")
+function WidgetTools.loaderFrame:PLAYER_LOGIN()
+	WidgetTools.loaderFrame:UnregisterEvent("PLAYER_LOGIN")
 
 
 	--[[ RESOURCES ]]
@@ -64,7 +64,7 @@ function WidgetTools.frame:PLAYER_LOGIN()
 
 	--[[ DEV TOOLS ]]
 
-	if WidgetToolsDB.frameAttributes.enabled then WidgetTools.frame:RegisterEvent("FRAMESTACK_VISIBILITY_UPDATED") end
+	if WidgetToolsDB.frameAttributes.enabled then WidgetTools.loaderFrame:RegisterEvent("FRAMESTACK_VISIBILITY_UPDATED") end
 
 
 	--[[ SETTINGS ]]
@@ -197,14 +197,14 @@ function WidgetTools.frame:PLAYER_LOGIN()
 										TableAttributeDisplay.LinesScrollFrame:SetWidth(WidgetToolsDB.frameAttributes.width)
 									end
 
-									WidgetTools.frame:RegisterEvent("FRAMESTACK_VISIBILITY_UPDATED")
+									WidgetTools.loaderFrame:RegisterEvent("FRAMESTACK_VISIBILITY_UPDATED")
 								else
 									if _G["TableAttributeDisplay"] then
 										TableAttributeDisplay:SetWidth(500)
 										TableAttributeDisplay.LinesScrollFrame:SetWidth(430)
 									end
 
-									WidgetTools.frame:UnregisterEvent("FRAMESTACK_VISIBILITY_UPDATED")
+									WidgetTools.loaderFrame:UnregisterEvent("FRAMESTACK_VISIBILITY_UPDATED")
 								end
 							end, },
 						},
@@ -515,7 +515,7 @@ function WidgetTools.frame:PLAYER_LOGIN()
 
 						oldToolboxes = WrapTextInColorCode(ns.strings.addons.old.inUse:gsub(
 							"#TOOLBOXES",  WrapTextInColorCode(toolboxes:sub(5), "FFFFFFFF")
-						), wt.ColorToHex(NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b, 1, true, false))
+						), wt.ColorToHex(NORMAL_FONT_COLOR, true, false))
 					end
 
 					wt.CreateText({
@@ -583,7 +583,7 @@ function WidgetTools.frame:PLAYER_LOGIN()
 				initialize = function(menu)
 					wt.CreateMenuTextline(menu, { text = ns.title, })
 					wt.CreateMenuButton(menu, {
-						title = wt.GetStrings("about").title,
+						title = wt.strings.about.title,
 						action = mainPage.open
 					})
 					wt.CreateMenuButton(menu, {
@@ -598,7 +598,7 @@ function WidgetTools.frame:PLAYER_LOGIN()
 				rightClickMenu = false,
 			}).open() end
 		end,
-		onEnter = function(_, frame) frame.tooltipData.lines[5] = {
+		onEnter = function(_, frame) wt.tooltipData[wt.GetID(frame)].lines[5] = {
 			text = "\n" .. (WidgetToolsDB.lite and ns.strings.compartment.lite or ns.strings.compartment.open),
 			font = GameFontNormalTiny,
 			color = ns.colors.grey[1],
@@ -624,8 +624,8 @@ function WidgetTools.frame:PLAYER_LOGIN()
 	} })
 end
 
-function WidgetTools.frame:FRAMESTACK_VISIBILITY_UPDATED()
-	WidgetTools.frame:UnregisterEvent("FRAMESTACK_VISIBILITY_UPDATED")
+function WidgetTools.loaderFrame:FRAMESTACK_VISIBILITY_UPDATED()
+	WidgetTools.loaderFrame:UnregisterEvent("FRAMESTACK_VISIBILITY_UPDATED")
 
 	if _G["TableAttributeDisplay"] then
 		TableAttributeDisplay:SetWidth(WidgetToolsDB.frameAttributes.width + 70)

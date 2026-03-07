@@ -12,14 +12,13 @@ if not ns.WidgetToolboxInitialization then return end
 local wt = ns.WidgetToolbox
 
 
---[[ LOCALIZATIONS (WoW locales: https://warcraft.wiki.gg/wiki/API_GetLocale#Values) ]]
+--[[ LOCALIZATIONS ]]
 
+--List of localization tables for [WoW locales](https://warcraft.wiki.gg/wiki/API_GetLocale#Values)
 wt.localizations = {}
 
---TODO: verity AI translations (from enUS)
-
---# flags will be replaced by text or number values via code
---\n represents the newline character
+--NOTE: #FLAGS will be replaced by text or number values via code; \n represents the newline character
+--CHECK AI translations (from enUS)
 
 --[ English ]
 
@@ -115,6 +114,8 @@ wt.localizations.enUS = {
 		warningSingle = "Are you sure you want to reset the settings on the #PAGE page to defaults?",
 	},
 	value = {
+		copy = "Copy Value",
+		paste = "Paste Value",
 		revert = "Revert Changes",
 		restore = "Restore Default",
 		note = "Right-click to reset or revert changes.",
@@ -277,6 +278,28 @@ wt.localizations.enUS = {
 			tooltip = "Make sure #FRAME cannot be moved out of screen bounds.",
 		},
 	},
+	font = {
+		title = "Text",
+		path = {
+			label = "Font",
+			tooltip = "Select the font.",
+			default = "This is a default font used by Blizzard.",
+			custom = "The Custom option offers full customization by letting you use any font by replacing the #FILE_CUSTOM placeholder font file with any other TrueType Font file found in\n#FONTS_DIRECTORY\nwhile keeping its original #FILE_CUSTOM file name.",
+			reminder = "You may need to fully restart the game client after replacing the font file to apply the change.",
+		},
+		size = {
+			label = "Size",
+			tooltip = "Set the font size.",
+		},
+		alignment = {
+			label = "Alignment",
+			tooltip = "Select the horizontal text alignment.",
+		},
+		color = {
+			label = "#COLOR_TYPE Color",
+			tooltip = "Set the #COLOR_TYPE text color.",
+		},
+	},
 	presets = {
 		apply = {
 			label = "Apply a Preset",
@@ -410,6 +433,8 @@ wt.localizations.ptBR = {
 		warningSingle = "Tem certeza que deseja redefinir as configurações da página #PAGE para os padrões?",
 	},
 	value = {
+		copy = "Copiar Valor",
+		paste = "Colar Valor",
 		revert = "Reverter Alterações",
 		restore = "Restaurar Padrão",
 		note = "Clique com o botão direito para redefinir ou reverter alterações.",
@@ -572,6 +597,28 @@ wt.localizations.ptBR = {
 			tooltip = "Certifique-se de que #FRAME não possa ser movido para fora dos limites da tela.",
 		},
 	},
+	font = {
+		title = "Texto",
+		path = {
+			label = "Fonte",
+			tooltip = "Selecione a fonte.",
+			default = "Esta é a fonte padrão usada pela Blizzard.",
+			custom = "A opção Personalizada oferece total customização, permitindo que você use qualquer fonte substituindo o arquivo de fonte #FILE_CUSTOM por qualquer outro arquivo TrueType encontrado em\n#FONTS_DIRECTORY\nmantendo o nome original do arquivo #FILE_CUSTOM.",
+			reminder = "Pode ser necessário reiniciar completamente o cliente do jogo após substituir o arquivo de fonte para aplicar a alteração.",
+		},
+		size = {
+			label = "Tamanho",
+			tooltip = "Defina o tamanho da fonte.",
+		},
+		alignment = {
+			label = "Alinhamento",
+			tooltip = "Selecione o alinhamento horizontal do texto.",
+		},
+		color = {
+			label = "Cor de #COLOR_TYPE",
+			tooltip = "Defina a cor do texto #COLOR_TYPE.",
+		},
+	},
 	presets = {
 		apply = {
 			label = "Aplicar um Predefinido",
@@ -705,6 +752,8 @@ wt.localizations.deDE = {
 		warningSingle = "Bist du sicher, dass du die Einstellungen der Seite #PAGE auf Standard zurücksetzen möchtest?",
 	},
 	value = {
+		copy = "Wert kopieren",
+		paste = "Wert einfügen",
 		revert = "Änderungen verwerfen",
 		restore = "Standard wiederherstellen",
 		note = "Rechtsklick zum Zurücksetzen oder Verwerfen von Änderungen.",
@@ -867,6 +916,28 @@ wt.localizations.deDE = {
 			tooltip = "Stelle sicher, dass #FRAME nicht außerhalb des Bildschirms verschoben werden kann.",
 		},
 	},
+	font = {
+		title = "Text",
+		path = {
+			label = "Schriftart",
+			tooltip = "Wähle die Schriftart aus.",
+			default = "Dies ist die von Blizzard verwendete Standardschriftart.",
+			custom = "Die Option Benutzerdefiniert bietet vollständige Anpassung, indem Sie die Schriftdatei #FILE_CUSTOM durch eine andere TrueType-Schriftdatei ersetzen, die in\n#FONTS_DIRECTORY\ngefunden wird, während der ursprüngliche Dateiname #FILE_CUSTOM beibehalten wird.",
+			reminder = "Möglicherweise müssen Sie den Spielclient vollständig neu starten, nachdem Sie die Schriftdatei ersetzt haben, damit die Änderung wirksam wird.",
+		},
+		size = {
+			label = "Größe",
+			tooltip = "Stelle die Schriftgröße ein.",
+		},
+		alignment = {
+			label = "Ausrichtung",
+			tooltip = "Wähle die horizontale Textausrichtung.",
+		},
+		color = {
+			label = "#COLOR_TYPE-Farbe",
+			tooltip = "Lege die #COLOR_TYPE-Textfarbe fest.",
+		},
+	},
 	presets = {
 		apply = {
 			label = "Voreinstellung anwenden",
@@ -1000,6 +1071,8 @@ wt.localizations.frFR = {
 		warningSingle = "Êtes-vous sûr de vouloir réinitialiser les paramètres de la page #PAGE aux valeurs par défaut ?",
 	},
 	value = {
+		copy = "Copier la valeur",
+		paste = "Coller la valeur",
 		revert = "Annuler les modifications",
 		restore = "Restaurer la valeur par défaut",
 		note = "Clic droit pour réinitialiser ou annuler les modifications.",
@@ -1162,6 +1235,28 @@ wt.localizations.frFR = {
 			tooltip = "Assurez-vous que #FRAME ne puisse pas être déplacé hors de l'écran.",
 		},
 	},
+	font = {
+		title = "Texte",
+		path = {
+			label = "Police",
+			tooltip = "Sélectionnez la police.",
+			default = "Ceci est la police par défaut utilisée par Blizzard.",
+			custom = "L’option Personnalisée offre une personnalisation complète en vous permettant d’utiliser n’importe quelle police en remplaçant le fichier de police #FILE_CUSTOM par n’importe quel autre fichier TrueType trouvé dans\n#FONTS_DIRECTORY\ntout en conservant son nom de fichier #FILE_CUSTOM.",
+			reminder = "Vous devrez peut-être redémarrer complètement le client du jeu après avoir remplacé le fichier de police pour appliquer le changement.",
+		},
+		size = {
+			label = "Taille",
+			tooltip = "Définissez la taille de la police.",
+		},
+		alignment = {
+			label = "Alignement",
+			tooltip = "Sélectionnez l’alignement horizontal du texte.",
+		},
+		color = {
+			label = "Couleur #COLOR_TYPE",
+			tooltip = "Définissez la couleur du texte #COLOR_TYPE.",
+		},
+	},
 	presets = {
 		apply = {
 			label = "Appliquer un préréglage",
@@ -1295,6 +1390,8 @@ wt.localizations.esES = {
 		warningSingle = "¿Seguro que quieres restablecer los ajustes de la página #PAGE a los valores predeterminados?",
 	},
 	value = {
+		copy = "Copiar valor",
+		paste = "Pegar valor",
 		revert = "Revertir Cambios",
 		restore = "Restaurar Predeterminado",
 		note = "Haz clic derecho para restablecer o revertir cambios.",
@@ -1457,6 +1554,28 @@ wt.localizations.esES = {
 			tooltip = "Asegúrate de que #FRAME no pueda moverse fuera de los límites de la pantalla.",
 		},
 	},
+	font = {
+		title = "Texto",
+		path = {
+			label = "Fuente",
+			tooltip = "Selecciona la fuente.",
+			default = "Esta es la fuente predeterminada utilizada por Blizzard.",
+			custom = "La opción Personalizada ofrece una personalización completa, permitiéndote usar cualquier fuente sustituyendo el archivo #FILE_CUSTOM por cualquier otro archivo TrueType encontrado en\n#FONTS_DIRECTORY\nmanteniendo el nombre original del archivo #FILE_CUSTOM.",
+			reminder = "Puede que necesites reiniciar completamente el cliente del juego después de reemplazar el archivo de fuente para aplicar el cambio.",
+		},
+		size = {
+			label = "Tamaño",
+			tooltip = "Establece el tamaño de la fuente.",
+		},
+		alignment = {
+			label = "Alineación",
+			tooltip = "Selecciona la alineación horizontal del texto.",
+		},
+		color = {
+			label = "Color de #COLOR_TYPE",
+			tooltip = "Establece el color del texto #COLOR_TYPE.",
+		},
+	},
 	presets = {
 		apply = {
 			label = "Aplicar un Preajuste",
@@ -1590,6 +1709,8 @@ wt.localizations.esMX = {
 		warningSingle = "¿Seguro que quieres restablecer los ajustes de la página #PAGE a los valores predeterminados?",
 	},
 	value = {
+		copy = "Copiar valor",
+		paste = "Pegar valor",
 		revert = "Revertir Cambios",
 		restore = "Restaurar Predeterminado",
 		note = "Haz clic derecho para restablecer o revertir cambios.",
@@ -1752,6 +1873,28 @@ wt.localizations.esMX = {
 			tooltip = "Asegúrate de que #FRAME no pueda moverse fuera de los límites de la pantalla.",
 		},
 	},
+	font = {
+		title = "Texto",
+		path = {
+			label = "Fuente",
+			tooltip = "Selecciona la fuente.",
+			default = "Esta es la fuente predeterminada usada por Blizzard.",
+			custom = "La opción Personalizada permite una personalización completa al reemplazar el archivo de fuente #FILE_CUSTOM con cualquier otro archivo TrueType encontrado en\n#FONTS_DIRECTORY\nmanteniendo el nombre original del archivo #FILE_CUSTOM.",
+			reminder = "Puede que necesites reiniciar por completo el cliente del juego después de reemplazar el archivo de fuente para aplicar el cambio.",
+		},
+		size = {
+			label = "Tamaño",
+			tooltip = "Configura el tamaño de la fuente.",
+		},
+		alignment = {
+			label = "Alineación",
+			tooltip = "Selecciona la alineación horizontal del texto.",
+		},
+		color = {
+			label = "Color de #COLOR_TYPE",
+			tooltip = "Configura el color del texto #COLOR_TYPE.",
+		},
+	},
 	presets = {
 		apply = {
 			label = "Aplicar un Preajuste",
@@ -1885,6 +2028,8 @@ wt.localizations.itIT = {
 		warningSingle = "Sei sicuro di voler ripristinare le impostazioni della pagina #PAGE ai valori predefiniti?",
 	},
 	value = {
+		copy = "Copia valore",
+		paste = "Incolla valore",
 		revert = "Annulla modifiche",
 		restore = "Ripristina predefinito",
 		note = "Clic destro per reimpostare o annullare le modifiche.",
@@ -2047,6 +2192,28 @@ wt.localizations.itIT = {
 			tooltip = "Assicurati che #FRAME non possa essere spostato fuori dai limiti dello schermo.",
 		},
 	},
+	font = {
+		title = "Testo",
+		path = {
+			label = "Carattere",
+			tooltip = "Seleziona il carattere.",
+			default = "Questo è il carattere predefinito usato da Blizzard.",
+			custom = "L’opzione Personalizzato offre una completa personalizzazione permettendoti di usare qualsiasi carattere sostituendo il file #FILE_CUSTOM con un qualsiasi altro file TrueType trovato in\n#FONTS_DIRECTORY\nmantenendo il nome originale del file #FILE_CUSTOM.",
+			reminder = "Potrebbe essere necessario riavviare completamente il client di gioco dopo aver sostituito il file del carattere per applicare la modifica.",
+		},
+		size = {
+			label = "Dimensione",
+			tooltip = "Imposta la dimensione del carattere.",
+		},
+		alignment = {
+			label = "Allineamento",
+			tooltip = "Seleziona l’allineamento orizzontale del testo.",
+		},
+		color = {
+			label = "Colore #COLOR_TYPE",
+			tooltip = "Imposta il colore del testo #COLOR_TYPE.",
+		},
+	},
 	presets = {
 		apply = {
 			label = "Applica un Predefinito",
@@ -2180,6 +2347,8 @@ wt.localizations.koKR = {
 		warningSingle = "#PAGE 페이지의 설정을 기본값으로 초기화하시겠습니까?",
 	},
 	value = {
+		copy = "값 복사",
+		paste = "값 붙여넣기",
 		revert = "변경 사항 되돌리기",
 		restore = "기본값 복원",
 		note = "오른쪽 클릭으로 초기화 또는 변경 사항 되돌리기.",
@@ -2342,6 +2511,28 @@ wt.localizations.koKR = {
 			tooltip = "#FRAME이 화면 밖으로 나가지 않도록 합니다.",
 		},
 	},
+	font = {
+		title = "텍스트",
+		path = {
+			label = "글꼴",
+			tooltip = "글꼴을 선택하세요.",
+			default = "이것은 블리자드에서 사용하는 기본 글꼴입니다.",
+			custom = "사용자 지정 옵션은 #FILE_CUSTOM 글꼴 파일을\n#FONTS_DIRECTORY\n내에서 찾을 수 있는 다른 TrueType 글꼴 파일로 교체하여 완전한 사용자 지정을 제공합니다. 단, 원래의 #FILE_CUSTOM 파일 이름은 유지해야 합니다.",
+			reminder = "글꼴 파일을 교체한 후 변경 사항을 적용하려면 게임 클라이언트를 완전히 재시작해야 할 수 있습니다.",
+		},
+		size = {
+			label = "크기",
+			tooltip = "글꼴 크기를 설정하세요.",
+		},
+		alignment = {
+			label = "정렬",
+			tooltip = "텍스트의 가로 정렬을 선택하세요.",
+		},
+		color = {
+			copy = "값 복사",
+			paste = "값 붙여넣기",
+		},
+	},
 	presets = {
 		apply = {
 			label = "프리셋 적용",
@@ -2475,6 +2666,8 @@ wt.localizations.zhTW = {
 		warningSingle = "確定要將 #PAGE 頁面的設定恢復為預設值嗎？",
 	},
 	value = {
+		copy = "複製數值",
+		paste = "貼上數值",
 		revert = "還原變更",
 		restore = "恢復預設",
 		note = "右鍵點擊可重設或還原變更。",
@@ -2637,6 +2830,28 @@ wt.localizations.zhTW = {
 			tooltip = "確保#FRAME不會被移出螢幕範圍。",
 		},
 	},
+	font = {
+		title = "文字",
+		path = {
+			label = "字體",
+			tooltip = "選擇字體。",
+			default = "這是 Blizzard 使用的預設字體。",
+			custom = "自訂選項提供完整的自訂功能，讓您可以將 #FILE_CUSTOM 字體檔替換為在\n#FONTS_DIRECTORY\n中找到的任何 TrueType 字體檔，同時保持原本的 #FILE_CUSTOM 檔名。",
+			reminder = "替換字體檔後，您可能需要完全重新啟動遊戲客戶端才能套用變更。",
+		},
+		size = {
+			label = "大小",
+			tooltip = "設定字體大小。",
+		},
+		alignment = {
+			label = "對齊",
+			tooltip = "選擇文字的水平對齊方式。",
+		},
+		color = {
+			label = "#COLOR_TYPE 顏色",
+			tooltip = "設定 #COLOR_TYPE 文字顏色。",
+		},
+	},
 	presets = {
 		apply = {
 			label = "套用預設位置",
@@ -2770,6 +2985,8 @@ wt.localizations.zhCN = {
 		warningSingle = "确定要将#PAGE页面的设置恢复为默认值吗？",
 	},
 	value = {
+		copy = "复制数值",
+		paste = "粘贴数值",
 		revert = "撤销更改",
 		restore = "恢复默认",
 		note = "右键点击以重置或撤销更改。",
@@ -2932,6 +3149,28 @@ wt.localizations.zhCN = {
 			tooltip = "确保#FRAME不会被移出屏幕范围。",
 		},
 	},
+	font = {
+		title = "文本",
+		path = {
+			label = "字体",
+			tooltip = "选择字体。",
+			default = "这是 Blizzard 使用的默认字体。",
+			custom = "自定义选项提供完全自定义功能，允许你将 #FILE_CUSTOM 字体文件替换为在\n#FONTS_DIRECTORY\n中找到的任何 TrueType 字体文件，同时保持原有的 #FILE_CUSTOM 文件名。",
+			reminder = "替换字体文件后，你可能需要完全重启游戏客户端才能应用更改。",
+		},
+		size = {
+			label = "大小",
+			tooltip = "设置字体大小。",
+		},
+		alignment = {
+			label = "对齐",
+			tooltip = "选择文本的水平对齐方式。",
+		},
+		color = {
+			label = "#COLOR_TYPE 颜色",
+			tooltip = "设置 #COLOR_TYPE 文本颜色。",
+		},
+	},
 	presets = {
 		apply = {
 			label = "应用预设",
@@ -3065,6 +3304,8 @@ wt.localizations.ruRU = {
 		warningSingle = "Вы уверены, что хотите сбросить настройки страницы #PAGE по умолчанию?",
 	},
 	value = {
+		copy = "Копировать значение",
+		paste = "Вставить значение",
 		revert = "Отменить изменения",
 		restore = "Восстановить по умолчанию",
 		note = "Щёлкните правой кнопкой мыши для сброса или отмены изменений.",
@@ -3225,6 +3466,28 @@ wt.localizations.ruRU = {
 		keepInBounds = {
 			label = "Держать в пределах экрана",
 			tooltip = "Не позволять #FRAME выходить за пределы экрана.",
+		},
+	},
+	font = {
+		title = "Текст",
+		path = {
+			label = "Шрифт",
+			tooltip = "Выберите шрифт.",
+			default = "Это шрифт по умолчанию, используемый Blizzard.",
+			custom = "Параметр «Пользовательский» предоставляет полную настройку, позволяя использовать любой шрифт, заменив файл #FILE_CUSTOM любым другим файлом TrueType, найденным в\n#FONTS_DIRECTORY\nпри этом сохранив исходное имя файла #FILE_CUSTOM.",
+			reminder = "После замены файла шрифта может потребоваться полностью перезапустить игровой клиент, чтобы изменения вступили в силу.",
+		},
+		size = {
+			label = "Размер",
+			tooltip = "Установите размер шрифта.",
+		},
+		alignment = {
+			label = "Выравнивание",
+			tooltip = "Выберите горизонтальное выравнивание текста.",
+		},
+		color = {
+			label = "Цвет #COLOR_TYPE",
+			tooltip = "Установите цвет текста #COLOR_TYPE.",
 		},
 	},
 	presets = {

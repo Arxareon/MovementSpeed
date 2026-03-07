@@ -1424,10 +1424,9 @@ frames.main = wt.CreateFrame({
 
 		--| Player Speed
 
-		frames.playerSpeed.display = wt.CreateFrame({
+		frames.playerSpeed.display = wt.CreateCustomFrame({
 			parent = UIParent,
 			name = name .. "PlayerSpeed",
-			customizable = true,
 			events = { OnUpdate = function(self)
 				--Update the tooltip
 				if self:IsMouseOver() and ns.tooltip:IsVisible() then wt.UpdateTooltip(self, { lines = GetPlayerSpeedTooltipLines("playerSpeed"), }) end

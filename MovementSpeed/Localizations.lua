@@ -4,15 +4,13 @@
 local ns = select(2, ...)
 
 
---[[ LOCALIZATIONS (WoW locales: https://warcraft.wiki.gg/wiki/API_GetLocale#Values) ]]
+--[[ LOCALIZATIONS ]]
 
+--List of localization tables for [WoW locales](https://warcraft.wiki.gg/wiki/API_GetLocale#Values)
 ns.localizations = {}
 
---TODO: verity AI translations (from enUS)
---TODO: adjust the date formats for the translated languages
-
---# flags will be replaced by text or number values via code
---\n represents the newline character
+--NOTE: #FLAGS will be replaced by text or number values via code; \n represents the newline character
+--CHECK AI translations (from enUS)
 
 --[ English ]
 
@@ -86,35 +84,6 @@ ns.localizations.enUS = {
 				frequency = {
 					label = "Update Frequency",
 					tooltip = "Set the time in seconds to wait before speed value is updated again.",
-				},
-			},
-			font = {
-				title = "Font & Text",
-				family = {
-					label = "Font",
-					tooltip = "Select the font of the speed value text.",
-					default = "This is a default font used by Blizzard.",
-					custom = {
-						"You may set the #OPTION_CUSTOM option to any font of your liking by replacing the #FILE_CUSTOM file with another TrueType Font file found in:",
-						"while keeping the original #FILE_CUSTOM name.",
-						"You may need to restart the game client after replacing the Custom font file.",
-					},
-				},
-				size = {
-					label = "Font Size",
-					tooltip = "Set the size of the displayed text.",
-				},
-				alignment = {
-					label = "Text Alignment",
-					tooltip = "Select the horizontal alignment of the text inside the speed display.",
-				},
-				valueColoring = {
-					label = "Individual Value Coloring",
-					tooltip = "Color the speed values in the display with the default #ADDON color palette.",
-				},
-				color = {
-					label = "Font Color",
-					tooltip = "The color of the entire speed value text when the #VALUE_COLORING option is turned off.",
 				},
 			},
 			background = {
@@ -257,8 +226,6 @@ ns.localizations.enUS = {
 	misc = {
 		date = "#MONTH/#DAY/#YEAR",
 		options = "Options",
-		default = "Default",
-		custom = "Custom",
 		enabled = "enabled",
 		disabled = "disabled",
 		days = "days",
@@ -340,35 +307,6 @@ ns.localizations.ptBR = {
 				frequency = {
 					label = "Frequência de Atualização",
 					tooltip = "Defina o tempo em segundos para aguardar antes de atualizar o valor de velocidade novamente.",
-				},
-			},
-			font = {
-				title = "Fonte & Texto",
-				family = {
-					label = "Fonte",
-					tooltip = "Selecione a fonte do texto do valor de velocidade.",
-					default = "Esta é uma fonte padrão usada pela Blizzard.",
-					custom = {
-						"Você pode definir a opção #OPTION_CUSTOM para qualquer fonte desejada substituindo o arquivo #FILE_CUSTOM por outro arquivo TrueType Font encontrado em:",
-						"mantendo o nome original #FILE_CUSTOM.",
-						"Pode ser necessário reiniciar o cliente do jogo após substituir o arquivo de fonte personalizada.",
-					},
-				},
-				size = {
-					label = "Tamanho da Fonte",
-					tooltip = "Defina o tamanho do texto exibido.",
-				},
-				alignment = {
-					label = "Alinhamento do Texto",
-					tooltip = "Selecione o alinhamento horizontal do texto dentro da exibição de velocidade.",
-				},
-				valueColoring = {
-					label = "Coloração Individual de Valores",
-					tooltip = "Colore os valores de velocidade na exibição com a paleta de cores padrão do #ADDON.",
-				},
-				color = {
-					label = "Cor da Fonte",
-					tooltip = "A cor de todo o texto do valor de velocidade quando a opção #VALUE_COLORING está desativada.",
 				},
 			},
 			background = {
@@ -511,8 +449,6 @@ ns.localizations.ptBR = {
 	misc = {
 		date = "#MONTH/#DAY/#YEAR",
 		options = "Opções",
-		default = "Padrão",
-		custom = "Personalizado",
 		enabled = "habilitado",
 		disabled = "desabilitado",
 		days = "dias",
@@ -594,35 +530,6 @@ ns.localizations.deDE = {
 				frequency = {
 					label = "Aktualisierungshäufigkeit",
 					tooltip = "Lege die Zeit in Sekunden fest, die zwischen den Aktualisierungen des Geschwindigkeitswertes gewartet werden soll.",
-				},
-			},
-			font = {
-				title = "Schrift & Text",
-				family = {
-					label = "Schriftart",
-					tooltip = "Wähle die Schriftart des Geschwindigkeitswert-Textes.",
-					default = "Dies ist eine von Blizzard verwendete Standardschriftart.",
-					custom = {
-						"Du kannst die Option #OPTION_CUSTOM auf eine beliebige Schriftart setzen, indem du die Datei #FILE_CUSTOM durch eine andere TrueType-Schriftart aus:",
-						"ersetzt und den ursprünglichen Namen #FILE_CUSTOM beibehältst.",
-						"Nach dem Ersetzen der benutzerdefinierten Schriftdatei musst du den Spielclient möglicherweise neu starten.",
-					},
-				},
-				size = {
-					label = "Schriftgröße",
-					tooltip = "Lege die Größe des angezeigten Textes fest.",
-				},
-				alignment = {
-					label = "Textausrichtung",
-					tooltip = "Wähle die horizontale Ausrichtung des Textes in der Geschwindigkeitsanzeige.",
-				},
-				valueColoring = {
-					label = "Individuelle Wertfarbe",
-					tooltip = "Färbe die Geschwindigkeitswerte in der Anzeige mit der Standardfarbpalette von #ADDON.",
-				},
-				color = {
-					label = "Schriftfarbe",
-					tooltip = "Die Farbe des gesamten Geschwindigkeitswert-Textes, wenn die Option #VALUE_COLORING deaktiviert ist.",
 				},
 			},
 			background = {
@@ -765,8 +672,6 @@ ns.localizations.deDE = {
 	misc = {
 		date = "#MONTH/#DAY/#YEAR",
 		options = "Optionen",
-		default = "Standard",
-		custom = "Benutzerdefiniert",
 		enabled = "aktiviert",
 		disabled = "deaktiviert",
 		days = "Tage",
@@ -848,35 +753,6 @@ ns.localizations.frFR = {
 				frequency = {
 					label = "Fréquence de mise à jour",
 					tooltip = "Définissez le temps en secondes à attendre avant que la valeur de vitesse soit mise à jour à nouveau.",
-				},
-			},
-			font = {
-				title = "Police & Texte",
-				family = {
-					label = "Police",
-					tooltip = "Sélectionnez la police du texte de la valeur de vitesse.",
-					default = "Ceci est une police par défaut utilisée par Blizzard.",
-					custom = {
-						"Vous pouvez définir l'option #OPTION_CUSTOM sur n'importe quelle police en remplaçant le fichier #FILE_CUSTOM par un autre fichier TrueType Font trouvé dans :",
-						"tout en gardant le nom original #FILE_CUSTOM.",
-						"Vous devrez peut-être redémarrer le client du jeu après avoir remplacé le fichier de police personnalisée.",
-					},
-				},
-				size = {
-					label = "Taille de la police",
-					tooltip = "Définissez la taille du texte affiché.",
-				},
-				alignment = {
-					label = "Alignement du texte",
-					tooltip = "Sélectionnez l'alignement horizontal du texte dans l'affichage de la vitesse.",
-				},
-				valueColoring = {
-					label = "Coloration individuelle des valeurs",
-					tooltip = "Colorer les valeurs de vitesse dans l'affichage avec la palette de couleurs par défaut de #ADDON.",
-				},
-				color = {
-					label = "Couleur de la police",
-					tooltip = "La couleur de tout le texte de la valeur de vitesse lorsque l'option #VALUE_COLORING est désactivée.",
 				},
 			},
 			background = {
@@ -1019,8 +895,6 @@ ns.localizations.frFR = {
 	misc = {
 		date = "#MONTH/#DAY/#YEAR",
 		options = "Options",
-		default = "Par défaut",
-		custom = "Personnalisé",
 		enabled = "activé",
 		disabled = "désactivé",
 		days = "jours",
@@ -1102,35 +976,6 @@ ns.localizations.esES = {
 				frequency = {
 					label = "Frecuencia de actualización",
 					tooltip = "Establece el tiempo en segundos que debe esperar antes de actualizar el valor de velocidad de nuevo.",
-				},
-			},
-			font = {
-				title = "Fuente y texto",
-				family = {
-					label = "Fuente",
-					tooltip = "Selecciona la fuente del texto del valor de velocidad.",
-					default = "Esta es una fuente predeterminada usada por Blizzard.",
-					custom = {
-						"Puedes establecer la opción #OPTION_CUSTOM en cualquier fuente que desees reemplazando el archivo #FILE_CUSTOM por otro archivo TrueType Font encontrado en:",
-						"manteniendo el nombre original #FILE_CUSTOM.",
-						"Puede que necesites reiniciar el cliente del juego después de reemplazar el archivo de fuente personalizada.",
-					},
-				},
-				size = {
-					label = "Tamaño de fuente",
-					tooltip = "Establece el tamaño del texto mostrado.",
-				},
-				alignment = {
-					label = "Alineación de texto",
-					tooltip = "Selecciona la alineación horizontal del texto dentro de la visualización de velocidad.",
-				},
-				valueColoring = {
-					label = "Coloreado individual de valores",
-					tooltip = "Colorea los valores de velocidad en la visualización con la paleta de colores predeterminada de #ADDON.",
-				},
-				color = {
-					label = "Color de fuente",
-					tooltip = "El color de todo el texto del valor de velocidad cuando la opción #VALUE_COLORING está desactivada.",
 				},
 			},
 			background = {
@@ -1273,8 +1118,6 @@ ns.localizations.esES = {
 	misc = {
 		date = "#MONTH/#DAY/#YEAR",
 		options = "Opciones",
-		default = "Predeterminado",
-		custom = "Personalizado",
 		enabled = "activado",
 		disabled = "desactivado",
 		days = "días",
@@ -1356,35 +1199,6 @@ ns.localizations.esMX = {
 				frequency = {
 					label = "Frecuencia de actualización",
 					tooltip = "Establece el tiempo en segundos que debe esperar antes de actualizar el valor de velocidad de nuevo.",
-				},
-			},
-			font = {
-				title = "Fuente y texto",
-				family = {
-					label = "Fuente",
-					tooltip = "Selecciona la fuente del texto del valor de velocidad.",
-					default = "Esta es una fuente predeterminada usada por Blizzard.",
-					custom = {
-						"Puedes establecer la opción #OPTION_CUSTOM en cualquier fuente que desees reemplazando el archivo #FILE_CUSTOM por otro archivo TrueType Font encontrado en:",
-						"manteniendo el nombre original #FILE_CUSTOM.",
-						"Puede que necesites reiniciar el cliente del juego después de reemplazar el archivo de fuente personalizada.",
-					},
-				},
-				size = {
-					label = "Tamaño de fuente",
-					tooltip = "Establece el tamaño del texto mostrado.",
-				},
-				alignment = {
-					label = "Alineación de texto",
-					tooltip = "Selecciona la alineación horizontal del texto dentro de la visualización de velocidad.",
-				},
-				valueColoring = {
-					label = "Coloreado individual de valores",
-					tooltip = "Colorea los valores de velocidad en la visualización con la paleta de colores predeterminada de #ADDON.",
-				},
-				color = {
-					label = "Color de fuente",
-					tooltip = "El color de todo el texto del valor de velocidad cuando la opción #VALUE_COLORING está desactivada.",
 				},
 			},
 			background = {
@@ -1527,8 +1341,6 @@ ns.localizations.esMX = {
 	misc = {
 		date = "#MONTH/#DAY/#YEAR",
 		options = "Opciones",
-		default = "Predeterminado",
-		custom = "Personalizado",
 		enabled = "activado",
 		disabled = "desactivado",
 		days = "días",
@@ -1610,35 +1422,6 @@ ns.localizations.itIT = {
 				frequency = {
 					label = "Frequenza Aggiornamento",
 					tooltip = "Imposta il tempo in secondi da attendere prima che il valore della velocità venga aggiornato di nuovo.",
-				},
-			},
-			font = {
-				title = "Font & Testo",
-				family = {
-					label = "Font",
-					tooltip = "Seleziona il font del testo del valore della velocità.",
-					default = "Questo è un font predefinito usato da Blizzard.",
-					custom = {
-						"Puoi impostare l'opzione #OPTION_CUSTOM su qualsiasi font desideri sostituendo il file #FILE_CUSTOM con un altro file TrueType Font trovato in:",
-						"mantenendo il nome originale #FILE_CUSTOM.",
-						"Potresti dover riavviare il client di gioco dopo aver sostituito il file del font personalizzato.",
-					},
-				},
-				size = {
-					label = "Dimensione Font",
-					tooltip = "Imposta la dimensione del testo visualizzato.",
-				},
-				alignment = {
-					label = "Allineamento Testo",
-					tooltip = "Seleziona l'allineamento orizzontale del testo all'interno della visualizzazione della velocità.",
-				},
-				valueColoring = {
-					label = "Colorazione Valori Individuali",
-					tooltip = "Colora i valori della velocità nella visualizzazione con la palette di colori predefinita di #ADDON.",
-				},
-				color = {
-					label = "Colore Font",
-					tooltip = "Il colore dell'intero testo del valore della velocità quando l'opzione #VALUE_COLORING è disattivata.",
 				},
 			},
 			background = {
@@ -1781,8 +1564,6 @@ ns.localizations.itIT = {
 	misc = {
 		date = "#MONTH/#DAY/#YEAR",
 		options = "Opzioni",
-		default = "Predefinito",
-		custom = "Personalizzato",
 		enabled = "abilitato",
 		disabled = "disabilitato",
 		days = "giorni",
@@ -1864,35 +1645,6 @@ ns.localizations.koKR = {
 				frequency = {
 					label = "업데이트 빈도",
 					tooltip = "속도 값이 다시 업데이트되기까지 대기할 시간을 초 단위로 설정하세요.",
-				},
-			},
-			font = {
-				title = "글꼴 및 텍스트",
-				family = {
-					label = "글꼴",
-					tooltip = "속도 값 텍스트의 글꼴을 선택하세요.",
-					default = "블리자드에서 사용하는 기본 글꼴입니다.",
-					custom = {
-						"#OPTION_CUSTOM 옵션을 원하는 글꼴로 설정하려면 #FILE_CUSTOM 파일을 다른 TrueType Font 파일로 교체하세요:",
-						"#FILE_CUSTOM 원래 이름을 유지하세요.",
-						"사용자 글꼴 파일을 교체한 후 게임 클라이언트를 재시작해야 할 수 있습니다.",
-					},
-				},
-				size = {
-					label = "글꼴 크기",
-					tooltip = "표시되는 텍스트의 크기를 설정하세요.",
-				},
-				alignment = {
-					label = "텍스트 정렬",
-					tooltip = "속도 표시 내 텍스트의 수평 정렬을 선택하세요.",
-				},
-				valueColoring = {
-					label = "개별 값 색상",
-					tooltip = "표시에 #ADDON 기본 색상 팔레트로 속도 값을 색칠합니다.",
-				},
-				color = {
-					label = "글꼴 색상",
-					tooltip = "#VALUE_COLORING 옵션이 꺼져 있을 때 전체 속도 값 텍스트의 색상입니다.",
 				},
 			},
 			background = {
@@ -2035,8 +1787,6 @@ ns.localizations.koKR = {
 	misc = {
 		date = "#YEAR년 #MONTH월 #DAY일",
 		options = "옵션",
-		default = "기본값",
-		custom = "사용자 설정",
 		enabled = "활성화됨",
 		disabled = "비활성화됨",
 		days = "일",
@@ -2118,35 +1868,6 @@ ns.localizations.zhTW = {
 				frequency = {
 					label = "更新頻率",
 					tooltip = "設定再次更新速度數值前需等待的秒數。",
-				},
-			},
-			font = {
-				title = "字型與文字",
-				family = {
-					label = "字型",
-					tooltip = "選擇速度數值文字的字型。",
-					default = "這是Blizzard使用的預設字型。",
-					custom = {
-						"您可將#OPTION_CUSTOM選項設為任意字型，只需將#FILE_CUSTOM檔案替換為其他TrueType字型檔案，檔案位置：",
-						"請保持原始檔名#FILE_CUSTOM。",
-						"替換自訂字型檔案後可能需要重新啟動遊戲。",
-					},
-				},
-				size = {
-					label = "字型大小",
-					tooltip = "設定顯示文字的大小。",
-				},
-				alignment = {
-					label = "文字對齊",
-					tooltip = "選擇速度顯示內文字的水平對齊方式。",
-				},
-				valueColoring = {
-					label = "個別數值著色",
-					tooltip = "以#ADDON預設配色為顯示中的速度數值著色。",
-				},
-				color = {
-					label = "字型顏色",
-					tooltip = "關閉#VALUE_COLORING選項時整個速度數值文字的顏色。",
 				},
 			},
 			background = {
@@ -2289,8 +2010,6 @@ ns.localizations.zhTW = {
 	misc = {
 		date = "#MONTH/#DAY/#YEAR",
 		options = "選項",
-		default = "預設",
-		custom = "自訂",
 		enabled = "已啟用",
 		disabled = "已停用",
 		days = "天",
@@ -2372,35 +2091,6 @@ ns.localizations.zhCN = {
 				frequency = {
 					label = "更新频率",
 					tooltip = "设置再次更新速度数值前等待的秒数。",
-				},
-			},
-			font = {
-				title = "字体与文本",
-				family = {
-					label = "字体",
-					tooltip = "选择速度数值文本的字体。",
-					default = "这是暴雪使用的默认字体。",
-					custom = {
-						"您可以通过将#FILE_CUSTOM文件替换为其他TrueType字体文件，将#OPTION_CUSTOM选项设置为任意字体，文件位置：",
-						"请保持原始文件名#FILE_CUSTOM。",
-						"替换自定义字体文件后可能需要重启游戏客户端。",
-					},
-				},
-				size = {
-					label = "字体大小",
-					tooltip = "设置显示文本的大小。",
-				},
-				alignment = {
-					label = "文本对齐",
-					tooltip = "选择速度显示内文本的水平对齐方式。",
-				},
-				valueColoring = {
-					label = "单独数值着色",
-					tooltip = "使用#ADDON默认配色方案为显示中的速度数值着色。",
-				},
-				color = {
-					label = "字体颜色",
-					tooltip = "关闭#VALUE_COLORING选项时整个速度数值文本的颜色。",
 				},
 			},
 			background = {
@@ -2543,8 +2233,6 @@ ns.localizations.zhCN = {
 	misc = {
 		date = "#MONTH/#DAY/#YEAR",
 		options = "选项",
-		default = "默认",
-		custom = "自定义",
 		enabled = "已启用",
 		disabled = "已禁用",
 		days = "天",
@@ -2626,35 +2314,6 @@ ns.localizations.ruRU = {
 				frequency = {
 					label = "Частота обновления",
 					tooltip = "Установите время в секундах, через которое значение скорости будет обновлено снова.",
-				},
-			},
-			font = {
-				title = "Шрифт и текст",
-				family = {
-					label = "Шрифт",
-					tooltip = "Выберите шрифт текста значения скорости.",
-					default = "Это стандартный шрифт, используемый Blizzard.",
-					custom = {
-						"Вы можете установить опцию #OPTION_CUSTOM на любой шрифт, заменив файл #FILE_CUSTOM на другой файл TrueType Font из:",
-						"сохранив оригинальное имя #FILE_CUSTOM.",
-						"Возможно, потребуется перезапустить игровой клиент после замены файла пользовательского шрифта.",
-					},
-				},
-				size = {
-					label = "Размер шрифта",
-					tooltip = "Установите размер отображаемого текста.",
-				},
-				alignment = {
-					label = "Выравнивание текста",
-					tooltip = "Выберите горизонтальное выравнивание текста внутри отображения скорости.",
-				},
-				valueColoring = {
-					label = "Индивидуальная окраска значений",
-					tooltip = "Окрашивать значения скорости в отображении с помощью стандартной цветовой палитры #ADDON.",
-				},
-				color = {
-					label = "Цвет шрифта",
-					tooltip = "Цвет всего текста значения скорости, если опция #VALUE_COLORING выключена.",
 				},
 			},
 			background = {
@@ -2797,8 +2456,6 @@ ns.localizations.ruRU = {
 	misc = {
 		date = "#DAY.#MONTH.#YEAR",
 		options = "Настройки",
-		default = "Стандарт",
-		custom = "Пользовательский",
 		enabled = "включено",
 		disabled = "выключено",
 		days = "дней",

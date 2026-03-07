@@ -1,3 +1,6 @@
+--NOTE: Annotations are for development purposes only, providing documentation for use with LUA Language Server. This file does not need to be loaded by the game client.
+
+
 --[[ MISC ]]
 
 ---@alias ModifierKey
@@ -107,9 +110,30 @@
 ---@field name string
 ---@field handler fun(...: any)
 
+---@alias AnyWidgetType
+---| actionButton
+---| toggle
+---| selector
+---| specialSelector
+---| multiselector
+---| textbox
+---| numeric
+---| colorPicker
+
+---@alias AnyGUIWidgetType
+---| checkbox
+---| radioButton
+---| radioSelector
+---| checkboxSelector
+---| specialRadioSelector
+---| dropdownSelector
+---| singleLineEditbox
+---| customSingleLineEditbox
+---| multilineEditbox
+---| numericSlider
+---| colorPickerFrame
+
 ---@alias WidgetTypeName
----| "SettingsPage"
----| "DataManagementPage"
 ---| "ActionButton"
 ---| "Toggle"
 ---| "Selector"
@@ -118,14 +142,27 @@
 ---| "Numeric"
 ---| "ColorPicker"
 
----@alias AnyWidgetType
----| actionButton
----| toggle
----| selector
----| textbox
----| numeric
----| colorPicker
+---@alias SettingsPageTypeName
+---| "SettingsPage"
+---| "DataManagementPage"
 
+---@alias OptionsTemplateTypeName
+---| "PositionOptions"
+---| "FontOptions"
+
+---@alias AnyTypeName
+---| WidgetTypeName
+---| SettingsPageTypeName
+---| OptionsTemplateTypeName
+
+--| Global functions
+
+---Create a colored string from the provided value via escape sequences
+---***
+---@param value string|number Value to add coloring to
+---@param color colorData|colorRGBA Table containing the color values
+---@return string
+function WrapTextInColor(value, color) return value end
 
 --[[ TABLE MANAGEMENT ]]
 
@@ -149,6 +186,12 @@
 
 ---@class namedChildObject : childObject, namedObject_base
 ---@field append? boolean Instead of setting the specified name by itself, append it to the name of the specified parent frame | ***Default:*** true if t.parent ~= UIParent
+
+
+--[[ LITE MODE ]]
+
+---@class liteObject
+---@field lite? boolean If false, overrule **WidgetToolsDB.lite** and use full GUI functionality | ***Default:*** true
 
 
 --[[ POSITION & DIMENSIONS ]]
@@ -195,7 +238,7 @@
 
 ---@class arrangementData
 ---@field margins? spacingData Inset the content inside the container frame by the specified amount on each side
----@field gaps? number The amount of space to leave between rows | ***Default:*** 8
+---@field gaps? number The amount of space to leave between rows and items within rows | ***Default:*** 8
 ---@field flip? boolean Fill the rows from right to left instead of left to right | ***Default:*** false
 ---@field resize? boolean Set the height of the container frame to match the space taken up by the arranged content (including margins) | ***Default:*** true
 ---@field order? { [table[]] : integer[] } If set, position the child frames by into columns within rows in the order specified in a nested structure, an array of subtables representing rows, and their values representing the index of a given child frame in { **container**:[GetChildren()](https://wowpedia.fandom.com/wiki/API_Frame_GetChildren) }<ul><li>***Note:*** If not set, assemble the arrangement from the individual arrangement descriptions of child frames stored in their **arrangementInfo** custom table property.</li></ul>
@@ -208,12 +251,12 @@
 ---@field initialize? fun(container?: Frame, width: number, height: number, category?: string, keys?: string[], name?: string) This function will be called while setting up the container frame to perform specific tasks like creating content child frames right away<hr><p>@*param* `container`? AnyFrameObject ― Reference to the frame to be set as the parent for child objects created during initialization (nil if **WidgetToolsDB.lite** is true)</p><p>@*param* `width` number The current width of the container frame (0 if **WidgetToolsDB.lite** is true)</p><p>@*param* `height` number The current height of the container frame (0 if **WidgetToolsDB.lite** is true)</p><p>@*param* `category`? string A unique string used for categorizing settings data management rules & change handler scripts</p><p>@*param* `keys`? string[] A list of unique strings appended to **category** linking a subset of settings data rules to be handled together in the specified order</p><p>@*param* `name`? string The name parameter of the container specified at construction</p>
 
 ---@class arrangementRules
----@field newRow? boolean Place the frame into a new row within its container instead of adding it to a specified row | ***Default:*** true
+---@field newRow? boolean Place the frame into a new row within its container instead of adding it to a specified row | ***Default:*** true<ul><li>***Note:*** If the item would not fit in the row with other items in there, it will automatically be placed in a new row.</li></ul>
 ---@field row? integer Place the frame in the specified existing row | ***Default:*** *last row*<ul><li>***Note:*** If the value provided is larger than the number current rows, it will be placed in the last row.</li></ul>
----@field column? integer Place the frame at this position within its row | ***Default:*** *new column at the end of the row* <ul><li>***Note:*** If the value provided is larger than the number of widgets assigned to the specified row, it will be placed at the end of the row.</li></ul>
+---@field column? integer Place the frame at this position within its row | ***Default:*** *new column at the end of the row*<ul><li>***Note:*** If the value provided is larger than the number of widgets assigned to the specified row, it will be placed at the end of the row.</li></ul>
 
 ---@class arrangeableObject
----@field arrange? arrangementRules When set, automatically position the frame in a columns within rows arrangement in its parent container via ***WidgetTools*.ArrangeContent(**t.parent**, ...)**
+---@field arrange? arrangementRules When set, automatically position the frame in a columns within rows arrangement in its parent container via ***WidgetToolbox*.ArrangeContent(**t.parent**, ...)**
 
 --| Size
 
@@ -530,6 +573,7 @@
 ---@class backdropFrame : BackdropTemplate
 ---@field backdropInfo backdropInfo
 
+
 --[[ CHAT CONTROL ]]
 
 ---@alias chatCommandColorNames
@@ -565,6 +609,9 @@
 
 --[[ TOOLTIP ]]
 
+---@class tooltipFrameData
+---@field tooltip? GameTooltip Reference to the tooltip frame to set up | ***Default:*** *default WidgetTools custom tooltip*
+
 ---@class tooltipLineData
 ---@field text string Text to be displayed in the line
 ---@field font? string|FontObject The FontObject to set for this line | ***Default:*** GameTooltipTextSmall
@@ -572,29 +619,28 @@
 ---@field wrap? boolean Allow the text in this line to be wrapped | ***Default:*** true
 
 ---@class tooltipTextData
----@field title string String to be shown as the tooltip title (text color: NORMAL_FONT_COLOR)
+---@field title? string String to be shown as the tooltip title (text color: NORMAL_FONT_COLOR) | ***Default:*** **owner:GetName()** or **tostring(owner)**
 ---@field lines? tooltipLineData[] Table containing the lists of parameters for the text lines after the title
 
----@class tooltipData : tooltipTextData
----@field tooltip? GameTooltip Reference to the tooltip frame to set up | ***Default:*** *default WidgetTools custom tooltip*
----@field anchor TooltipAnchor [GameTooltip anchor](https://wowpedia.fandom.com/wiki/API_GameTooltip_SetOwner#Arguments)
----@field offset? offsetData Values to offset the position of **tooltipData.tooltip** by
----@field position? positionData_base|positionData Table of parameters to call [Region:SetPoint(...)](https://wowpedia.fandom.com/wiki/API_ScriptRegionResizing_SetPoint) with when the tooltip is not automatically positioned via **t.anchor** | ***Default:*** "TOPLEFT" if **tooltipData.anchor** == "ANCHOR_NONE"<ul><li>***Note:*** **t.offset** will be used when calling [Region:SetPoint(...)](https://wowpedia.fandom.com/wiki/API_ScriptRegionResizing_SetPoint) as well.</li></ul>
+---@class tooltipData : tooltipFrameData, tooltipTextData
+---@field anchor? TooltipAnchor ***Default:*** "ANCHOR_CURSOR"
+---@field offset? offsetData Values to offset the position of ***tooltipData*.tooltip** by
+---@field position? positionData_base|positionData Table of parameters to call [Region:SetPoint(...)](https://wowpedia.fandom.com/wiki/API_ScriptRegionResizing_SetPoint) with when the tooltip is not automatically positioned via **t.anchor** | ***Default:*** "TOPLEFT" if ***tooltipData*.anchor** == "ANCHOR_NONE"<ul><li>***Note:*** **t.offset** will be used when calling [Region:SetPoint(...)](https://wowpedia.fandom.com/wiki/API_ScriptRegionResizing_SetPoint) as well.</li></ul>
 ---@field flipColors? boolean Flip the default color values of the title and the text lines | ***Default:*** false
 
 ---@class tooltipUpdateData
 ---@field title? string String to be shown as the tooltip title (text color: NORMAL_FONT_COLOR) | ***Default:*** **owner.tooltipData.title**
 ---@field lines? tooltipLineData[] Table containing the lists of parameters for the text lines after the title | ***Default:*** **owner.tooltipData.lines**
 ---@field tooltip? GameTooltip Reference to the tooltip frame to set up | ***Default:*** **owner.tooltipData.tooltip**
----@field offset? offsetData Values to offset the position of **tooltipData.tooltip** by | ***Default:*** **owner.tooltipData.offset**
+---@field offset? offsetData Values to offset the position of ***tooltipData*.tooltip** by | ***Default:*** **owner.tooltipData.offset**
 ---@field position? positionData_base|positionData Table of parameters to call [Region:SetPoint(...)](https://wowpedia.fandom.com/wiki/API_ScriptRegionResizing_SetPoint) with when the tooltip is not automatically positioned via **t.anchor** | ***Default:*** **owner.tooltipData.position**
 ---@field flipColors? boolean Flip the default color values of the title and the text lines | ***Default:*** **owner.tooltipData.flipColors**
 ---@field anchor? TooltipAnchor [GameTooltip anchor](https://wowpedia.fandom.com/wiki/API_GameTooltip_SetOwner#Arguments) | ***Default:*** **owner.tooltipData.anchor**
 
 ---@class tooltipToggleData
----@field triggers? Frame[] List of references to additional frames to add hover events to to toggle **tooltipData.tooltip** for **owner** besides **owner** itself
----@field checkParent? boolean Whether to check if **owner** is being hovered before hiding **tooltipData.tooltip** when triggers stop being hovered | ***Default:*** true
----@field replace? boolean If false, while **tooltipData.tooltip** is already visible for a different owner, don't change it | ***Default:*** true<ul><li>***Note:*** If **tooltipData.tooltip** is already shown for **owner**, ***WidgetToolbox*.UpdateTooltip(...)** will be called anyway.</li></ul>
+---@field triggers? Frame[] List of references to additional frames to add hover events to to toggle ***tooltipData*.tooltip** for **owner** besides **owner** itself
+---@field checkParent? boolean Whether to check if **owner** is being hovered before hiding ***tooltipData*.tooltip** when triggers stop being hovered | ***Default:*** true
+---@field replace? boolean If false, while ***tooltipData*.tooltip** is already visible for a different owner, don't change it | ***Default:*** true<ul><li>***Note:*** If ***tooltipData*.tooltip** is already shown for **owner**, ***WidgetToolbox*.UpdateTooltip(...)** will be called anyway.</li></ul>
 
 ---@class widgetTooltipTextData : tooltipTextData
 ---@field title? string Text to be displayed in the title line of the tooltip | ***Default:*** **t.title**
@@ -605,15 +651,20 @@
 ---@class presetTooltipTextData : tooltipTextData
 ---@field title? string Text to be displayed in the title line of the tooltip | ***Default:*** **t.presets.items[*index*].title**
 
----@class addonCompartmentTooltipData : tooltipTextData
+---@class addonCompartmentTooltipData : tooltipFrameData, tooltipTextData
 ---@field title? string Text to be displayed in the title line of the tooltip | ***Default:*** [GetAddOnMetadata(**addon**, "title")](https://wowpedia.fandom.com/wiki/API_GetAddOnMetadata)
----@field tooltip? GameTooltip Reference to the tooltip frame to set up | ***Default:*** *default WidgetTools custom tooltip*
 
 ---@class tooltipDescribableWidget
 ---@field tooltip? widgetTooltipTextData List of text lines to be added to the tooltip of the widget displayed when mousing over the frame
 
----@class tooltipDescribedObject
----@field tooltipData tooltipData Table of tooltip parameters used to display a tooltip for this frame
+--| Tooltip data
+
+---@alias AnyTooltipData
+---| tooltipData
+---| widgetTooltipTextData
+---| itemTooltipTextData
+---| presetTooltipTextData
+---| addonCompartmentTooltipData
 
 
 --[[ DEPENDENCIES ]]
@@ -630,8 +681,11 @@
 --[[ SETTINGS DATA MANAGEMENT ]]
 
 ---@class settingsRule
----@field widget checkbox|radioButton|radioSelector|checkboxSelector|specialSelector|dropdownSelector|textbox|multilineEditbox|numericSlider|colorPicker Reference to the widget to be saved & loaded data to/from with defined **loadData** and **saveData** functions
+---@field widget AnyWidgetType|AnyGUIWidgetType Reference to the widget to be saved & loaded data to/from with defined **loadData** and **saveData** functions
 ---@field onChange? string[] List of keys referencing functions to be called after the value of **widget** was changed by the user or via settings data management
+
+---@class settingsData_base
+---@field category? string A unique string used for categorizing settings data management rules & change handler scripts | ***Default:*** **addon**
 
 ---@class settingsData
 ---@field category? string A unique string used for categorizing settings data management rules & change handler scripts | ***Default:*** "WidgetTools" *(register as a global rule)*
@@ -639,8 +693,7 @@
 ---@field index? integer Set when to place this widget in the execution order when saving or loading batched settings data | ***Default:*** *placed at the end of the current list*
 ---@field onChange? table<string|integer, function|string> table<string|integer, function|string> List of new or already defined functions to call after the value of the widget was changed by the user or via settings data management<ul><li>**[*key*]**? string|integer ― A unique string appended to **category** to point to a newly defined function to be added to settings data management or just the index of the next function name | ***Default:*** *next assigned index*</li><li>**[*value*]** function|string ― The new function to register under its unique key, or the key of an already existing function</li><ul><li>***Note:*** Function definitions will be replaced by key references when they are registered to settings data management. Functions registered under duplicate keys are overwritten.</li></ul></ul>
 
----@class settingsData_collection
----@field category? string A unique string used for categorizing settings data management rules & change handler scripts | ***Default:*** **addon**
+---@class settingsData_collection : settingsData_base
 ---@field keys? string[] An ordered list of unique strings appended to **category** linking a subset of settings data rules to be handled together in the specified order via this settings category page | ***Default:*** { **t.name** }
 
 ---@class settingsWidget
@@ -653,6 +706,24 @@
 ---@class settingsFrame
 ---@field showDefault? boolean If true, show the default value of the widget in its tooltip | ***Default:*** true
 ---@field utilityMenu? boolean If true, assign a context menu to the settings widget frame to allow for quickly resetting changes or the default value | ***Default:*** true
+
+
+--[[ Profiles ]]
+
+---@class profile
+---@field title string Display name of the profile
+---@field data table Custom profile data
+
+---@class profileStorage
+---@field profiles profile[] List of profiles
+
+
+--[[ ADDON COMPARTMENT ]]
+
+---@class addonCompartmentFunctions
+---@field onClick? fun(addon: string, button: string, frame: Button) Called when the **addon**'s compartment button is clicked<ul><li>***Note:*** `AddonCompartmentFunc`, must be set in the specified **addon**'s TOC file, defining the name of the global function to be set for call.</li></ul>
+---@field onEnter? fun(addon: string, frame: Button|Frame) Called when the **addon**'s compartment button is being hovered before the tooltip (if set) is shown<ul><li>***Note:*** `AddonCompartmentFuncOnEnter`, must be set in the specified **addon**'s TOC file, defining the name of the global function to be set for call.</li></ul>
+---@field onLeave? fun(addon: string, frame: Button|Frame) Called when the **addon**'s compartment button is stopped being hovered before the tooltip (if set) is hidden<ul><li>***Note:*** `AddonCompartmentFuncOnLeave`, must be set in the specified **addon**'s TOC file, defining the name of the global function to be set for call.</li></ul>
 
 
 --[[ POPUP ]]
@@ -692,12 +763,6 @@
 ---@field position? reloadFramePositionData Table of parameters to call [Region:SetPoint(...)](https://wowpedia.fandom.com/wiki/API_ScriptRegionResizing_SetPoint) with | ***Default:*** "TOPRIGHT", -300, -80
 
 
---[[ LITE MODE ]]
-
----@class liteObject
----@field lite? boolean If false, overrule **WidgetToolsDB.lite** and use full GUI functionality | ***Default:*** true
-
-
 --[[ CONTAINERS ]]
 
 --[ Frame ]
@@ -706,7 +771,6 @@
 ---@field parent? AnyFrameObject Reference to the frame to set as the parent of the new frame | ***Default:*** nil *(parentless frame)*<ul><li>***Note:*** You may use [Region:SetParent(...)](https://wowpedia.fandom.com/wiki/API_ScriptRegion_SetParent) to set the parent frame later.</li></ul>
 ---@field name? string Unique string used to set the name of the new frame | ***Default:*** nil *(anonymous frame)*<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
 ---@field append? boolean When setting the name, append **t.name** to the name of **t.parent** instead | ***Default:*** true if **t.name** ~= nil and **t.parent** ~= nil and **t.parent** ~= UIParent
----@field customizable? boolean Create the frame with `BackdropTemplateMixin and "BackdropTemplate"` to be easily customizable | ***Default:*** false<ul><li>***Note:*** You may use ***WidgetToolbox*.SetBackdrop(...)** to set up the backdrop quickly.</li></ul>
 ---@field size? sizeData_zeroDefault|sizeData ***Default:*** *no size*<ul><li>***Note:*** Omitting or setting either value to 0 will result in the frame being invisible and not getting placed on the screen.</li></ul>
 ---@field events? table<ScriptFrame, fun(...: any)|attributeEventData> Table of key, value pairs of the names of script event handlers to be set for the frame and the functions to assign as event handlers called when they trigger<ul><li>***Note:*** "[OnEvent](https://wowpedia.fandom.com/wiki/UIHANDLER_OnEvent)" handlers specified here will not be set. Handler functions for specific global events should be specified in the **t.onEvent** table.</li></ul>
 ---@field onEvent? table<WowEvent, fun(self: Frame, ...: any)> Table of key, value pairs that holds global event tags & their corresponding event handlers to be registered for the frame<ul><li>***Note:*** You may want to include [Frame:UnregisterEvent(...)](https://wowpedia.fandom.com/wiki/API_Frame_UnregisterEvent) to prevent the handler function to be executed again.</li><li>***Example:*** "[ADDON_LOADED](https://wowpedia.fandom.com/wiki/ADDON_LOADED)" is fired repeatedly after each addon. To call the handler only after one specified addon is loaded, you may check the parameter the handler is called with. It's a good idea to unregister the event to prevent repeated calling for every other addon after the specified one has been loaded already.<pre>```function(self, addon)```<br>&#9;```if addon ~= "AddonNameSpace" then return end --Replace "AddonNameSpace" with the namespace of the specific addon to watch```<br>&#9;```self:UnregisterEvent("ADDON_LOADED")```<br>&#9;```--Do something```<br>```end```</pre></li></ul>
@@ -822,6 +886,7 @@
 ---@field events? table<ScriptFrame, fun(...: any)|attributeEventData> Table of key, value pairs of the names of script event handlers to be set for the frame and the functions to assign as event handlers called when they trigger<ul><li>***Note:*** "[OnEvent](https://wowpedia.fandom.com/wiki/UIHANDLER_OnEvent)" handlers specified here will not be set. Handler functions for specific global events should be specified in the **t.onEvent** table.</li></ul>
 ---@field onEvent? table<WowEvent, fun(self: Frame, ...: any)> Table of key, value pairs that holds global event tags & their corresponding event handlers to be registered for the frame<ul><li>***Note:*** You may want to include [Frame:UnregisterEvent(...)](https://wowpedia.fandom.com/wiki/API_Frame_UnregisterEvent) to prevent the handler function to be executed again.</li><li>***Example:*** "[ADDON_LOADED](https://wowpedia.fandom.com/wiki/ADDON_LOADED)" is fired repeatedly after each addon. To call the handler only after one specified addon is loaded, you may check the parameter the handler is called with. It's a good idea to unregister the event to prevent repeated calling for every other addon after the specified one has been loaded already.<pre>```function(self, addon)```<br>&#9;```if addon ~= "AddonNameSpace" then return end --Replace "AddonNameSpace" with the namespace of the specific addon to watch```<br>&#9;```self:UnregisterEvent("ADDON_LOADED")```<br>&#9;```--Do something```<br>```end```</pre></li></ul>
 
+
 --[[ SETTINGS ]]
 
 ---@class canvasFrame : Frame
@@ -830,14 +895,6 @@
 ---@field OnDefault function
 
 --[ Settings Page ]
-
----@class characterProfileData
----@field activeProfile integer The index of the currently active profile | ***Default:*** 1
-
----@class dataManagementSettingsData
----@field compactBackup boolean Whether to skip including additional white spaces to the backup string for more readability
-
---| Constructors
 
 ---@class settingsPageScrollData : scrollSpeedData
 ---@field height? number Set the height of the scrollable child frame to the specified value | ***Default:*** 0 *(no height)*
@@ -875,30 +932,6 @@
 ---@field autoSave? boolean If true, automatically save the values of all widgets registered for settings data management under settings keys listed in **t.dataManagement.keys**, committing their data to storage via ***WidgetToolbox*.SaveOptionsData(...)** | ***Default:*** true if **t.dataManagement.keys** ~= nil<ul><li>***Note:*** If **t.dataManagement.keys** is not set, the automatic load will not be executed even if this is set to true.</li></ul>
 ---@field autoLoad? boolean If true, automatically load all data to the widgets registered for settings data management under settings keys listed in **t.dataManagement.keys** from storage via ***WidgetToolbox*.LoadOptionsData(...)** | ***Default:*** true if **t.dataManagement.keys** ~= nil<ul><li>***Note:*** If **t.dataManagement.keys** is not set, the automatic load will not be executed even if this is set to true.</li></ul>
 ---@field arrangement? arrangementData_settingsPage If set, arrange the content added to the container frame during initialization into stacked rows based on the specifications provided in this table
-
----@class aboutPageCreationData : settingsPageCreationData_base
----@field description? string Text to be shown as the description below the title of the settings page | ***Default:*** [GetAddOnMetadata(**addon**, "Notes")](https://wowpedia.fandom.com/wiki/API_GetAddOnMetadata)
----@field changelog? { [table[]] : string[] } String arrays nested in subtables representing a version containing the raw changelog data, lines of text with formatting directives included<ul><li>***Note:*** The first line is expected to be the title containing the version number and/or the date of release.</li><li>***Note:*** Version tables are expected to be listed in ascending order by date of release (latest release last).</li><li>***Examples:***<ul><li>**Title formatting - version title:** `#V_`*Title text*`_#` (*it will appear as:* • Title text)</li><li>**Color formatting - highlighted text:** `#H_`*text to be colored*`_#` (*it will be colored white*)</li><li>**Color formatting - new updates:** `#N_`*text to be colored*`_#` (*it will be colored with:* #FF66EE66)</li><li>**Color formatting - fixes:** `#F_`*text to be colored*`_#` (*it will be colored with:* #FFEE4444)</li><li>**Color formatting - changes:** `#C_`*text to be colored*`_#` (*it will be colored with:* #FF8888EE)</li><li>**Color formatting - note:** `#O_`*text to be colored*`_#` (*it will be colored with:* #FFEEEE66)</li></ul></li></ul>
----@field static? boolean If true, disable the "Restore Defaults" & "Revert Changes" buttons | ***Default:*** true
-
----@class dataManagementPageCreationData : settingsPageCreationData_base, settingsPageEvents, liteObject
----@field name? string Unique string used to set the name of the canvas frame | ***Default:*** "Profiles"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
----@field title? string Text to be shown as the title of the settings page | ***Default:*** "Data Management"
----@field description? string Text to be shown as the description below the title of the settings page | ***Default:*** *describing profiles & backup*
----@field accountData profileStorage|table Reference to the account-bound SavedVariables addon database where profile data is to be stored<ul><li>***Note:*** A subtable will be created under the key **profiles** if it doesn't already exist, any other keys will be removed (any possible old data will be recovered and incorporated into the active profile data).</li></ul>
----@field characterData characterProfileData|table Reference to the character-specific SavedVariablesPerCharacter addon database where selected profiles are to be specified<ul><li>***Note:*** An integer value will be created under the key **activeProfile** if it doesn't already exist in this table.</li></ul>
----@field settingsData dataManagementSettingsData|table Reference to the SavedVariables or SavedVariablesPerCharacter table where settings specifications are to be stored and loaded from<ul><li>***Note:*** A boolean value will be created under the key **compactBackup** if it didn't already exist in this table.</li></ul>
----@field defaultsTable table A static table containing all default settings values to be cloned when creating a new profile
----@field valueChecker? fun(key: number|string, value: any): boolean Helper function for validating values when checking profile data, returning true if the value is to be accepted as valid
----@field recoveryMap? table<string, recoveryData>|fun(tableToCheck: table, recoveredData: recoveredData): recoveryMap: table<string, recoveryData>|nil Static map or function returning a dynamically creatable map for removed but recoverable data
----@field onRecovery? fun(tableToCheck: table) Function called after the data has been has been recovered via the **recoveryMap**
----@field onProfilesLoaded? function Called during profiles initialization and data validation (with **t.onImportAllProfiles(...)** also being called later when profiles data is imported via user interaction through the backup all profiles box)
----@field onProfileActivated? fun(title: string, index: integer) Called after a profile was activated<ul><li>***Note:*** It will not be called during profiles initialization.</li></ul><hr><p>@*param* `title` string — The title of the profile</p><p>@*param* `index` integer — The index of the profile that was activated</p>
----@field onProfileCreated? fun(title: string, index: integer) Called after a new profile was created<hr><p>@*param* `title` string — The title of the new profile</p><p>@*param* `index` integer — The index of the new profile</p>
----@field onProfileDeleted? fun(title: string, index: integer) Called after the active profile was deleted<hr><p>@*param* `title` string — The old title of the deleted profile</p><p>@*param* `index` integer — The old index of the deleted profile</p>
----@field onProfileReset? fun(title: string, index: integer) Called after the data of a profile was reset to defaults<hr><p>@*param* `title` string — The title of the profile</p><p>@*param* `index` integer — The index of the profile that was reset</p>
----@field onImport? fun(success: boolean, data: table) Called after a settings backup string import has been performed by the user loading data for the currently active profile<hr><p>@*param* `success` boolean — Whether the imported string was successfully processed</p><p>@*param* `data` table — The table containing the imported backup data</p>
----@field onImportAllProfiles? fun(success: boolean, data: table) Called after a settings backup string import has been performed by the user loading data for all profiles<ul><li>***Note:*** *t.onProfilesLoaded will also be called if the import was successful.</li></ul><hr><p>@*param* `success` boolean — Whether the imported string was successfully processed</p><p>@*param* `data` table — The table containing the imported backup data</p>
 
 --[ Settings Category ]
 
@@ -1095,7 +1128,7 @@
 ---| "anchor" Using the set of [AnchorPoint](https://warcraft.wiki.gg/wiki/Anchors) items
 ---| "justifyH" Using the set of horizontal text alignment items (JustifyH)
 ---| "justifyV" Using the set of vertical text alignment items (JustifyV)
----| "frameStrata" Using the set of [FrameStrata](https://warcraft.wiki.gg/wiki/Frame_Strata) items (excluding "WORLD")
+---| "strata" Using the set of [FrameStrata](https://warcraft.wiki.gg/wiki/Frame_Strata) items (excluding "WORLD")
 
 --| Event handlers
 
@@ -1161,14 +1194,23 @@
 
 --| Data value types
 
----@class wrappedIntegerValue
+---@class wrappedInteger
 ---@field index? integer ***Default:*** nil *(no selection)*
 
----@class wrappedSpecialData
----@field value? integer|FramePoint|JustifyHorizontal|JustifyVertical|FrameStrata ***Default:*** nil *(no selection)*
+---@class wrappedAnchor
+---@field value? FramePoint ***Default:*** nil *(no selection)*
 
----@class wrappedBooleanArrayData
----@field selections? boolean[] Indexed list of current item states in order | ***Default:*** false[] *(no selected items)*
+---@class wrappedJustifyH
+---@field value? JustifyHorizontal ***Default:*** nil *(no selection)*
+
+---@class wrappedJustifyV
+---@field value? JustifyVertical ***Default:*** nil *(no selection)*
+
+---@class wrappedStrata
+---@field value? FrameStrata ***Default:*** nil *(no selection)*
+
+---@class wrappedBooleanArray
+---@field states? boolean[] Indexed list of current item states in order | ***Default:*** false[] *(no selected items)*
 
 --| Parameters
 
@@ -1572,10 +1614,10 @@
 ---@class colorPickerCreationData : togglableObject, settingsWidget
 ---@field listeners? colorPickerEventListeners Table of key, value pairs of custom widget event tags and functions to assign as event handlers to call on trigger
 ---@field onCancel? function The function to be called when the color change is cancelled (after calling **t.onColorUpdate**)
----@field getData? fun(): color: colorData|nil Called to (if needed, modify and) load the widget data from storage<hr><p>@*return* `color` colorData|nil | ***Default:*** { r = 1, g = 1, b = 1, a = 1 } *(white)*</p>
+---@field getData? fun(): color: colorData|nil Called to (if needed, modify and) load the widget data from storage<hr><p>@*return* `color` colorData|nil | ***Default:*** { r = 1, g = 1, b = 1, a = 1 } *(opaque white)*</p>
 ---@field saveData? fun(color: colorData) Called to (if needed, modify and) save the widget data to storage<hr><p>@*param* `color` colorData</p>
 ---@field value? colorData_whiteDefault Values to use as the starting color set during initialization | ***Default:*** **t.getData()** or **t.default** if invalid<ul><li>***Note:*** If the alpha start value was not set, configure the color picker to handle RBG values exclusively instead of the full RGBA.</li></ul>
----@field default? colorData Default value of the widget | ***Default:*** { r = 1, g = 1, b = 1, a = 1 } *(white)*
+---@field default? colorData Default value of the widget | ***Default:*** { r = 1, g = 1, b = 1, a = 1 } *(opaque white)*
 
 ---@class colorPickerFrameCreationData : colorPickerCreationData, labeledChildObject, tooltipDescribableWidget, arrangeableObject, positionableObject, visibleObject_base, liteObject, settingsFrame
 ---@field name? string Unique string used to set the frame name | ***Default:*** "Color Picker"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
@@ -1583,7 +1625,57 @@
 ---@field events? table<ScriptFrame, fun(...: any)|attributeEventData> Table of key, value pairs of the names of script event handlers to be set for the color picker frame and the functions to assign as event handlers called when they trigger
 
 
---[[ POSITION OPTIONS ]]
+--[[ TEMPLATES ]]
+
+--[ Settings Pages ]
+
+--| About
+
+---@class aboutPageCreationData : settingsPageCreationData_base
+---@field description? string Text to be shown as the description below the title of the settings page | ***Default:*** [GetAddOnMetadata(**addon**, "Notes")](https://wowpedia.fandom.com/wiki/API_GetAddOnMetadata)
+---@field changelog? { [table[]] : string[] } String arrays nested in subtables representing a version containing the raw changelog data, lines of text with formatting directives included<ul><li>***Note:*** The first line is expected to be the title containing the version number and/or the date of release.</li><li>***Note:*** Version tables are expected to be listed in ascending order by date of release (latest release last).</li><li>***Examples:***<ul><li>**Title formatting - version title:** `#V_`*Title text*`_#` (*it will appear as:* • Title text)</li><li>**Color formatting - highlighted text:** `#H_`*text to be colored*`_#` (*it will be colored white*)</li><li>**Color formatting - new updates:** `#N_`*text to be colored*`_#` (*it will be colored with:* #FF66EE66)</li><li>**Color formatting - fixes:** `#F_`*text to be colored*`_#` (*it will be colored with:* #FFEE4444)</li><li>**Color formatting - changes:** `#C_`*text to be colored*`_#` (*it will be colored with:* #FF8888EE)</li><li>**Color formatting - note:** `#O_`*text to be colored*`_#` (*it will be colored with:* #FFEEEE66)</li></ul></li></ul>
+---@field static? boolean If true, disable the "Restore Defaults" & "Revert Changes" buttons | ***Default:*** true
+
+--| Data Management
+
+---@class characterProfileData
+---@field activeProfile integer The index of the currently active profile | ***Default:*** 1
+
+---@class dataManagementSettingsData
+---@field compactBackup boolean Whether to skip including additional white spaces to the backup string for more readability
+
+---@class dataManagementPageCreationData : settingsPageCreationData_base, settingsPageEvents, liteObject
+---@field name? string Unique string used to set the name of the canvas frame | ***Default:*** "Profiles"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
+---@field title? string Text to be shown as the title of the settings page | ***Default:*** "Data Management"
+---@field description? string Text to be shown as the description below the title of the settings page | ***Default:*** *describing profiles & backup*
+---@field accountData profileStorage|table Reference to the account-bound SavedVariables addon database where profile data is to be stored<ul><li>***Note:*** A subtable will be created under the key **profiles** if it doesn't already exist, any other keys will be removed (any possible old data will be recovered and incorporated into the active profile data).</li></ul>
+---@field characterData characterProfileData|table Reference to the character-specific SavedVariablesPerCharacter addon database where selected profiles are to be specified<ul><li>***Note:*** An integer value will be created under the key **activeProfile** if it doesn't already exist in this table.</li></ul>
+---@field settingsData dataManagementSettingsData|table Reference to the SavedVariables or SavedVariablesPerCharacter table where settings specifications are to be stored and loaded from<ul><li>***Note:*** A boolean value will be created under the key **compactBackup** if it didn't already exist in this table.</li></ul>
+---@field defaultsTable table A static table containing all default settings values to be cloned when creating a new profile
+---@field valueChecker? fun(key: number|string, value: any): boolean Helper function for validating values when checking profile data, returning true if the value is to be accepted as valid
+---@field recoveryMap? table<string, recoveryData>|fun(tableToCheck: table, recoveredData: recoveredData): recoveryMap: table<string, recoveryData>|nil Static map or function returning a dynamically creatable map for removed but recoverable data
+---@field onRecovery? fun(tableToCheck: table) Function called after the data has been has been recovered via the **recoveryMap**
+---@field onProfilesLoaded? function Called during profiles initialization and data validation (with **t.onImportAllProfiles(...)** also being called later when profiles data is imported via user interaction through the backup all profiles box)
+---@field onProfileActivated? fun(title: string, index: integer) Called after a profile was activated<ul><li>***Note:*** It will not be called during profiles initialization.</li></ul><hr><p>@*param* `title` string — The title of the profile</p><p>@*param* `index` integer — The index of the profile that was activated</p>
+---@field onProfileCreated? fun(title: string, index: integer) Called after a new profile was created<hr><p>@*param* `title` string — The title of the new profile</p><p>@*param* `index` integer — The index of the new profile</p>
+---@field onProfileDeleted? fun(title: string, index: integer) Called after the active profile was deleted<hr><p>@*param* `title` string — The old title of the deleted profile</p><p>@*param* `index` integer — The old index of the deleted profile</p>
+---@field onProfileReset? fun(title: string, index: integer) Called after the data of a profile was reset to defaults<hr><p>@*param* `title` string — The title of the profile</p><p>@*param* `index` integer — The index of the profile that was reset</p>
+---@field onImport? fun(success: boolean, data: table) Called after a settings backup string import has been performed by the user loading data for the currently active profile<hr><p>@*param* `success` boolean — Whether the imported string was successfully processed</p><p>@*param* `data` table — The table containing the imported backup data</p>
+---@field onImportAllProfiles? fun(success: boolean, data: table) Called after a settings backup string import has been performed by the user loading data for all profiles<ul><li>***Note:*** *t.onProfilesLoaded will also be called if the import was successful.</li></ul><hr><p>@*param* `success` boolean — Whether the imported string was successfully processed</p><p>@*param* `data` table — The table containing the imported backup data</p>
+
+--[ Settings Widget Panels ]
+
+---@class settingsWidgetPanel_base
+---@field canvas Frame The canvas frame child item of an existing settings category page to add the panel to
+---@field dependencies? dependencyRule[] Automatically disable or enable all widgets in the new panel based on the rules described in subtables
+
+---@class settingsWidgetPanel_frame : settingsWidgetPanel_base
+---@field name? string Refer to **frame** by this display name in the tooltips and descriptions of settings widgets | ***Default:*** **frame:GetName()**
+
+---@class settingsWidgetPanel_text : settingsWidgetPanel_base
+---@field name? string Refer to **text** by this display name in the tooltips and descriptions of settings widgets | ***Default:*** **text:GetName()**
+
+--| Position
 
 ---@class positionOptionsSettingsData
 ---@field keepInPlace boolean If true, don't move **frame** when changing the anchor, update the offset values instead.
@@ -1619,41 +1711,43 @@
 ---@class movabilityData_positioning : movabilityData
 ---@field modifier? ModifierKey The specific (or any) modifier key required to be pressed down to move **frame** (if **frame** has the "OnUpdate" script defined) | ***Default:*** "SHIFT"<ul><li>***Note:*** Used to determine the specific modifier check to use. Example: when set to "any" [IsModifierKeyDown](https://wowpedia.fandom.com/wiki/API_IsModifierKeyDown) is used.</li></ul>
 
----@class settingsData_position
----@field category? string A unique string used for categorizing settings data management rules & change handler scripts | ***Default:*** **addon**
+---@class settingsData_position : settingsData_base
 ---@field key? string A unique string appended to **category** linking a subset of settings data rules to be handled together | ***Default:*** "Position"
 
----@class positionManagementCreationData
----@field canvas Frame The canvas frame child item of an existing settings category page to add the position panel to
----@field frame AnyFrameObject Reference to the frame to create the position settings for
----@field frameName string Include this string in the tooltips and descriptions of settings widgets when referring to **t.frame**
----@field presets? presetItemList Reference to the table containing **t.frame** position presets to be managed by settings widgets added when set
----@field setMovable? movabilityData_positioning When specified, set **t.frame** as movable, dynamically updating the position settings widgets when it's moved by the user
----@field dependencies? dependencyRule[] Automatically disable or enable all widgets in the new panel based on the rules described in subtables
----@field getData fun(): table: positionPresetData Return a reference to the table within a SavedVariables(PerCharacter) addon database where data is committed to when **t.frame** was successfully moved
----@field defaultsTable table Reference to the table containing the default values<ul><li>***Note:*** The defaults table should contain values under matching keys to the values within *t.getData()*.</li></ul>
+---@class positionManagementCreationData : settingsWidgetPanel_frame
+---@field presets? presetItemList Reference to the table containing **frame** position presets to be managed by settings widgets added when set
+---@field setMovable? movabilityData_positioning When specified, set **frame** as movable, dynamically updating the position settings widgets when it's moved by the user
+---@field getData fun(): table: positionPresetData Return a reference to the table within a SavedVariables(PerCharacter) addon database where data is committed to
+---@field defaultsTable positionPresetData Reference to the table containing the default values<ul><li>***Note:*** The defaults table should contain values under matching keys to the values within *t.getData()*.</li></ul>
 ---@field settingsData positionOptionsSettingsData|table Reference to the SavedVariables or SavedVariablesPerCharacter table where settings specifications are to be stored and loaded from<ul><li>***Note:*** A boolean value will be created under the key **keepInPlace** if it didn't already exist in this table.</li></ul>
----@field dataManagement? settingsData_position Register the positioning widgets to settings data management linked with the specified key under the specified category
----@field onChangePosition? function Function to call after the value of **panel.position.anchor**, **panel.position.relativeTo**, **panel.position.relativePoint**, **panel.position.offset.x** or **panel.position.offset.y** was changed by the user or via settings data management before the base onChange handler is called built-in to the functionality of the position settings panel template updating the position of **t.frame**
----@field onChangeKeepInBounds? function Function to call after the value of **panel.position.keepInBounds** was changed by the user or via settings data management before the base onChange handlers are called built-in to the functionality of the position settings panel template updating **t.frame**
----@field onChangeStrata? function Function to call after the value of **panel.layer.strata** was changed by the user or via settings data management before the base onChange handlers are called built-in to the functionality of the position settings panel template updating **t.frame**
----@field onChangeLevel? function Function to call after the value of **panel.layer.level** was changed by the user or via settings data management before the base onChange handlers are called built-in to the functionality of the position settings panel template updating **t.frame**
----@field onChangeKeepOnTop? function Function to call after the value of **panel.layer.keepOnTop** was changed by the user or via settings data management before the base onChange handlers are called built-in to the functionality of the position settings panel template updating **t.frame**
+---@field dataManagement? settingsData_position Register the widgets to settings data management to be linked with the specified key under the specified category
+---@field onChangePosition? function Function to call after the value of **panel.widgets.position.anchor**, **panel.widgets.position.relativeTo**, **panel.widgets.position.relativePoint**, **panel.widgets.position.offset.x** or **panel.widgets.position.offset.y** was changed by the user or via settings data management before the base onChange handler is called built-in to the functionality of the settings panel template updating the position of **frame**
+---@field onChangeKeepInBounds? function Function to call after the value of **panel.widgets.position.keepInBounds** was changed by the user or via settings data management before the base onChange handlers are called built-in to the functionality of the settings panel template updating **frame**
+---@field onChangeStrata? function Function to call after the value of **panel.widgets.layer.strata** was changed by the user or via settings data management before the base onChange handlers are called built-in to the functionality of the settings panel template updating **frame**
+---@field onChangeLevel? function Function to call after the value of **panel.widgets.layer.level** was changed by the user or via settings data management before the base onChange handlers are called built-in to the functionality of the settings panel template updating **frame**
+---@field onChangeKeepOnTop? function Function to call after the value of **panel.widgets.layer.keepOnTop** was changed by the user or via settings data management before the base onChange handlers are called built-in to the functionality of the settings panel template updating **frame**
 
+--| Text font
 
---[[ ADDON COMPARTMENT ]]
+---@class textColorData_base
+---@field base colorData
 
----@class addonCompartmentFunctions
----@field onClick? fun(addon: string, button: string, frame: Button) Called when the **addon**'s compartment button is clicked<ul><li>***Note:*** `AddonCompartmentFunc`, must be set in the specified **addon**'s TOC file, defining the name of the global function to be set for call.</li></ul>
----@field onEnter? fun(addon: string, frame: Button|Frame) Called when the **addon**'s compartment button is being hovered before the tooltip (if set) is shown<ul><li>***Note:*** `AddonCompartmentFuncOnEnter`, must be set in the specified **addon**'s TOC file, defining the name of the global function to be set for call.</li></ul>
----@field onLeave? fun(addon: string, frame: Button|Frame) Called when the **addon**'s compartment button is stopped being hovered before the tooltip (if set) is hidden<ul><li>***Note:*** `AddonCompartmentFuncOnLeave`, must be set in the specified **addon**'s TOC file, defining the name of the global function to be set for call.</li></ul>
+---@class fontOptionsData
+---@field path string Path to the font file relative to the WoW client directory<ul><li>***Note:*** The use of `/` as separator is recommended (Example: Interface/AddOns/AddonNameKey/Fonts/Font.ttf), otherwise use `\\`.</li><li>***Note:*** **File format:** Font files must be in TTF or OTF format.</li></ul>
+---@field size number Font size
+---@field alignment JustifyHorizontal Horizontal text alignment
+---@field colors table<string, colorData>|textColorData_base List of named coloring options
 
+---@class settingsData_font : settingsData_base
+---@field key? string A unique string appended to **category** linking a subset of settings data rules to be handled together | ***Default:*** "Font"
 
---[[ Profiles ]]
-
----@class profile
----@field title string Display name of the profile
----@field data table Custom profile data
-
----@class profileStorage
----@field profiles profile[] List of profiles
+---@class fontManagementCreationData : settingsWidgetPanel_text
+---@field colorOrder? string[] If set, use this array of the data management keys of managed colors to order of their widgets by
+---@field colorNames? table<string, string> If set, use this list of color display names paired with their data management keys to set their widget and tooltip titles shown as "Color **t.colorNames[*key*]**" *(localized)* | ***Default:*** *data management **key*****:sub(1,1):upper() .. key:sub(2)**
+---@field getData fun(): table: fontOptionsData Return a reference to the table within a SavedVariables(PerCharacter) addon database where data is committed to
+---@field defaultsTable fontOptionsData Reference to the table containing the default values
+---@field dataManagement? settingsData_font Register the widgets to settings data management to be linked with the specified key under the specified category
+---@field onChangeFont? function Function to call after the value of **panel.widgets.path** or **panel.widgets.size** was changed by the user or via settings data management before the base onChange handler is called built-in to the functionality of the settings panel template updating the position of **text**
+---@field onChangeSize? function Function to call after the value of **panel.widgets.position.keepInBounds** was changed by the user or via settings data management before the base onChange handlers are called built-in to the functionality of the settings panel template updating **text**
+---@field onChangeAlignment? function Function to call after the value of **panel.widgets.layer.strata** was changed by the user or via settings data management before the base onChange handlers are called built-in to the functionality of the settings panel template updating **text**
+---@field onChangeColor? fun(color: string) Function to call after the value of **panel.widgets.layer.level** was changed by the user or via settings data management before the base onChange handlers are called built-in to the functionality of the settings panel template updating **text**
