@@ -2,8 +2,8 @@
 
 # List of directories to copy from this project
 $addons = @()
-$addons += "WidgetTools"
 $addons += "MovementSpeed"
+# $addons += "WidgetTools"
 
 # List of clients (signified by client directory tags: _retail_, _classic_, _ptr_ etc.) to install to
 $clients = Get-Content "$PSScriptRoot\.config\WoWClients.txt" | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne "" }

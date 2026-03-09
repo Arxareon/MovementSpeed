@@ -1,15 +1,17 @@
 --[[ NAMESPACE ]]
 
----@class WidgetToolsNamespace
+---@class addonNamespace
 local ns = select(2, ...)
 
 
 --[[ INITIALIZATION ]]
 
-if not ns.WidgetToolboxInitialization then return end
-
----@class wt
+---@class widgetToolbox
 local wt = ns.WidgetToolbox
+
+if not wt.initialization then return end
+
+local rs = WidgetTools.GetResources()
 
 
 --[[ UX HELPERS ]]
@@ -50,7 +52,7 @@ function wt.AddWidgetTooltipLines(t, default)
 		text = (hadLines and "\n" or "") .. WrapTextInColorCode(DEFAULT .. ": ", "FF66FF66") .. (type(default) == "string" and default or "")
 	}) end
 	if t.utilityMenu ~= false then table.insert(t.tooltip.lines, {
-		text = (t.showDefault == false and "\n" or "") .. wt.strings.value.note, font = GameFontNormalTiny, color = ns.colors.grey[1],
+		text = (t.showDefault == false and "\n" or "") .. wt.strings.value.note, font = GameFontNormalTiny, color = rs.colors.grey[1],
 	}) end
 end
 
@@ -400,7 +402,7 @@ function wt.AddDescription(t)
 	t.offset.x = t.offset.x or 0
 	t.offset.y = t.offset.y or 1
 	t.spacer = (t.spacer or 5) * (t.justify ~= "LEFT" and -1 or 1)
-	t.color = t.color or wt.AddMissing({ a = 0.55 }, wt.colors.highlight)
+	t.color = t.color or wt.AddMissing({ a = 0.55 }, HIGHLIGHT_FONT_COLOR)
 
 	local separator = wt.CreateText({
 		parent = parent,
@@ -902,7 +904,7 @@ function wt.CreatePopupMenu(t)
 				justify = { h = "RIGHT", },
 				width = 16,
 				font = "ChatFontNormal",
-				color = wt.colors.normal,
+				color = NORMAL_FONT_COLOR,
 			})
 
 			if type(t.tooltip) == "table" then wt.AddTooltip(frame, {
@@ -1090,11 +1092,11 @@ function wt.CreateSettingsPage(addon, t)
 	--- - ***Note:*** No category page will be opened if **WidgetToolsDB.lite** is true.
 	function page.open()
 		if WidgetToolsDB.lite or not page.category then
-			print(wt.Color(wt.Texture(ns.textures.logo, 9) .. " " .. ns.title, ns.colors.gold[1]) .. " " .. wt.Color(ns.strings.chat.lite.reminder:gsub(
-				"#HINT", wt.Color(ns.strings.chat.lite.hint:gsub(
-					"#COMMAND", wt.Color("/" .. ns.chat.keyword .. " " .. ns.chat.commands.lite, { r = 1, g = 1, b = 1, })
-				), ns.colors.grey[1])
-			), ns.colors.gold[2]))
+			print(wt.Color(wt.Texture(rs.textures.logo, 9) .. " " .. rs.title, rs.colors.gold[1]) .. " " .. wt.Color(rs.strings.chat.lite.reminder:gsub(
+				"#HINT", wt.Color(rs.strings.chat.lite.hint:gsub(
+					"#COMMAND", wt.Color("/" .. rs.chat.keyword .. " " .. rs.chat.commands.lite, { r = 1, g = 1, b = 1, })
+				), rs.colors.grey[1])
+			), rs.colors.gold[2]))
 
 			return
 		end
@@ -1242,7 +1244,7 @@ function wt.CreateSettingsPage(addon, t)
 		--| Defaults button
 
 		defaultsWarning = wt.RegisterPopupDialog(addon, (t.name or "") .. "DEFAULT", {
-			text = wt.strings.settings.warningSingle:gsub("#PAGE", wt.Color(page.title, wt.colors.normal)),
+			text = wt.strings.settings.warningSingle:gsub("#PAGE", wt.Color(page.title, NORMAL_FONT_COLOR)),
 			accept = ACCEPT,
 			onAccept = function() page.default(true) end,
 		})
@@ -1382,7 +1384,7 @@ function wt.CreateSettingsCategory(addon, parent, pages, t)
 
 	--Override defaults warning and add all defaults option to dialog
 	wt.UpdatePopupDialog(parent.getDefaultsPopupKey(), {
-		text = wt.strings.settings.warning:gsub("#CATEGORY", wt.Color(parentTitle, wt.colors.normal)):gsub("#PAGE", wt.Color(parentTitle, wt.colors.normal)),
+		text = wt.strings.settings.warning:gsub("#CATEGORY", wt.Color(parentTitle, NORMAL_FONT_COLOR)):gsub("#PAGE", wt.Color(parentTitle, NORMAL_FONT_COLOR)),
 		accept = ALL_SETTINGS,
 		alt = CURRENT_SETTINGS,
 		onAccept = function() category.defaults(true) end,
@@ -1400,8 +1402,8 @@ function wt.CreateSettingsCategory(addon, parent, pages, t)
 
 		--Override defaults warning and add all defaults option to dialog
 		wt.UpdatePopupDialog(pages[i].getDefaultsPopupKey(), {
-			text = wt.strings.settings.warning:gsub("#CATEGORY", wt.Color(parentTitle, wt.colors.normal)):gsub(
-				"#PAGE", wt.Color(pages[i].title or "", wt.colors.normal)
+			text = wt.strings.settings.warning:gsub("#CATEGORY", wt.Color(parentTitle, NORMAL_FONT_COLOR)):gsub(
+				"#PAGE", wt.Color(pages[i].title or "", NORMAL_FONT_COLOR)
 			),
 			accept = ALL_SETTINGS,
 			alt = CURRENT_SETTINGS,
@@ -6119,7 +6121,7 @@ function wt.CreateColorPickerFrame(t, widget)
 		name = "ColorGradient",
 		position = { offset = { x = 2.5, y = -2.5 } },
 		size = { w = 14, h = 17 },
-		path = wt.textures.gradientBG,
+		path = ns.rs.textures.gradientBG,
 		layer = "BACKGROUND",
 		level = -7,
 	})
@@ -6129,7 +6131,7 @@ function wt.CreateColorPickerFrame(t, widget)
 		name = "AlphaBG",
 		position = { offset = { x = 2.5, y = -2.5 } },
 		size = { w = 29, h = 17 },
-		path = wt.textures.alphaBG,
+		path = ns.rs.textures.alphaBG,
 		layer = "BACKGROUND",
 		level = -8,
 		tile = { h = true, v = true },
@@ -6364,7 +6366,7 @@ function wt.CreateAboutPage(addon, t)
 								"#MONTH", data.month
 							):gsub(
 								"#YEAR", data.year
-							), wt.colors.normal) .. ")", "FFFFFFFF") or ""),
+							), NORMAL_FONT_COLOR) .. ")", "FFFFFFFF") or ""),
 							font = "GameFontNormalSmall",
 							justify = { h = "LEFT", },
 							wrap = false,
@@ -6545,7 +6547,7 @@ function wt.CreateAboutPage(addon, t)
 						arrange = {},
 						size = { w = panel:GetWidth() - 225, h = panel:GetHeight() - 25 },
 						font = { normal = "GameFontDisableSmall", },
-						color = ns.colors.grey[2],
+						color = rs.colors.grey[2],
 						value = wt.FormatChangelog(t.changelog, true),
 						readOnly = true,
 					})
@@ -6594,7 +6596,7 @@ function wt.CreateAboutPage(addon, t)
 									arrange = {},
 									size = { w = windowPanel:GetWidth() - 32, h = windowPanel:GetHeight() - 58 },
 									font = { normal = "GameFontDisable", },
-									color = ns.colors.grey[2],
+									color = rs.colors.grey[2],
 									value = wt.FormatChangelog(t.changelog),
 									readOnly = true,
 									scrollSpeed = 0.2,
@@ -6892,7 +6894,7 @@ function wt.CreateDataManagementPage(addon, t)
 				end
 
 				if unsafe then delete() else StaticPopup_Show(wt.UpdatePopupDialog(deleteProfilePopup, {
-					text = wt.strings.profiles.delete.warning:gsub("#PROFILE", wt.Color(t.accountData.profiles[index].title, wt.colors.normal)):gsub("#ADDON", addonTitle),
+					text = wt.strings.profiles.delete.warning:gsub("#PROFILE", wt.Color(t.accountData.profiles[index].title, NORMAL_FONT_COLOR)):gsub("#ADDON", addonTitle),
 					onAccept = delete,
 				})) end
 
@@ -6922,7 +6924,7 @@ function wt.CreateDataManagementPage(addon, t)
 				end
 
 				if unsafe then reset() else StaticPopup_Show(wt.UpdatePopupDialog(resetProfilePopup, {
-					text = wt.strings.profiles.reset.warning:gsub("#PROFILE", wt.Color(t.accountData.profiles[index].title, wt.colors.normal)):gsub("#ADDON", addonTitle),
+					text = wt.strings.profiles.reset.warning:gsub("#PROFILE", wt.Color(t.accountData.profiles[index].title, NORMAL_FONT_COLOR)):gsub("#ADDON", addonTitle),
 					onAccept = reset,
 				}))end
 
@@ -7674,7 +7676,7 @@ function wt.CreatePositionOptions(addon, frame, t)
 					--| Options Widgets
 
 					local savePopup = wt.RegisterPopupDialog(addon, "SAVE_PRESET", {
-						text = wt.strings.presets.save.warning:gsub("#CUSTOM", wt.Color(panel.presets[t.presets.custom.index].title, wt.colors.normal)),
+						text = wt.strings.presets.save.warning:gsub("#CUSTOM", wt.Color(panel.presets[t.presets.custom.index].title, NORMAL_FONT_COLOR)),
 						accept = wt.strings.override,
 						onAccept = panel.saveCustomPreset,
 					})
@@ -7693,7 +7695,7 @@ function wt.CreatePositionOptions(addon, frame, t)
 					})
 
 					local resetPopup = wt.RegisterPopupDialog(addon, "RESET_PRESET_" .. panelFrame:GetName(), {
-						text = wt.strings.presets.reset.warning:gsub("#CUSTOM", wt.Color(panel.presets[t.presets.custom.index].title, wt.colors.normal)),
+						text = wt.strings.presets.reset.warning:gsub("#CUSTOM", wt.Color(panel.presets[t.presets.custom.index].title, NORMAL_FONT_COLOR)),
 						accept = wt.strings.override,
 						onAccept = panel.resetCustomPreset,
 					})
@@ -8011,14 +8013,14 @@ function wt.CreateFontOptions(addon, text, t)
 			if not fontItems then
 				fontItems = {}
 
-				for i = 1, #wt.fonts do
+				for i = 1, #rs.fonts do
 					fontItems[i] = {}
-					fontItems[i].title = wt.fonts[i].name
+					fontItems[i].title = rs.fonts[i].name
 					fontItems[i].tooltip = {
-						title = wt.fonts[i].name,
-						lines = i == 1 and { { text = wt.strings.font.path.default, }, } or (i == #wt.fonts and {
+						title = rs.fonts[i].name,
+						lines = i == 1 and { { text = wt.strings.font.path.default, }, } or (i == #rs.fonts and {
 							{ text = wt.strings.font.path.custom:gsub(
-								"#FONTS_DIRECTORY", wt.Color("[WoW]\\Interface\\AddOns\\" .. ns.name .. "\\Fonts\\", { r = 0.185, g = 0.72, b = 0.84 })
+								"#FONTS_DIRECTORY", wt.Color("[WoW]\\Interface\\AddOns\\" .. rs.name .. "\\Fonts\\", { r = 0.185, g = 0.72, b = 0.84 })
 							):gsub("#FILE_CUSTOM", "CUSTOM.ttf") },
 							{ text = "\n" .. wt.strings.font.path.reminder, color = { r = 0.89, g = 0.65, b = 0.40 }, },
 						} or nil),
@@ -8034,9 +8036,9 @@ function wt.CreateFontOptions(addon, text, t)
 				arrange = {},
 				items = fontItems,
 				dependencies = t.dependencies,
-				getData = function() return wt.FindIndex(wt.fonts, t.getData().path) end,
-				saveData = function(value) t.getData().path = wt.fonts[value].path end,
-				default = wt.FindIndex(wt.fonts, t.defaultsTable.path),
+				getData = function() return wt.FindIndex(rs.fonts, t.getData().path) end,
+				saveData = function(value) t.getData().path = rs.fonts[value].path end,
+				default = wt.FindIndex(rs.fonts, t.defaultsTable.path),
 				dataManagement = {
 					category = t.dataManagement.category,
 					key = t.dataManagement.key,
@@ -8051,7 +8053,7 @@ function wt.CreateFontOptions(addon, text, t)
 						UpdateFontDropdownText = not WidgetToolsDB.lite and function()
 							--Update the font of the dropdown toggle button label
 							local _, size, flags = panel.widgets.path.toggle.label:GetFont()
-							panel.widgets.path.toggle.label:SetFont(wt.fonts[panel.widgets.path.getSelected() or 1].path, size, flags)
+							panel.widgets.path.toggle.label:SetFont(rs.fonts[panel.widgets.path.getSelected() or 1].path, size, flags)
 
 							--WATCH if its still needed to: Refresh the text so the font will be applied right away (if the font is loaded)
 							local s = panel.widgets.path.toggle.label:GetText()
@@ -8065,7 +8067,7 @@ function wt.CreateFontOptions(addon, text, t)
 			--Update the font of the dropdown items
 			if panel.widgets.path.frame then for i = 1, #panel.widgets.path.toggles do if panel.widgets.path.toggles[i].label then
 				local _, size, flags = panel.widgets.path.toggles[i].label:GetFont()
-				panel.widgets.path.toggles[i].label:SetFont(wt.fonts[i].path, size, flags)
+				panel.widgets.path.toggles[i].label:SetFont(rs.fonts[i].path, size, flags)
 			end end end
 
 			--| Size

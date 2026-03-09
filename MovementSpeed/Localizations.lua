@@ -1,6 +1,6 @@
 --[[ NAMESPACE ]]
 
----@class MovementSpeedNamespace
+---@class addonNamespace
 local ns = select(2, ...)
 
 

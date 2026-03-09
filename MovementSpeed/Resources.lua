@@ -1,7 +1,7 @@
 --[[ NAMESPACE ]]
 
 ---Addon namespace table
----@class MovementSpeedNamespace
+---@class addonNamespace
 ---@field name string Addon namespace name
 local ns = select(2, ...)
 

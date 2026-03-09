@@ -1,15 +1,17 @@
 --[[ NAMESPACE ]]
 
----@class WidgetToolsNamespace
+---@class addonNamespace
 local ns = select(2, ...)
 
 
 --[[ INITIALIZATION ]]
 
-if not ns.WidgetToolboxInitialization then return end
-
----@class wt
+---@class widgetToolbox
 local wt = ns.WidgetToolbox
+
+if not wt.initialization then return end
+
+local rs = WidgetTools.GetResources()
 
 
 --[[ GENERAL ]]
@@ -605,7 +607,7 @@ end
 function wt.FindIndex(array, value)
 	if type(array) ~= "table" then return nil end
 
-	for i = 1, #wt.fonts do if wt.fonts[i].path == value then return i end end
+	for i = 1, #rs.fonts do if rs.fonts[i].path == value then return i end end
 
 	return nil
 end
@@ -887,7 +889,7 @@ function wt.SetPosition(frame, position, unlink, userPlaced)
 	--Set the position
 	if relativeTo and unlink then
 		if not positioningAid then
-			positioningAid = CreateFrame("Frame", ns.name .. "PositioningAid", UIParent)
+			positioningAid = CreateFrame("Frame", rs.name .. "PositioningAid", UIParent)
 
 			positioningAid:Hide()
 		end
@@ -1427,7 +1429,7 @@ function wt.AddTooltip(owner, t, toggle, duplicate)
 	if not tooltipData[id].tooltip or not (wt.IsFrame(tooltipData[id].tooltip) and tooltipData[id].tooltip:IsObjectType("GameTooltip")) then
 		--Create the default reusable tooltip
 		if not defaultTooltip then
-			defaultTooltip = CreateFrame("GameTooltip", ns.name .. ns.WidgetToolboxVersion .. "GameTooltip", nil, "GameTooltipTemplate")
+			defaultTooltip = CreateFrame("GameTooltip", rs.name .. wt.version .. "GameTooltip", nil, "GameTooltipTemplate")
 
 			--| Visibility
 
@@ -1492,7 +1494,9 @@ function wt.UpdateTooltip(owner, t)
 
 	local id = wt.GetID(owner)
 
-	if type(t) ~= "table" then if type(tooltipData[id]) == "table" then t = tooltipData[id] else return end end
+	if type(tooltipData[id]) ~= "table" then return end
+
+	if type(t) ~= "table" then t = tooltipData[id] else wt.FillValues(t, tooltipData[id]) end
 
 	--| Position
 
@@ -1503,7 +1507,7 @@ function wt.UpdateTooltip(owner, t)
 
 	--| Title
 
-	local titleColor = t.flipColors and wt.colors.normal or wt.colors.highlight
+	local titleColor = t.flipColors and NORMAL_FONT_COLOR or HIGHLIGHT_FONT_COLOR
 
 	t.tooltip:AddLine(t.title, titleColor.r, titleColor.g, titleColor.b, true)
 
@@ -1529,7 +1533,7 @@ function wt.UpdateTooltip(owner, t)
 
 			--| Add textline
 
-			local color = t.lines[i].color or (t.flipColors and wt.colors.highlight or wt.colors.normal)
+			local color = t.lines[i].color or (t.flipColors and HIGHLIGHT_FONT_COLOR or NORMAL_FONT_COLOR)
 
 			t.tooltip:AddLine(t.lines[i].text, color.r, color.g, color.b, t.lines[i].wrap ~= false)
 		end

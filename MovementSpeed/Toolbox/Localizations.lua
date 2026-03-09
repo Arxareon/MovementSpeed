@@ -1,15 +1,15 @@
 --[[ NAMESPACE ]]
 
----@class WidgetToolsNamespace
+---@class addonNamespace
 local ns = select(2, ...)
 
 
 --[[ INITIALIZATION ]]
 
-if not ns.WidgetToolboxInitialization then return end
-
----@class wt
+---@class widgetToolbox
 local wt = ns.WidgetToolbox
+
+if not wt.initialization then return end
 
 
 --[[ LOCALIZATIONS ]]

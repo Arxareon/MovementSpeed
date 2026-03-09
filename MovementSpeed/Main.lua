@@ -1,13 +1,15 @@
 --[[ NAMESPACE ]]
 
----@class MovementSpeedNamespace
+---@class addonNamespace
 local ns = select(2, ...)
 
 
 --[[ REFERENCES ]]
 
----@class wt
+---@class widgetToolbox
 local wt = ns.WidgetToolbox
+
+local rs = WidgetTools.GetResources()
 
 local frames = {
 	playerSpeed = {},
@@ -251,7 +253,7 @@ local function SetDisplaySize(display, displayData, height)
 	for i = 1, 3 do if displayData.value.units[i] then ratio = ratio + 0.2 end end --Separators
 
 	--Resize the display
-	display.display:SetSize(height * ratio * wt.fonts[wt.FindIndex(wt.fonts, displayData.font.path)].widthRatio - 4, height)
+	display.display:SetSize(height * ratio * rs.fonts[wt.FindIndex(rs.fonts, displayData.font.path)].widthRatio - 4, height)
 end
 
 ---Set the backdrop of the specified speed display elements

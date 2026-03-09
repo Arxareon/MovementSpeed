@@ -1,31 +1,38 @@
 --[[ NAMESPACE ]]
 
----@class WidgetToolsNamespace
+--| Hook into the local addon namespace
+
+---@class addonNamespace
 local ns = select(2, ...)
+
+--Addon namespace name
+local name = ...
 
 
 --[[ TOOLBOX ]]
 
-ns.WidgetToolboxVersion = "2.3"
+--Widget Toolbox version number
+local version = "2.3"
 
 --| Check for the toolbox
 
-ns.WidgetToolbox = WidgetTools.RegisterToolbox(ns.name, ns.WidgetToolboxVersion)
+ns.WidgetToolbox = WidgetTools.RegisterToolbox(name, version)
 
-if ns.WidgetToolbox then do return end end
+if type(ns.WidgetToolbox) == "table" then return end
 
 --| Create a new toolbox
 
-ns.WidgetToolbox = {}
-
-ns.WidgetToolboxInitialization = true
+---@class widgetToolbox
+ns.WidgetToolbox = { version = version, initialization = true }
 
 WidgetTools.loaderFrame:RegisterEvent("ADDON_LOADED")
 
 function WidgetTools.loaderFrame:ADDON_LOADED(addon)
-	if addon ~= ns.name then return end
+	if addon ~= name then return end
 
 	WidgetTools.loaderFrame:UnregisterEvent("ADDON_LOADED")
 
-	ns.WidgetToolbox = WidgetTools.RegisterToolbox(ns.name, ns.WidgetToolboxVersion, ns.WidgetToolbox)
+	ns.WidgetToolbox.initialization = false
+
+	ns.WidgetToolbox = WidgetTools.RegisterToolbox(name, ns.WidgetToolbox.version, ns.WidgetToolbox)
 end

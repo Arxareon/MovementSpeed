@@ -365,7 +365,7 @@ function WrapTextInColor(value, color) return value end
 ---@field layer? DrawLayer
 ---@field text? string Text to be shown
 ---@field font? string Name of the [Font](https://wowpedia.fandom.com/wiki/UIOBJECT_Font) object to be used | ***Default:*** "GameFontNormal"<ul><li>***Note:*** A new font object (or a modified copy of an existing one) can be created via ***WidgetToolbox*.CreateFont(...)** (even within this table definition).</li></ul>
----@field color? colorData Apply the specified color to the text (overriding **t.font**)
+---@field color? colorData|colorRGBA Apply the specified color to the text (overriding **t.font**)
 ---@field justify? justifyData Set the justification of the text (overriding **t.font**)
 ---@field wrap? boolean Whether or not to allow the text lines to wrap (overriding **t.font**) | ***Default:*** true
 
