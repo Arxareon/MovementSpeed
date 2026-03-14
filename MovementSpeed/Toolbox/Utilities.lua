@@ -1224,7 +1224,7 @@ end
 ---***
 ---@param frame backdropFrame|AnyFrameObject Reference to the frame to set the backdrop of<ul><li>***Note:*** The template of **frame** must have been set as: `BackdropTemplateMixin and "BackdropTemplate"`.</li></ul>
 ---@param backdrop? backdropData Parameters to set the custom backdrop with | ***Default:*** nil *(remove the backdrop)*
----@param updates? table<AnyScriptType, backdropUpdateRule> Table of key, value pairs containing the list of events to set listeners for assigned to **updates[*key*].frame**, linking backdrop changes to it, modifying the specified parameters on trigger<ul><li>***Note:*** All update rules are additive, calling ***WidgetToolbox*.SetBackdrop(...)** multiple times with **updates** specified *will not* override previously set update rules. The base **backdrop** values used for these old rules *will not* change by setting a new backdrop via ***WidgetToolbox*.SetBackdrop(...)** either!</li></ul>
+---@param updates? backdropUpdateRule[] Table of backdrop update rules, modifying the specified parameters on trigger<ul><li>***Note:*** All update rules are additive, calling ***WidgetToolbox*.SetBackdrop(...)** multiple times with **updates** specified *will not* override previously set update rules. The base **backdrop** values used for these old rules *will not* change by setting a new backdrop via ***WidgetToolbox*.SetBackdrop(...)** either!</li></ul>
 function wt.SetBackdrop(frame, backdrop, updates)
 	if not frame.SetBackdrop then return end
 
@@ -1266,68 +1266,73 @@ function wt.SetBackdrop(frame, backdrop, updates)
 
 	--[ Backdrop Updates ]
 
-	if updates then for key, value in pairs(updates) do
-		value.trigger = value.trigger or frame
-		if value.trigger:HasScript(key) then value.trigger:HookScript(key, function(self, ...)
-			--Unconditional: Restore the base backdrop on event trigger
-			if not value.rule then
-				setBackdrop(backdrop)
+	if type(updates) == "table" then for i = 1, #updates do
+		if type(updates[i].triggers) ~= "table" or not next(updates[i].triggers) then updates[i].triggers = { frame } end
 
-				return
+		for key, value in pairs(updates[i].rules) do
+			local function updater(self, ...)
+				--Unconditional: Restore the base backdrop on event trigger
+				if type(value) ~= "function" then
+					setBackdrop(backdrop)
+
+					return
+				end
+
+				--Conditional: Evaluate the rule
+				local backdropUpdate, fill = value(self, ...)
+
+				--Remove the backdrop
+				if type(backdropUpdate) ~= "table" then
+					setBackdrop(nil)
+
+					return
+				end
+
+				--Restore the base backdrop or do nothing on evaluation
+				if not next(backdropUpdate) then if fill then
+					setBackdrop(backdrop)
+
+					return
+				else return end end
+
+				--Fill defaults
+				if fill then
+					--Fill backdrop update table with the base backdrop values
+					backdropUpdate = backdrop and wt.AddMissing(backdropUpdate, backdrop) or nil
+				else
+					--Fill backdrop update table with the current values
+					if frame.backdropInfo then
+						--Background
+						backdropUpdate.background = backdropUpdate.background or {}
+						backdropUpdate.background.texture = backdropUpdate.background.texture or wt.AddMissing(backdropUpdate.background.texture, {
+							path = frame.backdropInfo.bgFile,
+							size = frame.backdropInfo.tileSize,
+							tile = frame.backdropInfo.tile,
+							insets = {
+								l = frame.backdropInfo.insets.left,
+								r = frame.backdropInfo.insets.right,
+								t = frame.backdropInfo.insets.top,
+								b = frame.backdropInfo.insets.bottom
+							}
+						})
+						backdropUpdate.background.color = backdropUpdate.background.color or wt.PackColor(frame:GetBackdropColor())
+
+						--Border
+						backdropUpdate.border = backdropUpdate.border or {}
+						backdropUpdate.border.texture = backdropUpdate.border.texture or wt.AddMissing(backdropUpdate.border.texture, {
+							path = frame.backdropInfo.edgeFile,
+							width = frame.backdropInfo.edgeSize,
+						})
+						backdropUpdate.border.color = backdropUpdate.border.color or wt.PackColor(frame:GetBackdropColor())
+					else backdropUpdate = nil end
+				end
+
+				--Update the backdrop
+				setBackdrop(backdropUpdate)
 			end
 
-			--Conditional: Evaluate the rule
-			local backdropUpdate, fill = value.rule(self, ...)
-
-			--Remove the backdrop
-			if type(backdropUpdate) ~= "table" then
-				setBackdrop(nil)
-
-				return
-			end
-
-			--Restore the base backdrop or do nothing on evaluation
-			if not next(backdropUpdate) then if fill then
-				setBackdrop(backdrop)
-
-				return
-			else return end end
-
-			--Fill defaults
-			if fill then
-				--Fill backdrop update table with the base backdrop values
-				backdropUpdate = backdrop and wt.AddMissing(backdropUpdate, backdrop) or nil
-			else
-				--Fill backdrop update table with the current values
-				if frame.backdropInfo then
-					--Background
-					backdropUpdate.background = backdropUpdate.background or {}
-					backdropUpdate.background.texture = backdropUpdate.background.texture or wt.AddMissing(backdropUpdate.background.texture, {
-						path = frame.backdropInfo.bgFile,
-						size = frame.backdropInfo.tileSize,
-						tile = frame.backdropInfo.tile,
-						insets = {
-							l = frame.backdropInfo.insets.left,
-							r = frame.backdropInfo.insets.right,
-							t = frame.backdropInfo.insets.top,
-							b = frame.backdropInfo.insets.bottom
-						}
-					})
-					backdropUpdate.background.color = backdropUpdate.background.color or wt.PackColor(frame:GetBackdropColor())
-
-					--Border
-					backdropUpdate.border = backdropUpdate.border or {}
-					backdropUpdate.border.texture = backdropUpdate.border.texture or wt.AddMissing(backdropUpdate.border.texture, {
-						path = frame.backdropInfo.edgeFile,
-						width = frame.backdropInfo.edgeSize,
-					})
-					backdropUpdate.border.color = backdropUpdate.border.color or wt.PackColor(frame:GetBackdropColor())
-				else backdropUpdate = nil end
-			end
-
-			--Update the backdrop
-			setBackdrop(backdropUpdate)
-		end) end
+			for j = 1, #updates[i].triggers do if updates[i].triggers[j]:HasScript(key) then updates[i].triggers[j]:HookScript(key, updater) end end
+		end
 	end end
 end
 

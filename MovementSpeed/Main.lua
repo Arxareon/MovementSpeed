@@ -339,19 +339,19 @@ local function GetPlayerSpeedTooltipLines()
 					"#W", wt.Color(wt.Thousands(map.size.w, 2), { r = 1, g = 1, b = 1 })
 				):gsub(
 					"#H", wt.Color(wt.Thousands(map.size.h, 2), { r = 1, g = 1, b = 1 })
-				), ns.colors.grey[2])
+				), rs.colors.grey[2])
 			),
 			color = NORMAL_FONT_COLOR,
 		},
 		{
 			text = "\n" .. ns.strings.speedTooltip.hintOptions,
-			font = GameFontNormalTiny,
-			color = ns.colors.grey[1],
+			font = GameFontNormalSmall,
+			color = rs.colors.grey[1],
 		},
 		{
 			text = ns.strings.speedTooltip.hintMove,
-			font = GameFontNormalTiny,
-			color = ns.colors.grey[1],
+			font = GameFontNormalSmall,
+			color = rs.colors.grey[1],
 		},
 	}
 
@@ -403,19 +403,19 @@ local function GetTravelSpeedTooltipLines()
 					"#W", wt.Color(wt.Thousands(map.size.w, 2), { r = 1, g = 1, b = 1 })
 				):gsub(
 					"#H", wt.Color(wt.Thousands(map.size.h, 2), { r = 1, g = 1, b = 1 })
-				), ns.colors.grey[2])
+				), rs.colors.grey[2])
 			),
 			color = NORMAL_FONT_COLOR,
 		},
 		{
 			text = "\n" .. ns.strings.speedTooltip.hintOptions,
-			font = GameFontNormalTiny,
-			color = ns.colors.grey[1],
+			font = GameFontNormalSmall,
+			color = rs.colors.grey[1],
 		},
 		{
 			text = ns.strings.speedTooltip.hintMove,
-			font = GameFontNormalTiny,
-			color = ns.colors.grey[1],
+			font = GameFontNormalSmall,
+			color = rs.colors.grey[1],
 		},
 	}
 
@@ -454,7 +454,7 @@ end
 ---Assemble the text for the mouseover target's speed
 ---@return string
 local function GetTargetSpeedText()
-	return wt.Texture(ns.textures.logo) .. " " .. ns.strings.targetSpeed:gsub("#SPEED", wt.Color(GetSpeedText("targetSpeed"), ns.colors.grey[2]))
+	return wt.Texture(ns.textures.logo) .. " " .. ns.strings.targetSpeed:gsub("#SPEED", wt.Color(GetSpeedText("targetSpeed"), rs.colors.grey[2]))
 end
 
 --| Updates
@@ -484,6 +484,9 @@ local function EnableTargetSpeedUpdates()
 			lineAdded = false
 			for i = 2, tooltip:NumLines() do
 				line = _G["GameTooltipTextLeft" .. i]
+
+				if issecretvalue(line:GetText()) then return end --WATCH temporary failsafe
+
 				if line then if string.match(line:GetText() or "", wt.Texture(ns.textures.logo)) then
 					--Update the speed line
 					line:SetText(GetTargetSpeedText())
@@ -496,7 +499,7 @@ local function EnableTargetSpeedUpdates()
 			--Add the speed line if the target is moving
 			if not lineAdded and GetUnitSpeed("mouseover") ~= 0 then
 				tooltip:AddLine(GetTargetSpeedText(), ns.colors.green[1].r, ns.colors.green[1].g, ns.colors.green[1].b, true)
-				tooltip:Show() --Force the tooltip to be resized
+				tooltip:Show() --Force the tooltip to be resized --FIX flashing issue when hovering over unit frames
 			end
 		end)
 	end)
@@ -589,10 +592,6 @@ local function CreateUpdateOptions(panel, display, category, key)
 		dataManagement = {
 			category = category,
 			key = key,
-			-- onChange = { RefreshSpeedUpdates = function() --CHECK if needed
-			-- 	StopSpeedDisplayUpdates(display)
-			-- 	StartSpeedDisplayUpdates(display)
-			-- end },
 		},
 	})
 
@@ -607,7 +606,6 @@ local function CreateUpdateOptions(panel, display, category, key)
 		max = 1,
 		increment = 0.05,
 		altStep = 0.2,
-		events = { OnValueChanged = function(_, value)  end, },
 		dependencies = {
 			{ frame = options[display].visibility.hidden, evaluate = function(state) return not state end },
 			{ frame = options[display].update.throttle },
@@ -618,7 +616,6 @@ local function CreateUpdateOptions(panel, display, category, key)
 		dataManagement = {
 			category = category,
 			key = key,
-			-- onChange = { "RefreshSpeedUpdates", }, --CHECK if needed
 		},
 	})
 end
@@ -788,30 +785,26 @@ local function CreateSpeedDisplayOptionsPage(display)
 				color = { r = 0.5, g = 0.5, b = 0.5, a = 0.9 },
 			}
 		},
-		backdropUpdates = {
-			OnEnter = { rule = function()
-				return IsMouseButtonDown() and {
+		backdropUpdates = { { rules = {
+			OnEnter = function()
+				return IsMouseButtonDown("LeftButton") and {
 					background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
 					border = { color = { r = 0.42, g = 0.42, b = 0.42, a = 0.9 } }
 				} or {
 					background = { color = { r = 0.15, g = 0.15, b = 0.15, a = 0.9 } },
 					border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
 				}
-			end },
-			OnLeave = { rule = function() return {}, true end },
-			OnMouseDown = { rule = function(self)
-				return self:IsEnabled() and {
-					background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
-					border = { color = { r = 0.42, g = 0.42, b = 0.42, a = 0.9 } }
-				} or {}
-			end },
-			OnMouseUp = { rule = function(self)
-				return self:IsEnabled() and self:IsMouseOver() and {
-					background = { color = { r = 0.15, g = 0.15, b = 0.15, a = 0.9 } },
-					border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
-				} or {}
-			end },
-		},
+			end,
+			OnLeave = function() return {}, true end,
+			OnMouseDown = function(self) return IsMouseButtonDown("LeftButton") and self:IsEnabled() and {
+				background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
+				border = { color = { r = 0.42, g = 0.42, b = 0.42, a = 0.9 } }
+			} or {} end,
+			OnMouseUp = function(self) return self:IsEnabled() and self:IsMouseOver() and {
+				background = { color = { r = 0.15, g = 0.15, b = 0.15, a = 0.9 } },
+				border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
+			} or {} end,
+		}, }, },
 	}
 
 	---@type settingsPage|nil
@@ -871,6 +864,7 @@ local function CreateSpeedDisplayOptionsPage(display)
 
 			--[ Position ]
 
+			---@type positionPanel|nil
 			options[display].position = wt.CreatePositionOptions(ns.name, frames[display].display, {
 				canvas = canvas,
 				name = ns.strings.options.speedDisplay.referenceName:gsub("#TYPE", ns.strings.options[display].title),
@@ -1494,11 +1488,11 @@ frames.main = wt.CreateFrame({
 					{
 						command = ns.chat.commands.preset,
 						description = function()
-							return ns.strings.chat.preset.description:gsub(
+							return (ns.strings.chat.preset.description:gsub(
 								"#TYPE", ns.strings.options[MovementSpeedCS.mainDisplay].title
 							):gsub(
 								"#INDEX", wt.Color(ns.chat.commands.preset .. " " .. 1, ns.colors.green[2])
-							)
+							))
 						end,
 						handler = function(_, p) return options[MovementSpeedCS.mainDisplay].position.applyPreset(tonumber(p)) end,
 						error = ns.strings.chat.preset.unchanged .. "\n" .. wt.Color(ns.strings.chat.preset.error:gsub(
@@ -1520,65 +1514,64 @@ frames.main = wt.CreateFrame({
 					{
 						command = ns.chat.commands.save,
 						description = function()
-							return ns.strings.chat.save.description:gsub(
+							return (ns.strings.chat.save.description:gsub(
 								"#TYPE", ns.strings.options[MovementSpeedCS.mainDisplay].title
 							):gsub(
 								"#CUSTOM", wt.Color(options[MovementSpeedCS.mainDisplay].position.presets[1].title, ns.colors.yellow[1])
-							)
+							))
 						end,
 						handler = function() options[MovementSpeedCS.mainDisplay].position.saveCustomPreset() end,
 					},
 					{
 						command = ns.chat.commands.reset,
 						description = function()
-							return ns.strings.chat.reset.description:gsub(
+							return (ns.strings.chat.reset.description:gsub(
 								"#TYPE", ns.strings.options[MovementSpeedCS.mainDisplay].title
 							):gsub(
 								"#CUSTOM", wt.Color(options[MovementSpeedCS.mainDisplay].position.presets[1].title, ns.colors.yellow[1])
-							)
+							))
 						end,
 						handler = function() options[MovementSpeedCS.mainDisplay].position.resetCustomPreset() end,
 					},
 					{
 						command = ns.chat.commands.toggle,
-						description = function() return ns.strings.chat.toggle.description:gsub("#TYPE", ns.strings.options[MovementSpeedCS.mainDisplay].title):gsub(
+						description = function() return (ns.strings.chat.toggle.description:gsub("#TYPE", ns.strings.options[MovementSpeedCS.mainDisplay].title):gsub(
 							"#HIDDEN", wt.Color(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedCS.mainDisplay].visibility.hidden and ns.strings.chat.toggle.hidden or ns.strings.chat.toggle.notHidden, ns.colors.yellow[1])
-						) end,
+						)) end,
 						handler = function()
 							options[MovementSpeedCS.mainDisplay].visibility.hidden.setData(not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedCS.mainDisplay].visibility.hidden)
 
 							return true
 						end,
-						success = function() return (MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedCS.mainDisplay].visibility.hidden and ns.strings.chat.toggle.hiding or ns.strings.chat.toggle.unhiding):gsub(
+						success = function() return ((MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedCS.mainDisplay].visibility.hidden and ns.strings.chat.toggle.hiding or ns.strings.chat.toggle.unhiding):gsub(
 							"#TYPE", ns.strings.options[MovementSpeedCS.mainDisplay].title
-						) end,
+						)) end,
 					},
 					{
 						command = ns.chat.commands.auto,
-						description = function() return ns.strings.chat.auto.description:gsub("#TYPE", ns.strings.options[MovementSpeedCS.mainDisplay].title):gsub(
+						description = function() return (ns.strings.chat.auto.description:gsub("#TYPE", ns.strings.options[MovementSpeedCS.mainDisplay].title):gsub(
 							"#STATE", wt.Color(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedCS.mainDisplay].visibility.autoHide and ns.strings.misc.enabled or ns.strings.misc.disabled, ns.colors.yellow[1])
-						) end,
+						)) end,
 						handler = function()
 							options[MovementSpeedCS.mainDisplay].visibility.autoHide.setData(not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedCS.mainDisplay].visibility.autoHide)
 
 							return true
 						end,
-						success = function()
-							return ns.strings.chat.auto.response:gsub(
+						success = function() return (ns.strings.chat.auto.response:gsub(
 								"#TYPE", ns.strings.options[MovementSpeedCS.mainDisplay].title
 							):gsub(
 								"#STATE", wt.Color(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedCS.mainDisplay].visibility.autoHide and ns.strings.misc.enabled or ns.strings.misc.disabled, ns.colors.yellow[2])
-							)
+							))
 						end,
 					},
 					{
 						command = ns.chat.commands.size,
 						description = function()
-							return ns.strings.chat.size.description:gsub(
+							return (ns.strings.chat.size.description:gsub(
 								"#TYPE", ns.strings.options[MovementSpeedCS.mainDisplay].title
 							):gsub(
 								"#SIZE", wt.Color(ns.chat.commands.size .. " " .. ns.profileDefault[MovementSpeedCS.mainDisplay].font.size, ns.colors.green[2])
-							)
+							))
 						end,
 						handler = function(_, p)
 							local size = tonumber(p)
@@ -1589,29 +1582,29 @@ frames.main = wt.CreateFrame({
 
 							return true, size
 						end,
-						success = function(size) return ns.strings.chat.size.response:gsub(
+						success = function(size) return (ns.strings.chat.size.response:gsub(
 							"#TYPE", ns.strings.options[MovementSpeedCS.mainDisplay].title
-						):gsub("#VALUE", wt.Color(size, ns.colors.yellow[2])) end,
-						error = function() return ns.strings.chat.size.unchanged:gsub(
+						):gsub("#VALUE", wt.Color(size, ns.colors.yellow[2]))) end,
+						error = function() return (ns.strings.chat.size.unchanged:gsub(
 							"#TYPE", ns.strings.options[MovementSpeedCS.mainDisplay].title
-						) end,
+						)) end,
 						onError = function() print("    " .. wt.Color(ns.strings.chat.size.error:gsub(
 							"#SIZE", wt.Color(ns.chat.commands.size .. " " .. ns.profileDefault[MovementSpeedCS.mainDisplay].font.size, ns.colors.green[2])
 						), ns.colors.yellow[2])) end,
 					},
 					{
 						command = ns.chat.commands.swap,
-						description = function() return ns.strings.chat.swap.description:gsub(
+						description = function() return (ns.strings.chat.swap.description:gsub(
 							"#ACTIVE", wt.Color(ns.strings.options[MovementSpeedCS.mainDisplay].title, ns.colors.yellow[1])
-						) end,
+						)) end,
 						handler = function()
 							MovementSpeedCS.mainDisplay = MovementSpeedCS.mainDisplay == "playerSpeed" and "travelSpeed" or "playerSpeed"
 
 							return true
 						end,
-						success = function() return ns.strings.chat.swap.response:gsub(
+						success = function() return (ns.strings.chat.swap.response:gsub(
 							"#ACTIVE", wt.Color(ns.strings.options[MovementSpeedCS.mainDisplay].title, ns.colors.yellow[2])
-						) end,
+						)) end,
 					},
 					{
 						command = ns.chat.commands.profile,
@@ -1637,9 +1630,9 @@ frames.main = wt.CreateFrame({
 					},
 					{
 						command = ns.chat.commands.default,
-						description = function() return ns.strings.chat.default.description:gsub(
+						description = function() return (ns.strings.chat.default.description:gsub(
 							"#PROFILE", wt.Color(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].title, ns.colors.yellow[1])
-						) end,
+						)) end,
 						handler = function() return options.dataManagement.resetProfile() end,
 					},
 					{
@@ -1723,7 +1716,7 @@ frames.main = wt.CreateFrame({
 	},
 	initialize = function(frame, _, _, name)
 		--Custom Tooltip
-		-- local tooltip = wt.CreateGameTooltip(ns.name) --TODO restore when fixed --FIX custom tooltip now being usable
+		local tooltip = wt.CreateGameTooltip(ns.name) --TODO restore when fixed --FIX custom tooltip now being usable
 
 		--| Player Speed
 
@@ -1737,7 +1730,7 @@ frames.main = wt.CreateFrame({
 			initialize = function(display, _, height)
 				--Tooltip
 				frames.playerSpeed.tooltipData = wt.AddTooltip(display, {
-					-- tooltip = tooltip, --TODO restore when fixed
+					tooltip = tooltip, --TODO restore when fixed
 					title = ns.strings.speedTooltip.title:gsub("#SPEED", ns.strings.options.playerSpeed.title),
 					anchor = "ANCHOR_BOTTOMRIGHT",
 					offset = { y = height },
@@ -1770,7 +1763,7 @@ frames.main = wt.CreateFrame({
 			initialize = function(display, _ , height)
 				--Tooltip
 				frames.travelSpeed.tooltipData = wt.AddTooltip(display, {
-					-- tooltip = tooltip, --TODO restore when fixed
+					tooltip = tooltip, --TODO restore when fixed
 					title = ns.strings.speedTooltip.title:gsub("#SPEED", ns.strings.options.travelSpeed.title),
 					anchor = "ANCHOR_BOTTOMRIGHT",
 					offset = { y = height },

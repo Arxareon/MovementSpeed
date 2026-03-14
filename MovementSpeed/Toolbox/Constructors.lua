@@ -39,7 +39,7 @@ function wt.CreateGameTooltip(name)
 end
 
 ---Add default value and utility menu hint tooltip lines to widget tooltip tables
----@param t settingsFrame|tooltipDescribableWidget Parameters are to be provided in this table
+---@param t tooltipDescribableWidget|tooltipDescribableSettingsWidget Parameters are to be provided in this table
 ---@param default? string Default value, formatted | ***Default:*** ""
 function wt.AddWidgetTooltipLines(t, default)
 	if type(t) ~= "table" or (t.showDefault == false and t.utilityMenu == false) or type(t.tooltip) ~= "table" then return end
@@ -52,7 +52,7 @@ function wt.AddWidgetTooltipLines(t, default)
 		text = (hadLines and "\n" or "") .. WrapTextInColorCode(DEFAULT .. ": ", "FF66FF66") .. (type(default) == "string" and default or "")
 	}) end
 	if t.utilityMenu ~= false then table.insert(t.tooltip.lines, {
-		text = (t.showDefault == false and "\n" or "") .. wt.strings.value.note, font = GameFontNormalTiny, color = rs.colors.grey[1],
+		text = (t.showDefault == false and "\n" or "") .. wt.strings.value.note, font = GameFontNormalSmall, color = rs.colors.grey[1],
 	}) end
 end
 
@@ -379,7 +379,7 @@ function wt.AddTitle(t)
 		width = t.width,
 		layer = "ARTWORK",
 		text = t.text,
-		font =  t.font or "GameFontHighlight",
+		font = t.font or "GameFontHighlight",
 		color = t.color,
 		justify = { h = t.justify or "LEFT", },
 	})
@@ -926,22 +926,22 @@ function wt.CreatePopupMenu(t)
 					color = { r = 0.5, g = 0.5, b = 0.5, a = 0.9 },
 				}
 			},
-			{
-				OnEnter = { rule = function()
-					return IsMouseButtonDown() and {
+			{ { rules = {
+				OnEnter = function()
+					return IsMouseButtonDown("LeftButton") and {
 						background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
 						border = { color = { r = 0.42, g = 0.42, b = 0.42, a = 0.9 } }
 					} or {
 						background = { color = { r = 0.15, g = 0.15, b = 0.15, a = 0.9 } },
 						border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
 					}
-				end },
-				OnLeave = { rule = function() return {}, true end },
-				OnMouseDown = { rule = function() return {
+				end,
+				OnLeave = function() return {}, true end,
+				OnMouseDown = function() return IsMouseButtonDown("LeftButton") and {
 					background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
 					border = { color = { r = 0.42, g = 0.42, b = 0.42, a = 0.9 } }
-				} end },
-			})
+				} or {} end,
+			}, }, })
 		end
 	})
 
@@ -3687,11 +3687,18 @@ function wt.CreateRadioSelector(t, widget)
 
 	--| Utility menu
 
+	local openTriggers = { {
+		frame = selector.frame,
+		condition = selector.isEnabled,
+	}, }
+
+	for i = 1, #selector.toggles do table.insert(openTriggers, {
+		frame = selector.toggles[i].button,
+		condition = selector.isEnabled,
+	}) end
+
 	if t.utilityMenu ~= false then wt.CreateContextMenu({
-		triggers = { {
-			frame = selector.frame,
-			condition = selector.isEnabled,
-		}, },
+		triggers = openTriggers,
 		initialize = function(menu)
 			wt.CreateMenuTextline(menu, { text = title })
 			wt.CreateMenuButton(menu, { title = wt.strings.value.copy, action = function() wt.clipboard.selection = { index = selector.getSelected() } end })
@@ -3710,11 +3717,17 @@ end
 ---***
 ---@param itemset SpecialSelectorItemset Specify what type of selector should be created
 ---@param t? specialRadioSelectorCreationData Parameters are to be provided in this table
----@param widget? selector Reference to an already existing special selector widget to set up as a special selector frame instead of creating a new base widget
+---@param widget? specialSelector|selector Reference to an already existing special selector widget to set up as a special selector frame instead of creating a new base widget
 ---***
 ---@return specialSelector|specialRadioSelector selector References to the new [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame), an array of its child [CheckButton](https://warcraft.wiki.gg/wiki/UIOBJECT_CheckButton) widget items, utility functions and more wrapped in a table
 function wt.CreateSpecialRadioSelector(itemset, t, widget)
 	t = type(t) == "table" and t or {}
+
+	widget = widget and widget.isType and widget.isType("SpecialSelector") and widget or wt.CreateSpecialSelector(itemset, t)
+
+	if WidgetToolsDB.lite and t.lite ~= false then return widget end
+
+	wt.AddWidgetTooltipLines(t, t.showDefault ~= false and WrapTextInColorCode(t.default and itemsets[itemset][t.default].value or tostring(t.default), "FFFFFFFF"))
 
 	local utilityMenu = t.utilityMenu
 
@@ -3722,13 +3735,12 @@ function wt.CreateSpecialRadioSelector(itemset, t, widget)
 	t = wt.FillValues(t or {}, {
 		labels = false,
 		columns = itemset == "strata" and 8 or 3,
+		showDefault = false,
 		utilityMenu = false,
 	})
 
 	---@class specialRadioSelector : radioSelector, specialSelector
-	local selector = wt.CreateRadioSelector(t, widget and widget.isType and widget.isType("SpecialSelector") and widget or wt.CreateSpecialSelector(itemset, t))
-
-	if WidgetToolsDB.lite and t.lite ~= false then return selector end
+	local selector = wt.CreateRadioSelector(t, widget)
 
 	--| Utility menu
 
@@ -3888,11 +3900,18 @@ function wt.CreateCheckboxSelector(t, widget)
 
 	--| Utility menu
 
+	local openTriggers = { {
+		frame = selector.frame,
+		condition = selector.isEnabled,
+	}, }
+
+	for i = 1, #selector.toggles do table.insert(openTriggers, {
+		frame = selector.toggles[i].button,
+		condition = selector.isEnabled,
+	}) end
+
 	if t.utilityMenu ~= false then wt.CreateContextMenu({
-		triggers = { {
-			frame = selector.frame,
-			condition = selector.isEnabled,
-		}, },
+		triggers = openTriggers,
 		initialize = function(menu)
 			wt.CreateMenuTextline(menu, { text = title })
 			wt.CreateMenuButton(menu, { title = wt.strings.value.copy, action = function() wt.clipboard.selections = { states = selector.getSelections() } end })
@@ -3930,7 +3949,7 @@ function wt.CreateDropdownSelector(t, widget)
 
 	--| Position & dimensions
 
-	t.width = t.width or 160
+	t.width = t.width or 180
 
 	if t.arrange then selector.dropdown.arrangementInfo = t.arrange else wt.SetPosition(selector.dropdown, t.position) end
 
@@ -3950,7 +3969,7 @@ function wt.CreateDropdownSelector(t, widget)
 
 	selector.label = t.label ~= false and wt.AddTitle({
 		parent = selector.dropdown,
-		offset = { x = 4, },
+		anchor = "TOP",
 		text = title,
 		font = "GameFontNormal",
 	}) or nil
@@ -4006,9 +4025,9 @@ function wt.CreateDropdownSelector(t, widget)
 		position = { anchor = "BOTTOM", },
 		size = { w = t.width - (t.cycleButtons ~= false and 44 or 0), },
 		font = {
-			normal = "GameFontHighlightSmall",
-			highlight = "GameFontHighlightSmall",
-			disabled = "GameFontDisableSmall",
+			normal = "GameFontNormalSmall2",
+			highlight = "GameFontHighlightSmall2",
+			disabled = "GameFontDisableSmall2",
 		},
 		backdrop = {
 			background = {
@@ -4024,57 +4043,62 @@ function wt.CreateDropdownSelector(t, widget)
 			}
 		},
 		backdropUpdates = {
-			OnEnter = { rule = function()
-				return IsMouseButtonDown() and {
-					background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
-					border = { color = { r = 0.42, g = 0.42, b = 0.42, a = 0.9 } }
-				} or (open and {
-					background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
-					border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
-				} or {
-					background = { color = { r = 0.15, g = 0.15, b = 0.15, a = 0.9 } },
-					border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
-				})
-			end },
-			OnLeave = { rule = function()
-				if open then return {
-					background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
-					border = { color = { r = 0.6, g = 0.6, b = 0.6, a = 0.9 } }
-				} end
-				return {}, true
-			end },
-			OnMouseDown = { rule = function(self)
-				return self:IsEnabled() and {
-					background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
-					border = { color = { r = 0.42, g = 0.42, b = 0.42, a = 0.9 } }
-				} or {}
-			end },
-			OnMouseUp = { rule = function(_, button)
-				if button == "LeftButton" then return {} end
+			{ rules = {
+				OnEnter = function()
+					return IsMouseButtonDown("LeftButton") and {
+						background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
+						border = { color = { r = 0.42, g = 0.42, b = 0.42, a = 0.9 } }
+					} or (open and {
+						background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
+						border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
+					} or {
+						background = { color = { r = 0.15, g = 0.15, b = 0.15, a = 0.9 } },
+						border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
+					})
+				end,
+				OnLeave = function()
+					if open then return {
+						background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
+						border = { color = { r = 0.6, g = 0.6, b = 0.6, a = 0.9 } }
+					} end
+					return {}, true
+				end,
+				OnMouseDown = function(self)
+					return IsMouseButtonDown("LeftButton") and self:IsEnabled() and {
+						background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
+						border = { color = { r = 0.42, g = 0.42, b = 0.42, a = 0.9 } }
+					} or {}
+				end,
+				OnMouseUp = function(_, button)
+					if button == "LeftButton" then return {} end
 
-				return (open and {
-					background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
-					border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
-				} or {
-					background = { color = { r = 0.15, g = 0.15, b = 0.15, a = 0.9 } },
-					border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
-				})
-			end },
-			OnAttributeChanged = { trigger = selector.dropdown, rule = function(_, attribute, state)
-				if attribute ~= "open" then return {} end
+					return (open and {
+						background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
+						border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
+					} or {
+						background = { color = { r = 0.15, g = 0.15, b = 0.15, a = 0.9 } },
+						border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
+					})
+				end,
+			}, },
+			{
+				triggers = { selector.dropdown },
+				rules = { OnAttributeChanged = function(_, attribute, state)
+					if attribute ~= "open" then return {} end
 
-				if selector.toggle.frame:IsMouseOver() then return state and {
-					border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
-				} or {
-					background = { color = { r = 0.15, g = 0.15, b = 0.15, a = 0.9 } },
-					border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
-				} end
-				return {}, true
-			end },
+					if selector.toggle.frame:IsMouseOver() then return state and {
+						border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
+					} or {
+						background = { color = { r = 0.15, g = 0.15, b = 0.15, a = 0.9 } },
+						border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
+					} end
+					return {}, true
+				end, },
+			},
 		},
-		events = { OnMouseUp = function(_, button, isInside)
-			if t.clearable and button == "RightButton" and isInside and selector.toggle.frame:IsEnabled() then selector.setText(nil, true) end
-		end, },
+		events = t.clearable and t.utilityMenu == false and { OnMouseUp = function(_, button, isInside)
+			if button == "RightButton" and isInside and selector.toggle.frame:IsEnabled() then selector.setText(nil, true) end
+		end, } or nil,
 		dependencies = t.dependencies
 	})
 
@@ -4083,9 +4107,16 @@ function wt.CreateDropdownSelector(t, widget)
 	local previousDependencies, nextDependencies
 
 	if t.cycleButtons ~= false then
-		--Create a custom disabled font
+		--| Create a custom fonts
+
 		wt.CreateFont({
-			name = "ChatFontSmallDisabled",
+			name = "ChatFontNormalSmall",
+			template = "ChatFontSmall",
+			color = wt.PackColor(GameFontNormal:GetTextColor()),
+		})
+
+		wt.CreateFont({
+			name = "ChatFontDisableSmall",
 			template = "ChatFontSmall",
 			color = wt.PackColor(GameFontDisable:GetTextColor()),
 		})
@@ -4102,7 +4133,7 @@ function wt.CreateDropdownSelector(t, widget)
 			parent = selector.dropdown,
 			name = "SelectPrevious",
 			title = "◄",
-			titleOffset = { y = 0.5 },
+			titleOffset = { x = -1, y = 0.5 },
 			tooltip = {
 				title = wt.strings.dropdown.previous.label,
 				lines = { { text = wt.strings.dropdown.previous.tooltip, }, }
@@ -4110,9 +4141,9 @@ function wt.CreateDropdownSelector(t, widget)
 			position = { anchor = "BOTTOMLEFT", },
 			size = { w = 22, },
 			font = {
-				normal = "ChatFontSmall",
+				normal = "ChatFontNormalSmall",
 				highlight = "ChatFontSmall",
-				disabled = "ChatFontSmallDisabled",
+				disabled = "ChatFontDisableSmall",
 			},
 			backdrop = {
 				background = {
@@ -4127,30 +4158,30 @@ function wt.CreateDropdownSelector(t, widget)
 					color = { r = 0.5, g = 0.5, b = 0.5, a = 0.9 },
 				}
 			},
-			backdropUpdates = {
-				OnEnter = { rule = function()
-					return IsMouseButtonDown() and {
+			backdropUpdates = { { rules = {
+				OnEnter = function()
+					return IsMouseButtonDown("LeftButton") and {
 						background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
 						border = { color = { r = 0.42, g = 0.42, b = 0.42, a = 0.9 } }
 					} or {
 						background = { color = { r = 0.15, g = 0.15, b = 0.15, a = 0.9 } },
 						border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
 					}
-				end },
-				OnLeave = { rule = function() return {}, true end },
-				OnMouseDown = { rule = function(self)
-					return self:IsEnabled() and {
+				end,
+				OnLeave = function() return {}, true end,
+				OnMouseDown = function(self)
+					return IsMouseButtonDown("LeftButton") and self:IsEnabled() and {
 						background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
 						border = { color = { r = 0.42, g = 0.42, b = 0.42, a = 0.9 } }
 					} or {}
-				end },
-				OnMouseUp = { rule = function(self)
+				end,
+				OnMouseUp = function(self)
 					return self:IsEnabled() and self:IsMouseOver() and {
 						background = { color = { r = 0.15, g = 0.15, b = 0.15, a = 0.9 } },
 						border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
 					} or {}
-				end },
-			},
+				end,
+			}, }, },
 			action = function()
 				local selected = selector.getSelected()
 
@@ -4179,9 +4210,9 @@ function wt.CreateDropdownSelector(t, widget)
 			position = { anchor = "BOTTOMRIGHT", },
 			size = { w = 22, },
 			font = {
-				normal = "ChatFontSmall",
+				normal = "ChatFontNormalSmall",
 				highlight = "ChatFontSmall",
-				disabled = "ChatFontSmallDisabled",
+				disabled = "ChatFontDisableSmall",
 			},
 			backdrop = {
 				background = {
@@ -4196,30 +4227,30 @@ function wt.CreateDropdownSelector(t, widget)
 					color = { r = 0.5, g = 0.5, b = 0.5, a = 0.9 },
 				}
 			},
-			backdropUpdates = {
-				OnEnter = { rule = function()
-					return IsMouseButtonDown() and {
+			backdropUpdates = { { rules = {
+				OnEnter = function()
+					return IsMouseButtonDown("LeftButton") and {
 						background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
 						border = { color = { r = 0.42, g = 0.42, b = 0.42, a = 0.9 } }
 					} or {
 						background = { color = { r = 0.15, g = 0.15, b = 0.15, a = 0.9 } },
 						border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
 					}
-				end },
-				OnLeave = { rule = function() return {}, true end },
-				OnMouseDown = { rule = function(self)
-					return self:IsEnabled() and {
+				end,
+				OnLeave = function() return {}, true end,
+				OnMouseDown = function(self)
+					return IsMouseButtonDown("LeftButton") and self:IsEnabled() and {
 						background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
 						border = { color = { r = 0.42, g = 0.42, b = 0.42, a = 0.9 } }
 					} or {}
-				end },
-				OnMouseUp = { rule = function(self)
+				end,
+				OnMouseUp = function(self)
 					return self:IsEnabled() and self:IsMouseOver() and {
 						background = { color = { r = 0.15, g = 0.15, b = 0.15, a = 0.9 } },
 						border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
 					} or {}
-				end },
-			},
+				end,
+			}, }, },
 			action = function()
 				local selected = selector.getSelected()
 
@@ -4319,13 +4350,28 @@ function wt.CreateDropdownSelector(t, widget)
 	--| Utility menu
 
 	if t.utilityMenu ~= false then wt.CreateContextMenu({
-		triggers = { {
-			frame = selector.dropdown,
-			condition = selector.isEnabled,
-		}, },
+		triggers = {
+			{
+				frame = selector.dropdown,
+				condition = selector.isEnabled,
+			},
+			{
+				frame = selector.toggle.frame,
+				condition = selector.isEnabled,
+			},
+			{
+				frame = selector.previous.frame,
+				condition = selector.isEnabled,
+			},
+			{
+				frame = selector.next.frame,
+				condition = selector.isEnabled,
+			},
+		},
 		initialize = function(menu)
 			wt.CreateMenuTextline(menu, { text = title })
 			wt.CreateMenuButton(menu, { title = wt.strings.value.copy, action = function() wt.clipboard.selection = { index = selector.getSelected() } end })
+			if t.clearable then wt.CreateMenuButton(menu, { title = wt.strings.dropdown.clear, action = function() selector.setText(nil, true) end }) end
 			wt.CreateMenuButton(menu, { title = wt.strings.value.paste, action = function()
 				selector.setSelected(wt.clipboard.selection.index, true)
 			end }):SetEnabled(wt.clipboard.selection ~= nil)
@@ -4654,6 +4700,9 @@ local function setUpEditboxFrame(textbox, t)
 
 	textbox.editbox:HookScript("OnEscapePressed", function(self) self:ClearFocus() end)
 
+	textbox.editbox:HookScript("OnEnter", function(self) if textbox.isEnabled() and t.font.highlight then self:SetFontObject(t.font.highlight) end end)
+	textbox.editbox:HookScript("OnLeave", function(self) if textbox.isEnabled() and t.font.normal then self:SetFontObject(t.font.normal) end end)
+
 	--| State
 
 	--Inherit setter
@@ -4665,7 +4714,10 @@ local function setUpEditboxFrame(textbox, t)
 	local function updateState(_, state)
 		if t.readOnly then textbox.editbox:Disable() else textbox.editbox:SetEnabled(state) end
 
-		if state then if t.font.normal then textbox.editbox:SetFontObject(t.font.normal) end elseif t.font.disabled then textbox.editbox:SetFontObject(t.font.disabled) end
+		if state then
+			if textbox.editbox:IsMouseOver() and t.font.highlight then textbox.editbox:SetFontObject(t.font.highlight)
+			elseif t.font.normal then textbox.editbox:SetFontObject(t.font.normal) end
+		elseif t.font.disabled then textbox.editbox:SetFontObject(t.font.disabled) end
 
 		if textbox.label then textbox.label:SetFontObject(state and "GameFontNormal" or "GameFontDisable") end
 	end
@@ -4963,11 +5015,21 @@ function wt.CreateMultilineEditbox(t, widget)
 
 	--| Utility menu
 
+	---Utility menu opening condition checker
+	---@return boolean
+	local function openCondition() return textbox.isEnabled() and not t.readOnly end
+
 	if t.utilityMenu ~= false then wt.CreateContextMenu({
-		triggers = { {
-			frame = textbox.frame,
-			condition = function() return textbox.isEnabled() and not t.readOnly end,
-		}, },
+		triggers = {
+			{
+				frame = textbox.frame,
+				condition = openCondition,
+			},
+			{
+				frame = textbox.editbox,
+				condition = openCondition,
+			},
+		},
 		initialize = function(menu)
 			wt.CreateMenuTextline(menu, { text = title })
 			wt.CreateMenuButton(menu, { title = wt.strings.value.copy, action = function() wt.clipboard.text = textbox.getText() end })
@@ -5374,22 +5436,27 @@ function wt.CreateNumericSlider(t, widget)
 
 	local name = (t.append ~= false and t.parent and t.parent ~= UIParent and t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "Slider")
 
-	numeric.frame = CreateFrame("Frame", name, t.parent)
-	numeric.slider = CreateFrame("Slider", name .. "Frame", numeric.frame, "OptionsSliderTemplate")
-	numeric.slider.min = _G[name .. "FrameLow"]
-	numeric.slider.max = _G[name .. "FrameHigh"]
+	numeric.frame = CreateFrame("Frame", name, t.parent, BackdropTemplateMixin and "BackdropTemplate")
+	numeric.sliderFrame = CreateFrame("Slider", name .. "Frame", numeric.frame, "MinimalSliderWithSteppersTemplate")
+
+	---@type Slider
+	numeric.slider = numeric.sliderFrame.Slider
+
+	---@type Button
+	numeric.decreaseButton = numeric.sliderFrame.Back
+
+	---@type Button
+	numeric.increaseButton = numeric.sliderFrame.Forward
 
 	--| Position & dimensions
 
-	t.width = t.width or 160
+	t.width = t.width or 180
 
 	if t.arrange then numeric.frame.arrangementInfo = t.arrange else wt.SetPosition(numeric.frame, t.position) end
-	numeric.slider:SetPoint("TOP", 0, -15)
-	numeric.slider.min:SetPoint("TOPLEFT", numeric.slider, "BOTTOMLEFT")
-	numeric.slider.max:SetPoint("TOPRIGHT", numeric.slider, "BOTTOMRIGHT")
+	numeric.sliderFrame:SetPoint("TOP", 0, -8)
 
-	numeric.frame:SetSize(t.width, t.valueBox ~= false and 48 or 31)
-	numeric.slider:SetWidth(t.width - (t.sideButtons ~= false and 40 or 0))
+	numeric.frame:SetSize(t.width, t.valueBox ~= false and 64 or 52)
+	numeric.sliderFrame:SetWidth(t.width)
 
 	--| Visibility
 
@@ -5404,13 +5471,13 @@ function wt.CreateNumericSlider(t, widget)
 	local title = type(t.title) == "string" and t.title or type(t.name) == "string" and t.name or "Slider"
 
 	if t.label ~= false then
-		numeric.label = _G[name .. "FrameText"]
+		numeric.sliderFrame.TopText:SetPoint("TOP", numeric.frame, "TOP", 0, 4)
+		numeric.sliderFrame.TopText:SetText(title)
+		numeric.sliderFrame.TopText:Show()
+	end
 
-		numeric.label:SetPoint("TOP", numeric.frame, "TOP", 0, 2)
-		numeric.label:SetFontObject("GameFontNormal")
-
-		numeric.label:SetText(title)
-	else _G[name .. "FrameText"]:Hide() end
+	numeric.sliderFrame.MinText:Show()
+	numeric.sliderFrame.MaxText:Show()
 
 	--| Value step
 
@@ -5419,20 +5486,48 @@ function wt.CreateNumericSlider(t, widget)
 		numeric.slider:SetObeyStepOnDrag(true)
 	end
 
+	--| Decrease button
+
+	local decreaseTooltipLines = { { text = wt.strings.slider.decrease.tooltip[1]:gsub("#VALUE", t.step), }, }
+	if t.altStep then table.insert(decreaseTooltipLines, { text = wt.strings.slider.decrease.tooltip[2]:gsub("#VALUE", t.altStep), }) end
+	if t.utilityMenu ~= false then table.insert(decreaseTooltipLines, { text = "\n" .. wt.strings.value.note, font = GameFontNormalSmall, color = rs.colors.grey[1], }) end
+
+	wt.AddTooltip(numeric.decreaseButton, {
+		title = wt.strings.slider.decrease.label,
+		lines = decreaseTooltipLines,
+		anchor = "ANCHOR_TOPLEFT",
+	})
+
+	numeric.decreaseButton:HookScript("OnClick", function() numeric.decrease(IsAltKeyDown(), true) end)
+
+	--| Increase button
+
+	local increaseTooltipLines = { { text = wt.strings.slider.increase.tooltip[1]:gsub("#VALUE", t.step), }, }
+	if t.altStep then table.insert(increaseTooltipLines, { text = wt.strings.slider.increase.tooltip[2]:gsub("#VALUE", t.altStep), }) end
+	if t.utilityMenu ~= false then table.insert(increaseTooltipLines, { text = "\n" .. wt.strings.value.note, font = GameFontNormalSmall, color = rs.colors.grey[1], }) end
+
+	wt.AddTooltip(numeric.increaseButton, {
+		title = wt.strings.slider.increase.label,
+		lines = increaseTooltipLines,
+		anchor = "ANCHOR_TOPLEFT",
+	})
+
+	numeric.increaseButton:HookScript("OnClick", function() numeric.increase(IsAltKeyDown(), true) end)
+
 	--| Value box
 
-	local _min, _max = numeric.getMin(), numeric.getMax()
+	local minValue, maxValue = numeric.getMin(), numeric.getMax()
 
 	if t.valueBox ~= false then
 		--Calculate the required number of fractal digits, assemble string patterns for value validation
 		local decimals = t.fractional or max(
-			tostring(_min):gsub("-?[%d]+[%.]?([%d]*).*", "%1"):len(),
-			tostring(_max):gsub("-?[%d]+[%.]?([%d]*).*", "%1"):len(),
+			tostring(minValue):gsub("-?[%d]+[%.]?([%d]*).*", "%1"):len(),
+			tostring(maxValue):gsub("-?[%d]+[%.]?([%d]*).*", "%1"):len(),
 			tostring(t.step or 0):gsub("-?[%d]+[%.]?([%d]*).*", "%1"):len()
 		)
 		local decimalPattern = ""
 		for _ = 1, decimals do decimalPattern = decimalPattern .. "[%d]?" end
-		local matchPattern = "(" .. (_min < 0 and "-?" or "") .. "[%d]*)" .. (decimals > 0 and "([%.]?" .. decimalPattern .. ")" or "") .. ".*"
+		local matchPattern = "(" .. (minValue < 0 and "-?" or "") .. "[%d]*)" .. (decimals > 0 and "([%.]?" .. decimalPattern .. ")" or "") .. ".*"
 		local replacePattern = "%1" .. (decimals > 0 and "%2" or "")
 
 		numeric.valueBox = wt.CreateCustomEditbox({
@@ -5445,16 +5540,18 @@ function wt.CreateNumericSlider(t, widget)
 			},
 			position = {
 				anchor = "TOP",
+				offset = { y = 6 },
 				relativeTo = numeric.slider,
 				relativePoint = "BOTTOM",
 			},
-			size = { w = 64, },
+			size = { w = 80, h = 20 },
 			font = {
-				normal = "GameFontHighlightSmall",
-				disabled = "GameFontDisableSmall",
+				normal = "GameFontNormalSmall2",
+				highlight = "GameFontHighlightSmall2",
+				disabled = "GameFontDisableSmall2",
 			},
 			justify = { h = "CENTER", },
-			charLimit = max(tostring(math.floor(t.step)):len(), tostring(math.floor(_min)):len(), tostring(math.floor(_max)):len()) + (decimals > 0 and decimals + 1 or 0),
+			charLimit = max(tostring(math.floor(t.step)):len(), tostring(math.floor(minValue)):len(), tostring(math.floor(maxValue)):len()) + (decimals > 0 and decimals + 1 or 0),
 			backdrop = {
 				background = {
 					texture = {
@@ -5468,10 +5565,10 @@ function wt.CreateNumericSlider(t, widget)
 					color = { r = 0.5, g = 0.5, b = 0.5, a = 0.9 }
 				}
 			},
-			backdropUpdates = {
-				OnEnter = { rule = function(self) return self:IsEnabled() and { border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } } } or {} end },
-				OnLeave = {},
-			},
+			backdropUpdates = { { rules = {
+				OnEnter = function(self) return self:IsEnabled() and { border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } } } or {} end,
+				OnLeave = "",
+			}, }, },
 			events = {
 				OnChar = function(self, _, text) self:SetText(text:gsub(matchPattern, replacePattern)) end,
 				OnEnterPressed = function(self)
@@ -5489,143 +5586,6 @@ function wt.CreateNumericSlider(t, widget)
 
 		--Handle widget updates
 		numeric.setListener.changed(function(_, number) numeric.valueBox.setText(tostring(wt.Round(number, decimals)):gsub(matchPattern, replacePattern)) end)
-	end
-
-	--| Side buttons
-
-	if t.sideButtons ~= false then
-
-		--| Decrease
-
-		numeric.decreaseButton = wt.CreateCustomButton({
-			parent = numeric.frame,
-			name = "SelectPrevious",
-			title = "-",
-			tooltip = {
-				title = wt.strings.slider.decrease.label,
-				lines = {
-					{ text = wt.strings.slider.decrease.tooltip[1]:gsub("#VALUE", t.step), },
-					t.altStep and { text = wt.strings.slider.decrease.tooltip[2]:gsub("#VALUE", t.altStep), } or nil,
-				}
-			},
-			position = {
-				anchor = "LEFT",
-				relativeTo = numeric.slider,
-				relativePoint = "LEFT",
-				offset = { x = -21, }
-			},
-			size = { w = 20, h = 20 },
-			font = {
-				normal = "GameFontHighlightMedium",
-				highlight = "GameFontHighlightMedium",
-				disabled = "GameFontDisableMed2"
-			},
-			backdrop = {
-				background = {
-					texture = {
-						size = 5,
-						insets = { l = 3, r = 3, t = 3, b = 3 },
-					},
-					color = { r = 0.1, g = 0.1, b = 0.1, a = 0.9 },
-				},
-				border = {
-					texture = { width = 12, },
-					color = { r = 0.5, g = 0.5, b = 0.5, a = 0.9 },
-				}
-			},
-			backdropUpdates = {
-				OnEnter = { rule = function()
-					return IsMouseButtonDown() and {
-						background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
-						border = { color = { r = 0.42, g = 0.42, b = 0.42, a = 0.9 } }
-					} or {
-						background = { color = { r = 0.15, g = 0.15, b = 0.15, a = 0.9 } },
-						border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
-					}
-				end },
-				OnLeave = { rule = function() return {}, true end },
-				OnMouseDown = { rule = function(self)
-					return self:IsEnabled() and {
-						background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
-						border = { color = { r = 0.42, g = 0.42, b = 0.42, a = 0.9 } }
-					} or {}
-				end },
-				OnMouseUp = { rule = function(self)
-					return self:IsEnabled() and self:IsMouseOver() and {
-						background = { color = { r = 0.15, g = 0.15, b = 0.15, a = 0.9 } },
-						border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
-					} or {}
-				end },
-			},
-			action = function() numeric.decrease(IsAltKeyDown(), true) end,
-			dependencies = { { frame = numeric.slider, evaluate = function(value) return value > numeric.getMin() end }, }
-		})
-
-		--| Increase
-
-		numeric.increaseButton = wt.CreateCustomButton({
-			parent = numeric.frame,
-			name = "SelectNext",
-			title = "+",
-			tooltip = {
-				title = wt.strings.slider.increase.label,
-				lines = {
-					{ text = wt.strings.slider.increase.tooltip[1]:gsub("#VALUE", t.step), },
-					t.altStep and { text = wt.strings.slider.increase.tooltip[2]:gsub("#VALUE", t.altStep), } or nil,
-				}
-			},
-			position = {
-				anchor = "RIGHT",
-				relativeTo = numeric.slider,
-				relativePoint = "RIGHT",
-				offset = { x = 21, }
-			},
-			size = { w = 20, h = 20 },
-			font = {
-				normal = "GameFontHighlightMedium",
-				highlight = "GameFontHighlightMedium",
-				disabled = "GameFontDisableMed2",
-			},
-			backdrop = {
-				background = {
-					texture = {
-						size = 5,
-						insets = { l = 3, r = 3, t = 3, b = 3 },
-					},
-					color = { r = 0.1, g = 0.1, b = 0.1, a = 0.9 },
-				},
-				border = {
-					texture = { width = 12, },
-					color = { r = 0.5, g = 0.5, b = 0.5, a = 0.9 },
-				}
-			},
-			backdropUpdates = {
-				OnEnter = { rule = function()
-					return IsMouseButtonDown() and {
-						background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
-						border = { color = { r = 0.42, g = 0.42, b = 0.42, a = 0.9 } }
-					} or {
-						background = { color = { r = 0.15, g = 0.15, b = 0.15, a = 0.9 } },
-						border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
-					}
-				end },
-				OnLeave = { rule = function() return {}, true end },
-				OnMouseDown = { rule = function(self)
-					return self:IsEnabled() and {
-						background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
-						border = { color = { r = 0.42, g = 0.42, b = 0.42, a = 0.9 } }
-					} or {}
-				end },
-				OnMouseUp = { rule = function(self)
-					return self:IsEnabled() and self:IsMouseOver() and {
-						background = { color = { r = 0.15, g = 0.15, b = 0.15, a = 0.9 } },
-						border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
-					} or {}
-				end },
-			},
-			action = function() numeric.increase(IsAltKeyDown(), true) end,
-			dependencies = { { frame = numeric.slider, evaluate = function(value) return value < numeric.getMax() end }, }
-		})
 	end
 
 	--[ Events ]
@@ -5651,8 +5611,8 @@ function wt.CreateNumericSlider(t, widget)
 	---@param limitMin? number
 	---@param limitMax? number
 	local function updateLimits(limitMin, limitMax)
-		if limitMin then numeric.slider.min:SetText(tostring(limitMin)) else limitMin = numeric.getMin() end
-		if limitMax then numeric.slider.max:SetText(tostring(limitMax)) else limitMax = numeric.getMax() end
+		if limitMin then numeric.sliderFrame.MinText:SetText(tostring(limitMin)) else limitMin = numeric.getMin() end
+		if limitMax then numeric.sliderFrame.MaxText:SetText(tostring(limitMax)) else limitMax = numeric.getMax() end
 
 		numeric.slider:SetMinMaxValues(limitMin, limitMax)
 	end
@@ -5664,12 +5624,25 @@ function wt.CreateNumericSlider(t, widget)
 
 	--Link value changes
 	numeric.slider:HookScript("OnValueChanged", function(_, number, user)
+		if not IsMouseButtonDown("LeftButton") then numeric.slider:SetValue(numeric.getNumber()) return end
+
 		scriptEvent = true
 
 		numeric.setNumber(number, user)
-
-		PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
 	end)
+
+	--| Backdrop
+
+	wt.SetBackdrop(numeric.frame, { background = {
+		texture = { size = 5, },
+		color = { r = 1, g = 1, b = 1, a = 0 }
+	}, }, { {
+		triggers = { numeric.frame, numeric.slider, numeric.increaseButton, numeric.decreaseButton, t.valueBox ~= false and numeric.valueBox.editbox or nil },
+		rules = {
+			OnEnter = function() return numeric.isEnabled() and { background = { color = { a = 0.1 } } } or {} end,
+			OnLeave = "",
+		},
+	}, })
 
 	--| Tooltip
 
@@ -5688,10 +5661,32 @@ function wt.CreateNumericSlider(t, widget)
 	--| Utility menu
 
 	if t.utilityMenu ~= false then wt.CreateContextMenu({
-		triggers = { {
-			frame = numeric.frame,
-			condition = numeric.isEnabled,
-		}, },
+		triggers = {
+			{
+				frame = numeric.frame,
+				condition = numeric.isEnabled,
+			},
+			{
+				frame = numeric.sliderFrame,
+				condition = numeric.isEnabled,
+			},
+			{
+				frame = numeric.slider,
+				condition = numeric.isEnabled,
+			},
+			{
+				frame = numeric.decreaseButton,
+				condition = numeric.isEnabled,
+			},
+			{
+				frame = numeric.increaseButton,
+				condition = numeric.isEnabled,
+			},
+			t.valueBox ~= false and {
+				frame = numeric.valueBox.editbox,
+				condition = numeric.isEnabled,
+			} or nil,
+		},
 		initialize = function(menu)
 			wt.CreateMenuTextline(menu, { text = title })
 			wt.CreateMenuButton(menu, { title = wt.strings.value.copy, action = function() wt.clipboard.numeric = numeric.getNumber() end })
@@ -5711,14 +5706,14 @@ function wt.CreateNumericSlider(t, widget)
 	local function updateState(_, state)
 		numeric.slider:SetEnabled(state)
 
-		if numeric.label then numeric.label:SetFontObject(state and "GameFontNormal" or "GameFontDisable") end
+		numeric.sliderFrame.TopText:SetFontObject(state and "GameFontNormal" or "GameFontDisable")
+		numeric.sliderFrame.MinText:SetFontObject(state and "GameFontNormalSmall" or "GameFontDisableSmall")
+		numeric.sliderFrame.MaxText:SetFontObject(state and "GameFontNormalSmall" or "GameFontDisableSmall")
 
 		if t.valueBox ~= false then numeric.valueBox.setEnabled(state) end
 
-		if t.sideButtons ~= false then
-			numeric.decreaseButton.setEnabled(state and wt.CheckDependencies({ { frame = numeric.slider, evaluate = function(value) return value > numeric.getMin() end }, }))
-			numeric.increaseButton.setEnabled(state and wt.CheckDependencies({ { frame = numeric.slider, evaluate = function(value) return value < numeric.getMax() end }, }))
-		end
+		numeric.decreaseButton:SetEnabled(state and wt.CheckDependencies({ { frame = numeric.slider, evaluate = function(value) return value > numeric.getMin() end }, }))
+		numeric.increaseButton:SetEnabled(state and wt.CheckDependencies({ { frame = numeric.slider, evaluate = function(value) return value < numeric.getMax() end }, }))
 	end
 
 	numeric.setListener.enabled(updateState, 1)
@@ -5729,9 +5724,9 @@ function wt.CreateNumericSlider(t, widget)
 	updateState(nil, numeric.isEnabled())
 
 	--Set up the limits
-	updateLimits(_min, _max)
+	updateLimits(minValue, maxValue)
 
-	--Set up slider value
+	-- Set up slider value
 	updateNumber(nil, numeric.getNumber(), false)
 
 	return numeric
@@ -6090,38 +6085,32 @@ function wt.CreateColorPickerFrame(t, widget)
 				color = { r = 0.5, g = 0.5, b = 0.5, a = 0.9 }
 			}
 		},
-		backdropUpdates = {
-			OnEnter = { rule = function()
+		backdropUpdates = { { rules = {
+			OnEnter = function()
 				return IsMouseButtonDown() and {
 					border = { color = { r = 0.42, g = 0.42, b = 0.42, a = 0.9 } }
 				} or {
 					border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
 				}
-			end },
-			OnLeave = { rule = function()
-				return {
-					border = { color = { r = 0.5, g = 0.5, b = 0.5, a = 0.9 } }
-				}
-			end },
-			OnMouseDown = { rule = function()
-				return {
-					border = { color = { r = 0.42, g = 0.42, b = 0.42, a = 0.9 } }
-				}
-			end },
-			OnMouseUp = { rule = function(self)
-				return self:IsMouseOver() and {
-					border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
-				} or {}
-			end },
-		},
+			end,
+			OnLeave = function() return {
+				border = { color = { r = 0.5, g = 0.5, b = 0.5, a = 0.9 } }
+			} end,
+			OnMouseDown = function() return {
+				border = { color = { r = 0.42, g = 0.42, b = 0.42, a = 0.9 } }
+			} end,
+			OnMouseUp = function(self) return self:IsMouseOver() and {
+				border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
+			} or {} end,
+		}, }, },
 	}, colorPicker.button) end
 
 	colorPicker.button.gradient = wt.CreateTexture({
 		parent = colorPicker.button.frame,
 		name = "ColorGradient",
 		position = { offset = { x = 2.5, y = -2.5 } },
-		size = { w = 14, h = 17 },
-		path = ns.rs.textures.gradientBG,
+		size = { w = 17, h = 17 },
+		path = rs.textures.gradientBG,
 		layer = "BACKGROUND",
 		level = -7,
 	})
@@ -6131,7 +6120,7 @@ function wt.CreateColorPickerFrame(t, widget)
 		name = "AlphaBG",
 		position = { offset = { x = 2.5, y = -2.5 } },
 		size = { w = 29, h = 17 },
-		path = ns.rs.textures.alphaBG,
+		path = rs.textures.alphaBG,
 		layer = "BACKGROUND",
 		level = -8,
 		tile = { h = true, v = true },
@@ -6157,8 +6146,9 @@ function wt.CreateColorPickerFrame(t, widget)
 		size = { w = t.width - colorPicker.button.frame:GetWidth(), h = colorPicker.button.frame:GetHeight() },
 		insets = { l = 6, },
 		font = {
-			normal = "GameFontWhiteSmall",
-			disabled = "GameFontDisableSmall",
+			normal = "GameFontNormalSmall2",
+			highlight = "GameFontHighlightSmall2",
+			disabled = "GameFontDisableSmall2",
 		},
 		charLimit = 7 + (t.value.a and 2 or 0),
 		backdrop = {
@@ -6174,10 +6164,10 @@ function wt.CreateColorPickerFrame(t, widget)
 				color = { r = 0.5, g = 0.5, b = 0.5, a = 0.9 }
 			}
 		},
-		backdropUpdates = {
-			OnEnter = { rule = function(self) return self:IsEnabled() and { border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } } } or {} end },
-			OnLeave = {},
-		},
+		backdropUpdates = { { rules = {
+			OnEnter = function(self) return self:IsEnabled() and { border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } } } or {} end,
+			OnLeave = "",
+		}, }, },
 		events = {
 			OnChar = function(self, _, text) self.setText(text:gsub("^(#?)([%x]*).*", "%1%2"), false) end,
 			OnEnterPressed = function(_, text) colorPicker.setColor(wt.PackColor(wt.HexToColor(text)), true) end,
@@ -6232,11 +6222,25 @@ function wt.CreateColorPickerFrame(t, widget)
 
 	--| Utility menu
 
+	---Utility menu opening condition checker
+	---@return boolean
+	local function openCondition() return colorPicker.isEnabled() and not ColorPickerFrame:IsVisible() end
+
 	if t.utilityMenu ~= false then wt.CreateContextMenu({
-		triggers = { {
-			frame = colorPicker.frame,
-			condition = function() return colorPicker.isEnabled() and not ColorPickerFrame:IsVisible() end,
-		}, },
+		triggers = {
+			{
+				frame = colorPicker.frame,
+				condition = openCondition,
+			},
+			{
+				frame = colorPicker.button.frame,
+				condition = openCondition,
+			},
+			{
+				frame = colorPicker.hexBox.editbox,
+				condition = openCondition,
+			},
+		},
 		initialize = function(menu)
 			wt.CreateMenuTextline(menu, { text = title })
 			wt.CreateMenuButton(menu, { title = wt.strings.value.copy, action = function() wt.clipboard.color = colorPicker.getColor() end })

@@ -9,6 +9,8 @@ local ns = select(2, ...)
 ---@class widgetToolbox
 local wt = ns.WidgetToolbox
 
+local rs = WidgetTools.GetResources()
+
 local frames = {
 	playerSpeed = {},
 }
@@ -28,6 +30,7 @@ local options = {
 	},
 	targetSpeed = {
 		value = {},
+		font = {},
 	},
 	dataManagement = {},
 }
@@ -51,25 +54,6 @@ local timeSinceSpeedUpdate = {
 
 
 --[[ UTILITIES ]]
-
---[ Resource Management ]
-
----Find the ID of the font provided
----@param fontPath string
----@return integer id ***Default:*** 1 *(if* **fontPath** *isn't found)*
-local function GetFontID(fontPath)
-	local id = 1
-
-	for i = 1, #ns.fonts do
-		if ns.fonts[i].path == fontPath then
-			id = i
-
-			break
-		end
-	end
-
-	return id
-end
 
 --[ Data Management ]
 
@@ -99,19 +83,22 @@ end
 
 ---Format the raw string of the specified speed textline to be replaced by speed values later
 ---@param type "playerSpeed"|"targetSpeed"
----@param units table
----@param color? boolean
-local function FormatSpeedText(type, units, color)
+---@param units? [boolean, boolean, boolean] ***Default:*** **MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[type].value.units**
+---@param colors? speedColorList ***Default:*** **MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[type].font.colors**
+local function FormatSpeedText(type, units, colors)
+	units = units or MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[type].value.units
+	colors = colors or MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[type].font.colors
+
 	speedText[type] = ""
 
 	if units[1] then
 		local sign = (type == "targetSpeed" and "%%" or "%")
-		speedText[type] = speedText[type] .. (color and wt.Color("#PERCENT" .. sign, ns.colors.green[2]) or "#PERCENT" .. sign)
+		speedText[type] = speedText[type] .. wt.Color("#PERCENT" .. sign, colors.percent)
 	end
 	if units[2] then
-		speedText[type] = speedText[type] .. ns.strings.speedValue.separator .. (color and wt.Color(ns.strings.speedValue.yps:gsub(
-			"#YARDS", wt.Color("#YARDS", ns.colors.yellow[2])
-		), ns.colors.yellow[1]) or ns.strings.speedValue.yps)
+		speedText[type] = speedText[type] .. ns.strings.speedValue.separator .. wt.Color(ns.strings.speedValue.yps:gsub(
+			"#YARDS", wt.Color("#YARDS", colors.yards)
+		), colors.yards) --ADD support for secondary color
 	end
 
 	speedText[type] = speedText[type]:gsub("^" .. ns.strings.speedValue.separator, "")

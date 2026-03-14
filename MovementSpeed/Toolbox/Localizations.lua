@@ -67,6 +67,7 @@ wt.localizations.enUS = {
 			label = "Next option",
 			tooltip = "Select the next option.",
 		},
+		clear = "Clear selection",
 	},
 	copyBox = "Copy the text by pressing:\n" .. CTRL_KEY_TEXT .." + C (Windows)\n" .. COMMAND .. " + C (Mac)",
 	slider = {
@@ -118,7 +119,7 @@ wt.localizations.enUS = {
 		paste = "Paste Value",
 		revert = "Revert Changes",
 		restore = "Restore Default",
-		note = "Right-click to reset or revert changes.",
+		note = "Right-click to copy or revert.",
 	},
 	points = {
 		left = "Left",
@@ -386,6 +387,7 @@ wt.localizations.ptBR = {
 			label = "Próxima opção",
 			tooltip = "Selecionar a próxima opção.",
 		},
+		clear = "Limpar seleção",
 	},
 	copyBox = "Copie o texto pressionando:\n" .. CTRL_KEY_TEXT .." + C (Windows)\n" .. COMMAND .. " + C (Mac)",
 	slider = {
@@ -437,7 +439,7 @@ wt.localizations.ptBR = {
 		paste = "Colar Valor",
 		revert = "Reverter Alterações",
 		restore = "Restaurar Padrão",
-		note = "Clique com o botão direito para redefinir ou reverter alterações.",
+		note = "Clique com o botão direito para copiar ou reverter.",
 	},
 	points = {
 		left = "Esquerda",
@@ -705,6 +707,7 @@ wt.localizations.deDE = {
 			label = "Nächste Option",
 			tooltip = "Nächste Option auswählen.",
 		},
+		clear = "Auswahl löschen",
 	},
 	copyBox = "Kopiere den Text mit:\n" .. CTRL_KEY_TEXT .." + C (Windows)\n" .. COMMAND .. " + C (Mac)",
 	slider = {
@@ -756,7 +759,7 @@ wt.localizations.deDE = {
 		paste = "Wert einfügen",
 		revert = "Änderungen verwerfen",
 		restore = "Standard wiederherstellen",
-		note = "Rechtsklick zum Zurücksetzen oder Verwerfen von Änderungen.",
+		note = "Rechtsklick, um zu kopieren oder rückgängig zu machen.",
 	},
 	points = {
 		left = "Links",
@@ -1024,6 +1027,7 @@ wt.localizations.frFR = {
 			label = "Option suivante",
 			tooltip = "Sélectionner l'option suivante.",
 		},
+		clear = "Effacer la sélection",
 	},
 	copyBox = "Copiez le texte en appuyant sur :\n" .. CTRL_KEY_TEXT .." + C (Windows)\n" .. COMMAND .. " + C (Mac)",
 	slider = {
@@ -1075,7 +1079,7 @@ wt.localizations.frFR = {
 		paste = "Coller la valeur",
 		revert = "Annuler les modifications",
 		restore = "Restaurer la valeur par défaut",
-		note = "Clic droit pour réinitialiser ou annuler les modifications.",
+		note = "Clique droit pour copier ou annuler.",
 	},
 	points = {
 		left = "Gauche",
@@ -1343,6 +1347,7 @@ wt.localizations.esES = {
 			label = "Siguiente opción",
 			tooltip = "Seleccionar la siguiente opción.",
 		},
+		clear = "Borrar selección",
 	},
 	copyBox = "Copia el texto pulsando:\n" .. CTRL_KEY_TEXT .." + C (Windows)\n" .. COMMAND .. " + C (Mac)",
 	slider = {
@@ -1394,7 +1399,7 @@ wt.localizations.esES = {
 		paste = "Pegar valor",
 		revert = "Revertir Cambios",
 		restore = "Restaurar Predeterminado",
-		note = "Haz clic derecho para restablecer o revertir cambios.",
+		note = "Haz clic derecho para copiar o revertir.",
 	},
 	points = {
 		left = "Izquierda",
@@ -1662,6 +1667,7 @@ wt.localizations.esMX = {
 			label = "Siguiente opción",
 			tooltip = "Seleccionar la siguiente opción.",
 		},
+		clear = "Borrar selección",
 	},
 	copyBox = "Copia el texto presionando:\n" .. CTRL_KEY_TEXT .." + C (Windows)\n" .. COMMAND .. " + C (Mac)",
 	slider = {
@@ -1713,7 +1719,7 @@ wt.localizations.esMX = {
 		paste = "Pegar valor",
 		revert = "Revertir Cambios",
 		restore = "Restaurar Predeterminado",
-		note = "Haz clic derecho para restablecer o revertir cambios.",
+		note = "Haz clic derecho para copiar o revertir.",
 	},
 	points = {
 		left = "Izquierda",
@@ -1981,6 +1987,7 @@ wt.localizations.itIT = {
 			label = "Opzione successiva",
 			tooltip = "Seleziona l'opzione successiva.",
 		},
+		clear = "Cancella selezione",
 	},
 	copyBox = "Copia il testo premendo:\n" .. CTRL_KEY_TEXT .." + C (Windows)\n" .. COMMAND .. " + C (Mac)",
 	slider = {
@@ -2032,7 +2039,7 @@ wt.localizations.itIT = {
 		paste = "Incolla valore",
 		revert = "Annulla modifiche",
 		restore = "Ripristina predefinito",
-		note = "Clic destro per reimpostare o annullare le modifiche.",
+		note = "Clic destro per copiare o annullare.",
 	},
 	points = {
 		left = "Sinistra",
@@ -2300,6 +2307,7 @@ wt.localizations.koKR = {
 			label = "다음 옵션",
 			tooltip = "다음 옵션을 선택합니다.",
 		},
+		clear = "선택 지우기",
 	},
 	copyBox = "텍스트 복사:\n" .. CTRL_KEY_TEXT .." + C (Windows)\n" .. COMMAND .. " + C (Mac)",
 	slider = {
@@ -2351,7 +2359,7 @@ wt.localizations.koKR = {
 		paste = "값 붙여넣기",
 		revert = "변경 사항 되돌리기",
 		restore = "기본값 복원",
-		note = "오른쪽 클릭으로 초기화 또는 변경 사항 되돌리기.",
+		note = "오른쪽 클릭으로 복사하거나 되돌릴 수 있습니다.",
 	},
 	points = {
 		left = "왼쪽",
@@ -2619,6 +2627,7 @@ wt.localizations.zhTW = {
 			label = "下一個選項",
 			tooltip = "選擇下一個選項。",
 		},
+		clear = "清除選取",
 	},
 	copyBox = "請按下：\n" .. CTRL_KEY_TEXT .." + C (Windows)\n" .. COMMAND .. " + C (Mac) 來複製文字",
 	slider = {
@@ -2670,7 +2679,7 @@ wt.localizations.zhTW = {
 		paste = "貼上數值",
 		revert = "還原變更",
 		restore = "恢復預設",
-		note = "右鍵點擊可重設或還原變更。",
+		note = "右鍵點擊可複製或還原。",
 	},
 	points = {
 		left = "左",
@@ -2938,6 +2947,7 @@ wt.localizations.zhCN = {
 			label = "下一个选项",
 			tooltip = "选择下一个选项。",
 		},
+		clear = "清除选择",
 	},
 	copyBox = "按下：\n" .. CTRL_KEY_TEXT .. " + C (Windows)\n" .. COMMAND .. " + C (Mac) 复制文本",
 	slider = {
@@ -2989,7 +2999,7 @@ wt.localizations.zhCN = {
 		paste = "粘贴数值",
 		revert = "撤销更改",
 		restore = "恢复默认",
-		note = "右键点击以重置或撤销更改。",
+		note = "右键点击可复制或撤销。",
 	},
 	points = {
 		left = "左",
@@ -3257,6 +3267,7 @@ wt.localizations.ruRU = {
 			label = "Следующий вариант",
 			tooltip = "Выбрать следующий вариант.",
 		},
+		clear = "Очистить выделение",
 	},
 	copyBox = "Скопируйте текст, нажав:\n" .. CTRL_KEY_TEXT .." + C (Windows)\n" .. COMMAND .. " + C (Mac)",
 	slider = {
@@ -3308,7 +3319,7 @@ wt.localizations.ruRU = {
 		paste = "Вставить значение",
 		revert = "Отменить изменения",
 		restore = "Восстановить по умолчанию",
-		note = "Щёлкните правой кнопкой мыши для сброса или отмены изменений.",
+		note = "Щёлкните правой кнопкой, чтобы скопировать или отменить.",
 	},
 	points = {
 		left = "Слева",
