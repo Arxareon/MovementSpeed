@@ -419,7 +419,7 @@ local function CreateUpdateOptions(panel, category, key)
 		},
 	})
 
-	---@type numeric|numericSlider
+	---@type numeric|slider
 	options.playerSpeed.update.frequency = wt.CreateNumericSlider({
 		parent = panel,
 		name = "Frequency",
@@ -446,7 +446,7 @@ local function CreateUpdateOptions(panel, category, key)
 	})
 end
 local function CreateSpeedValueOptions(panel, category, key)
-	---@type checkboxSelector|multiselector
+	---@type checkgroup|multiselector
 	options.playerSpeed.value.units = wt.CreateCheckboxSelector({
 		parent = panel,
 		name = "Units",
@@ -469,7 +469,7 @@ local function CreateSpeedValueOptions(panel, category, key)
 		},
 	})
 
-	---@type numeric|numericSlider
+	---@type numeric|slider
 	options.playerSpeed.value.fractionals = wt.CreateNumericSlider({
 		parent = panel,
 		name = "Fractionals",
@@ -575,7 +575,7 @@ local function CreateFontOptions(panel, category, key)
 
 	--| Font size
 
-	---@type numeric|numericSlider
+	---@type numeric|slider
 	options.playerSpeed.font.size = wt.CreateNumericSlider({
 		parent = panel,
 		name = "Size",
@@ -653,7 +653,7 @@ local function CreateFontOptions(panel, category, key)
 
 	--| Font color
 
-	---@type colorPicker|colorPickerFrame
+	---@type colorManager|colorpicker
 	options.playerSpeed.font.color = wt.CreateColorPickerFrame({
 		parent = panel,
 		name = "Color",
@@ -697,7 +697,7 @@ local function CreateBackgroundOptions(panel, category, key)
 		},
 	})
 
-	---@type colorPicker|colorPickerFrame
+	---@type colorManager|colorpicker
 	options.playerSpeed.background.colors.bg = wt.CreateColorPickerFrame({
 		parent = panel,
 		name = "Color",
@@ -720,7 +720,7 @@ local function CreateBackgroundOptions(panel, category, key)
 		},
 	})
 
-	---@type colorPicker|colorPickerFrame
+	---@type colorManager|colorpicker
 	options.playerSpeed.background.colors.border = wt.CreateColorPickerFrame({
 		parent = panel,
 		name = "BorderColor",

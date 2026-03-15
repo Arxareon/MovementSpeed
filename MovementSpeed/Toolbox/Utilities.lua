@@ -1430,33 +1430,7 @@ function wt.AddTooltip(owner, t, toggle, duplicate)
 
 	tooltipData[id] = type(t) == "table" and t or {}
 
-	--Tooltip frame
-	if not tooltipData[id].tooltip or not (wt.IsFrame(tooltipData[id].tooltip) and tooltipData[id].tooltip:IsObjectType("GameTooltip")) then
-		--Create the default reusable tooltip
-		if not defaultTooltip then
-			defaultTooltip = CreateFrame("GameTooltip", rs.name .. wt.version .. "GameTooltip", nil, "GameTooltipTemplate")
-
-			--| Visibility
-
-			defaultTooltip:SetFrameStrata("TOOLTIP")
-			defaultTooltip:SetScale(UIParent:GetScale())
-
-			--| Title
-
-			_G[defaultTooltip:GetName() .. "TextLeft" .. 1]:SetFontObject("GameFontNormalMed1")
-			_G[defaultTooltip:GetName() .. "TextRight" .. 1]:SetFontObject("GameFontNormalMed1")
-		end
-
-		tooltipData[id].tooltip = defaultTooltip
-	end
-
-	--Position
-	tooltipData[id].position = tooltipData[id].position or {}
-	tooltipData[id].position.offset = tooltipData[id].offset or {}
-	if not tooltipData[id].anchor then tooltipData[id].anchor = "ANCHOR_CURSOR" end
-
-	--Title
-	if type(tooltipData[id].title) ~= "string" then tooltipData[id].title = owner:GetName() or tostring(wt.GetID(owner)) end
+	wt.UpdateTooltipData(owner)
 
 	--| Toggle events
 
@@ -1550,32 +1524,57 @@ function wt.UpdateTooltip(owner, t)
 	t.tooltip:SetScale(UIParent:GetScale())
 end
 
----Update the tooltip data values stored in the registry for a frame
+---Verify and update the tooltip data values stored in the registry for a frame
+---***
 ---@param owner AnyFrameObject Owner frame the tooltip data to be updated for<ul><li>***Note:*** If no entry has been registered for **owner** in the tooltip data registry via ***WidgetToolbox*.AddTooltip(...)** yet, no data will be changed.</li></ul>
----@param t tooltipUpdateData|tooltipData The parameters to update the tooltip with are to be provided in this table | ***Default:*** *(fill values from the data in the registry)*
----@param replaceLines? boolean Replace the full set of lines in the registry with **t.lines** instead of just adjusting the values of existing lines and adding new ones to delete any unused lines | ***Default:*** type(**t.lines**) == "table"
+---@param t? tooltipUpdateData|tooltipData The parameters to update the tooltip with are to be provided in this table | ***Default:*** *(fill values from the data in the registry or use default values for required values missing from the registry)*
+---@param linesUpdate? boolean|nil If true, replace the full set of lines in the registry with **t.lines**, or if explicitly false, append the lines to the current list of lines, or if nil or something else, adjust the values of existing lines at matching indexes instead without adding or removing lines | ***Default:*** nil
+---***
 ---@return tooltipData|nil # Reference to the tooltip data table registered for **owner** to display the tooltip info by<ul><li>***Note:*** Default to nil when **owner** was invalid or tooltip data did not exist for it in the registry.</li></ul>
-function wt.UpdateTooltipData(owner, t, replaceLines)
-	if not wt.IsFrame(owner) or type(t) ~= "table" then return nil end
+function wt.UpdateTooltipData(owner, t, linesUpdate)
+	if not wt.IsFrame(owner) then return nil end
 
-	--| Update the tooltip data
+	t = type(t) == "table" and t or {}
+
+	--| Verify & update the tooltip data
 
 	local id = wt.GetID(owner)
 
 	if type(tooltipData[id]) ~= "table" then return nil end
 
-	local tooltip = wt.IsFrame(t.tooltip) and t.tooltip:IsObjectType("GameTooltip") and t.tooltip or defaultTooltip
+	--Tooltip frame
+	if wt.IsFrame(t.tooltip) and t.tooltip:IsObjectType("GameTooltip") then tooltipData[id].tooltip = t.tooltip
+	elseif not tooltipData[id].tooltip or not (wt.IsFrame(tooltipData[id].tooltip) and tooltipData[id].tooltip:IsObjectType("GameTooltip")) then
+		--Create the default reusable tooltip
+		if not defaultTooltip then
+			defaultTooltip = CreateFrame("GameTooltip", rs.name .. wt.version .. "GameTooltip", nil, "GameTooltipTemplate")
+
+			--| Visibility
+
+			defaultTooltip:SetFrameStrata("TOOLTIP")
+			defaultTooltip:SetScale(UIParent:GetScale())
+
+			--| Title
+
+			_G[defaultTooltip:GetName() .. "TextLeft" .. 1]:SetFontObject("GameFontNormalMed1")
+			_G[defaultTooltip:GetName() .. "TextRight" .. 1]:SetFontObject("GameFontNormalMed1")
+		end
+
+		tooltipData[id].tooltip = defaultTooltip
+	end
 	t.tooltip = nil
 
-	--Clear textlines
-	if replaceLines ~= false then wt.RemoveMismatch(tooltipData[id].lines, t.lines) end
+	--Update textlines
+	if linesUpdate == true then wt.RemoveMismatch(tooltipData[id].lines, t.lines)
+	elseif linesUpdate == false and type(t.lines) == "table" then
+		if type(tooltipData[id].lines) ~= "table" then tooltipData[id].lines = {} end
+
+		for i = 1, #t.lines do table.insert(tooltipData[id].lines, t.lines[i]) end
+
+		t.lines = nil
+	end
 
 	tooltipData[id] = wt.FillValues(tooltipData[id], t)
-
-	--| Fill defaults
-
-	--Tooltip frame
-	tooltipData[id].tooltip = tooltip
 
 	--Position
 	tooltipData[id].position = tooltipData[id].position or {}
@@ -1953,8 +1952,10 @@ function wt.SetUpAddonCompartment(addon, calls, tooltip)
 		tooltip.anchor = "ANCHOR_BOTTOMRIGHT"
 
 		_G[onEnterName] = function(addonNamespace, frame)
+			--Set tooltip
 			local id = wt.GetID(frame)
 			if type(tooltipData[id]) ~= "table" then tooltipData[id] = tooltip end
+			wt.UpdateTooltipData(frame)
 
 			--Call handler
 			if calls.onEnter then calls.onEnter(addonNamespace, frame) end

@@ -595,8 +595,8 @@ local function CreateUpdateOptions(panel, display, category, key)
 		},
 	})
 
-	---@type numeric|numericSlider
-	options[display].update.frequency = wt.CreateNumericSlider({
+	---@type numeric|slider
+	options[display].update.frequency = wt.CreateSlider({
 		parent = panel,
 		name = "Frequency",
 		title = ns.strings.options.speedDisplay.update.frequency.label,
@@ -620,8 +620,8 @@ local function CreateUpdateOptions(panel, display, category, key)
 	})
 end
 local function CreateSpeedValueOptions(panel, display, category, key)
-	---@type checkboxSelector|multiselector
-	options[display].value.units = wt.CreateCheckboxSelector({
+	---@type checkgroup|multiselector
+	options[display].value.units = wt.CreateCheckgroup({
 		parent = panel,
 		name = "Units",
 		title = ns.strings.options.speedValue.units.label,
@@ -643,8 +643,8 @@ local function CreateSpeedValueOptions(panel, display, category, key)
 		},
 	})
 
-	---@type numeric|numericSlider
-	options[display].value.fractionals = wt.CreateNumericSlider({
+	---@type numeric|slider
+	options[display].value.fractionals = wt.CreateSlider({
 		parent = panel,
 		name = "Fractionals",
 		title = ns.strings.options.speedValue.fractionals.label,
@@ -704,8 +704,8 @@ local function CreateBackgroundOptions(panel, display, category, key)
 		},
 	})
 
-	---@type colorPicker|colorPickerFrame
-	options[display].background.colors.bg = wt.CreateColorPickerFrame({
+	---@type colorManager|colorpicker
+	options[display].background.colors.bg = wt.CreateColorpicker({
 		parent = panel,
 		name = "Color",
 		title = ns.strings.options.speedDisplay.background.colors.bg.label,
@@ -727,8 +727,8 @@ local function CreateBackgroundOptions(panel, display, category, key)
 		},
 	})
 
-	---@type colorPicker|colorPickerFrame
-	options[display].background.colors.border = wt.CreateColorPickerFrame({
+	---@type colorManager|colorpicker
+	options[display].background.colors.border = wt.CreateColorpicker({
 		parent = panel,
 		name = "BorderColor",
 		title = ns.strings.options.speedDisplay.background.colors.border.label,
@@ -1179,7 +1179,7 @@ local function CreateTargetSpeedOptionsPage()
 				arrange = {},
 				arrangement = {},
 				initialize = function(panel)
-					options.targetSpeed.value.units = wt.CreateCheckboxSelector({
+					options.targetSpeed.value.units = wt.CreateCheckgroup({
 						parent = panel,
 						name = "Units",
 						title = ns.strings.options.speedValue.units.label,
@@ -1198,7 +1198,7 @@ local function CreateTargetSpeedOptionsPage()
 						},
 					})
 
-					options.targetSpeed.value.fractionals = wt.CreateNumericSlider({
+					options.targetSpeed.value.fractionals = wt.CreateSlider({
 						parent = panel,
 						name = "Fractionals",
 						title = ns.strings.options.speedValue.fractionals.label,
@@ -1246,11 +1246,11 @@ local function CreateTargetSpeedOptionsPage()
 				arrange = {},
 				arrangement = {},
 				initialize = function(panel)
-					---@type (colorPicker|colorPickerFrame)[]
+					---@type (colorManager|colorpicker)[]
 					options.targetSpeed.font.colors = {}
 
 					for key, _ in pairs(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.targetSpeed.font.colors) do
-						options.targetSpeed.font.colors[key] = wt.CreateColorPickerFrame({
+						options.targetSpeed.font.colors[key] = wt.CreateColorpicker({
 							parent = panel,
 							name = "Color",
 							title = wt.strings.font.color.label,

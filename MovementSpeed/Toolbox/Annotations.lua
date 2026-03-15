@@ -111,30 +111,30 @@
 ---@field handler fun(...: any)
 
 ---@alias AnyWidgetType
----| actionButton
+---| action
 ---| toggle
 ---| selector
 ---| specialSelector
 ---| multiselector
 ---| textbox
 ---| numeric
----| colorPicker
+---| colormanager
 
 ---@alias AnyGUIWidgetType
 ---| checkbox
----| radioButton
----| radioSelector
----| checkboxSelector
----| specialRadioSelector
----| dropdownSelector
----| singleLineEditbox
----| customSingleLineEditbox
+---| radiobutton
+---| radiogroup
+---| dropdownRadiogroup
+---| specialRadiogroup
+---| checkgroup
+---| customEditbox
+---| customEditbox
 ---| multilineEditbox
----| numericSlider
----| colorPickerFrame
+---| customSlider
+---| colorpicker
 
 ---@alias WidgetTypeName
----| "ActionButton"
+---| "Action"
 ---| "Toggle"
 ---| "Selector"
 ---| "Multiselector"
@@ -867,7 +867,7 @@ function WrapTextInColor(value, color) return value end
 ---@field initialize? fun(menu: contextMenu|contextSubmenu) This function will be called while setting up the menu to perform specific tasks like creating menu content items right away<hr><p>@*param* `menu` contextMenu|contextSubmenu ― Reference to the container of menu elements (such as titles, widgets, dividers or other frames) for menu items to be added to during initialization</p>
 
 ---@class contextMenuCreationData : contextMenuCreationData_base
----@field triggers? contextMenuTriggerData[] List of trigger frames and behavior to link to toggle the context menu
+---@field triggers? contextMenuTriggerData[] List of trigger frames and behavior to link to toggle the context menu | ***Default:*** *(no triggers)*
 
 ---@class contextSubmenuCreationData : contextMenuCreationData_base
 ---@field title? string Text to be shown on the opener button item representing the submenu within the parent menu | ***Default:*** "Submenu"
@@ -951,7 +951,7 @@ function WrapTextInColor(value, color) return value end
 --[ Button ]
 
 ---@alias ButtonType
----| actionButton
+---| action
 ---| simpleButton
 ---| customButton
 
@@ -996,11 +996,11 @@ function WrapTextInColor(value, color) return value end
 
 --| Constructors
 
----@class actionButtonCreationData : togglableObject
----@field action? fun(self: actionButton, user?: boolean) Function to call when the button is triggered (clicked by the user or triggered programmatically)<ul><li>***Note:*** This function will be called when an "[OnClick](https://warcraft.wiki.gg/wiki/UIHANDLER_OnClick)" script event happens, there's no need to register it again under **t.events.OnClick**.</li></ul><hr><p>@*param* `self` actionButton — Reference to the button widget</p><p>@*param* `user`? boolean — Marking whether the call is due to a user interaction or not | ***Default:*** false</p>
+---@class actionCreationData : togglableObject
+---@field action? fun(self: action, user?: boolean) Function to call when the button is triggered (clicked by the user or triggered programmatically)<ul><li>***Note:*** This function will be called when an "[OnClick](https://warcraft.wiki.gg/wiki/UIHANDLER_OnClick)" script event happens, there's no need to register it again under **t.events.OnClick**.</li></ul><hr><p>@*param* `self` action — Reference to the button widget</p><p>@*param* `user`? boolean — Marking whether the call is due to a user interaction or not | ***Default:*** false</p>
 ---@field listeners? buttonEventListeners Table of key, value pairs of custom widget event tags and functions to assign as event handlers to call on trigger
 
----@class simpleButtonCreationData : actionButtonCreationData, labeledChildObject, tooltipDescribableWidget, arrangeableObject, positionableObject, visibleObject_base, buttonScriptEvents, liteObject
+---@class simpleButtonCreationData : actionCreationData, labeledChildObject, tooltipDescribableWidget, arrangeableObject, positionableObject, visibleObject_base, buttonScriptEvents, liteObject
 ---@field name? string Unique string used to set the frame name | ***Default:*** "Button"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
 ---@field titleOffset? offsetData Offset the position of the label of the button
 ---@field size? sizeData_button|sizeData
@@ -1014,7 +1014,7 @@ function WrapTextInColor(value, color) return value end
 ---@alias ToggleType
 ---| toggle
 ---| checkbox
----| radioButton
+---| radiobutton
 
 ---@alias ToggleEventTag
 ---| "enabled"
@@ -1067,7 +1067,7 @@ function WrapTextInColor(value, color) return value end
 ---@field w? number Width | ***Default:*** **t.label** and 180 or **t.size.h**
 ---@field h? number Height | ***Default:*** 26
 
----@class sizeData_radioButton
+---@class sizeData_radiobutton
 ---@field w? number Width | ***Default:***  **t.label** and 160 or **t.size.h**
 ---@field h? number Height | ***Default:*** 16
 
@@ -1086,17 +1086,17 @@ function WrapTextInColor(value, color) return value end
 ---@field font? labelFontOptions List of the [FontObject](https://warcraft.wiki.gg/wiki/UIOBJECT_Font#List_of_Font_Objects) object names to be used for the label | ***Default:*** *normal sized default Blizzard UI fonts*<ul><li>***Note:*** A new font object (or a modified copy of an existing one) can be created via ***WidgetToolbox*.CreateFont(...)** (even within this table definition).</li></ul>
 ---@field events? table<ScriptButton, fun(self: checkbox, state: boolean, button?: string, down?: boolean)|fun(...: any)|attributeEventData> Table of key, value pairs of the names of script event handlers to be set for the checkbox and the functions to assign as event handlers called when they trigger<ul><li>***Note:*** "[OnClick](https://warcraft.wiki.gg/wiki/UIHANDLER_OnClick)" will be called with custom parameters:<hr><p>@*param* `self` AnyFrameObject ― Reference to the toggle frame</p><p>@*param* `state` boolean ― The checked state of the toggle frame</p><p>@*param* `button`? string — Which button caused the click | ***Default:*** "LeftButton"</p><p>@*param* `down`? boolean — Whether the event happened on button press (down) or release (up) | ***Default:*** false</p></li></ul>
 
----@class radioButtonCreationData : checkboxCreationData
----@field size? sizeData_radioButton|sizeData
+---@class radiobuttonCreationData : checkboxCreationData
+---@field size? sizeData_radiobutton|sizeData
 ---@field clearable? boolean Whether this radio button should be clearable by right clicking on it or not | ***Default:*** false<ul><li>***Note:*** The radio button will be registered for "RightButtonUp" triggers to call "[OnClick](https://warcraft.wiki.gg/wiki/UIHANDLER_OnClick)" events with **button** = "RightButton".</li></ul>
----@field events? table<ScriptButton, fun(self: radioButton, state: boolean, button?: string, down?: boolean)|fun(...: any)|attributeEventData> Table of key, value pairs of the names of script event handlers to be set for the radio button and the functions to assign as event handlers called when they trigger<ul><li>***Note:*** "[OnClick](https://warcraft.wiki.gg/wiki/UIHANDLER_OnClick)" will be called with custom parameters:<hr><p>@*param* `self` AnyFrameObject ― Reference to the toggle frame</p><p>@*param* `state` boolean ― The checked state of the toggle frame</p><p>@*param* `button`? string — Which button caused the click | ***Default:*** "LeftButton"</p><p>@*param* `down`? boolean — Whether the event happened on button press (down) or release (up) | ***Default:*** false</p></li></ul>
+---@field events? table<ScriptButton, fun(self: radiobutton, state: boolean, button?: string, down?: boolean)|fun(...: any)|attributeEventData> Table of key, value pairs of the names of script event handlers to be set for the radio button and the functions to assign as event handlers called when they trigger<ul><li>***Note:*** "[OnClick](https://warcraft.wiki.gg/wiki/UIHANDLER_OnClick)" will be called with custom parameters:<hr><p>@*param* `self` AnyFrameObject ― Reference to the toggle frame</p><p>@*param* `state` boolean ― The checked state of the toggle frame</p><p>@*param* `button`? string — Which button caused the click | ***Default:*** "LeftButton"</p><p>@*param* `down`? boolean — Whether the event happened on button press (down) or release (up) | ***Default:*** false</p></li></ul>
 
 --[ Selector ]
 
 ---@alias SelectorType
 ---| selector
----| radioSelector
----| dropdownSelector
+---| radiogroup
+---| dropdownRadiogroup
 
 ---@alias SpecialSelectorType
 ---| selector
@@ -1108,19 +1108,19 @@ function WrapTextInColor(value, color) return value end
 ---| "selected"
 ---| string
 
----@alias MultiselectorType
----| multiselector
----| checkboxSelector
-
 ---@alias SelectorEventTag
 ---| SpecialSelectorEventTag
 ---| "updated"
+
+---@alias MultiselectorType
+---| multiselector
+---| checkgroup
 
 ---@alias MultiselectorEventTag
 ---| SelectorEventTag
 ---| "limited"
 
----@alias DropdownSelectorEventTag
+---@alias DropdownEventTag
 ---| SelectorEventTag
 ---| "open"
 
@@ -1334,24 +1334,24 @@ function WrapTextInColor(value, color) return value end
 ---@field name? string Unique string used to set the frame name | ***Default:*** "Selector"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
 ---@field events? table<ScriptFrame, fun(...: any)|attributeEventData> Table of key, value pairs of the names of script event handlers to be set for the selector frame and the functions to assign as event handlers called when they trigger
 
----@class radioSelectorCreationData_base : tooltipDescribableSettingsWidget
+---@class radiogroupCreationData_base : tooltipDescribableSettingsWidget
 ---@field clearable? boolean If true, the selector input should be clearable by right clicking on its radio buttons, setting the selected value to nil | ***Default:*** false
 
----@class radioSelectorCreationData : selectorCreationData, selectorFrameCreationData, radioSelectorCreationData_base
+---@class radiogroupCreationData : selectorCreationData, selectorFrameCreationData, radiogroupCreationData_base
 ---@field width? number The height is dynamically set to fit all items (and the title if set), the width may be specified | ***Default:*** *dynamically set to fit all columns of items* or **t.label** and 160 or 0 *(whichever is greater)*<ul><li>***Note:*** The width of each individual item will be set to **t.width** if **t.columns** is 1 and **t.width** is specified.</li></ul>
----@field items? (selectorItem|selectorRadioButton)[] Table containing subtables with data used to create item widgets, or already existing radio buttons
+---@field items? (selectorItem|selectorRadiobutton)[] Table containing subtables with data used to create item widgets, or already existing radio buttons
 ---@field columns? integer Arrange the newly created widget items in a grid with the specified number of columns instead of a vertical list | ***Default:*** 1
 ---@field labels? boolean Whether or not to add the labels to the right of each newly created widget item | ***Default:*** true
 
----@class specialRadioSelectorCreationData : specialSelectorCreationData, selectorFrameCreationData, radioSelectorCreationData_base
+---@class specialRadiogroupCreationData : specialSelectorCreationData, selectorFrameCreationData, radiogroupCreationData_base
 
----@class checkboxSelectorCreationData : multiselectorCreationData, selectorFrameCreationData, tooltipDescribableSettingsWidget
+---@class checkgroupCreationData : multiselectorCreationData, selectorFrameCreationData, tooltipDescribableSettingsWidget
 ---@field width? number The height is dynamically set to fit all items (and the title if set), the width may be specified | ***Default:*** *dynamically set to fit all columns of items* or **t.label** and 160 or 0 *(whichever is greater)*<ul><li>***Note:*** The width of each individual item will be set to **t.width** if **t.columns** is 1 and **t.width** is specified.</li></ul>
 ---@field items? (selectorItem|selectorCheckbox)[] Table containing subtables with data used to create item widgets, or already existing checkboxes
 ---@field labels? boolean Whether or not to add the labels to the right of each newly created widget item | ***Default:*** true
 ---@field columns? integer Arrange the newly created widget items in a grid with the specified number of columns instead of a vertical list | ***Default:*** 1
 
----@class dropdownSelectorCreationData : radioSelectorCreationData, widgetWidthValue, tooltipDescribableSettingsWidget
+---@class dropdownRadiogroupCreationData : radiogroupCreationData, widgetWidthValue, tooltipDescribableSettingsWidget
 ---@field name? string Unique string used to set the frame name | ***Default:*** "Dropdown"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
 ---@field text? string The default text to display on the dropdown when no item is selected | ***Default:*** ""
 ---@field clearable? boolean If true, the selector input should be clearable by right clicking on its radio buttons, or, if **t.utilityMenu** is false, the dropdown toggle button itself (if true, a clear selection option is added to the utility menu instead), setting the selected value to nil | ***Default:*** false
@@ -1362,8 +1362,8 @@ function WrapTextInColor(value, color) return value end
 
 ---@alias TextboxType
 ---| textbox
----| singleLineEditbox
----| customSingleLineEditbox
+---| customEditbox
+---| customEditbox
 ---| multilineEditbox
 
 ---@alias TextboxEventTag
@@ -1471,7 +1471,7 @@ function WrapTextInColor(value, color) return value end
 
 ---@alias NumericType
 ---| numeric
----| numericSlider
+---| customSlider
 
 ---@alias NumericEventTag
 ---| "enabled"
@@ -1551,18 +1551,21 @@ function WrapTextInColor(value, color) return value end
 ---@field value? number The starting value of the widget to set during initialization | ***Default:*** **t.getData()** or **t.default** if invalid
 ---@field default? number Default value of the widget | ***Default:*** **t.min**
 
----@class numericSliderCreationData : numericCreationData, labeledChildObject, tooltipDescribableWidget, arrangeableObject, positionableObject, widgetWidthValue, visibleObject_base, liteObject, tooltipDescribableSettingsWidget
+---@class sliderCreationData : numericCreationData, labeledChildObject, tooltipDescribableWidget, arrangeableObject, positionableObject, widgetWidthValue, visibleObject_base, liteObject, tooltipDescribableSettingsWidget
 ---@field name? string Unique string used to set the frame name | ***Default:*** "Slider"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
 ---@field valueBox? boolean Whether or not should the slider have an [EditBox](https://warcraft.wiki.gg/wiki/UIOBJECT_EditBox) as a child to manually enter a precise value to move the slider to | ***Default:*** true
 ---@field events? table<ScriptSlider, fun(...: any)|attributeEventData> Table of key, value pairs of the names of script event handlers to be set for the slider frame and the functions to assign as event handlers called when they trigger<ul><li>***Example:*** "[OnValueChanged](https://warcraft.wiki.gg/wiki/UIHANDLER_OnValueChanged)" whenever the value in the slider widget is modified.</li></ul>
 
+---@class classicSliderCreationData : sliderCreationData
+---@field sideButtons? boolean Whether or not to add increase/decrease buttons next to the slider to change the value by the increment set in **t.step** | ***Default:*** true
+
 --[ Color Picker ]
 
----@alias ColorPickerType
----| colorPicker
----| colorPickerFrame
+---@alias ColorpickerType
+---| colormanager
+---| colorpicker
 
----@alias ColorPickerEventTag
+---@alias ColorpickerEventTag
 ---| "enabled"
 ---| "loaded"
 ---| "saved"
@@ -1571,56 +1574,56 @@ function WrapTextInColor(value, color) return value end
 
 --| Event handlers
 
----@alias ColorPickerEventHandler_enabled
----| fun(self: ColorPickerType, state: boolean) Called when an "enabled" event is invoked after **colorPicker.setEnabled(...)** was called<hr><p>@*param* `self` ColorPickerType ― Reference to the button widget</p><p>@*param* `state` boolean ― True if the widget is enabled</p>
+---@alias ColorpickerEventHandler_enabled
+---| fun(self: ColorpickerType, state: boolean) Called when an "enabled" event is invoked after **colorpicker.setEnabled(...)** was called<hr><p>@*param* `self` ColorPickerType ― Reference to the button widget</p><p>@*param* `state` boolean ― True if the widget is enabled</p>
 
----@alias ColorPickerEventHandler_loaded
----| fun(self: ColorPickerType, success: boolean) Called when an "loaded" event is invoked after the data of this widget has been loaded from storage<hr><p>@*param* `self` ColorPickerType ― Reference to the widget</p><p>@*param* `success` boolean ― True if data was returned by **t.getData()** and it was loaded to the widget</p>
+---@alias ColorpickerEventHandler_loaded
+---| fun(self: ColorpickerType, success: boolean) Called when an "loaded" event is invoked after the data of this widget has been loaded from storage<hr><p>@*param* `self` ColorPickerType ― Reference to the widget</p><p>@*param* `success` boolean ― True if data was returned by **t.getData()** and it was loaded to the widget</p>
 
----@alias ColorPickerEventHandler_saved
----| fun(self: ColorPickerType, success: boolean) Called when an "saved" event is invoked after the data of this widget has been saved to storage<hr><p>@*param* `self` ColorPickerType ― Reference to the widget</p><p>@*param* `success` boolean ― True if data was committed successfully via **t.saveData(...)**</p>
+---@alias ColorpickerEventHandler_saved
+---| fun(self: ColorpickerType, success: boolean) Called when an "saved" event is invoked after the data of this widget has been saved to storage<hr><p>@*param* `self` ColorPickerType ― Reference to the widget</p><p>@*param* `success` boolean ― True if data was committed successfully via **t.saveData(...)**</p>
 
----@alias ColorPickerEventHandler_colored
----| fun(self: ColorPickerType, color: colorData, user: boolean) Called when an "colored" event is invoked after **colorPicker.setColor(...)** was called<hr><p>@*param* `self` ColorPickerType ― Reference to the toggle widget</p><p>@*param* `number` number ― The current value of the widget</p><p>@*param* `user` boolean ― True if the event was invoked by an action taken by the user</p>
+---@alias ColorpickerEventHandler_colored
+---| fun(self: ColorpickerType, color: colorData, user: boolean) Called when an "colored" event is invoked after **colorpicker.setColor(...)** was called<hr><p>@*param* `self` ColorPickerType ― Reference to the toggle widget</p><p>@*param* `number` number ― The current value of the widget</p><p>@*param* `user` boolean ― True if the event was invoked by an action taken by the user</p>
 
----@alias ColorPickerEventHandler_any
----| fun(self: ColorPickerType, ...: any) Called when a custom event is invoked<hr><p>@*param* `self` ColorPickerType ― Reference to the widget</p><p>@*param* `...` any — Any leftover arguments</p>
+---@alias ColorpickerEventHandler_any
+---| fun(self: ColorpickerType, ...: any) Called when a custom event is invoked<hr><p>@*param* `self` ColorPickerType ― Reference to the widget</p><p>@*param* `...` any — Any leftover arguments</p>
 
 --| Parameters
 
----@class colorPickerEventListener_enabled : eventHandlerIndex
----@field handler ColorPickerEventHandler_enabled Handler function to register for call
+---@class colorpickerEventListener_enabled : eventHandlerIndex
+---@field handler ColorpickerEventHandler_enabled Handler function to register for call
 
----@class colorPickerEventListener_loaded : eventHandlerIndex
----@field handler ColorPickerEventHandler_loaded Handler function to register for call
+---@class colorpickerEventListener_loaded : eventHandlerIndex
+---@field handler ColorpickerEventHandler_loaded Handler function to register for call
 
----@class colorPickerEventListener_saved : eventHandlerIndex
----@field handler ColorPickerEventHandler_saved Handler function to register for call
+---@class colorpickerEventListener_saved : eventHandlerIndex
+---@field handler ColorpickerEventHandler_saved Handler function to register for call
 
----@class colorPickerEventListener_colored : eventHandlerIndex
----@field handler ColorPickerEventHandler_colored Handler function to register for call
+---@class colorpickerEventListener_colored : eventHandlerIndex
+---@field handler ColorpickerEventHandler_colored Handler function to register for call
 
----@class colorPickerEventListener_any : eventTag, eventHandlerIndex
----@field handler ColorPickerEventHandler_any Handler function to register for call
+---@class colorpickerEventListener_any : eventTag, eventHandlerIndex
+---@field handler ColorpickerEventHandler_any Handler function to register for call
 
----@class colorPickerEventListeners
----@field enabled? colorPickerEventListener_enabled[] List of functions to call in order when an "enabled" event is invoked after **colorPicker.setEnabled(...)** was called
----@field loaded? colorPickerEventListener_loaded[] List of functions to call in order when an "loaded" event is invoked after the data of this widget has been loaded from storage
----@field saved? colorPickerEventListener_saved[] List of functions to call in order when an "saved" event is invoked after the data of this widget has been saved to storage
----@field colored? colorPickerEventListener_colored[] List of functions to call in order when a "colored" event is invoked after **colorPicker.setColor(...)** was called
----@field [string]? colorPickerEventListener_any[] List of functions to call in order when a custom event is invoked
+---@class colorpickerEventListeners
+---@field enabled? colorpickerEventListener_enabled[] List of functions to call in order when an "enabled" event is invoked after **colorpicker.setEnabled(...)** was called
+---@field loaded? colorpickerEventListener_loaded[] List of functions to call in order when an "loaded" event is invoked after the data of this widget has been loaded from storage
+---@field saved? colorpickerEventListener_saved[] List of functions to call in order when an "saved" event is invoked after the data of this widget has been saved to storage
+---@field colored? colorpickerEventListener_colored[] List of functions to call in order when a "colored" event is invoked after **colorpicker.setColor(...)** was called
+---@field [string]? colorpickerEventListener_any[] List of functions to call in order when a custom event is invoked
 
 --| Constructors
 
----@class colorPickerCreationData : togglableObject, settingsWidget
----@field listeners? colorPickerEventListeners Table of key, value pairs of custom widget event tags and functions to assign as event handlers to call on trigger
+---@class colormanagerCreationData : togglableObject, settingsWidget
+---@field listeners? colorpickerEventListeners Table of key, value pairs of custom widget event tags and functions to assign as event handlers to call on trigger
 ---@field onCancel? function The function to be called when the color change is cancelled (after calling **t.onColorUpdate**)
 ---@field getData? fun(): color: colorData|nil Called to (if needed, modify and) load the widget data from storage<hr><p>@*return* `color` colorData|nil | ***Default:*** { r = 1, g = 1, b = 1, a = 1 } *(opaque white)*</p>
 ---@field saveData? fun(color: colorData) Called to (if needed, modify and) save the widget data to storage<hr><p>@*param* `color` colorData</p>
 ---@field value? colorData_whiteDefault Values to use as the starting color set during initialization | ***Default:*** **t.getData()** or **t.default** if invalid<ul><li>***Note:*** If the alpha start value was not set, configure the color picker to handle RBG values exclusively instead of the full RGBA.</li></ul>
 ---@field default? colorData Default value of the widget | ***Default:*** { r = 1, g = 1, b = 1, a = 1 } *(opaque white)*
 
----@class colorPickerFrameCreationData : colorPickerCreationData, labeledChildObject, tooltipDescribableWidget, arrangeableObject, positionableObject, visibleObject_base, liteObject, tooltipDescribableSettingsWidget
+---@class colorpickerCreationData : colormanagerCreationData, labeledChildObject, tooltipDescribableWidget, arrangeableObject, positionableObject, visibleObject_base, liteObject, tooltipDescribableSettingsWidget
 ---@field name? string Unique string used to set the frame name | ***Default:*** "Color Picker"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
 ---@field width? number The height is defaulted to 36, the width may be specified | ***Default:*** 120
 ---@field events? table<ScriptFrame, fun(...: any)|attributeEventData> Table of key, value pairs of the names of script event handlers to be set for the color picker frame and the functions to assign as event handlers called when they trigger
