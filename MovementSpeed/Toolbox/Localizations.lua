@@ -1,15 +1,9 @@
---[[ NAMESPACE ]]
-
----@class addonNamespace
-local ns = select(2, ...)
-
-
---[[ INITIALIZATION ]]
+--[[ TOOLBOX ]]
 
 ---@class widgetToolbox
-local wt = ns.WidgetToolbox
+local wt = WidgetTools.toolboxes.initialization[C_AddOns.GetAddOnMetadata(..., "X-WidgetTools-ToolboxVersion")]
 
-if not wt.initialization then return end
+if not wt then return end
 
 
 --[[ LOCALIZATIONS ]]
@@ -336,8 +330,6 @@ wt.localizations.enUS = {
 	date = "#MONTH/#DAY/#YEAR",
 	override = "Override",
 	example = "Example",
-	separator = ",", --Thousand separator character
-	decimal = ".", --Decimal character
 }
 
 --[ Portuguese (Brazil) ]
@@ -656,8 +648,6 @@ wt.localizations.ptBR = {
 	date = "#DAY/#MONTH/#YEAR",
 	override = "Sobrescrever",
 	example = "Exemplo",
-	separator = ".", -- Separador de milhar
-	decimal = ",", -- Caractere decimal
 }
 
 --[ German ]
@@ -976,8 +966,6 @@ wt.localizations.deDE = {
 	date = "#DAY.#MONTH.#YEAR",
 	override = "Überschreiben",
 	example = "Beispiel",
-	separator = ".", -- Tausendertrennzeichen
-	decimal = ",", -- Dezimalzeichen
 }
 
 --[ French ]
@@ -1296,8 +1284,6 @@ wt.localizations.frFR = {
 	date = "#DAY/#MONTH/#YEAR",
 	override = "Écraser",
 	example = "Exemple",
-	separator = " ", -- Séparateur de milliers
-	decimal = ",", -- Caractère décimal
 }
 
 --[ Spanish (Spain) ]
@@ -1616,8 +1602,6 @@ wt.localizations.esES = {
 	date = "#DAY/#MONTH/#YEAR",
 	override = "Sobrescribir",
 	example = "Ejemplo",
-	separator = ".", -- Separador de miles
-	decimal = ",", -- Carácter decimal
 }
 
 --[ Spanish (Mexico) ]
@@ -1936,8 +1920,6 @@ wt.localizations.esMX = {
 	date = "#DAY/#MONTH/#YEAR",
 	override = "Sobrescribir",
 	example = "Ejemplo",
-	separator = ".", -- Separador de miles
-	decimal = ",", -- Carácter decimal
 }
 
 --[ Italian ]
@@ -2256,8 +2238,6 @@ wt.localizations.itIT = {
 	date = "#DAY/#MONTH/#YEAR",
 	override = "Sovrascrivi",
 	example = "Esempio",
-	separator = ".", -- Separatore delle migliaia
-	decimal = ",", -- Carattere decimale
 }
 
 --[ Korean ]
@@ -2576,8 +2556,6 @@ wt.localizations.koKR = {
 	date = "#YEAR년 #MONTH월 #DAY일",
 	override = "덮어쓰기",
 	example = "예시",
-	separator = ",", -- 천 단위 구분자
-	decimal = ".", -- 소수점 문자
 }
 
 --[ Chinese (traditional, Taiwan) ]
@@ -2896,8 +2874,6 @@ wt.localizations.zhTW = {
 	date = "#YEAR/#MONTH/#DAY",
 	override = "覆蓋",
 	example = "範例",
-	separator = ",", -- 千分位分隔符號
-	decimal = ".", -- 小數點符號
 }
 
 --[ Chinese (simplified, PRC) ]
@@ -3216,8 +3192,6 @@ wt.localizations.zhCN = {
 	date = "#YEAR/#MONTH/#DAY",
 	override = "覆盖",
 	example = "示例",
-	separator = ",", -- 千位分隔符
-	decimal = ".", -- 小数点符号
 }
 
 --[ Russian ]
@@ -3536,6 +3510,4 @@ wt.localizations.ruRU = {
 	date = "#DAY.#MONTH.#YEAR",
 	override = "Перезаписать",
 	example = "Пример",
-	separator = " ", -- Разделитель тысяч
-	decimal = ",", -- Десятичный разделитель
 }

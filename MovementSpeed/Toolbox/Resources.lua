@@ -1,15 +1,9 @@
---[[ NAMESPACE ]]
-
----@class addonNamespace
-local ns = select(2, ...)
-
-
---[[ INITIALIZATION ]]
+--[[ TOOLBOX ]]
 
 ---@class widgetToolbox
-local wt = ns.WidgetToolbox
+local wt = WidgetTools.toolboxes.initialization[C_AddOns.GetAddOnMetadata(..., "X-WidgetTools-ToolboxVersion")]
 
-if not wt.initialization then return end
+if not wt then return end
 
 
 --[[ STRINGS ]]
@@ -35,17 +29,6 @@ wt.strings.about.fullChangelog.tooltip = wt.strings.about.fullChangelog.tooltip 
 --| Cleanup
 
 wt.localizations = nil
-
-
---[[ Data ]]
-
---WidgetTools main database table
-WidgetToolsDB = WidgetToolsDB or {}
-
---Data checkup
-wt.RemoveEmpty(WidgetToolsDB)
-wt.AddMissing(WidgetToolsDB, ns.defaults)
-wt.RemoveMismatch(WidgetToolsDB, ns.defaults)
 
 
 --[[ MISC ]]

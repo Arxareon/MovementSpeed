@@ -6,10 +6,16 @@ local ns = select(2, ...)
 
 --[[ REFERENCES ]]
 
----@class widgetToolbox
-local wt = ns.WidgetToolbox
+---@type widgetToolbox
+local wt = ns[C_AddOns.GetAddOnMetadata(ns.name, "X-WidgetTools-AddToNamespace")]
 
-local rs = WidgetTools.GetResources()
+---@type widgetToolsResources
+local rs = WidgetTools.resources
+
+---@type widgetToolsUtilities
+local ut = WidgetTools.utilities
+
+local cr = WrapTextInColor
 
 local frames = {
 	playerSpeed = {},
@@ -104,9 +110,9 @@ end
 ---Print visibility info
 ---@param display displayType
 local function PrintStatus(display)
-	print(wt.Color((frames.main:IsVisible() and (
+	print(cr((frames.main:IsVisible() and (
 		not frames[display].display:IsVisible() and ns.strings.chat.status.notVisible or ns.strings.chat.status.visible
-	) or ns.strings.chat.status.hidden):gsub("#TYPE", ns.strings.options[display].title):gsub("#AUTO", ns.strings.chat.status.auto:gsub("#STATE", wt.Color(
+	) or ns.strings.chat.status.hidden):gsub("#TYPE", ns.strings.options[display].title):gsub("#AUTO", ns.strings.chat.status.auto:gsub("#STATE", cr(
 		MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].visibility.autoHide and ns.strings.misc.enabled or ns.strings.misc.disabled, ns.colors.yellow[1]
 	))), ns.colors.yellow[2]))
 end
@@ -134,16 +140,16 @@ local function FormatSpeedText(type, units, colors)
 
 	if units[1] then
 		local sign = (type == "targetSpeed" and "%%" or "%")
-		speedText[type] = speedText[type] .. wt.Color("#PERCENT" .. sign, colors.percent)
+		speedText[type] = speedText[type] .. cr("#PERCENT" .. sign, colors.percent)
 	end
 	if units[2] then
-		speedText[type] = speedText[type] .. ns.strings.speedValue.separator .. wt.Color(ns.strings.speedValue.yps:gsub(
-			"#YARDS", wt.Color("#YARDS", colors.yards)
+		speedText[type] = speedText[type] .. ns.strings.speedValue.separator .. cr(ns.strings.speedValue.yps:gsub(
+			"#YARDS", cr("#YARDS", colors.yards)
 		), colors.yards) --ADD support for secondary color
 	end
 	if units[3] then
-		speedText[type] = speedText[type] .. ns.strings.speedValue.separator .. wt.Color(ns.strings.speedValue.cps:gsub(
-			"#COORDS", wt.Color(ns.strings.speedValue.coordPair, colors.coords)
+		speedText[type] = speedText[type] .. ns.strings.speedValue.separator .. cr(ns.strings.speedValue.cps:gsub(
+			"#COORDS", cr(ns.strings.speedValue.coordPair, colors.coords)
 		), colors.coords) --ADD support for secondary color
 	end
 
@@ -157,25 +163,25 @@ local function GetSpeedText(type)
 	local f = max(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[type].value.fractionals, 1)
 
 	return speedText[type]:gsub(
-		"#PERCENT", wt.Thousands(
+		"#PERCENT", ut.Thousands(
 			speed[type].percent,
 			MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[type].value.fractionals,
 			true,
 			not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[type].value.zeros
 		)
 	):gsub(
-		"#YARDS", wt.Thousands(
+		"#YARDS", ut.Thousands(
 			speed[type].yards,
 			MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[type].value.fractionals,
 			true,
 			not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[type].value.zeros
 		)
 	):gsub(
-		"#X", wt.Thousands(
+		"#X", ut.Thousands(
 			speed[type].coords.x, f, true, not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[type].value.zeros
 		)
 	):gsub(
-		"#Y", wt.Thousands(
+		"#Y", ut.Thousands(
 			speed[type].coords.y, f, true, not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[type].value.zeros
 		)
 	)
@@ -253,7 +259,7 @@ local function SetDisplaySize(display, displayData, height)
 	for i = 1, 3 do if displayData.value.units[i] then ratio = ratio + 0.2 end end --Separators
 
 	--Resize the display
-	display.display:SetSize(height * ratio * rs.fonts[wt.FindIndex(rs.fonts, displayData.font.path)].widthRatio - 4, height)
+	display.display:SetSize(height * ratio * rs.fonts[ut.FindIndex(rs.fonts, displayData.font.path)].widthRatio - 4, height)
 end
 
 ---Set the backdrop of the specified speed display elements
@@ -307,38 +313,38 @@ local function GetPlayerSpeedTooltipLines()
 		{ text = ns.strings.speedTooltip.description },
 		{ text = "\n" .. ns.strings.speedTooltip.playerSpeed, },
 		{
-			text = "\n" .. ns.strings.speedTooltip.text[1]:gsub("#YARDS", wt.Color(wt.Thousands(speed.playerSpeed.yards, 2, true),  ns.colors.yellow[2])),
+			text = "\n" .. ns.strings.speedTooltip.text[1]:gsub("#YARDS", cr(ut.Thousands(speed.playerSpeed.yards, 2, true),  ns.colors.yellow[2])),
 			font = GameTooltipText,
 			color = ns.colors.yellow[1],
 		},
 		{
 			text = "\n" .. ns.strings.speedTooltip.text[2]:gsub(
-				"#PERCENT", wt.Color(wt.Thousands(speed.playerSpeed.percent, 2, true) .. "%%", ns.colors.green[2])
+				"#PERCENT", cr(ut.Thousands(speed.playerSpeed.percent, 2, true) .. "%%", ns.colors.green[2])
 			),
 			font = GameTooltipText,
 			color = ns.colors.green[1],
 		},
 		{
 			text = "\n" .. ns.strings.speedTooltip.text[3]:gsub(
-				"#COORDS", wt.Color(ns.strings.speedValue.coordPair:gsub(
-					"#X", wt.Thousands(speed.playerSpeed.coords.x, 2, true)
+				"#COORDS", cr(ns.strings.speedValue.coordPair:gsub(
+					"#X", ut.Thousands(speed.playerSpeed.coords.x, 2, true)
 				):gsub(
-					"#Y", wt.Thousands(speed.playerSpeed.coords.y, 2, true)
+					"#Y", ut.Thousands(speed.playerSpeed.coords.y, 2, true)
 				), ns.colors.blue[2])
 			),
 			font = GameTooltipText,
 			color = ns.colors.blue[1],
 		},
 		{
-			text = "\n" .. ns.strings.speedTooltip.mapTitle:gsub("#MAP", wt.Color(map.name, { r = 1, g = 1, b = 1 })),
+			text = "\n" .. ns.strings.speedTooltip.mapTitle:gsub("#MAP", cr(map.name, { r = 1, g = 1, b = 1 })),
 			color = NORMAL_FONT_COLOR,
 		},
 		{
 			text = ns.strings.speedTooltip.mapSize:gsub(
-				"#SIZE", wt.Color(ns.strings.speedTooltip.mapSizeValues:gsub(
-					"#W", wt.Color(wt.Thousands(map.size.w, 2), { r = 1, g = 1, b = 1 })
+				"#SIZE", cr(ns.strings.speedTooltip.mapSizeValues:gsub(
+					"#W", cr(ut.Thousands(map.size.w, 2), { r = 1, g = 1, b = 1 })
 				):gsub(
-					"#H", wt.Color(wt.Thousands(map.size.h, 2), { r = 1, g = 1, b = 1 })
+					"#H", cr(ut.Thousands(map.size.h, 2), { r = 1, g = 1, b = 1 })
 				), rs.colors.grey[2])
 			),
 			color = NORMAL_FONT_COLOR,
@@ -370,39 +376,39 @@ local function GetTravelSpeedTooltipLines()
 		},
 		{
 			text = ns.strings.speedTooltip.text[1]:gsub(
-				"#YARDS", wt.Color(wt.Thousands(speed.travelSpeed.yards, 2, true), ns.colors.yellow[2])
+				"#YARDS", cr(ut.Thousands(speed.travelSpeed.yards, 2, true), ns.colors.yellow[2])
 			):gsub("-1", not pastPosition.x and GetUnitSpeed("player") ~= 0 and "X" or "0"),
 			font = GameTooltipText,
 			color = ns.colors.yellow[1],
 		},
 		{
 			text = "\n" .. ns.strings.speedTooltip.text[2]:gsub(
-				"#PERCENT", wt.Color(wt.Thousands(speed.travelSpeed.percent, 2, true) .. "%%", ns.colors.green[2])
+				"#PERCENT", cr(ut.Thousands(speed.travelSpeed.percent, 2, true) .. "%%", ns.colors.green[2])
 			):gsub("-1", not pastPosition.x and GetUnitSpeed("player") ~= 0 and "X" or "0"),
 			font = GameTooltipText,
 			color = ns.colors.green[1],
 		},
 		{
 			text = "\n" .. ns.strings.speedTooltip.text[3]:gsub(
-				"#COORDS", wt.Color(ns.strings.speedValue.coordPair:gsub(
-					"#X", wt.Thousands(speed.travelSpeed.coords.x, 2, true)
+				"#COORDS", cr(ns.strings.speedValue.coordPair:gsub(
+					"#X", ut.Thousands(speed.travelSpeed.coords.x, 2, true)
 				):gsub(
-					"#Y", wt.Thousands(speed.travelSpeed.coords.y, 2, true)
+					"#Y", ut.Thousands(speed.travelSpeed.coords.y, 2, true)
 				), ns.colors.blue[2])
 			):gsub("-1", not pastPosition.x and GetUnitSpeed("player") ~= 0 and "X" or "0"),
 			font = GameTooltipText,
 			color = ns.colors.blue[1],
 		},
 		{
-			text = "\n" .. ns.strings.speedTooltip.mapTitle:gsub("#MAP", wt.Color(map.name, { r = 1, g = 1, b = 1 })),
+			text = "\n" .. ns.strings.speedTooltip.mapTitle:gsub("#MAP", cr(map.name, { r = 1, g = 1, b = 1 })),
 			color = NORMAL_FONT_COLOR,
 		},
 		{
 			text = ns.strings.speedTooltip.mapSize:gsub(
-				"#SIZE", wt.Color(ns.strings.speedTooltip.mapSizeValues:gsub(
-					"#W", wt.Color(wt.Thousands(map.size.w, 2), { r = 1, g = 1, b = 1 })
+				"#SIZE", cr(ns.strings.speedTooltip.mapSizeValues:gsub(
+					"#W", cr(ut.Thousands(map.size.w, 2), { r = 1, g = 1, b = 1 })
 				):gsub(
-					"#H", wt.Color(wt.Thousands(map.size.h, 2), { r = 1, g = 1, b = 1 })
+					"#H", cr(ut.Thousands(map.size.h, 2), { r = 1, g = 1, b = 1 })
 				), rs.colors.grey[2])
 			),
 			color = NORMAL_FONT_COLOR,
@@ -454,7 +460,7 @@ end
 ---Assemble the text for the mouseover target's speed
 ---@return string
 local function GetTargetSpeedText()
-	return wt.Texture(ns.textures.logo) .. " " .. ns.strings.targetSpeed:gsub("#SPEED", wt.Color(GetSpeedText("targetSpeed"), rs.colors.grey[2]))
+	return wt.Texture(ns.textures.logo) .. " " .. ns.strings.targetSpeed:gsub("#SPEED", cr(GetSpeedText("targetSpeed"), rs.colors.grey[2]))
 end
 
 --| Updates
@@ -611,7 +617,7 @@ local function CreateUpdateOptions(panel, display, category, key)
 			{ frame = options[display].update.throttle },
 		},
 		getData = function() return MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].update.frequency end,
-		saveData = function(value) MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].update.frequency = wt.Round(value, 2) end,
+		saveData = function(value) MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].update.frequency = ut.Round(value, 2) end,
 		default = ns.profileDefault[display].update.frequency,
 		dataManagement = {
 			category = category,
@@ -704,7 +710,7 @@ local function CreateBackgroundOptions(panel, display, category, key)
 		},
 	})
 
-	---@type colorManager|colorpicker
+	---@type colormanager|colorpicker
 	options[display].background.colors.bg = wt.CreateColorpicker({
 		parent = panel,
 		name = "Color",
@@ -727,7 +733,7 @@ local function CreateBackgroundOptions(panel, display, category, key)
 		},
 	})
 
-	---@type colorManager|colorpicker
+	---@type colormanager|colorpicker
 	options[display].background.colors.border = wt.CreateColorpicker({
 		parent = panel,
 		name = "BorderColor",
@@ -826,9 +832,9 @@ local function CreateSpeedDisplayOptionsPage(display)
 		},
 		onDefault = function(_, category)
 			chatCommands.print(ns.strings.chat.default.responseCategory:gsub(
-				"#CATEGORY", wt.Color(ns.strings.options.speedDisplay.title:gsub("#TYPE", ns.strings.options[display].title), ns.colors.yellow[2])
+				"#CATEGORY", cr(ns.strings.options.speedDisplay.title:gsub("#TYPE", ns.strings.options[display].title), ns.colors.yellow[2])
 			):gsub(
-				"#PROFILE", wt.Color(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].title, ns.colors.yellow[2])
+				"#PROFILE", cr(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].title, ns.colors.yellow[2])
 			))
 
 			if not category or display == "playerSpeed" then options[display].position.resetCustomPreset() else options[display].position.applyPreset(1) end
@@ -848,10 +854,10 @@ local function CreateSpeedDisplayOptionsPage(display)
 				initialize = function(panel, _, _, key)
 					CreateVisibilityOptions(panel, display, category, key)
 
-					wt.CreateCustomButton(wt.AddMissing({
+					wt.CreateCustomButton(ut.Fill({
 						parent = panel,
 						action = function()
-							wt.CopyValues(
+							ut.CopyValues(
 								MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].visibility,
 								MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[otherDisplay].visibility
 							)
@@ -960,7 +966,7 @@ local function CreateSpeedDisplayOptionsPage(display)
 						options[display].visibility.hidden.setData(false)
 
 						chatCommands.print(ns.strings.chat.preset.response:gsub(
-							"#PRESET", wt.Color(options[display].position.presets[i].title, ns.colors.yellow[2])
+							"#PRESET", cr(options[display].position.presets[i].title, ns.colors.yellow[2])
 						):gsub(
 							"#TYPE", ns.strings.options[display].title
 						))
@@ -970,15 +976,15 @@ local function CreateSpeedDisplayOptionsPage(display)
 						defaultsTable = ns.profileDefault.customPreset,
 						onSave = function() chatCommands.print(ns.strings.chat.save.response:gsub(
 							"#TYPE", ns.strings.options[display].title
-						):gsub("#CUSTOM", wt.Color(CUSTOM, ns.colors.yellow[2]))) end,
-						onReset = function() chatCommands.print(ns.strings.chat.reset.response:gsub("#CUSTOM", wt.Color(CUSTOM, ns.colors.yellow[2]))) end
+						):gsub("#CUSTOM", cr(CUSTOM, ns.colors.yellow[2]))) end,
+						onReset = function() chatCommands.print(ns.strings.chat.reset.response:gsub("#CUSTOM", cr(CUSTOM, ns.colors.yellow[2]))) end
 					}
 				},
 				setMovable = { events = {
 					onStop = function() chatCommands.print(ns.strings.chat.position.save:gsub("#TYPE", ns.strings.options[display].title)) end,
 					onCancel = function()
 						chatCommands.print(ns.strings.chat.position.cancel:gsub("#TYPE", ns.strings.options[display].title))
-						print(wt.Color(ns.strings.chat.position.error, ns.colors.yellow[2]))
+						print(cr(ns.strings.chat.position.error, ns.colors.yellow[2]))
 					end,
 				}, },
 				dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
@@ -990,10 +996,10 @@ local function CreateSpeedDisplayOptionsPage(display)
 
 			if options[display].position.frame.description then options[display].position.frame.description:SetWidth(328) end
 
-			wt.CreateCustomButton(wt.AddMissing({
+			wt.CreateCustomButton(ut.Fill({
 				parent = options[display].position.frame,
 				action = function()
-					wt.CopyValues(
+					ut.CopyValues(
 						MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].position,
 						MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[otherDisplay].position
 					)
@@ -1013,10 +1019,10 @@ local function CreateSpeedDisplayOptionsPage(display)
 				initialize = function(panel, _, _, key)
 					CreateUpdateOptions(panel, display, category, key)
 
-					wt.CreateCustomButton(wt.AddMissing({
+					wt.CreateCustomButton(ut.Fill({
 						parent = panel,
 						action = function()
-							wt.CopyValues(
+							ut.CopyValues(
 								MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].update,
 								MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[otherDisplay].update
 							)
@@ -1038,10 +1044,10 @@ local function CreateSpeedDisplayOptionsPage(display)
 				initialize = function(panel, _, _, key)
 					CreateSpeedValueOptions(panel, display, category, key)
 
-					wt.CreateCustomButton(wt.AddMissing({
+					wt.CreateCustomButton(ut.Fill({
 						parent = panel,
 						action = function()
-							wt.CopyValues(
+							ut.CopyValues(
 								MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].value,
 								MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[otherDisplay].value
 							)
@@ -1083,10 +1089,10 @@ local function CreateSpeedDisplayOptionsPage(display)
 				onChangeColor = function() FormatSpeedText(display) end
 			})
 
-			wt.CreateCustomButton(wt.AddMissing({
+			wt.CreateCustomButton(ut.Fill({
 				parent = options[display].font.frame,
 				action = function()
-					wt.CopyValues(
+					ut.CopyValues(
 						MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].font,
 						MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[otherDisplay].font
 					)
@@ -1106,10 +1112,10 @@ local function CreateSpeedDisplayOptionsPage(display)
 				initialize = function(panel, _, _, key)
 					CreateBackgroundOptions(panel, display, category, key)
 
-					wt.CreateCustomButton(wt.AddMissing({
+					wt.CreateCustomButton(ut.Fill({
 						parent = panel,
 						action = function()
-							wt.CopyValues(
+							ut.CopyValues(
 								MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].background,
 								MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[otherDisplay].background
 							)
@@ -1137,9 +1143,9 @@ local function CreateTargetSpeedOptionsPage()
 		dataManagement = {},
 		onDefault = function()
 			chatCommands.print(ns.strings.chat.default.responseCategory:gsub(
-				"#CATEGORY", wt.Color(ns.strings.options.targetSpeed.title, ns.colors.yellow[2])
+				"#CATEGORY", cr(ns.strings.options.targetSpeed.title, ns.colors.yellow[2])
 			):gsub(
-				"#PROFILE", wt.Color(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].title, ns.colors.yellow[2])
+				"#PROFILE", cr(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].title, ns.colors.yellow[2])
 			))
 		end,
 		arrangement = {},
@@ -1246,7 +1252,7 @@ local function CreateTargetSpeedOptionsPage()
 				arrange = {},
 				arrangement = {},
 				initialize = function(panel)
-					---@type (colorManager|colorpicker)[]
+					---@type (colormanager|colorpicker)[]
 					options.targetSpeed.font.colors = {}
 
 					for key, _ in pairs(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.targetSpeed.font.colors) do
@@ -1341,7 +1347,7 @@ frames.main = wt.CreateFrame({
 			MovementSpeedDBC = MovementSpeedDBC or {}
 
 			---@type MovementSpeedCS
-			MovementSpeedCS = wt.AddMissing(MovementSpeedCS or {}, {
+			MovementSpeedCS = ut.Fill(MovementSpeedCS or {}, {
 				compactBackup = true,
 				playerSpeed = { keepInPlace = true, },
 				travelSpeed = { keepInPlace = true, },
@@ -1447,10 +1453,10 @@ frames.main = wt.CreateFrame({
 					options.targetSpeed.page.load(true)
 					options.dataManagement.page.load(true)
 
-					chatCommands.print(ns.strings.chat.profile.response:gsub("#PROFILE", wt.Color(title, ns.colors.yellow[2])))
+					chatCommands.print(ns.strings.chat.profile.response:gsub("#PROFILE", cr(title, ns.colors.yellow[2])))
 				end,
-				onProfileDeleted = function(title) chatCommands.print(ns.strings.chat.default.response:gsub("#PROFILE", wt.Color(title, ns.colors.yellow[2]))) end,
-				onProfileReset = function(title) chatCommands.print(ns.strings.chat.default.response:gsub("#PROFILE", wt.Color(title, ns.colors.yellow[2]))) end,
+				onProfileDeleted = function(title) chatCommands.print(ns.strings.chat.default.response:gsub("#PROFILE", cr(title, ns.colors.yellow[2]))) end,
+				onProfileReset = function(title) chatCommands.print(ns.strings.chat.default.response:gsub("#PROFILE", cr(title, ns.colors.yellow[2]))) end,
 				onImport = function(success) if success then
 					--Update the interface options
 					options.playerSpeed.page.load(true)
@@ -1478,6 +1484,7 @@ frames.main = wt.CreateFrame({
 
 			--[ Chat Control Setup ]
 
+			---@type chatCommandManager
 			chatCommands = wt.RegisterChatCommands(ns.name, ns.chat.keywords, {
 				commands = {
 					{
@@ -1491,20 +1498,20 @@ frames.main = wt.CreateFrame({
 							return (ns.strings.chat.preset.description:gsub(
 								"#TYPE", ns.strings.options[MovementSpeedCS.mainDisplay].title
 							):gsub(
-								"#INDEX", wt.Color(ns.chat.commands.preset .. " " .. 1, ns.colors.green[2])
+								"#INDEX", cr(ns.chat.commands.preset .. " " .. 1, ns.colors.green[2])
 							))
 						end,
 						handler = function(_, p) return options[MovementSpeedCS.mainDisplay].position.applyPreset(tonumber(p)) end,
-						error = ns.strings.chat.preset.unchanged .. "\n" .. wt.Color(ns.strings.chat.preset.error:gsub(
-							"#INDEX", wt.Color(ns.chat.commands.preset .. " " .. 1, ns.colors.green[2])
+						error = ns.strings.chat.preset.unchanged .. "\n" .. cr(ns.strings.chat.preset.error:gsub(
+							"#INDEX", cr(ns.chat.commands.preset .. " " .. 1, ns.colors.green[2])
 						), ns.colors.yellow[2]),
 						onError = function()
-							print(wt.Color(ns.strings.chat.preset.list, ns.colors.yellow[1]))
+							print(cr(ns.strings.chat.preset.list, ns.colors.yellow[1]))
 							for i = 1, #options[MovementSpeedCS.mainDisplay].position.presets, 2 do
-								local list = "    " .. wt.Color(i, ns.colors.green[2]) .. wt.Color(" • " .. options[MovementSpeedCS.mainDisplay].position.presets[i].title, ns.colors.yellow[2])
+								local list = "    " .. cr(i, ns.colors.green[2]) .. cr(" • " .. options[MovementSpeedCS.mainDisplay].position.presets[i].title, ns.colors.yellow[2])
 
 								if i + 1 <= #options[MovementSpeedCS.mainDisplay].position.presets then
-									list = list .. "    " .. wt.Color(i + 1, ns.colors.green[2]) .. wt.Color(" • " .. options[MovementSpeedCS.mainDisplay].position.presets[i + 1].title, ns.colors.yellow[2])
+									list = list .. "    " .. cr(i + 1, ns.colors.green[2]) .. cr(" • " .. options[MovementSpeedCS.mainDisplay].position.presets[i + 1].title, ns.colors.yellow[2])
 								end
 
 								print(list)
@@ -1517,7 +1524,7 @@ frames.main = wt.CreateFrame({
 							return (ns.strings.chat.save.description:gsub(
 								"#TYPE", ns.strings.options[MovementSpeedCS.mainDisplay].title
 							):gsub(
-								"#CUSTOM", wt.Color(options[MovementSpeedCS.mainDisplay].position.presets[1].title, ns.colors.yellow[1])
+								"#CUSTOM", cr(options[MovementSpeedCS.mainDisplay].position.presets[1].title, ns.colors.yellow[1])
 							))
 						end,
 						handler = function() options[MovementSpeedCS.mainDisplay].position.saveCustomPreset() end,
@@ -1528,7 +1535,7 @@ frames.main = wt.CreateFrame({
 							return (ns.strings.chat.reset.description:gsub(
 								"#TYPE", ns.strings.options[MovementSpeedCS.mainDisplay].title
 							):gsub(
-								"#CUSTOM", wt.Color(options[MovementSpeedCS.mainDisplay].position.presets[1].title, ns.colors.yellow[1])
+								"#CUSTOM", cr(options[MovementSpeedCS.mainDisplay].position.presets[1].title, ns.colors.yellow[1])
 							))
 						end,
 						handler = function() options[MovementSpeedCS.mainDisplay].position.resetCustomPreset() end,
@@ -1536,7 +1543,7 @@ frames.main = wt.CreateFrame({
 					{
 						command = ns.chat.commands.toggle,
 						description = function() return (ns.strings.chat.toggle.description:gsub("#TYPE", ns.strings.options[MovementSpeedCS.mainDisplay].title):gsub(
-							"#HIDDEN", wt.Color(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedCS.mainDisplay].visibility.hidden and ns.strings.chat.toggle.hidden or ns.strings.chat.toggle.notHidden, ns.colors.yellow[1])
+							"#HIDDEN", cr(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedCS.mainDisplay].visibility.hidden and ns.strings.chat.toggle.hidden or ns.strings.chat.toggle.notHidden, ns.colors.yellow[1])
 						)) end,
 						handler = function()
 							options[MovementSpeedCS.mainDisplay].visibility.hidden.setData(not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedCS.mainDisplay].visibility.hidden)
@@ -1550,7 +1557,7 @@ frames.main = wt.CreateFrame({
 					{
 						command = ns.chat.commands.auto,
 						description = function() return (ns.strings.chat.auto.description:gsub("#TYPE", ns.strings.options[MovementSpeedCS.mainDisplay].title):gsub(
-							"#STATE", wt.Color(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedCS.mainDisplay].visibility.autoHide and ns.strings.misc.enabled or ns.strings.misc.disabled, ns.colors.yellow[1])
+							"#STATE", cr(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedCS.mainDisplay].visibility.autoHide and ns.strings.misc.enabled or ns.strings.misc.disabled, ns.colors.yellow[1])
 						)) end,
 						handler = function()
 							options[MovementSpeedCS.mainDisplay].visibility.autoHide.setData(not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedCS.mainDisplay].visibility.autoHide)
@@ -1560,7 +1567,7 @@ frames.main = wt.CreateFrame({
 						success = function() return (ns.strings.chat.auto.response:gsub(
 								"#TYPE", ns.strings.options[MovementSpeedCS.mainDisplay].title
 							):gsub(
-								"#STATE", wt.Color(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedCS.mainDisplay].visibility.autoHide and ns.strings.misc.enabled or ns.strings.misc.disabled, ns.colors.yellow[2])
+								"#STATE", cr(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[MovementSpeedCS.mainDisplay].visibility.autoHide and ns.strings.misc.enabled or ns.strings.misc.disabled, ns.colors.yellow[2])
 							))
 						end,
 					},
@@ -1570,7 +1577,7 @@ frames.main = wt.CreateFrame({
 							return (ns.strings.chat.size.description:gsub(
 								"#TYPE", ns.strings.options[MovementSpeedCS.mainDisplay].title
 							):gsub(
-								"#SIZE", wt.Color(ns.chat.commands.size .. " " .. ns.profileDefault[MovementSpeedCS.mainDisplay].font.size, ns.colors.green[2])
+								"#SIZE", cr(ns.chat.commands.size .. " " .. ns.profileDefault[MovementSpeedCS.mainDisplay].font.size, ns.colors.green[2])
 							))
 						end,
 						handler = function(_, p)
@@ -1584,18 +1591,18 @@ frames.main = wt.CreateFrame({
 						end,
 						success = function(size) return (ns.strings.chat.size.response:gsub(
 							"#TYPE", ns.strings.options[MovementSpeedCS.mainDisplay].title
-						):gsub("#VALUE", wt.Color(size, ns.colors.yellow[2]))) end,
+						):gsub("#VALUE", cr(size, ns.colors.yellow[2]))) end,
 						error = function() return (ns.strings.chat.size.unchanged:gsub(
 							"#TYPE", ns.strings.options[MovementSpeedCS.mainDisplay].title
 						)) end,
-						onError = function() print("    " .. wt.Color(ns.strings.chat.size.error:gsub(
-							"#SIZE", wt.Color(ns.chat.commands.size .. " " .. ns.profileDefault[MovementSpeedCS.mainDisplay].font.size, ns.colors.green[2])
+						onError = function() print("    " .. cr(ns.strings.chat.size.error:gsub(
+							"#SIZE", cr(ns.chat.commands.size .. " " .. ns.profileDefault[MovementSpeedCS.mainDisplay].font.size, ns.colors.green[2])
 						), ns.colors.yellow[2])) end,
 					},
 					{
 						command = ns.chat.commands.swap,
 						description = function() return (ns.strings.chat.swap.description:gsub(
-							"#ACTIVE", wt.Color(ns.strings.options[MovementSpeedCS.mainDisplay].title, ns.colors.yellow[1])
+							"#ACTIVE", cr(ns.strings.options[MovementSpeedCS.mainDisplay].title, ns.colors.yellow[1])
 						)) end,
 						handler = function()
 							MovementSpeedCS.mainDisplay = MovementSpeedCS.mainDisplay == "playerSpeed" and "travelSpeed" or "playerSpeed"
@@ -1603,25 +1610,25 @@ frames.main = wt.CreateFrame({
 							return true
 						end,
 						success = function() return (ns.strings.chat.swap.response:gsub(
-							"#ACTIVE", wt.Color(ns.strings.options[MovementSpeedCS.mainDisplay].title, ns.colors.yellow[2])
+							"#ACTIVE", cr(ns.strings.options[MovementSpeedCS.mainDisplay].title, ns.colors.yellow[2])
 						)) end,
 					},
 					{
 						command = ns.chat.commands.profile,
 						description = ns.strings.chat.profile.description:gsub(
-							"#INDEX", wt.Color(ns.chat.commands.profile .. " " .. 1, ns.colors.green[2])
+							"#INDEX", cr(ns.chat.commands.profile .. " " .. 1, ns.colors.green[2])
 						),
 						handler = function(_, p) return options.dataManagement.activateProfile(tonumber(p)) end,
-						error = ns.strings.chat.profile.unchanged .. "\n" .. wt.Color(ns.strings.chat.profile.error:gsub(
-							"#INDEX", wt.Color(ns.chat.commands.profile .. " " .. 1, ns.colors.green[2])
+						error = ns.strings.chat.profile.unchanged .. "\n" .. cr(ns.strings.chat.profile.error:gsub(
+							"#INDEX", cr(ns.chat.commands.profile .. " " .. 1, ns.colors.green[2])
 						), ns.colors.yellow[2]),
 						onError = function()
-							print(wt.Color(ns.strings.chat.profile.list, ns.colors.yellow[1]))
+							print(cr(ns.strings.chat.profile.list, ns.colors.yellow[1]))
 							for i = 1, #MovementSpeedDB.profiles, 4 do
-								local list = "    " .. wt.Color(i, ns.colors.green[2]) .. wt.Color(" • " .. MovementSpeedDB.profiles[i].title, ns.colors.yellow[2])
+								local list = "    " .. cr(i, ns.colors.green[2]) .. cr(" • " .. MovementSpeedDB.profiles[i].title, ns.colors.yellow[2])
 
 								for j = i + 1, min(i + 3, #MovementSpeedDB.profiles) do
-									list = list .. "    " .. wt.Color(j, ns.colors.green[2]) .. wt.Color(" • " .. MovementSpeedDB.profiles[j].title, ns.colors.yellow[2])
+									list = list .. "    " .. cr(j, ns.colors.green[2]) .. cr(" • " .. MovementSpeedDB.profiles[j].title, ns.colors.yellow[2])
 								end
 
 								print(list)
@@ -1631,7 +1638,7 @@ frames.main = wt.CreateFrame({
 					{
 						command = ns.chat.commands.default,
 						description = function() return (ns.strings.chat.default.description:gsub(
-							"#PROFILE", wt.Color(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].title, ns.colors.yellow[1])
+							"#PROFILE", cr(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].title, ns.colors.yellow[1])
 						)) end,
 						handler = function() return options.dataManagement.resetProfile() end,
 					},
@@ -1647,7 +1654,7 @@ frames.main = wt.CreateFrame({
 					command = ns.colors.green[2],
 					description = ns.colors.yellow[2]
 				},
-				onWelcome = function() print(wt.Color(ns.strings.chat.help.move, ns.colors.yellow[2])) end,
+				onWelcome = function() print(cr(ns.strings.chat.help.move, ns.colors.yellow[2])) end,
 			})
 
 			--Welcome message
@@ -1657,13 +1664,13 @@ frames.main = wt.CreateFrame({
 
 			--Player Speed
 			CreateContextMenu("playerSpeed")
-			wt.SetPosition(frames.playerSpeed.display, wt.AddMissing({ relativePoint = MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.position.anchor, }, MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.position))
+			wt.SetPosition(frames.playerSpeed.display, ut.Fill({ relativePoint = MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.position.anchor, }, MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.position))
 			wt.ConvertToAbsolutePosition(frames.playerSpeed.display)
 			SetDisplayValues(frames.playerSpeed, MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed)
 
 			--Travel Speed
 			CreateContextMenu("travelSpeed")
-			wt.SetPosition(frames.travelSpeed.display, wt.AddMissing({ relativePoint = MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.travelSpeed.position.anchor, }, MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.travelSpeed.position))
+			wt.SetPosition(frames.travelSpeed.display, ut.Fill({ relativePoint = MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.travelSpeed.position.anchor, }, MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.travelSpeed.position))
 			wt.ConvertToAbsolutePosition(frames.travelSpeed.display)
 			SetDisplayValues(frames.travelSpeed, MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.travelSpeed)
 		end,
@@ -1689,7 +1696,7 @@ frames.main = wt.CreateFrame({
 				options.targetSpeed.page.load(true)
 				options.dataManagement.page.load(true)
 
-				chatCommands.print(ns.strings.chat.profile.response:gsub("#PROFILE", wt.Color(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].title, ns.colors.yellow[2])))
+				chatCommands.print(ns.strings.chat.profile.response:gsub("#PROFILE", cr(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].title, ns.colors.yellow[2])))
 			end
 
 			--Visibility notice

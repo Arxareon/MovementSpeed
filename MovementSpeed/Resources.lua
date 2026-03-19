@@ -1,4 +1,4 @@
---[[ NAMESPACE ]]
+--[[ NAMESPACE ]]	
 
 ---Addon namespace table
 ---@class addonNamespace

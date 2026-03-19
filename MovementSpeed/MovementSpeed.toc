@@ -1,8 +1,8 @@
 ## Interface: 120001, 50503, 20505, 11508
 ## Title: Movement Speed
 ## Version: 3.3
-## X-Day: 8
-## X-Month: 5
+## X-Day: 20
+## X-Month: 3
 ## X-Year: 2026
 ## Category: HUDs
 ## Notes: View your movement speed in customizable displays and of other characters in mouseover tooltips with fast updates.
@@ -17,6 +17,8 @@
 ## SavedVariables: MovementSpeedDB, MovementSpeedCS
 ## SavedVariablesPerCharacter: MovementSpeedDBC
 ## Dependencies: WidgetTools
+## X-WidgetTools-ToolboxVersion: 3.0
+## X-WidgetTools-AddToNamespace: wt
 
 Localizations.lua
 Resources.lua

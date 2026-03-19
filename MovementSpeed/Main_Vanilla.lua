@@ -653,7 +653,7 @@ local function CreateFontOptions(panel, category, key)
 
 	--| Font color
 
-	---@type colorManager|colorpicker
+	---@type colormanager|colorpicker
 	options.playerSpeed.font.color = wt.CreateColorPickerFrame({
 		parent = panel,
 		name = "Color",
@@ -697,7 +697,7 @@ local function CreateBackgroundOptions(panel, category, key)
 		},
 	})
 
-	---@type colorManager|colorpicker
+	---@type colormanager|colorpicker
 	options.playerSpeed.background.colors.bg = wt.CreateColorPickerFrame({
 		parent = panel,
 		name = "Color",
@@ -720,7 +720,7 @@ local function CreateBackgroundOptions(panel, category, key)
 		},
 	})
 
-	---@type colorManager|colorpicker
+	---@type colormanager|colorpicker
 	options.playerSpeed.background.colors.border = wt.CreateColorPickerFrame({
 		parent = panel,
 		name = "BorderColor",
