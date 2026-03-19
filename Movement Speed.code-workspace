@@ -10,8 +10,8 @@
 			{
 				"type": "PowerShell",
 				"request": "launch",
-				"name": "CopyToWoW.ps1",
-				"script": "${workspaceFolder}/Install Tools/CopyToWoW.ps1"
+				"name": "Copy to WoW",
+				"script": "${workspaceFolder}/.install/CopyToWoW.ps1"
 			}
 		]
 	},

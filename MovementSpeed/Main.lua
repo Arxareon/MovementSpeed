@@ -13,7 +13,7 @@ local wt = ns[C_AddOns.GetAddOnMetadata(ns.name, "X-WidgetTools-AddToNamespace")
 local rs = WidgetTools.resources
 
 ---@type widgetToolsUtilities
-local ut = WidgetTools.utilities
+local us = WidgetTools.utilities
 
 local cr = WrapTextInColor
 
@@ -163,25 +163,25 @@ local function GetSpeedText(type)
 	local f = max(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[type].value.fractionals, 1)
 
 	return speedText[type]:gsub(
-		"#PERCENT", ut.Thousands(
+		"#PERCENT", us.Thousands(
 			speed[type].percent,
 			MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[type].value.fractionals,
 			true,
 			not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[type].value.zeros
 		)
 	):gsub(
-		"#YARDS", ut.Thousands(
+		"#YARDS", us.Thousands(
 			speed[type].yards,
 			MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[type].value.fractionals,
 			true,
 			not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[type].value.zeros
 		)
 	):gsub(
-		"#X", ut.Thousands(
+		"#X", us.Thousands(
 			speed[type].coords.x, f, true, not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[type].value.zeros
 		)
 	):gsub(
-		"#Y", ut.Thousands(
+		"#Y", us.Thousands(
 			speed[type].coords.y, f, true, not MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[type].value.zeros
 		)
 	)
@@ -259,7 +259,7 @@ local function SetDisplaySize(display, displayData, height)
 	for i = 1, 3 do if displayData.value.units[i] then ratio = ratio + 0.2 end end --Separators
 
 	--Resize the display
-	display.display:SetSize(height * ratio * rs.fonts[ut.FindIndex(rs.fonts, displayData.font.path)].widthRatio - 4, height)
+	display.display:SetSize(height * ratio * rs.fonts[us.FindIndex(rs.fonts, displayData.font.path)].widthRatio - 4, height)
 end
 
 ---Set the backdrop of the specified speed display elements
@@ -313,13 +313,13 @@ local function GetPlayerSpeedTooltipLines()
 		{ text = ns.strings.speedTooltip.description },
 		{ text = "\n" .. ns.strings.speedTooltip.playerSpeed, },
 		{
-			text = "\n" .. ns.strings.speedTooltip.text[1]:gsub("#YARDS", cr(ut.Thousands(speed.playerSpeed.yards, 2, true),  ns.colors.yellow[2])),
+			text = "\n" .. ns.strings.speedTooltip.text[1]:gsub("#YARDS", cr(us.Thousands(speed.playerSpeed.yards, 2, true),  ns.colors.yellow[2])),
 			font = GameTooltipText,
 			color = ns.colors.yellow[1],
 		},
 		{
 			text = "\n" .. ns.strings.speedTooltip.text[2]:gsub(
-				"#PERCENT", cr(ut.Thousands(speed.playerSpeed.percent, 2, true) .. "%%", ns.colors.green[2])
+				"#PERCENT", cr(us.Thousands(speed.playerSpeed.percent, 2, true) .. "%%", ns.colors.green[2])
 			),
 			font = GameTooltipText,
 			color = ns.colors.green[1],
@@ -327,9 +327,9 @@ local function GetPlayerSpeedTooltipLines()
 		{
 			text = "\n" .. ns.strings.speedTooltip.text[3]:gsub(
 				"#COORDS", cr(ns.strings.speedValue.coordPair:gsub(
-					"#X", ut.Thousands(speed.playerSpeed.coords.x, 2, true)
+					"#X", us.Thousands(speed.playerSpeed.coords.x, 2, true)
 				):gsub(
-					"#Y", ut.Thousands(speed.playerSpeed.coords.y, 2, true)
+					"#Y", us.Thousands(speed.playerSpeed.coords.y, 2, true)
 				), ns.colors.blue[2])
 			),
 			font = GameTooltipText,
@@ -342,9 +342,9 @@ local function GetPlayerSpeedTooltipLines()
 		{
 			text = ns.strings.speedTooltip.mapSize:gsub(
 				"#SIZE", cr(ns.strings.speedTooltip.mapSizeValues:gsub(
-					"#W", cr(ut.Thousands(map.size.w, 2), { r = 1, g = 1, b = 1 })
+					"#W", cr(us.Thousands(map.size.w, 2), { r = 1, g = 1, b = 1 })
 				):gsub(
-					"#H", cr(ut.Thousands(map.size.h, 2), { r = 1, g = 1, b = 1 })
+					"#H", cr(us.Thousands(map.size.h, 2), { r = 1, g = 1, b = 1 })
 				), rs.colors.grey[2])
 			),
 			color = NORMAL_FONT_COLOR,
@@ -376,14 +376,14 @@ local function GetTravelSpeedTooltipLines()
 		},
 		{
 			text = ns.strings.speedTooltip.text[1]:gsub(
-				"#YARDS", cr(ut.Thousands(speed.travelSpeed.yards, 2, true), ns.colors.yellow[2])
+				"#YARDS", cr(us.Thousands(speed.travelSpeed.yards, 2, true), ns.colors.yellow[2])
 			):gsub("-1", not pastPosition.x and GetUnitSpeed("player") ~= 0 and "X" or "0"),
 			font = GameTooltipText,
 			color = ns.colors.yellow[1],
 		},
 		{
 			text = "\n" .. ns.strings.speedTooltip.text[2]:gsub(
-				"#PERCENT", cr(ut.Thousands(speed.travelSpeed.percent, 2, true) .. "%%", ns.colors.green[2])
+				"#PERCENT", cr(us.Thousands(speed.travelSpeed.percent, 2, true) .. "%%", ns.colors.green[2])
 			):gsub("-1", not pastPosition.x and GetUnitSpeed("player") ~= 0 and "X" or "0"),
 			font = GameTooltipText,
 			color = ns.colors.green[1],
@@ -391,9 +391,9 @@ local function GetTravelSpeedTooltipLines()
 		{
 			text = "\n" .. ns.strings.speedTooltip.text[3]:gsub(
 				"#COORDS", cr(ns.strings.speedValue.coordPair:gsub(
-					"#X", ut.Thousands(speed.travelSpeed.coords.x, 2, true)
+					"#X", us.Thousands(speed.travelSpeed.coords.x, 2, true)
 				):gsub(
-					"#Y", ut.Thousands(speed.travelSpeed.coords.y, 2, true)
+					"#Y", us.Thousands(speed.travelSpeed.coords.y, 2, true)
 				), ns.colors.blue[2])
 			):gsub("-1", not pastPosition.x and GetUnitSpeed("player") ~= 0 and "X" or "0"),
 			font = GameTooltipText,
@@ -406,9 +406,9 @@ local function GetTravelSpeedTooltipLines()
 		{
 			text = ns.strings.speedTooltip.mapSize:gsub(
 				"#SIZE", cr(ns.strings.speedTooltip.mapSizeValues:gsub(
-					"#W", cr(ut.Thousands(map.size.w, 2), { r = 1, g = 1, b = 1 })
+					"#W", cr(us.Thousands(map.size.w, 2), { r = 1, g = 1, b = 1 })
 				):gsub(
-					"#H", cr(ut.Thousands(map.size.h, 2), { r = 1, g = 1, b = 1 })
+					"#H", cr(us.Thousands(map.size.h, 2), { r = 1, g = 1, b = 1 })
 				), rs.colors.grey[2])
 			),
 			color = NORMAL_FONT_COLOR,
@@ -617,7 +617,7 @@ local function CreateUpdateOptions(panel, display, category, key)
 			{ frame = options[display].update.throttle },
 		},
 		getData = function() return MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].update.frequency end,
-		saveData = function(value) MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].update.frequency = ut.Round(value, 2) end,
+		saveData = function(value) MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].update.frequency = us.Round(value, 2) end,
 		default = ns.profileDefault[display].update.frequency,
 		dataManagement = {
 			category = category,
@@ -854,10 +854,10 @@ local function CreateSpeedDisplayOptionsPage(display)
 				initialize = function(panel, _, _, key)
 					CreateVisibilityOptions(panel, display, category, key)
 
-					wt.CreateCustomButton(ut.Fill({
+					wt.CreateCustomButton(us.Fill({
 						parent = panel,
 						action = function()
-							ut.CopyValues(
+							us.CopyValues(
 								MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].visibility,
 								MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[otherDisplay].visibility
 							)
@@ -996,10 +996,10 @@ local function CreateSpeedDisplayOptionsPage(display)
 
 			if options[display].position.frame.description then options[display].position.frame.description:SetWidth(328) end
 
-			wt.CreateCustomButton(ut.Fill({
+			wt.CreateCustomButton(us.Fill({
 				parent = options[display].position.frame,
 				action = function()
-					ut.CopyValues(
+					us.CopyValues(
 						MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].position,
 						MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[otherDisplay].position
 					)
@@ -1019,10 +1019,10 @@ local function CreateSpeedDisplayOptionsPage(display)
 				initialize = function(panel, _, _, key)
 					CreateUpdateOptions(panel, display, category, key)
 
-					wt.CreateCustomButton(ut.Fill({
+					wt.CreateCustomButton(us.Fill({
 						parent = panel,
 						action = function()
-							ut.CopyValues(
+							us.CopyValues(
 								MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].update,
 								MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[otherDisplay].update
 							)
@@ -1044,10 +1044,10 @@ local function CreateSpeedDisplayOptionsPage(display)
 				initialize = function(panel, _, _, key)
 					CreateSpeedValueOptions(panel, display, category, key)
 
-					wt.CreateCustomButton(ut.Fill({
+					wt.CreateCustomButton(us.Fill({
 						parent = panel,
 						action = function()
-							ut.CopyValues(
+							us.CopyValues(
 								MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].value,
 								MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[otherDisplay].value
 							)
@@ -1089,10 +1089,10 @@ local function CreateSpeedDisplayOptionsPage(display)
 				onChangeColor = function() FormatSpeedText(display) end
 			})
 
-			wt.CreateCustomButton(ut.Fill({
+			wt.CreateCustomButton(us.Fill({
 				parent = options[display].font.frame,
 				action = function()
-					ut.CopyValues(
+					us.CopyValues(
 						MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].font,
 						MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[otherDisplay].font
 					)
@@ -1112,10 +1112,10 @@ local function CreateSpeedDisplayOptionsPage(display)
 				initialize = function(panel, _, _, key)
 					CreateBackgroundOptions(panel, display, category, key)
 
-					wt.CreateCustomButton(ut.Fill({
+					wt.CreateCustomButton(us.Fill({
 						parent = panel,
 						action = function()
-							ut.CopyValues(
+							us.CopyValues(
 								MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].background,
 								MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[otherDisplay].background
 							)
@@ -1347,7 +1347,7 @@ frames.main = wt.CreateFrame({
 			MovementSpeedDBC = MovementSpeedDBC or {}
 
 			---@type MovementSpeedCS
-			MovementSpeedCS = ut.Fill(MovementSpeedCS or {}, {
+			MovementSpeedCS = us.Fill(MovementSpeedCS or {}, {
 				compactBackup = true,
 				playerSpeed = { keepInPlace = true, },
 				travelSpeed = { keepInPlace = true, },
@@ -1664,13 +1664,13 @@ frames.main = wt.CreateFrame({
 
 			--Player Speed
 			CreateContextMenu("playerSpeed")
-			wt.SetPosition(frames.playerSpeed.display, ut.Fill({ relativePoint = MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.position.anchor, }, MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.position))
+			wt.SetPosition(frames.playerSpeed.display, us.Fill({ relativePoint = MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.position.anchor, }, MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.position))
 			wt.ConvertToAbsolutePosition(frames.playerSpeed.display)
 			SetDisplayValues(frames.playerSpeed, MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed)
 
 			--Travel Speed
 			CreateContextMenu("travelSpeed")
-			wt.SetPosition(frames.travelSpeed.display, ut.Fill({ relativePoint = MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.travelSpeed.position.anchor, }, MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.travelSpeed.position))
+			wt.SetPosition(frames.travelSpeed.display, us.Fill({ relativePoint = MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.travelSpeed.position.anchor, }, MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.travelSpeed.position))
 			wt.ConvertToAbsolutePosition(frames.travelSpeed.display)
 			SetDisplayValues(frames.travelSpeed, MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.travelSpeed)
 		end,

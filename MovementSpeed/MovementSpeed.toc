@@ -16,6 +16,7 @@
 ## IconTexture: Interface/AddOns/MovementSpeed/Textures/Logo.tga
 ## SavedVariables: MovementSpeedDB, MovementSpeedCS
 ## SavedVariablesPerCharacter: MovementSpeedDBC
+## LoadSavedVariablesFirst: 1
 ## Dependencies: WidgetTools
 ## X-WidgetTools-ToolboxVersion: 3.0
 ## X-WidgetTools-AddToNamespace: wt

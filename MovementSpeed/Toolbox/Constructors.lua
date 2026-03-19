@@ -10,6 +10,7 @@ if not wt then return end
 
 local rs = WidgetTools.resources
 local ut = WidgetTools.utilities
+local ds = WidgetTools.debugging
 local cr = WrapTextInColor
 
 
@@ -1068,11 +1069,6 @@ function wt.CreateSettingsPage(addon, t)
 	---<hr><p></p>
 	function page.isType(type) return type == "SettingsPage" end
 
-	---Return a value at the specified key from the table used for creating the settings page
-	---@param key string
-	---@return any
-	function page.getProperty(key) return ut.FindValue(t, key) end
-
 	---Returns the unique identifier key representing the defaults warning popup dialog in the global **StaticPopupDialogs** table, and used as the parameter when calling [StaticPopup_Show()](https://warcraft.wiki.gg/wiki/API_StaticPopup_Show) or [StaticPopup_Hide()](https://warcraft.wiki.gg/wiki/API_StaticPopup_Hide)
 	---@return string
 	function page.getDefaultsPopupKey() return defaultsWarning end
@@ -1277,6 +1273,10 @@ function wt.CreateSettingsPage(addon, t)
 		})
 	end
 
+	--[ Category Resources ]
+
+	page.categorySyncer = { onDefault = t.onDefault, dataManagement = t.dataManagement, titleIcon = t.titleIcon } --REPLACE temporary solution
+
 	--[ Initialization ]
 
 	--Register to the Settings panel
@@ -1339,12 +1339,12 @@ function wt.CreateSettingsCategory(addon, parent, pages, t)
 	---@param callListeners? boolean If true, call the **onDefault** listeners (if set) of each individual category page separately | ***Default:*** true
 	function category.defaults(user, callListeners)
 		for i = 1, #category.pages do
-			local dataManagement = category.pages[i].getProperty("dataManagement")
-			local onDefault = callListeners ~= false and category.pages[i].getProperty("onDefault") or nil
+			local dataManagement = category.pages[i].categorySyncer.dataManagement --REPLACE
+			local onDefault = callListeners ~= false and category.pages[i].categorySyncer.onDefault or nil --REPLACE
 
 			--Update with default values
-			if type(dataManagement) == "table" and type(dataManagement.keys) == "table" then for i = 1, #dataManagement.keys do
-				wt.ResetSettingsData(dataManagement.category, dataManagement.keys[i])
+			if type(dataManagement) == "table" and type(dataManagement.keys) == "table" then for j = 1, #dataManagement.keys do
+				wt.ResetSettingsData(dataManagement.category, dataManagement.keys[j])
 			end end
 
 			--Call listeners
@@ -1383,7 +1383,7 @@ function wt.CreateSettingsCategory(addon, parent, pages, t)
 
 		table.insert(category.pages, pages[i])
 
-		wt.RegisterSettingsPage(pages[i], parent, pages[i].getProperty("titleIcon"))
+		wt.RegisterSettingsPage(pages[i], parent, pages[i].categorySyncer.titleIcon) --REPLACE
 
 		--Override defaults warning and add all defaults option to dialog
 		wt.UpdatePopupDialog(pages[i].getDefaultsPopupKey(), {
@@ -1480,11 +1480,6 @@ function wt.CreateAction(t)
 	---@return boolean
 	---<hr><p></p>
 	function action.isType(type) return type == "Action" end
-
-	---Return a value at the specified key from the table used for creating the widget
-	---@param key string
-	---@return any
-	function action.getProperty(key) return ut.FindValue(t, key) end
 
 	--| Event handling
 
@@ -1845,11 +1840,6 @@ function wt.CreateToggle(t)
 	---@return boolean
 	---<hr><p></p>
 	function toggle.isType(type) return type == "Toggle" end
-
-	---Return a value at the specified key from the table used for creating the widget
-	---@param key string
-	---@return any
-	function toggle.getProperty(key) return ut.FindValue(t, key) end
 
 	--| Event handling
 
@@ -2616,11 +2606,6 @@ function wt.CreateSelector(t)
 	---<hr><p></p>
 	function selector.isType(type) return type == "Selector" end
 
-	---Return a value at the specified key from the table used for creating the widget
-	---@param key string
-	---@return any
-	function selector.getProperty(key) return ut.FindValue(t, key) end
-
 	--| Event handling
 
 	--Get a trigger function to call all registered listeners for the specified custom widget event with
@@ -2942,11 +2927,6 @@ function wt.CreateSpecialSelector(itemset, t)
 	---<hr><p></p>
 	function selector.isType(type) return type == "SpecialSelector" end
 
-	---Return a value at the specified key from the table used for creating the widget
-	---@param key string
-	---@return any
-	function selector.getProperty(key) return ut.FindValue(t, key) end
-
 	---Return the itemset type specified for this special selector on creation
 	---@return SpecialSelectorItemset itemset
 	function selector.getItemset() return itemset end
@@ -3201,11 +3181,6 @@ function wt.CreateMultiselector(t)
 	---@return boolean
 	---<hr><p></p>
 	function selector.isType(type) return type == "Multiselector" end
-
-	---Return a value at the specified key from the table used for creating the widget
-	---@param key string
-	---@return any
-	function selector.getProperty(key) return ut.FindValue(t, key) end
 
 	--| Event handling
 
@@ -4501,11 +4476,6 @@ function wt.CreateTextbox(t)
 	---<hr><p></p>
 	function textbox.isType(type) return type == "Textbox" end
 
-	---Return a value at the specified key from the table used for creating the widget
-	---@param key string
-	---@return any
-	function textbox.getProperty(key) return ut.FindValue(t, key) end
-
 	--| Event handling
 
 	--Get a trigger function to call all registered listeners for the specified custom widget event with
@@ -5250,11 +5220,6 @@ function wt.CreateNumeric(t)
 	---@return boolean
 	---<hr><p></p>
 	function numeric.isType(type) return type == "Numeric" end
-
-	---Return a value at the specified key from the table used for creating the widget
-	---@param key string
-	---@return any
-	function numeric.getProperty(key) return ut.FindValue(t, key) end
 
 	--| Event handling
 
@@ -6219,11 +6184,6 @@ function wt.CreateColormanager(t)
 	---<hr><p></p>
 	function colormanager.isType(type) return type == "Colorpicker" end
 
-	---Return a value at the specified key from the table used for creating the widget
-	---@param key string
-	---@return any
-	function colormanager.getProperty(key) return ut.FindValue(t, key) end
-
 	--| Event handling
 
 	--Call all registered listeners for a custom widget event
@@ -7157,11 +7117,6 @@ function wt.CreateDataManagementPage(addon, t)
 	---@return boolean
 	---<hr><p></p>
 	function dataManagement.isType(type) return type == "DataManagementPage" end
-
-	---Return a value at the specified key from the table used for creating the data management page
-	---@param key string
-	---@return any
-	function dataManagement.getProperty(key) return ut.FindValue(t, key) end
 
 	--[ Settings Page ]
 

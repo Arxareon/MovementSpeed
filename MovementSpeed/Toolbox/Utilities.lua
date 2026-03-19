@@ -10,6 +10,7 @@ if not wt then return end
 
 local rs = WidgetTools.resources
 local ut = WidgetTools.utilities
+local ds = WidgetTools.debugging
 local cr = WrapTextInColor
 
 
@@ -95,23 +96,23 @@ end
 ---@return boolean|colorData
 function wt.IsColor(t)
 	if type(t) ~= "table" then
-		ut.Log("Invalid color table: " ..  ut.TableToString(t))
+		ds.Log("Invalid color table: " ..  ut.TableToString(t))
 
 		return false
 	elseif type(t.r) ~= "number" or t.r < 0 or t.r > 1 then
-		ut.Log("Invalid red color value: " .. tostring(t.r))
+		ds.Log("Invalid red color value: " .. tostring(t.r))
 
 		return false
 	elseif type(t.g) ~= "number" or t.g < 0 or t.g > 1 then
-		ut.Log("Invalid green color value: " .. tostring(t.g))
+		ds.Log("Invalid green color value: " .. tostring(t.g))
 
 		return false
 	elseif type(t.b) ~= "number" or t.b < 0 or t.b > 1 then
-		ut.Log("Invalid blue color value: " .. tostring(t.b))
+		ds.Log("Invalid blue color value: " .. tostring(t.b))
 
 		return false
 	elseif (type(t.a) ~= "number" and t.a ~= nil) or t.a < 0 or t.a > 1 then
-		ut.Log("Invalid alpha color value: " .. tostring(t.a))
+		ds.Log("Invalid alpha color value: " .. tostring(t.a))
 
 		return false
 	end
@@ -1103,7 +1104,9 @@ function wt.UpdateTooltipData(frame, t, linesUpdate)
 	elseif not tooltipData[id].tooltip or not (ut.IsFrame(tooltipData[id].tooltip) and tooltipData[id].tooltip:IsObjectType("GameTooltip")) then
 		--Create the default reusable tooltip
 		if not defaultTooltip then
-			defaultTooltip = CreateFrame("GameTooltip", rs.name .. C_AddOns.GetAddOnMetadata(rs.name, "X-WidgetToolboxVersion") .. "GameTooltip", nil, "GameTooltipTemplate")
+			local name = "Widget Toolbox " .. C_AddOns.GetAddOnMetadata(rs.name, "X-WidgetTools-ToolboxVersion") .. "GameTooltip"
+
+			defaultTooltip = CreateFrame("GameTooltip", name, nil, "GameTooltipTemplate")
 
 			--| Visibility
 
