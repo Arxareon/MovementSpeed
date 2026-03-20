@@ -1,4 +1,6 @@
---[[ TOOLBOX ]]
+--[[ REFERENCES ]]
+
+--[ Toolbox ]
 
 ---@class widgetToolbox
 local wt = WidgetTools.toolboxes.initialization[C_AddOns.GetAddOnMetadata(..., "X-WidgetTools-ToolboxVersion")]

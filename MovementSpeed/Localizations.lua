@@ -1,4 +1,6 @@
---[[ NAMESPACE ]]
+--[[ REFERENCES ]]
+
+--[ Namespace ]
 
 ---@class addonNamespace
 local ns = select(2, ...)

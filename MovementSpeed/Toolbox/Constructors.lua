@@ -1,17 +1,25 @@
---[[ TOOLBOX ]]
+--[[ REFERENCES ]]
+
+--[ Toolbox ]
 
 ---@class widgetToolbox
 local wt = WidgetTools.toolboxes.initialization[C_AddOns.GetAddOnMetadata(..., "X-WidgetTools-ToolboxVersion")]
 
 if not wt then return end
 
+--[ Shortcuts ]
 
---[[ REFERENCES ]]
-
+---@type widgetToolsResources
 local rs = WidgetTools.resources
-local ut = WidgetTools.utilities
+
+---@type widgetToolsUtilities
+local us = WidgetTools.utilities
+
+---@type widgetToolsDebugging
 local ds = WidgetTools.debugging
+
 local cr = WrapTextInColor
+local crc = WrapTextInColorCode
 
 
 --[[ UX HELPERS ]]
@@ -285,11 +293,11 @@ function wt.CreateFont(name, t)
 	if t.font then font:SetFont(t.font.path, t.font.size, t.font.style) end
 
 	--Set appearance
-	if type(t.color) == "table" then font:SetTextColor(wt.UnpackColor(ut.Fill(t.color, { r = 1, g = 1, b = 1 }))) end
+	if type(t.color) == "table" then font:SetTextColor(wt.UnpackColor(us.Fill(t.color, { r = 1, g = 1, b = 1 }))) end
 	if type(t.spacing) == "number" then font:SetSpacing(t.spacing) end
 	if type(t.shadow) == "table" then
 		font:SetShadowOffset(t.shadow.offset.x or 1, t.shadow.offset.y)
-		font:SetShadowColor(wt.UnpackColor(ut.Fill(t.shadow.color, { r = 0, g = 0, b = 0 })))
+		font:SetShadowColor(wt.UnpackColor(us.Fill(t.shadow.color, { r = 0, g = 0, b = 0 })))
 	end
 
 	--Set text positioning
@@ -394,7 +402,7 @@ function wt.CreateDescription(title, t)
 	t.offset.x = type(t.offset.x) == "number" and t.offset.x or 0
 	t.offset.y = type(t.offset.y) == "number" and t.offset.y or 1
 	t.spacer = (type(t.spacer) == "number" and t.spacer or 5) * (t.justify ~= "LEFT" and -1 or 1)
-	t.color = type(t.color) == "table" and t.color or ut.Fill({ a = 0.55 }, HIGHLIGHT_FONT_COLOR)
+	t.color = type(t.color) == "table" and t.color or us.Fill({ a = 0.55 }, HIGHLIGHT_FONT_COLOR)
 
 	local separator = wt.CreateText({
 		parent = parent,
@@ -521,7 +529,7 @@ function wt.CreateTexture(frame, t, updates)
 			end
 
 			--Conditional: Evaluate the rule & fill texture update date with the base values
-			local data = ut.Fill(value.rule(self, ...), t)
+			local data = us.Fill(value.rule(self, ...), t)
 
 			--Update the texture
 			setTexture(data)
@@ -770,14 +778,14 @@ function wt.CreatePanel(t)
 	--| Backdrop
 
 	wt.SetBackdrop(panel, {
-		background = ut.Fill(t.background, {
+		background = us.Fill(t.background, {
 			texture = {
 				size = 5,
 				insets = { l = 4, r = 4, t = 4, b = 4 },
 			},
 			color = { r = 0.175, g = 0.175, b = 0.175, a = 0.65 }
 		}),
-		border = ut.Fill(t.border, {
+		border = us.Fill(t.border, {
 			texture = { width = 16, },
 			color = { r = 0.75, g = 0.75, b = 0.75, a = 0.5 }
 		})
@@ -1095,8 +1103,8 @@ function wt.CreateSettingsPage(addon, t)
 
 	---Force update all linked settings widgets in this category page
 	---***
-	---@param handleChanges? boolean If true, also call all registered change handlers | ***Default:*** false
-	---@param user? boolean If true, mark the call as being the result of a user interaction | ***Default:*** false
+	---@param handleChanges? boolean If true, also call all registered change handlers | ***Default:*** `false`
+	---@param user? boolean If true, mark the call as being the result of a user interaction | ***Default:*** `false`
 	function page.load(handleChanges, user)
 		--Update settings widgets
 		if t.autoLoad ~= false and type(t.dataManagement) == "table" then for i = 1, #t.dataManagement.keys do
@@ -1110,7 +1118,7 @@ function wt.CreateSettingsPage(addon, t)
 
 	---Force save all settings data of this category page from all linked widgets
 	---***
-	---@param user? boolean If true, mark the call as being the result of a user interaction | ***Default:*** false
+	---@param user? boolean If true, mark the call as being the result of a user interaction | ***Default:*** `false`
 	function page.save(user)
 		--Retrieve data from settings widgets and commit to storage
 		if t.autoSave ~= false and type(t.dataManagement) == "table" then for i = 1, #t.dataManagement.keys do
@@ -1123,7 +1131,7 @@ function wt.CreateSettingsPage(addon, t)
 
 	---Apply settings data of this category page by calling all registered **onChange** handlers of all linked widgets
 	---***
-	---@param user? boolean If true, mark the call as being the result of a user interaction | ***Default:*** false
+	---@param user? boolean If true, mark the call as being the result of a user interaction | ***Default:*** `false`
 	function page.apply(user)
 		if type(t.dataManagement) == "table" then for i = 1, #t.dataManagement.keys do wt.ApplySettingsData(t.dataManagement.category, t.dataManagement.keys[i]) end end
 
@@ -1133,7 +1141,7 @@ function wt.CreateSettingsPage(addon, t)
 
 	---Revert any changes made in this category page and reload all linked widget data
 	---***
-	---@param user? boolean If true, mark the call as being the result of a user interaction | ***Default:*** false
+	---@param user? boolean If true, mark the call as being the result of a user interaction | ***Default:*** `false`
 	function page.cancel(user)
 		--Update settings widgets
 		if type(t.dataManagement) == "table" then for i = 1, #t.dataManagement.keys do wt.RevertSettingsData(t.dataManagement.category, t.dataManagement.keys[i]) end end
@@ -1144,7 +1152,7 @@ function wt.CreateSettingsPage(addon, t)
 
 	---Reset all settings data of this category page to default values
 	---***
-	---@param user? boolean If true, mark the call as being the result of a user interaction | ***Default:*** false
+	---@param user? boolean If true, mark the call as being the result of a user interaction | ***Default:*** `false`
 	function page.default(user)
 		--Update with default values
 		if type(t.dataManagement) == "table" then for i = 1, #t.dataManagement.keys do wt.ResetSettingsData(t.dataManagement.category, t.dataManagement.keys[i]) end end
@@ -1291,7 +1299,7 @@ function wt.CreateSettingsPage(addon, t)
 		t.initialize(page.content, width, height, (t.dataManagement or {}).category, (t.dataManagement or {}).keys, t.name or addon)
 
 		--Arrange content
-		if t.arrangement and page.content then wt.ArrangeContent(page.content, ut.Fill(t.arrangement, {
+		if t.arrangement and page.content then wt.ArrangeContent(page.content, us.Fill(t.arrangement, {
 			margins = { l = 10, r = 10, t = 54, b = 10 },
 			gaps = 54,
 			resize = t.scroll ~= nil
@@ -1324,8 +1332,8 @@ function wt.CreateSettingsCategory(addon, parent, pages, t)
 
 	---Force update the settings widgets for all pages in this category
 	---***
-	---@param handleChanges? boolean If true, also call all registered change handlers | ***Default:*** false
-	---@param user? boolean If true, mark the call as being the result of a user interaction | ***Default:*** false
+	---@param handleChanges? boolean If true, also call all registered change handlers | ***Default:*** `false`
+	---@param user? boolean If true, mark the call as being the result of a user interaction | ***Default:*** `false`
 	function category.load(handleChanges, user)
 		for i = 1, #category.pages do category.pages[i].load(handleChanges, user) end
 
@@ -1335,8 +1343,8 @@ function wt.CreateSettingsCategory(addon, parent, pages, t)
 
 	---Reset all settings data to their default values for all pages in this category
 	---***
-	---@param user? boolean If true, mark the call as being the result of a user interaction | ***Default:*** false
-	---@param callListeners? boolean If true, call the **onDefault** listeners (if set) of each individual category page separately | ***Default:*** true
+	---@param user? boolean If true, mark the call as being the result of a user interaction | ***Default:*** `false`
+	---@param callListeners? boolean If true, call the **onDefault** listeners (if set) of each individual category page separately | ***Default:*** `true`
 	function category.defaults(user, callListeners)
 		for i = 1, #category.pages do
 			local dataManagement = category.pages[i].categorySyncer.dataManagement --REPLACE
@@ -1518,8 +1526,8 @@ function wt.CreateAction(t)
 
 	---Enable or disable the widget based on the specified value
 	---***
-	---@param state? boolean Enable the input if true, disable if not | ***Default:*** true
-	---@param silent? boolean If false, invoke an "enabled" event and call registered listeners | ***Default:*** false
+	---@param state? boolean Enable the input if true, disable if not | ***Default:*** `true`
+	---@param silent? boolean If false, invoke an "enabled" event and call registered listeners | ***Default:*** `false`
 	function action.setEnabled(state, silent)
 		enabled = state ~= false
 
@@ -1529,8 +1537,8 @@ function wt.CreateAction(t)
 	--| Action
 
 	---Trigger the action registered for the button (if it is enabled)
-	---@param user? boolean Whether to flag the action as being initiated by a user interaction or not | ***Default:*** false
-	---@param silent? boolean If false, invoke a "trigger" event and call registered listeners | ***Default:*** false
+	---@param user? boolean Whether to flag the action as being initiated by a user interaction or not | ***Default:*** `false`
+	---@param silent? boolean If false, invoke a "trigger" event and call registered listeners | ***Default:*** `false`
 	function action.trigger(user, silent)
 		if enabled and t.action then t.action(action, user) end
 
@@ -1887,10 +1895,10 @@ function wt.CreateToggle(t)
 
 	--| Options data management
 
-	---Read the data from storage via **t.getData()** then verify and load it to the widget
+	---Read the data from storage then verify and load it to the widget
 	---***
-	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
-	---@param silent? boolean If false, invoke a "loaded" event and call registered listeners | ***Default:*** false
+	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** `true`
+	---@param silent? boolean If false, invoke a "loaded" event and call registered listeners | ***Default:*** `false`
 	function toggle.loadData(handleChanges, silent)
 		handleChanges = handleChanges ~= false
 
@@ -1908,7 +1916,7 @@ function wt.CreateToggle(t)
 	---Verify and save the provided data or the current value of the widget to storage via **t.saveData(...)**
 	---***
 	---@param state? boolean Data to be saved | ***Default:*** *the currently set value of the widget*
-	---@param silent? boolean If false, invoke a "saved" event and call registered listeners | ***Default:*** false
+	---@param silent? boolean If false, invoke a "saved" event and call registered listeners | ***Default:*** `false`
 	function toggle.saveData(state, silent)
 		if type(t.saveData) == "function" then
 			if state == nil then state = value end
@@ -1926,29 +1934,33 @@ function wt.CreateToggle(t)
 	---Verify and save the provided data to storage via **t.saveData(...)** then load it to the widget via **t.loadData()**
 	---***
 	---@param state? boolean Data to be saved | ***Default:*** *the currently set value of the widget*
-	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
-	---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** false
+	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** `true`
+	---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** `false`
 	function toggle.setData(state, handleChanges, silent)
 		toggle.saveData(state, silent)
 		toggle.loadData(handleChanges, silent)
 	end
 
-	---Set a data snapshot so any changes made to the widget and/or the stored data can be reverted to this value via **toggle.revertData()**
-	---@param stored? boolean If true, use the data from storage via **t.getData()** to create the snapshot instead of using the current widget value | ***Default:*** false
-	function toggle.snapshotData(stored) if stored == true then snapshot = toggle.getData() else snapshot = value end end
-
+	---Get the currently set default value
+	---@return boolean default
 	function toggle.getDefault() return default end
 
+	---Set the default value
+	---@param state? boolean ***Default:*** `false`
 	function toggle.setDefault(state) default = state == true end
 
 	---Set and load the stored data managed by the widget to the default value specified via **t.default** at construction
-	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
-	---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** false
+	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** `true`
+	---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** `false`
 	function toggle.resetData(handleChanges, silent) toggle.setData(default, handleChanges, silent) end
 
+	---Set a data snapshot so any changes made to the widget and/or the stored data can be reverted to this value via **toggle.revertData()**
+	---@param stored? boolean If true, use the data from storage to create the snapshot instead of using the current widget value | ***Default:*** `false`
+	function toggle.snapshotData(stored) if stored == true then snapshot = toggle.getData() else snapshot = value end end
+
 	---Set and load the stored data managed by the widget to the last saved data snapshot set via **toggle.snapshotData()**
-	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
-	---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** false
+	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** `true`
+	---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** `false`
 	function toggle.revertData(handleChanges, silent) toggle.setData(snapshot, handleChanges, silent) end
 
 	---Returns the current toggle state of the widget
@@ -1957,9 +1969,9 @@ function wt.CreateToggle(t)
 
 	---Verify and set the toggle value of the widget to the provided state
 	---***
-	---@param state? boolean ***Default:*** false
-	---@param user? boolean If true, mark the change as being initiated via a user interaction and call change handlers | ***Default:*** false
-	---@param silent? boolean If false, invoke a "toggled" event and call registered listeners | ***Default:*** false
+	---@param state? boolean ***Default:*** `false`
+	---@param user? boolean If true, mark the change as being initiated via a user interaction and call change handlers | ***Default:*** `false`
+	---@param silent? boolean If false, invoke a "toggled" event and call registered listeners | ***Default:*** `false`
 	function toggle.setState(state, user, silent)
 		value = state == true
 
@@ -1972,8 +1984,8 @@ function wt.CreateToggle(t)
 
 	---Flip the current toggle state of the widget
 	---***
-	---@param user? boolean If true, mark the change as being initiated via a user interaction and call change handlers | ***Default:*** false
-	---@param silent? boolean If false, invoke a "toggled" event and call registered listeners | ***Default:*** false
+	---@param user? boolean If true, mark the change as being initiated via a user interaction and call change handlers | ***Default:*** `false`
+	---@param silent? boolean If false, invoke a "toggled" event and call registered listeners | ***Default:*** `false`
 	function toggle.toggleState(user, silent) toggle.setState(not value, user, silent) end
 
 	---Utility turn a toggle state value into formatted string
@@ -1983,7 +1995,7 @@ function wt.CreateToggle(t)
 	function toggle.formatValue(state)
 		if type(state) ~= "boolean" then state = value end
 
-		return WrapTextInColorCode((state and VIDEO_OPTIONS_ENABLED or VIDEO_OPTIONS_DISABLED):lower(), state and "FFAAAAFF" or "FFFFAA66")
+		return crc((state and VIDEO_OPTIONS_ENABLED or VIDEO_OPTIONS_DISABLED):lower(), state and "FFAAAAFF" or "FFFFAA66")
 	end
 
 	--| State & dependencies
@@ -1994,8 +2006,8 @@ function wt.CreateToggle(t)
 
 	---Enable or disable the widget based on the specified value
 	---***
-	---@param state? boolean Enable the input if true, disable if not | ***Default:*** true
-	---@param silent? boolean If false, invoke an "enabled" event and call registered listeners | ***Default:*** false
+	---@param state? boolean Enable the input if true, disable if not | ***Default:*** `true`
+	---@param silent? boolean If false, invoke an "enabled" event and call registered listeners | ***Default:*** `false`
 	function toggle.setEnabled(state, silent)
 		enabled = state ~= false
 
@@ -2416,6 +2428,10 @@ function wt.CreateRadiobutton(t, toggle)
 	---@field label? FontString
 	local radiobutton = toggle
 
+	--[ Properties ]
+
+	local clearable = t.clearable
+
 	--[ Frame Setup ]
 
 	local name = (t.append ~= false and t.parent and t.parent ~= UIParent and t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "Toggle")
@@ -2456,7 +2472,7 @@ function wt.CreateRadiobutton(t, toggle)
 			PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
 
 			radiobutton.setState(true, true)
-		elseif t.clearable and button == "RightButton" then
+		elseif clearable and button == "RightButton" then
 			PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_OFF)
 
 			radiobutton.setState(false, true)
@@ -2466,19 +2482,19 @@ function wt.CreateRadiobutton(t, toggle)
 	--Linked mouse interactions
 	radiobutton.frame:HookScript("OnEnter", function() if radiobutton.button:IsEnabled() then
 		radiobutton.button:LockHighlight()
-		if IsMouseButtonDown("LeftButton") or (t.clearable and IsMouseButtonDown("RightButton")) then radiobutton.button:SetButtonState("PUSHED") end
+		if IsMouseButtonDown("LeftButton") or (clearable and IsMouseButtonDown("RightButton")) then radiobutton.button:SetButtonState("PUSHED") end
 	end end)
 	radiobutton.frame:HookScript("OnLeave", function() if radiobutton.button:IsEnabled() then
 		radiobutton.button:UnlockHighlight()
 		radiobutton.button:SetButtonState("NORMAL")
 	end end)
-	radiobutton.frame:HookScript("OnMouseDown", function(_, button) if radiobutton.button:IsEnabled() and button == "LeftButton" or (t.clearable and button == "RightButton") then
+	radiobutton.frame:HookScript("OnMouseDown", function(_, button) if radiobutton.button:IsEnabled() and button == "LeftButton" or (clearable and button == "RightButton") then
 		radiobutton.button:SetButtonState("PUSHED")
 	end end)
 	radiobutton.frame:HookScript("OnMouseUp", function(_, button, isInside) if radiobutton.button:IsEnabled() then
 		radiobutton.button:SetButtonState("NORMAL")
 
-		if isInside and button == "LeftButton" or (t.clearable and button == "RightButton") then radiobutton.button:Click(button) end
+		if isInside and button == "LeftButton" or (clearable and button == "RightButton") then radiobutton.button:Click(button) end
 	end end)
 
 	--| State
@@ -2549,7 +2565,6 @@ local itemsets = {
 ---@return selector selector Reference to the new selector widget, utility functions and more wrapped in a table
 function wt.CreateSelector(t)
 	t = type(t) == "table" and t or {}
-	t.items = t.items or {}
 
 	--[ Wrapper table ]
 
@@ -2557,6 +2572,8 @@ function wt.CreateSelector(t)
 	local selector = {}
 
 	--[ Properties ]
+
+	local clearable = t.clearable
 
 	--| Toggle items
 
@@ -2574,9 +2591,9 @@ function wt.CreateSelector(t)
 	---@param v any
 	---@return integer|nil
 	local function verify(v)
-		v = type(v) == "number" and Clamp(math.floor(v), 1, #selector.toggles) or nil
+		v = type(v) == "number" and Clamp(math.floor(v), 1, #t.items) or nil
 
-		return v and v or not t.clearable and default or nil
+		return v and v or not clearable and default or nil
 	end
 
 	default = verify(t.default)
@@ -2667,11 +2684,11 @@ function wt.CreateSelector(t)
 	---Register, update or set up a new toggle widget item
 	---***
 	---@param index integer
-	---@param silent? boolean ***Default:*** false
+	---@param silent? boolean ***Default:*** `false`
 	local function setToggle(index, silent)
 		local new = false
 
-		if t.items[index].isType and t.items[index].isType("Toggle") then
+		if wt.IsWidget(t.items[index]) == "Toggle" then
 			--| Register the already defined toggle widget
 
 			new = true
@@ -2701,20 +2718,20 @@ function wt.CreateSelector(t)
 	--- - ***Note:*** The size of the selector widget may change if the number of provided items differs from the number of currently set items. Make sure to rearrange and/or resize other relevant frames potentially impacted by this if needed!
 	--- - ***Note:*** The currently selected item may not be the same after item were removed. In that case, the new item at the same index will be selected instead. If one or more items from the last indexes were removed, the new last item at the reduced count index will be selected. Make sure to use **selector.setSelected(...)** to correct the selection if needed!
 	---***
-	---@param items (selectorItem|toggle|selectorToggle)[] Table containing subtables with data used to update the toggle widgets, or already existing toggle widgets
-	---@param silent? boolean If false, invoke "updated" or "added" events and call registered listeners | ***Default:*** false
-	function selector.updateItems(items, silent)
-		t.items = items
+	---@param newItems (selectorItem|toggle|selectorToggle)[] Table containing subtables with data used to update the toggle widgets, or already existing toggle widgets
+	---@param silent? boolean If false, invoke "updated" or "added" events and call registered listeners | ***Default:*** `false`
+	function selector.updateItems(newItems, silent)
+		t.items = newItems
 
 		--Update the toggle widgets
-		for i = 1, #items do
+		for i = 1, #newItems do
 			setToggle(i, silent)
 
 			if not silent then selector.toggles[i].invoke._("activated", true) end
 		end
 
 		--Deactivate extra toggle widgets
-		while #items < #selector.toggles do
+		while #newItems < #selector.toggles do
 			selector.toggles[#selector.toggles].setState(false)
 
 			if not silent then selector.toggles[#selector.toggles].invoke._("activated", false) end
@@ -2730,10 +2747,10 @@ function wt.CreateSelector(t)
 
 	--| Options data management
 
-	---Read the data from storage via **t.getData()** then verify and load it to the widget
+	---Read the data from storage then verify and load it to the widget
 	---***
-	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
-	---@param silent? boolean If false, invoke a "loaded" event and call registered listeners | ***Default:*** false
+	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** `true`
+	---@param silent? boolean If false, invoke a "loaded" event and call registered listeners | ***Default:*** `false`
 	function selector.loadData(handleChanges, silent)
 		handleChanges = handleChanges ~= false
 
@@ -2751,7 +2768,7 @@ function wt.CreateSelector(t)
 	---Verify and save the provided data or the current value of the widget to storage via **t.saveData(...)**
 	---***
 	---@param data? wrappedInteger If set, save the value wrapped in this table | ***Default:*** *the currently set value of the widget*
-	---@param silent? boolean If false, invoke a "loaded" event and call registered listeners | ***Default:*** false
+	---@param silent? boolean If false, invoke a "loaded" event and call registered listeners | ***Default:*** `false`
 	function selector.saveData(data, silent)
 		if type(t.saveData) == "function" then
 			t.saveData(type(data) == "table" and verify(data.index) or value)
@@ -2767,29 +2784,33 @@ function wt.CreateSelector(t)
 	---Verify and save the provided data to storage via **t.saveData(...)** then load it to the widget via **t.loadData()**
 	---***
 	---@param data? wrappedInteger If set, save the value wrapped in this table | ***Default:*** *the currently set value of the widget*
-	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
-	---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** false
+	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** `true`
+	---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** `false`
 	function selector.setData(data, handleChanges, silent)
 		selector.saveData(data, silent)
 		selector.loadData(handleChanges, silent)
 	end
 
-	---Set a data snapshot so any changes made to the widget and/or the stored data can be reverted to this value via **selector.revertData()**
-	---@param stored? boolean If true, use the data from storage via **t.getData()** to create the snapshot instead of using the current widget value | ***Default:*** false
-	function selector.snapshotData(stored) snapshot = stored and selector.getData() or value end
-
+	---Get the currently set default value
+	---@return integer|nil default
 	function selector.getDefault() return default end
 
-	function selector.setDefault(index) default = index end
+	---Set the default value
+	---@param index integer|nil | ***Default:*** *no change*
+	function selector.setDefault(index) default = verify(index) end
 
 	---Set and load the stored data managed by the widget to the default value specified via **t.default** at construction
-	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
-	---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** false
+	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** `true`
+	---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** `false`
 	function selector.resetData(handleChanges, silent) selector.setData({ index = default }, handleChanges, silent) end
 
+	---Set a data snapshot so any changes made to the widget and/or the stored data can be reverted to this value via **selector.revertData()**
+	---@param stored? boolean If true, use the data from storage to create the snapshot instead of using the current widget value | ***Default:*** `false`
+	function selector.snapshotData(stored) snapshot = stored and selector.getData() or value end
+
 	---Set and load the stored data managed by the widget to the last saved data snapshot set via **selector.snapshotData()**
-	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
-	---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** false
+	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** `true`
+	---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** `false`
 	function selector.revertData(handleChanges, silent) selector.setData({ index = snapshot }, handleChanges, silent) end
 
 	---Returns the index of the currently selected item or nil if there is no selection
@@ -2799,8 +2820,8 @@ function wt.CreateSelector(t)
 	---Verify and set the specified item as selected
 	---***
 	---@param index? integer ***Default:*** nil *(no selection)*
-	---@param user? boolean If true, mark the change as being initiated via a user interaction and call change handlers | ***Default:*** false
-	---@param silent? boolean If false, invoke a "selected" event and call registered listeners | ***Default:*** false
+	---@param user? boolean If true, mark the change as being initiated via a user interaction and call change handlers | ***Default:*** `false`
+	---@param silent? boolean If false, invoke a "selected" event and call registered listeners | ***Default:*** `false`
 	function selector.setSelected(index, user, silent)
 		value = verify(index)
 
@@ -2821,8 +2842,8 @@ function wt.CreateSelector(t)
 
 	---Enable or disable the widget based on the specified value
 	---***
-	---@param state? boolean Enable the input if true, disable if not | ***Default:*** true
-	---@param silent? boolean If false, invoke an "enabled" event and call registered listeners | ***Default:*** false
+	---@param state? boolean Enable the input if true, disable if not | ***Default:*** `true`
+	---@param silent? boolean If false, invoke an "enabled" event and call registered listeners | ***Default:*** `false`
 	function selector.setEnabled(state, silent)
 		enabled = state ~= false
 
@@ -2870,7 +2891,11 @@ function wt.CreateSpecialSelector(itemset, t)
 
 	--[ Properties ]
 
-	---@diagnostic disable-next-line: inject-field
+	local clearable = t.clearable
+
+	--| Toggle items
+
+	---@diagnostic disable-next-line: inject-field --REPLACE when changing t references to locals
 	t.items = {}
 	for i = 1, #itemsets[itemset] do
 		t.items[i] = {}
@@ -2890,17 +2915,17 @@ function wt.CreateSpecialSelector(itemset, t)
 
 	---Data verification utility
 	---@param v any
-	---@return FramePoint|JustifyHorizontal|JustifyVertical|FrameStrata|nil
+	---@return specialSelectorValueTypes|nil
 	---@return integer|nil
 	local function verify(v)
-		local index = type(v) == "number" and Clamp(math.floor(v), 1, #selector.toggles) or v
+		local index = type(v) == "number" and Clamp(math.floor(v), 1, #itemsets[itemset]) or v
 		if type(v) == "string" then for i = 1, #itemsets[itemset] do if itemsets[itemset][i].value == v then index = i break end end end
 		v = itemsets[itemset][index]
 
-		return type(v) == "table" and v.value or not t.clearable and default or nil, index
+		return type(v) == "table" and v.value or not clearable and default or nil, index
 	end
 
-	default, t.default = verify(t.default)
+	default = verify(t.default)
 	local value = verify(t.value or type(t.getData) == "function" and t.getData() or nil)
 	local snapshot = value
 
@@ -2977,10 +3002,10 @@ function wt.CreateSpecialSelector(itemset, t)
 
 	--| Options data management
 
-	---Read the data from storage via **t.getData()** then verify and load it to the widget
+	---Read the data from storage then verify and load it to the widget
 	---***
-	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
-	---@param silent? boolean If false, invoke a "loaded" event and call registered listeners | ***Default:*** false
+	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** `true`
+	---@param silent? boolean If false, invoke a "loaded" event and call registered listeners | ***Default:*** `false`
 	function selector.loadData(handleChanges, silent)
 		handleChanges = handleChanges ~= false
 
@@ -2998,7 +3023,7 @@ function wt.CreateSpecialSelector(itemset, t)
 	---Verify and save the provided data or the current value of the widget to storage via **t.saveData(...)**
 	---***
 	---@param data? wrappedInteger|wrappedAnchor|wrappedJustifyH|wrappedJustifyV|wrappedStrata If set, save the value wrapped in this table | ***Default:*** *the currently set value of the widget*
-	---@param silent? boolean If false, invoke a "loaded" event and call registered listeners | ***Default:*** false
+	---@param silent? boolean If false, invoke a "loaded" event and call registered listeners | ***Default:*** `false`
 	function selector.saveData(data, silent)
 		if type(t.saveData) == "function" then
 			t.saveData(type(data) == "table" and verify(data.value) or value)
@@ -3008,44 +3033,59 @@ function wt.CreateSpecialSelector(itemset, t)
 	end
 
 	---Get the currently stored data via **t.getData()**
-	---@return FramePoint|JustifyHorizontal|JustifyVertical|FrameStrata|nil
+	---@return specialSelectorValueTypes|nil
 	function selector.getData() return type(t.getData) == "function" and t.getData() end
 
 	---Verify and save the provided data to storage via **t.saveData(...)** then load it to the widget via **t.loadData()**
 	---***
 	---@param data? wrappedInteger|wrappedAnchor|wrappedJustifyH|wrappedJustifyV|wrappedStrata If set, save the value wrapped in this table | ***Default:*** *the currently set value of the widget*
-	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
-	---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** false
+	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** `true`
+	---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** `false`
 	function selector.setData(data, handleChanges, silent)
 		selector.saveData(data, silent)
 		selector.loadData(handleChanges, silent)
 	end
 
-	---Set a data snapshot so any changes made to the widget and/or the stored data can be reverted to this value via **selector.revertData()**
-	---@param stored? boolean If true, use the data from storage via **t.getData()** to create the snapshot instead of using the current widget value | ***Default:*** false
-	function selector.snapshotData(stored) snapshot = stored and selector.getData() or value end
+	---Get the currently set default value
+	---@return specialSelectorValueTypes|nil default
+	function selector.getDefault() return default end
+
+	---Set the default value
+	---***
+	---@param selected integer|specialSelectorValueTypes|nil | ***Default:*** *no change*
+	---<hr><p></p>
+	function selector.setDefault(selected) default = verify(selected) end
 
 	---Set and load the stored data managed by the widget to the default value specified via **t.default** at construction
-	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
-	---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** false
+	---***
+	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** `true`
+	---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** `false`
 	function selector.resetData(handleChanges, silent) selector.setData({ value = default }, handleChanges, silent) end
 
+	---Set a data snapshot so any changes made to the widget and/or the stored data can be reverted to this value via **selector.revertData()**
+	---***
+	---@param stored? boolean If true, use the data from storage to create the snapshot instead of using the current widget value | ***Default:*** `false`
+	function selector.snapshotData(stored) snapshot = stored and selector.getData() or value end
+
 	---Set and load the stored data managed by the widget to the last saved data snapshot set via **selector.snapshotData()**
-	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
-	---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** false
+	---***
+	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** `true`
+	---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** `false`
 	function selector.revertData(handleChanges, silent) selector.setData({ value = snapshot }, handleChanges, silent) end
 
 	---Returns the value of the currently selected item or nil if there is no selection
-	---@return FramePoint|JustifyHorizontal|JustifyVertical|FrameStrata|nil
+	---@return specialSelectorValueTypes|nil selected
+	---<hr><p></p>
 	function selector.getSelected() return value end
 
 	---Set the specified item as selected
 	---***
-	---@param selected? integer|FramePoint|JustifyHorizontal|JustifyVertical|FrameStrata The index or the value of the item to be set as selected ***Default:*** nil *(no selection)*
-	---@param user? boolean If true, mark the change as being initiated via a user interaction and call change handlers | ***Default:*** false
-	---@param silent? boolean If false, invoke a "selected" event and call registered listeners | ***Default:*** false
+	---@param selected? integer|specialSelectorValueTypes|nil The index or the value of the item to be set as selected ***Default:*** nil *(no selection)*
+	---@param user? boolean If true, mark the change as being initiated via a user interaction and call change handlers | ***Default:*** `false`
+	---@param silent? boolean If false, invoke a "selected" event and call registered listeners | ***Default:*** `false`
+	---<hr><p></p>
 	function selector.setSelected(selected, user, silent)
-		value, selected = verify(selected)
+		_, selected = verify(selected)
 
 		for i = 1, #selector.toggles do selector.toggles[i].setState(i == selected, user, silent) end
 
@@ -3064,8 +3104,8 @@ function wt.CreateSpecialSelector(itemset, t)
 
 	---Enable or disable the widget based on the specified value
 	---***
-	---@param state? boolean Enable the input if true, disable if not | ***Default:*** true
-	---@param silent? boolean If false, invoke an "enabled" event and call registered listeners | ***Default:*** false
+	---@param state? boolean Enable the input if true, disable if not | ***Default:*** `true`
+	---@param silent? boolean If false, invoke an "enabled" event and call registered listeners | ***Default:*** `false`
 	function selector.setEnabled(state, silent)
 		enabled = state ~= false
 
@@ -3131,7 +3171,7 @@ function wt.CreateMultiselector(t)
 
 	--| Toggle items
 
-	t.items = t.items or {}
+	t.items = type(t.items) == "table" and us.Clone(t.items) or {}
 	t.limits = t.limits or {}
 	t.limits.min = t.limits.min or 1
 	t.limits.max = t.limits.max or #t.items
@@ -3151,13 +3191,13 @@ function wt.CreateMultiselector(t)
 	---@param v any
 	---@return boolean[]|nil
 	local function verify(v)
-		return ut.Fill(ut.Prune(type(v) == "table" and ut.Clone(v) or {}, function(_, itemValue) return type(itemValue) == "boolean" end), default)
+		return us.Fill(us.Prune(type(v) == "table" and us.Clone(v) or {}, function(_, itemValue) return type(itemValue) == "boolean" end), default)
 	end
 
 	default = verify(t.default)
 	local value = verify(t.value or type(t.getData) == "function" and t.getData() or nil)
 	---@type boolean[]|nil
-	local snapshot = ut.Clone(value)
+	local snapshot = us.Clone(value)
 
 	--| State
 
@@ -3251,7 +3291,7 @@ function wt.CreateMultiselector(t)
 	---***
 	---@param item toggle|selectorToggle
 	---@param index integer
-	---@param silent? boolean ***Default:*** false
+	---@param silent? boolean ***Default:*** `false`
 	local function setToggle(item, index, silent)
 		if type(item) ~= "table" then return end
 
@@ -3285,20 +3325,20 @@ function wt.CreateMultiselector(t)
 	--- - ***Note:*** The size of the selector widget may change if the number of provided items differs from the number of currently set items. Make sure to rearrange and/or resize other relevant frames potentially impacted by this if needed!
 	--- - ***Note:*** The currently selected item may not be the same after item were removed. In that case, the new item at the same index will be selected instead. If one or more items from the last indexes were removed, the new last item at the reduced count index will be selected. Make sure to use **selector.setSelected(...)** to correct the selection if needed!
 	---***
-	---@param items (selectorItem|toggle|selectorToggle)[] Table containing subtables with data used to update the toggle widgets, or already existing toggle widgets
-	---@param silent? boolean If false, invoke "updated" or "added" events and call registered listeners | ***Default:*** false
-	function selector.updateItems(items, silent)
-		t.items = items
+	---@param newItems (selectorItem|toggle|selectorToggle)[] Table containing subtables with data used to update the toggle widgets, or already existing toggle widgets
+	---@param silent? boolean If false, invoke "updated" or "added" events and call registered listeners | ***Default:*** `false`
+	function selector.updateItems(newItems, silent)
+		t.items = newItems
 
 		--Update the toggle widgets
-		for i = 1, #items do
-			setToggle(items[i], i, silent)
+		for i = 1, #newItems do
+			setToggle(newItems[i], i, silent)
 
 			if not silent then selector.toggles[i].invoke._("activated", true) end
 		end
 
 		--Deactivate extra toggle widgets
-		while #items < #selector.toggles do
+		while #newItems < #selector.toggles do
 			selector.toggles[#selector.toggles].setState(nil, nil, silent)
 
 			if not silent then selector.toggles[#selector.toggles].invoke._("activated", false) end
@@ -3318,10 +3358,10 @@ function wt.CreateMultiselector(t)
 
 	--| Options data management
 
-	---Read the data from storage via **t.getData()** then verify and load it to the widget
+	---Read the data from storage then verify and load it to the widget
 	---***
-	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
-	---@param silent? boolean If false, invoke a "loaded" event and call registered listeners | ***Default:*** false
+	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** `true`
+	---@param silent? boolean If false, invoke a "loaded" event and call registered listeners | ***Default:*** `false`
 	function selector.loadData(handleChanges, silent)
 		handleChanges = handleChanges ~= false
 
@@ -3339,7 +3379,7 @@ function wt.CreateMultiselector(t)
 	---Verify and save the provided data or the current value of the widget to storage via **t.saveData(...)**
 	---***
 	---@param data? wrappedBooleanArray If set, save the value wrapped in this table | ***Default:*** *the currently set value of the widget*
-	---@param silent? boolean If false, invoke a "loaded" event and call registered listeners | ***Default:*** false
+	---@param silent? boolean If false, invoke a "loaded" event and call registered listeners | ***Default:*** `false`
 	function selector.saveData(data, silent)
 		if type(t.saveData) == "function" then
 			t.saveData(type(data) == "table" and verify(data.states) or value)
@@ -3355,37 +3395,45 @@ function wt.CreateMultiselector(t)
 	---Verify and save the provided data to storage via **t.saveData(...)** then load it to the widget via **t.loadData()**
 	---***
 	---@param data? wrappedBooleanArray If set, save the value wrapped in this table | ***Default:*** *the currently set value of the widget*
-	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
-	---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** false
+	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** `true`
+	---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** `false`
 	function selector.setData(data, handleChanges, silent)
 		selector.saveData(data, silent)
 		selector.loadData(handleChanges, silent)
 	end
 
-	---Set a data snapshot so any changes made to the widget and/or the stored data can be reverted to this value via **selector.revertData()**
-	---@param stored? boolean If true, use the data from storage via **t.getData()** to create the snapshot instead of using the current widget value | ***Default:*** false
-	function selector.snapshotData(stored) ut.CopyValues(snapshot, stored and selector.getData() or value) end
+	---Get the currently set default value
+	---@return boolean[] default
+	function selector.getDefault() return default end
+
+	---Set the default value
+	---@param index boolean[]|nil | ***Default:*** *no change*
+	function selector.setDefault(index) default = verify(index) end
 
 	---Set and load the stored data managed by the widget to the last saved data snapshot set via **selector.snapshotData()**
-	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
-	---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** false
-	function selector.revertData(handleChanges, silent) selector.setData({ states = ut.Clone(snapshot) }, handleChanges, silent) end
+	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** `true`
+	---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** `false`
+	function selector.revertData(handleChanges, silent) selector.setData({ states = us.Clone(snapshot) }, handleChanges, silent) end
+
+	---Set a data snapshot so any changes made to the widget and/or the stored data can be reverted to this value via **selector.revertData()**
+	---@param stored? boolean If true, use the data from storage to create the snapshot instead of using the current widget value | ***Default:*** `false`
+	function selector.snapshotData(stored) us.CopyValues(snapshot, stored and selector.getData() or value) end
 
 	---Set and load the stored data managed by the widget to the default value specified via **t.default** at construction
-	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
-	---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** false
-	function selector.resetData(handleChanges, silent) selector.setData({ states = ut.Clone(default) }, handleChanges, silent) end
+	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** `true`
+	---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** `false`
+	function selector.resetData(handleChanges, silent) selector.setData({ states = us.Clone(default) }, handleChanges, silent) end
 
 	---Returns the list of all items and their current states
 	---***
 	---@return boolean[] selections Indexed list of item states
-	function selector.getSelections() return ut.Clone(value) end
+	function selector.getSelections() return us.Clone(value) end
 
 	---Set the specified items as selected
 	---***
-	---@param selections? boolean[]|nil  Indexed list of item states | ***Default:*** false[] *(no selected items)*
-	---@param user? boolean If true, mark the change as being initiated via a user interaction and call change handlers | ***Default:*** false
-	---@param silent? boolean If false, invoke "selected" and "limited" events and call registered listeners | ***Default:*** false
+	---@param selections? boolean[]|nil  Indexed list of item states | ***Default:*** `false`[] *(no selected items)*
+	---@param user? boolean If true, mark the change as being initiated via a user interaction and call change handlers | ***Default:*** `false`
+	---@param silent? boolean If false, invoke "selected" and "limited" events and call registered listeners | ***Default:*** `false`
 	function selector.setSelections(selections, user, silent)
 		value = verify(selections)
 
@@ -3411,9 +3459,9 @@ function wt.CreateMultiselector(t)
 	---Set the specified item as selected
 	---***
 	---@param index integer Index of the item | ***Range:*** (1, #selector.toggles)
-	---@param selected? boolean If true, set the item at this index as selected | ***Default:*** false
-	---@param user? boolean If true, mark the change as being initiated via a user interaction and call change handlers | ***Default:*** false
-	---@param silent? boolean If false, invoke "selected" and "limited" events and call registered listeners | ***Default:*** false
+	---@param selected? boolean If true, set the item at this index as selected | ***Default:*** `false`
+	---@param user? boolean If true, mark the change as being initiated via a user interaction and call change handlers | ***Default:*** `false`
+	---@param silent? boolean If false, invoke "selected" and "limited" events and call registered listeners | ***Default:*** `false`
 	function selector.setSelected(index, selected, user, silent)
 		if not selector.toggles[index] then return end
 
@@ -3446,8 +3494,8 @@ function wt.CreateMultiselector(t)
 
 	---Enable or disable the widget based on the specified value
 	---***
-	---@param state? boolean Enable the input if true, disable if not | ***Default:*** true
-	---@param silent? boolean If false, invoke an "enabled" event and call registered listeners | ***Default:*** false
+	---@param state? boolean Enable the input if true, disable if not | ***Default:*** `true`
+	---@param silent? boolean If false, invoke an "enabled" event and call registered listeners | ***Default:*** `false`
 	function selector.setEnabled(state, silent)
 		enabled = state ~= false
 
@@ -3555,22 +3603,36 @@ end
 ---Create a radio button selector GUI frame to pick one out of multiple options with enhanced widget functionality
 ---***
 ---@param t? radiogroupCreationData Parameters are to be provided in this table
----@param selector? selector Reference to an already existing selector to set up as a radio selector instead of creating a new base widget
+---@param selector? selector|specialSelector Reference to an already existing selector to set up as a radio selector instead of creating a new base widget
 ---***
----@return radiogroup|selector # References to the new [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame), an array of its child [CheckButton](https://warcraft.wiki.gg/wiki/UIOBJECT_CheckButton) widget items, utility functions and more wrapped in a table
+---@return radiogroup|specialRadiogroup|selector|specialSelector # References to the new [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame), an array of its child [CheckButton](https://warcraft.wiki.gg/wiki/UIOBJECT_CheckButton) widget items, utility functions and more wrapped in a table
 function wt.CreateRadiogroup(t, selector)
 	t = type(t) == "table" and t or {}
-	selector = selector and selector.isType and (selector.isType("Selector") or selector.isType("SpecialSelector")) and selector or wt.CreateSelector(t)
+	local selectorType = wt.IsWidget(selector)
+	selector = (selectorType == "Selector" or selectorType == "SpecialSelector") and selector or wt.CreateSelector(t)
 
 	if WidgetToolsDB.lite and t.lite ~= false then return selector end
 
 	---@class selectorRadiobutton : selectorToggle, radiobutton
 
-	---@class radiogroup : selector
-	---@field frame Frame|table
-	---@field label FontString|nil
-	---@field toggles? selectorRadiobutton[] The list of radio button widgets linked together in this selector
-	local radiogroup = selector
+	local radiogroup
+	if selectorType == "Selector" then --WATCH replace branching with a better solution to assign the right annotations
+		---@class radiogroup : selector
+		---@field frame Frame|table
+		---@field label FontString|nil
+		---@field toggles? selectorRadiobutton[] The list of radio button widgets linked together in this selector
+		radiogroup = selector
+	else
+		---@class specialRadiogroup : specialSelector
+		---@field frame Frame|table
+		---@field label FontString|nil
+		---@field toggles? selectorRadiobutton[] The list of radio button widgets linked together in this selector
+		radiogroup = selector
+	end
+
+	--[ Properties ]
+
+	local clearable = t.clearable
 
 	--[ Frame Setup ]
 
@@ -3602,10 +3664,10 @@ function wt.CreateRadiogroup(t, selector)
 					offset = { x = radiogroup.label and item.index == 1 and -4 or 0, y = radiogroup.label and item.index == 1 and -2 or 0}
 				},
 				size = { w = (t.width and t.columns == 1) and t.width or nil, },
-				clearable = t.clearable,
+				clearable = clearable,
 				events = { OnClick = function(_, _, button)
 					if button == "LeftButton" then radiogroup.setSelected(item.index, true)
-					elseif t.clearable and button == "RightButton" and not radiogroup.getSelected() then radiogroup.setSelected(nil, true) end
+					elseif clearable and button == "RightButton" and not radiogroup.getSelected() then radiogroup.setSelected(nil, true) end
 				end, },
 				showDefault = false,
 				utilityMenu = false,
@@ -3661,7 +3723,10 @@ function wt.CreateRadiogroup(t, selector)
 		})
 
 		local defaultValue
-		if t.showDefault ~= false then defaultValue = WrapTextInColorCode(t.default and t.items[t.default].title or tostring(t.default), "FFFFFFFF") end
+		if t.showDefault ~= false then
+			local default = radiogroup.getDefault()
+			defaultValue = crc(default and t.items[default].title or tostring(default), "FFFFFFFF")
+		end
 
 		local frames = { radiogroup.frame }
 		for i = 1, #radiogroup.toggles do table.insert(frames, radiogroup.toggles[i].frame) end
@@ -3690,7 +3755,7 @@ function wt.CreateRadiogroup(t, selector)
 				radiogroup.setSelected(wt.clipboard.selection.index, true)
 			end }):SetEnabled(wt.clipboard.selection ~= nil)
 			wt.CreateMenuButton(menu, { title = wt.strings.value.revert, action = function() radiogroup.revertData() end })
-			if t.default then wt.CreateMenuButton(menu, { title = wt.strings.value.restore, action = function() radiogroup.resetData() end }) end
+			if t.showDefault then wt.CreateMenuButton(menu, { title = wt.strings.value.restore, action = function() radiogroup.resetData() end }) end
 		end
 	}) end
 
@@ -3705,9 +3770,13 @@ end
 ---@return dropdownRadiogroup|selector # References to the new [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame), an array of its child [CheckButton](https://warcraft.wiki.gg/wiki/UIOBJECT_CheckButton) widget items, a toggle [Button](https://warcraft.wiki.gg/wiki/UIOBJECT_Button), utility functions and more wrapped in a table
 function wt.CreateDropdownRadiogroup(t, selector)
 	t = type(t) == "table" and t or {}
-	selector = selector and selector.isType and selector.isType("Selector") and selector or wt.CreateSelector(t)
+	selector = wt.IsWidget(selector) == "Selector" and selector or wt.CreateSelector(t)
 
 	if WidgetToolsDB.lite and t.lite ~= false then return selector end
+
+	--[ Properties ]
+
+	local clearable = t.clearable
 
 	--[ Frame Setup ]
 
@@ -3762,7 +3831,7 @@ function wt.CreateDropdownRadiogroup(t, selector)
 		position = { anchor = "CENTER", },
 		width = t.width - 12,
 		items = t.items,
-		clearable = t.clearable,
+		clearable = clearable,
 		listeners = t.listeners,
 		dependencies = t.dependencies,
 		getData = t.getData,
@@ -3873,7 +3942,7 @@ function wt.CreateDropdownRadiogroup(t, selector)
 				end, },
 			},
 		},
-		events = t.clearable and t.utilityMenu == false and { OnMouseUp = function(_, button, isInside)
+		events = clearable and t.utilityMenu == false and { OnMouseUp = function(_, button, isInside)
 			if button == "RightButton" and isInside and dropdown.toggle.frame:IsEnabled() then dropdown.setText(nil, true) end
 		end, } or nil,
 		dependencies = t.dependencies
@@ -4038,13 +4107,13 @@ function wt.CreateDropdownRadiogroup(t, selector)
 	---Set the text displayed on the label of the toggle button
 	---***
 	---@param text? string ***Default:*** **t.items[*index*].title** *(the title of the currently selected item)* or "…" *(if there is no selection)*
-	---@param silent? boolean If false, invoke a "labeled" event and call registered listeners | ***Default:*** false
+	---@param silent? boolean If false, invoke a "labeled" event and call registered listeners | ***Default:*** `false`
 	function dropdown.setText(text, silent)
 		local index = dropdown.getSelected()
 		local item = t.items[index] or {}
 		text = type(text) == "string" and text or item.title or "…"
-		local tooltip = ut.Clone(item.tooltip) or {}
-		tooltip = ut.Fill(tooltip, {
+		local tooltip = us.Clone(item.tooltip) or {}
+		tooltip = us.Fill(tooltip, {
 			title = text,
 			lines = {
 				{ text = index and wt.strings.dropdown.selected or wt.strings.dropdown.none, },
@@ -4131,7 +4200,10 @@ function wt.CreateDropdownRadiogroup(t, selector)
 		})
 
 		local defaultValue
-		if t.showDefault ~= false then defaultValue = WrapTextInColorCode(t.default and t.items[t.default].title or tostring(t.default), "FFFFFFFF") end
+		if t.showDefault ~= false then
+			local default = dropdown.getDefault()
+			defaultValue = crc(default and t.items[default].title or tostring(default), "FFFFFFFF")
+		end
 
 		wt.AddWidgetTooltipLines({ dropdown.holderFrame, dropdown.toggle.frame, dropdown.previous.frame, dropdown.next.frame }, defaultValue, t.utilityMenu)
 	end
@@ -4160,12 +4232,12 @@ function wt.CreateDropdownRadiogroup(t, selector)
 		initialize = function(menu)
 			wt.CreateMenuTextline(menu, { text = title })
 			wt.CreateMenuButton(menu, { title = wt.strings.value.copy, action = function() wt.clipboard.selection = { index = dropdown.getSelected() } end })
-			if t.clearable then wt.CreateMenuButton(menu, { title = wt.strings.dropdown.clear, action = function() dropdown.setText(nil, true) end }) end
+			if clearable then wt.CreateMenuButton(menu, { title = wt.strings.dropdown.clear, action = function() dropdown.setText(nil, true) end }) end
 			wt.CreateMenuButton(menu, { title = wt.strings.value.paste, action = function()
 				dropdown.setSelected(wt.clipboard.selection.index, true)
 			end }):SetEnabled(wt.clipboard.selection ~= nil)
 			wt.CreateMenuButton(menu, { title = wt.strings.value.revert, action = function() dropdown.revertData() end })
-			if t.default then wt.CreateMenuButton(menu, { title = wt.strings.value.restore, action = function() dropdown.resetData() end }) end
+			if dropdown.getDefault() then wt.CreateMenuButton(menu, { title = wt.strings.value.restore, action = function() dropdown.resetData() end }) end
 		end
 	}) end
 
@@ -4209,7 +4281,7 @@ end
 ---@return specialSelector|specialRadiogroup # References to the new [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame), an array of its child [CheckButton](https://warcraft.wiki.gg/wiki/UIOBJECT_CheckButton) widget items, utility functions and more wrapped in a table
 function wt.CreateSpecialRadiogroup(itemset, t, selector)
 	t = type(t) == "table" and t or {}
-	selector = selector and selector.isType and selector.isType("SpecialSelector") and selector or wt.CreateSpecialSelector(itemset, t)
+	selector = wt.IsWidget(selector) == "SpecialSelector" and selector or wt.CreateSpecialSelector(itemset, t)
 
 	if WidgetToolsDB.lite and t.lite ~= false then return selector end
 
@@ -4217,21 +4289,21 @@ function wt.CreateSpecialRadiogroup(itemset, t, selector)
 	local utilityMenu = t.utilityMenu
 
 	---@type specialRadiogroupCreationData|radiogroupCreationData
-	t = ut.Pull(t or {}, {
+	t = us.Pull(t or {}, {
 		labels = false,
 		columns = itemset == "strata" and 8 or 3,
 		showDefault = false,
 		utilityMenu = false,
 	})
 
-	---@class specialRadiogroup : radiogroup, specialSelector
+	---@type specialRadiogroup
 	local radiogroup = wt.CreateRadiogroup(t, selector)
 
 	--| Tooltip
 
 	if type(t.tooltip) == "table" then
 		local defaultValue
-		if showDefault ~= false then WrapTextInColorCode(t.default and itemsets[itemset][t.default].value or tostring(t.default), "FFFFFFFF") end
+		if showDefault ~= false then crc(radiogroup.getDefault(), "FFFFFFFF") end
 
 		local frames = { radiogroup.frame }
 		for i = 1, #radiogroup.toggles do table.insert(frames, radiogroup.toggles[i].frame) end
@@ -4253,7 +4325,7 @@ function wt.CreateSpecialRadiogroup(itemset, t, selector)
 				radiogroup.setSelected(wt.clipboard[radiogroup.getItemset()].value, true)
 			end }):SetEnabled(wt.clipboard[radiogroup.getItemset()] ~= nil)
 			wt.CreateMenuButton(menu, { title = wt.strings.value.revert, action = function() radiogroup.revertData() end })
-			if t.default then wt.CreateMenuButton(menu, { title = wt.strings.value.restore, action = function() radiogroup.resetData() end }) end
+			if showDefault then wt.CreateMenuButton(menu, { title = wt.strings.value.restore, action = function() radiogroup.resetData() end }) end
 		end
 	}) end
 
@@ -4263,12 +4335,12 @@ end
 ---Create a checkbox selector GUI frame to pick multiple options out of a list with enhanced widget functionality
 ---***
 ---@param t? checkgroupCreationData Parameters are to be provided in this table
----@param selector? selector Reference to an already existing selector to set up as a multiple selector instead of creating a new base widget
+---@param selector? multiselector Reference to an already existing selector to set up as a multiple selector instead of creating a new base widget
 ---***
 ---@return checkgroup|multiselector # References to the new [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame), an array of its child [CheckButton](https://warcraft.wiki.gg/wiki/UIOBJECT_CheckButton) widget items, utility functions and more wrapped in a table
 function wt.CreateCheckgroup(t, selector)
 	t = type(t) == "table" and t or {}
-	selector = selector and selector.isType and selector.isType("Multiselector") and selector or wt.CreateMultiselector(t)
+	selector = wt.IsWidget(selector) == "Multiselector" and selector or wt.CreateMultiselector(t)
 
 	if WidgetToolsDB.lite and t.lite ~= false then return selector end
 
@@ -4387,9 +4459,11 @@ function wt.CreateCheckgroup(t, selector)
 		local defaultValue
 		if t.showDefault ~= false then
 			defaultValue = ""
+			local default = checkgroup.getDefault()
+
 			for i = 1, #t.items do
-				defaultValue = defaultValue .. "\n" .. WrapTextInColorCode(t.items[i].title, "FFFFFFFF") .. WrapTextInColorCode(": ", "FF999999") .. WrapTextInColorCode(
-					(t.default[i] and VIDEO_OPTIONS_ENABLED or VIDEO_OPTIONS_DISABLED):lower(), t.default[i] and "FFAAAAFF" or "FFFFAA66"
+				defaultValue = defaultValue .. "\n" .. crc(t.items[i].title, "FFFFFFFF") .. crc(": ", "FF999999") .. crc(
+					(default[i] and VIDEO_OPTIONS_ENABLED or VIDEO_OPTIONS_DISABLED):lower(), default[i] and "FFAAAAFF" or "FFFFAA66"
 				)
 			end
 		end
@@ -4421,7 +4495,7 @@ function wt.CreateCheckgroup(t, selector)
 				checkgroup.setSelections(wt.clipboard.selections.states, true)
 			end }):SetEnabled(wt.clipboard.selections ~= nil)
 			wt.CreateMenuButton(menu, { title = wt.strings.value.revert, action = function() checkgroup.revertData() end })
-			if t.default then wt.CreateMenuButton(menu, { title = wt.strings.value.restore, action = function() checkgroup.resetData() end }) end
+			if t.showDefault then wt.CreateMenuButton(menu, { title = wt.strings.value.restore, action = function() checkgroup.resetData() end }) end
 		end
 	}) end
 
@@ -4522,10 +4596,10 @@ function wt.CreateTextbox(t)
 
 	--| Options data management
 
-	---Read the data from storage via **t.getData()** then verify and load it to the widget
+	---Read the data from storage then verify and load it to the widget
 	---***
-	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
-	---@param silent? boolean If false, invoke a "loaded" event and call registered listeners | ***Default:*** false
+	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** `true`
+	---@param silent? boolean If false, invoke a "loaded" event and call registered listeners | ***Default:*** `false`
 	function textbox.loadData(handleChanges, silent)
 		handleChanges = handleChanges ~= false
 
@@ -4543,7 +4617,7 @@ function wt.CreateTextbox(t)
 	---Verify and save the provided data or the current value of the widget to storage via **t.saveData(...)**
 	---***
 	---@param text? string Data to be saved | ***Default:*** *the currently set value of the widget*
-	---@param silent? boolean If false, invoke a "saved" event and call registered listeners | ***Default:*** false
+	---@param silent? boolean If false, invoke a "saved" event and call registered listeners | ***Default:*** `false`
 	function textbox.saveData(text, silent)
 		if type(t.saveData) == "function" then
 			t.saveData(type(text) == "string" and text or value)
@@ -4559,25 +4633,33 @@ function wt.CreateTextbox(t)
 	---Verify and save the provided data to storage via **t.saveData(...)** then load it to the widget via **t.loadData()**
 	---***
 	---@param text? string Data to be saved | ***Default:*** *the currently set value of the widget*
-	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
-	---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** false
+	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** `true`
+	---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** `false`
 	function textbox.setData(text, handleChanges, silent)
 		textbox.saveData(text, silent)
 		textbox.loadData(handleChanges, silent)
 	end
 
-	---Set a data snapshot so any changes made to the widget and/or the stored data can be reverted to this value via **textbox.revertData()**
-	---@param stored? boolean If true, use the data from storage via **t.getData()** to create the snapshot instead of using the current widget value | ***Default:*** false
-	function textbox.snapshotData(stored) snapshot = stored and textbox.getData() or value end
+	---Get the currently set default value
+	---@return string default
+	function textbox.getDefault() return default end
+
+	---Set the default value
+	---@param text string | ***Default:*** `""`
+	function textbox.setDefault(text) default = type(text) == "string" and text or "" end
 
 	---Set and load the stored data managed by the widget to the last saved data snapshot set via **textbox.snapshotData()**
-	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
-	---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** false
+	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** `true`
+	---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** `false`
 	function textbox.revertData(handleChanges, silent) textbox.setData(snapshot, handleChanges, silent) end
 
+	---Set a data snapshot so any changes made to the widget and/or the stored data can be reverted to this value via **textbox.revertData()**
+	---@param stored? boolean If true, use the data from storage to create the snapshot instead of using the current widget value | ***Default:*** `false`
+	function textbox.snapshotData(stored) snapshot = stored and textbox.getData() or value end
+
 	---Set and load the stored data managed by the widget to the default value specified via **t.default** at construction
-	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
-	---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** false
+	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** `true`
+	---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** `false`
 	function textbox.resetData(handleChanges, silent) textbox.setData(default, handleChanges, silent) end
 
 	---Returns the current text value of the widget
@@ -4587,8 +4669,8 @@ function wt.CreateTextbox(t)
 	---Set the text value of the widget
 	---***
 	---@param text? string ***Default:*** ""
-	---@param user? boolean If true, mark the change as being initiated via a user interaction and call change handlers | ***Default:*** false
-	---@param silent? boolean If false, invoke a "changed" event and call registered listeners | ***Default:*** false
+	---@param user? boolean If true, mark the change as being initiated via a user interaction and call change handlers | ***Default:*** `false`
+	---@param silent? boolean If false, invoke a "changed" event and call registered listeners | ***Default:*** `false`
 	function textbox.setText(text, user, silent)
 		value = type(text) == "string" and text or ""
 
@@ -4607,8 +4689,8 @@ function wt.CreateTextbox(t)
 
 	---Enable or disable the widget based on the specified value
 	---***
-	---@param state? boolean Enable the input if true, disable if not | ***Default:*** true
-	---@param silent? boolean If false, invoke an "enabled" event and call registered listeners | ***Default:*** false
+	---@param state? boolean Enable the input if true, disable if not | ***Default:*** `true`
+	---@param silent? boolean If false, invoke an "enabled" event and call registered listeners | ***Default:*** `false`
 	function textbox.setEnabled(state, silent)
 		enabled = state ~= false
 
@@ -4637,19 +4719,19 @@ end
 --| GUI
 
 ---Set the parameters of a GUI textbox widget frame
----@param textbox customEditbox|customEditbox|multilineEditbox
+---@param editbox customEditbox|customEditbox|multilineEditbox
 ---@param t editboxCreationData
-local function setUpEditboxFrame(textbox, t)
+local function setUpEditboxFrame(editbox, t)
 
 	--[ Frame Setup ]
 
 	--| Visibility
 
-	wt.SetVisibility(textbox.frame, t.visible ~= false)
+	wt.SetVisibility(editbox.frame, t.visible ~= false)
 
-	if t.frameStrata then textbox.frame:SetFrameStrata(t.frameStrata) end
-	if t.frameLevel then textbox.frame:SetFrameLevel(t.frameLevel) end
-	if t.keepOnTop then textbox.frame:SetToplevel(t.keepOnTop) end
+	if t.frameStrata then editbox.frame:SetFrameStrata(t.frameStrata) end
+	if t.frameLevel then editbox.frame:SetFrameLevel(t.frameLevel) end
+	if t.keepOnTop then editbox.frame:SetToplevel(t.keepOnTop) end
 
 	--[ Font & Text ]
 
@@ -4657,26 +4739,26 @@ local function setUpEditboxFrame(textbox, t)
 	t.insets = t.insets or {}
 	t.insets = { l = t.insets.l or 0, r = t.insets.r or 0, t = t.insets.t or 0, b = t.insets.b or 0 }
 
-	textbox.widget:SetTextInsets(t.insets.l, t.insets.r, t.insets.t, t.insets.b)
+	editbox.widget:SetTextInsets(t.insets.l, t.insets.r, t.insets.t, t.insets.b)
 
-	if t.font.normal then textbox.widget:SetFontObject(t.font.normal) end
+	if t.font.normal then editbox.widget:SetFontObject(t.font.normal) end
 
 	if t.justify then
-		if t.justify.h then textbox.widget:SetJustifyH(t.justify.h) end
-		if t.justify.v then textbox.widget:SetJustifyV(t.justify.v) end
+		if t.justify.h then editbox.widget:SetJustifyH(t.justify.h) end
+		if t.justify.v then editbox.widget:SetJustifyV(t.justify.v) end
 	end
 
-	if t.charLimit then textbox.widget:SetMaxLetters(t.charLimit) end
+	if t.charLimit then editbox.widget:SetMaxLetters(t.charLimit) end
 
 	--[ Events ]
 
 	--Register script event handlers
 	if t.events then for key, value in pairs(t.events) do
-		if key == "attribute" then textbox.widget:HookScript("OnAttributeChanged", function(_, attribute, ...) if attribute == value.name then value.handler(...) end end)
-		elseif key == "OnChar" then textbox.widget:SetScript("OnChar", function(self, char) value(self, char, self:GetText()) end)
-		elseif key == "OnTextChanged" then textbox.widget:SetScript("OnTextChanged", function(self, user) value(self, self:GetText(), user) end)
-		elseif key == "OnEnterPressed" then textbox.widget:SetScript("OnEnterPressed", function(self) value(self, self:GetText()) end)
-		else textbox.widget:HookScript(key, value) end
+		if key == "attribute" then editbox.widget:HookScript("OnAttributeChanged", function(_, attribute, ...) if attribute == value.name then value.handler(...) end end)
+		elseif key == "OnChar" then editbox.widget:SetScript("OnChar", function(self, char) value(self, char, self:GetText()) end)
+		elseif key == "OnTextChanged" then editbox.widget:SetScript("OnTextChanged", function(self, user) value(self, self:GetText(), user) end)
+		elseif key == "OnEnterPressed" then editbox.widget:SetScript("OnEnterPressed", function(self) value(self, self:GetText()) end)
+		else editbox.widget:HookScript(key, value) end
 	end end
 
 	--| UX
@@ -4687,117 +4769,117 @@ local function setUpEditboxFrame(textbox, t)
 	---@param _ any
 	---@param text string
 	local function updateText(_, text) if not scriptEvent then
-		textbox.widget:SetText(text)
+		editbox.widget:SetText(text)
 
-		if t.resetCursor ~= false then textbox.widget:SetCursorPosition(0) end
+		if t.resetCursor ~= false then editbox.widget:SetCursorPosition(0) end
 	else scriptEvent = false end end
 
 	--Handle widget updates
-	textbox.setListener.changed(updateText, 1)
+	editbox.setListener.changed(updateText, 1)
 
 	--Link value changes
-	textbox.widget:HookScript("OnTextChanged", function(self, user)
+	editbox.widget:HookScript("OnTextChanged", function(self, user)
 		scriptEvent = true
 
-		textbox.setText(self:GetText(), user)
+		editbox.setText(self:GetText(), user)
 	end)
 
-	textbox.widget:SetAutoFocus(t.keepFocused)
+	editbox.widget:SetAutoFocus(t.keepFocused)
 
-	if t.focusOnShow then textbox.widget:HookScript("OnShow", function(self) self:SetFocus() end) end
+	if t.focusOnShow then editbox.widget:HookScript("OnShow", function(self) self:SetFocus() end) end
 
-	if t.unfocusOnEnter ~= false then textbox.widget:HookScript("OnEnterPressed", function(self)
+	if t.unfocusOnEnter ~= false then editbox.widget:HookScript("OnEnterPressed", function(self)
 		PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
 
 		self:ClearFocus()
 	end) end
 
-	textbox.widget:HookScript("OnEscapePressed", function(self) self:ClearFocus() end)
+	editbox.widget:HookScript("OnEscapePressed", function(self) self:ClearFocus() end)
 
-	textbox.widget:HookScript("OnEnter", function(self) if textbox.isEnabled() and t.font.highlight then self:SetFontObject(t.font.highlight) end end)
-	textbox.widget:HookScript("OnLeave", function(self) if textbox.isEnabled() and t.font.normal then self:SetFontObject(t.font.normal) end end)
+	editbox.widget:HookScript("OnEnter", function(self) if editbox.isEnabled() and t.font.highlight then self:SetFontObject(t.font.highlight) end end)
+	editbox.widget:HookScript("OnLeave", function(self) if editbox.isEnabled() and t.font.normal then self:SetFontObject(t.font.normal) end end)
 
 	--| State
 
 	--Inherit setter
-	textbox.widget.setEnabled = textbox.setEnabled
+	editbox.widget.setEnabled = editbox.setEnabled
 
 	---Update the widget UI based on its enabled state
 	---@param _ any
 	---@param state boolean
 	local function updateState(_, state)
-		if t.readOnly then textbox.widget:Disable() else textbox.widget:SetEnabled(state) end
+		if t.readOnly then editbox.widget:Disable() else editbox.widget:SetEnabled(state) end
 
 		if state then
-			if textbox.widget:IsMouseOver() and t.font.highlight then textbox.widget:SetFontObject(t.font.highlight)
-			elseif t.font.normal then textbox.widget:SetFontObject(t.font.normal) end
-		elseif t.font.disabled then textbox.widget:SetFontObject(t.font.disabled) end
+			if editbox.widget:IsMouseOver() and t.font.highlight then editbox.widget:SetFontObject(t.font.highlight)
+			elseif t.font.normal then editbox.widget:SetFontObject(t.font.normal) end
+		elseif t.font.disabled then editbox.widget:SetFontObject(t.font.disabled) end
 
-		if textbox.label then textbox.label:SetFontObject(state and "GameFontNormal" or "GameFontDisable") end
+		if editbox.label then editbox.label:SetFontObject(state and "GameFontNormal" or "GameFontDisable") end
 	end
 
 	--Handle widget updates
-	textbox.setListener.enabled(updateState, 1)
+	editbox.setListener.enabled(updateState, 1)
 
 	--[ Initialization ]
 
 	--Set up starting state
-	updateState(nil, textbox.isEnabled())
+	updateState(nil, editbox.isEnabled())
 
 	--Set up starting text
-	updateText(nil, textbox.getText())
+	updateText(nil, editbox.getText())
 end
 
 ---Set the parameters of a single-line GUI textbox widget frame
----@param textbox customEditbox|customEditbox
+---@param editbox customEditbox|customEditbox
 ---@param title string
 ---@param t editboxCreationData
-local function setUpSingleLineEditbox(textbox, title, t)
+local function setUpSingleLineEditbox(editbox, title, t)
 
 	--Set as single line
-	textbox.widget:SetMultiLine(false)
+	editbox.widget:SetMultiLine(false)
 
 	--| Position
 
-	if t.arrange then textbox.frame.arrangementInfo = t.arrange else wt.SetPosition(textbox.frame, t.position) end
-	textbox.widget:SetPoint("BOTTOMRIGHT")
+	if t.arrange then editbox.frame.arrangementInfo = t.arrange else wt.SetPosition(editbox.frame, t.position) end
+	editbox.widget:SetPoint("BOTTOMRIGHT")
 
 	--| Shared setup
 
-	setUpEditboxFrame(textbox, t)
+	setUpEditboxFrame(editbox, t)
 
 	--[ Events ]
 
 	--| Tooltip
 
 	if type(t.tooltip) == "table" then
-		wt.AddTooltip(textbox.widget, {
+		wt.AddTooltip(editbox.widget, {
 			title = t.tooltip.title or title,
 			lines = t.tooltip.lines,
 			anchor = "ANCHOR_RIGHT",
 		})
 
 		local defaultValue
-		if t.showDefault ~= false then defaultValue = WrapTextInColorCode(t.default, "FF55DD55") end
+		if t.showDefault ~= false then defaultValue = crc(editbox.getDefault(), "FF55DD55") end
 
-		wt.AddWidgetTooltipLines({ textbox.frame, textbox.widget }, defaultValue, t.utilityMenu)
+		wt.AddWidgetTooltipLines({ editbox.frame, editbox.widget }, defaultValue, t.utilityMenu)
 	end
 
 	--| Utility menu
 
 	if t.utilityMenu ~= false then wt.CreateContextMenu({
 		triggers = { {
-			frame = textbox.widget,
-			condition = function() return textbox.isEnabled() and not t.readOnly end,
+			frame = editbox.widget,
+			condition = function() return editbox.isEnabled() and not t.readOnly end,
 		}, },
 		initialize = function(menu)
 			wt.CreateMenuTextline(menu, { text = title })
-			wt.CreateMenuButton(menu, { title = wt.strings.value.copy, action = function() wt.clipboard.text = textbox.getText() end })
+			wt.CreateMenuButton(menu, { title = wt.strings.value.copy, action = function() wt.clipboard.text = editbox.getText() end })
 			wt.CreateMenuButton(menu, { title = wt.strings.value.paste, action = function()
-				textbox.setText(wt.clipboard.text, true)
+				editbox.setText(wt.clipboard.text, true)
 			end }):SetEnabled(wt.clipboard.text ~= nil)
-			wt.CreateMenuButton(menu, { title = wt.strings.value.revert, action = function() textbox.revertData() end })
-			if t.default then wt.CreateMenuButton(menu, { title = wt.strings.value.restore, action = function() textbox.resetData() end }) end
+			wt.CreateMenuButton(menu, { title = wt.strings.value.revert, action = function() editbox.revertData() end })
+			if t.showDefault then wt.CreateMenuButton(menu, { title = wt.strings.value.restore, action = function() editbox.resetData() end }) end
 		end
 	}) end
 end
@@ -4810,7 +4892,7 @@ end
 ---@return customEditbox|textbox # Reference to the new [EditBox](hhttps://warcraft.wiki.gg/wiki/UIOBJECT_EditBox), its holder [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame), utility functions and more wrapped in a table
 function wt.CreateEditbox(t, textbox)
 	t = type(t) == "table" and t or {}
-	textbox = textbox and textbox.isType and textbox.isType("Textbox") and textbox or wt.CreateTextbox(t)
+	textbox = wt.IsWidget(textbox) == "Textbox" and textbox or wt.CreateTextbox(t)
 
 	if WidgetToolsDB.lite and t.lite ~= false then return textbox end
 
@@ -4857,7 +4939,7 @@ end
 ---@return customEditbox|textbox # Reference to the new [EditBox](hhttps://warcraft.wiki.gg/wiki/UIOBJECT_EditBox), its holder [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame), utility functions and more wrapped in a table
 function wt.CreateCustomEditbox(t, textbox)
 	t = type(t) == "table" and t or {}
-	textbox = textbox and textbox.isType and textbox.isType("Textbox") and textbox or wt.CreateTextbox(t)
+	textbox = wt.IsWidget(textbox) == "Textbox" and textbox or wt.CreateTextbox(t)
 
 	if WidgetToolsDB.lite and t.lite ~= false then return textbox end
 
@@ -4914,7 +4996,7 @@ end
 ---@return multilineEditbox|textbox # Reference to the new [EditBox](hhttps://warcraft.wiki.gg/wiki/UIOBJECT_EditBox), its holder [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame), utility functions and more wrapped in a table
 function wt.CreateMultilineEditbox(t, textbox)
 	t = type(t) == "table" and t or {}
-	textbox = textbox and textbox.isType and textbox.isType("Textbox") and textbox or wt.CreateTextbox(t)
+	textbox = wt.IsWidget(textbox) == "Textbox" and textbox or wt.CreateTextbox(t)
 
 	if WidgetToolsDB.lite and t.lite ~= false then return textbox end
 
@@ -5022,7 +5104,7 @@ function wt.CreateMultilineEditbox(t, textbox)
 
 		if t.readOnly ~= true then
 			local defaultValue
-			if t.showDefault ~= false then defaultValue = WrapTextInColorCode(t.default, "FF55DD55") end
+			if t.showDefault ~= false then defaultValue = crc(editbox.getDefault(), "FF55DD55") end
 
 			wt.AddWidgetTooltipLines({ editbox.scrollFrame, editbox.widget }, defaultValue, t.utilityMenu)
 		end
@@ -5052,7 +5134,7 @@ function wt.CreateMultilineEditbox(t, textbox)
 				editbox.setText(wt.clipboard.text, true)
 			end }):SetEnabled(wt.clipboard.text ~= nil)
 			wt.CreateMenuButton(menu, { title = wt.strings.value.revert, action = function() editbox.revertData() end })
-			if t.default then wt.CreateMenuButton(menu, { title = wt.strings.value.restore, action = function() editbox.resetData() end }) end
+			if t.showDefault then wt.CreateMenuButton(menu, { title = wt.strings.value.restore, action = function() editbox.resetData() end }) end
 		end
 	}) end
 
@@ -5279,10 +5361,10 @@ function wt.CreateNumeric(t)
 
 	--| Options data management
 
-	---Read the data from storage via **t.getData()** then verify and load it to the widget
+	---Read the data from storage then verify and load it to the widget
 	---***
-	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
-	---@param silent? boolean If false, invoke a "loaded" event and call registered listeners | ***Default:*** false
+	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** `true`
+	---@param silent? boolean If false, invoke a "loaded" event and call registered listeners | ***Default:*** `false`
 	function numeric.loadData(handleChanges, silent)
 		handleChanges = handleChanges ~= false
 
@@ -5300,7 +5382,7 @@ function wt.CreateNumeric(t)
 	---Verify and save the provided data or the current value of the widget to storage via **t.saveData(...)**
 	---***
 	---@param number? number Data to be saved | ***Default:*** *the currently set value of the widget*
-	---@param silent? boolean If false, invoke a "saved" event and call registered listeners | ***Default:*** false
+	---@param silent? boolean If false, invoke a "saved" event and call registered listeners | ***Default:*** `false`
 	function numeric.saveData(number, silent)
 		if type(t.saveData) == "function" then
 			t.saveData(number and verify(number) or value)
@@ -5316,25 +5398,33 @@ function wt.CreateNumeric(t)
 	---Verify and save the provided data to storage via **t.saveData(...)** then load it to the widget via **t.loadData()**
 	---***
 	---@param number? number Data to be saved | ***Default:*** *the currently set value of the widget*
-	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
-	---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** false
+	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** `true`
+	---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** `false`
 	function numeric.setData(number, handleChanges, silent)
 		numeric.saveData(number, silent)
 		numeric.loadData(handleChanges, silent)
 	end
 
-	---Set a data snapshot so any changes made to the widget and/or the stored data can be reverted to this value via **numeric.revertData()**
-	---@param stored? boolean If true, use the data from storage via **t.getData()** to create the snapshot instead of using the current widget value | ***Default:*** false
-	function numeric.snapshotData(stored) snapshot = stored and numeric.getData() or value end
+	---Get the currently set default value
+	---@return number default
+	function numeric.getDefault() return default end
+
+	---Set the default value
+	---@param number number | ***Default:*** *no change*
+	function numeric.setDefault(number) default = verify(number) end
 
 	---Set and load the stored data managed by the widget to the last saved data snapshot set via **numeric.snapshotData()**
-	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
-	---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** false
+	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** `true`
+	---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** `false`
 	function numeric.revertData(handleChanges, silent) numeric.setData(snapshot, handleChanges, silent) end
 
+	---Set a data snapshot so any changes made to the widget and/or the stored data can be reverted to this value via **numeric.revertData()**
+	---@param stored? boolean If true, use the data from storage to create the snapshot instead of using the current widget value | ***Default:*** `false`
+	function numeric.snapshotData(stored) snapshot = stored and numeric.getData() or value end
+
 	---Set and load the stored data managed by the widget to the default value specified via **t.default** at construction
-	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
-	---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** false
+	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** `true`
+	---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** `false`
 	function numeric.resetData(handleChanges, silent) numeric.setData(default, handleChanges, silent) end
 
 	---Returns the current value of the widget
@@ -5355,15 +5445,15 @@ function wt.CreateNumeric(t)
 	end
 
 	---Decrease the value of the widget by the specified **t.step** or **t.altStep** amount
-	---@param alt? boolean If true, use **t.altStep** instead of **t.step** to decrease the value by | ***Default:*** false
-	---@param user? boolean If true, mark the change as being initiated via a user interaction and call change handlers | ***Default:*** false
-	---@param silent? boolean If false, invoke a "changed" event and call registered listeners | ***Default:*** false
+	---@param alt? boolean If true, use **t.altStep** instead of **t.step** to decrease the value by | ***Default:*** `false`
+	---@param user? boolean If true, mark the change as being initiated via a user interaction and call change handlers | ***Default:*** `false`
+	---@param silent? boolean If false, invoke a "changed" event and call registered listeners | ***Default:*** `false`
 	function numeric.decrease(alt, user, silent) numeric.setNumber(value - (alt and t.altStep or t.step), user, silent) end
 
 	---Increase the value of the widget by the specified **t.step** or **t.altStep** amount
-	---@param alt? boolean If true, use **t.altStep** instead of **t.step** to increase the value by | ***Default:*** false
-	---@param user? boolean If true, mark the change as being initiated via a user interaction and call change handlers | ***Default:*** false
-	---@param silent? boolean If false, invoke a "changed" event and call registered listeners | ***Default:*** false
+	---@param alt? boolean If true, use **t.altStep** instead of **t.step** to increase the value by | ***Default:*** `false`
+	---@param user? boolean If true, mark the change as being initiated via a user interaction and call change handlers | ***Default:*** `false`
+	---@param silent? boolean If false, invoke a "changed" event and call registered listeners | ***Default:*** `false`
 	function numeric.increase(alt, user, silent) numeric.setNumber(value + (alt and t.altStep or t.step), user, silent) end
 
 	--| State
@@ -5374,8 +5464,8 @@ function wt.CreateNumeric(t)
 
 	---Enable or disable the widget based on the specified value
 	---***
-	---@param state? boolean Enable the input if true, disable if not | ***Default:*** true
-	---@param silent? boolean If false, invoke an "enabled" event and call registered listeners | ***Default:*** false
+	---@param state? boolean Enable the input if true, disable if not | ***Default:*** `true`
+	---@param silent? boolean If false, invoke an "enabled" event and call registered listeners | ***Default:*** `false`
 	function numeric.setEnabled(state, silent)
 		enabled = state ~= false
 
@@ -5387,7 +5477,7 @@ function wt.CreateNumeric(t)
 	---Set the lower value limit of the widget
 	---***
 	---@param number number Updates the lower limit value | ***Range:*** (any, *current upper limit*) *capped automatically*
-	---@param silent? boolean If false, invoke a "min" event and call registered listeners | ***Default:*** false
+	---@param silent? boolean If false, invoke a "min" event and call registered listeners | ***Default:*** `false`
 	function numeric.setMin(number, silent)
 		limitMin = min(number, limitMax)
 
@@ -5399,7 +5489,7 @@ function wt.CreateNumeric(t)
 	---Set the upper value limit of the widget
 	---***
 	---@param number number Updates the upper limit value | ***Range:*** (*current lower limit*, any) *floored automatically*
-	---@param silent? boolean If false, invoke a "max" event and call registered listeners | ***Default:*** false
+	---@param silent? boolean If false, invoke a "max" event and call registered listeners | ***Default:*** `false`
 	function numeric.setMax(number, silent)
 		limitMax = max(limitMin, number)
 
@@ -5437,7 +5527,7 @@ end
 ---@return customSlider|numeric # References to the new [Slider](https://warcraft.wiki.gg/wiki/UIOBJECT_Slider), its holder [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame), child widgets, utility functions and more wrapped in a table
 function wt.CreateSlider(t, numeric)
 	t = type(t) == "table" and t or {}
-	numeric = numeric and numeric.isType and numeric.isType("Numeric") and numeric or wt.CreateNumeric(t)
+	numeric = wt.IsWidget(numeric) == "Numeric" and numeric or wt.CreateNumeric(t)
 
 	if WidgetToolsDB.lite and t.lite ~= false then return numeric end
 
@@ -5619,7 +5709,7 @@ function wt.CreateSlider(t, numeric)
 	---***
 	---@param _ any
 	---@param number number
-	---@param user? boolean ***Default:*** false
+	---@param user? boolean ***Default:*** `false`
 	local function updateNumber(_, number, user) if not scriptEvent then slider.widget.Slider:SetValue(number, user) else scriptEvent = false end end
 
 	---Update the min/max limits of the slider
@@ -5669,7 +5759,7 @@ function wt.CreateSlider(t, numeric)
 		}, { triggers = { slider.frame } })
 
 		local defaultValue
-		if t.showDefault ~= false then defaultValue = WrapTextInColorCode(tostring(t.default), "FFDDDD55") end
+		if t.showDefault ~= false then defaultValue = crc(tostring(slider.getDefault()), "FFDDDD55") end
 
 		wt.AddWidgetTooltipLines({ slider.frame, slider.widget.Slider, slider.widget.Back, slider.widget.Forward, slider.valuebox.widget }, defaultValue, t.utilityMenu)
 	end
@@ -5706,7 +5796,7 @@ function wt.CreateSlider(t, numeric)
 				slider.setNumber(wt.clipboard.numeric, true)
 			end }):SetEnabled(wt.clipboard.numeric ~= nil)
 			wt.CreateMenuButton(menu, { title = wt.strings.value.revert, action = function() slider.revertData() end })
-			if t.default then wt.CreateMenuButton(menu, { title = wt.strings.value.restore, action = function() slider.resetData() end }) end
+			if t.showDefault then wt.CreateMenuButton(menu, { title = wt.strings.value.restore, action = function() slider.resetData() end }) end
 		end
 	}) end
 
@@ -5752,7 +5842,7 @@ end
 ---@return classicSlider|numeric # References to the new [Slider](https://warcraft.wiki.gg/wiki/UIOBJECT_Slider), its holder [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame), child widgets, utility functions and more wrapped in a table
 function wt.CreateClassicSlider(t, numeric)
 	t = type(t) == "table" and t or {}
-	numeric = numeric and numeric.isType and numeric.isType("Numeric") and numeric or wt.CreateNumeric(t)
+	numeric = wt.IsWidget(numeric) == "Numeric" and numeric or wt.CreateNumeric(t)
 
 	if WidgetToolsDB.lite and t.lite ~= false then return numeric end
 
@@ -6041,7 +6131,7 @@ function wt.CreateClassicSlider(t, numeric)
 	---***
 	---@param _ any
 	---@param number number
-	---@param user? boolean ***Default:*** false
+	---@param user? boolean ***Default:*** `false`
 	local function updateNumber(_, number, user) if not scriptEvent then slider.widget:SetValue(number, user) else scriptEvent = false end end
 
 	---Update the min/max limits of the slider
@@ -6078,7 +6168,7 @@ function wt.CreateClassicSlider(t, numeric)
 		}, { triggers = { slider.frame } })
 
 		local defaultValue
-		if t.showDefault ~= false then defaultValue = WrapTextInColorCode(tostring(t.default), "FFDDDD55") end
+		if t.showDefault ~= false then defaultValue = crc(tostring(slider.getDefault()), "FFDDDD55") end
 
 		wt.AddWidgetTooltipLines({ slider.widget }, defaultValue, t.utilityMenu)
 	end
@@ -6097,7 +6187,7 @@ function wt.CreateClassicSlider(t, numeric)
 				slider.setNumber(wt.clipboard.numeric, true)
 			end }):SetEnabled(wt.clipboard.numeric ~= nil)
 			wt.CreateMenuButton(menu, { title = wt.strings.value.revert, action = function() slider.revertData() end })
-			if t.default then wt.CreateMenuButton(menu, { title = wt.strings.value.restore, action = function() slider.resetData() end }) end
+			if t.showDefault then wt.CreateMenuButton(menu, { title = wt.strings.value.restore, action = function() slider.resetData() end }) end
 		end
 	}) end
 
@@ -6156,7 +6246,7 @@ function wt.CreateColormanager(t)
 
 	--| Data
 
-	local default = wt.HarmonizeData(t.default, wt.PackColor(wt.UnpackColor(t.default))) --CHECK what are we doing here
+	local default = wt.PackColor(wt.UnpackColor(t.default))
 	local value = t.value or type(t.getData) == "function" and t.getData() or nil
 	value = wt.PackColor(wt.UnpackColor(value))
 	local snapshot = value
@@ -6230,10 +6320,10 @@ function wt.CreateColormanager(t)
 
 	--| Options data management
 
-	---Read the data from storage via **t.getData()** then verify and load it to the widget
+	---Read the data from storage then verify and load it to the widget
 	---***
-	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
-	---@param silent? boolean If false, invoke a "loaded" event and call registered listeners | ***Default:*** false
+	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** `true`
+	---@param silent? boolean If false, invoke a "loaded" event and call registered listeners | ***Default:*** `false`
 	function colormanager.loadData(handleChanges, silent)
 		handleChanges = handleChanges ~= false
 
@@ -6251,7 +6341,7 @@ function wt.CreateColormanager(t)
 	---Verify and save the provided data or the current value of the widget to storage via **t.saveData(...)**
 	---***
 	---@param color? colorData|colorRGBA Data to be saved | ***Default:*** *the currently set value of the widget*
-	---@param silent? boolean If false, invoke a "saved" event and call registered listeners | ***Default:*** false
+	---@param silent? boolean If false, invoke a "saved" event and call registered listeners | ***Default:*** `false`
 	function colormanager.saveData(color, silent)
 		if type(t.saveData) == "function" then
 			t.saveData(color and wt.PackColor(wt.UnpackColor(color)) or value)
@@ -6267,36 +6357,44 @@ function wt.CreateColormanager(t)
 	---Verify and save the provided data to storage via **t.saveData(...)** then load it to the widget via **t.loadData()**
 	---***
 	---@param color? colorData|colorRGBA Data to be saved | ***Default:*** *the currently set value of the widget*
-	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
-	---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** false
+	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** `true`
+	---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** `false`
 	function colormanager.setData(color, handleChanges, silent)
 		colormanager.saveData(color, silent)
 		colormanager.loadData(handleChanges, silent)
 	end
 
-	---Set a data snapshot so any changes made to the widget and/or the stored data can be reverted to this value via **colorpicker.revertData()**
-	---@param stored? boolean If true, use the data from storage via **t.getData()** to create the snapshot instead of using the current widget value | ***Default:*** false
-	function colormanager.snapshotData(stored) ut.CopyValues(snapshot, stored and colormanager.getData() or value) end
+	---Get the currently set default value
+	---@return colorData default
+	function colormanager.getDefault() return us.Clone(default) end
 
-	---Set and load the stored data managed by the widget to the last saved data snapshot set via **colorpicker.snapshotData()**
-	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
-	---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** false
+	---Set the default value
+	---@param color? colorData | ***Default:*** *opaque white:* `{ r = 1, g = 1, b = 1, a = 1 }`
+	function colormanager.setDefault(color) default = wt.PackColor(wt.UnpackColor(color)) end
+
+	---Set and load the stored data managed by the widget to the last saved data snapshot set via **colormanager.snapshotData()**
+	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** `true`
+	---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** `false`
 	function colormanager.revertData(handleChanges, silent) colormanager.setData(snapshot, handleChanges, silent) end
 
+	---Set a data snapshot so any changes made to the widget and/or the stored data can be reverted to this value via **colormanager.revertData()**
+	---@param stored? boolean If true, use the data from storage to create the snapshot instead of using the current widget value | ***Default:*** `false`
+	function colormanager.snapshotData(stored) us.CopyValues(snapshot, stored and colormanager.getData() or value) end
+
 	---Set and load the stored data managed by the widget to the default value specified via **t.default** at construction
-	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** true
-	---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** false
+	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** `true`
+	---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** `false`
 	function colormanager.resetData(handleChanges, silent) colormanager.setData(default, handleChanges, silent) end
 
 	---Returns the currently set channel values wrapped in a color table
 	---@return colorData
-	function colormanager.getColor() return ut.Clone(value) end
+	function colormanager.getColor() return us.Clone(value) end
 
 	---Set the managed color values
 	---***
-	---@param color? colorData|colorRGBA ***Default:*** { r = 1, g = 1, b = 1, a = 1 } *(opaque white)*
-	---@param user? boolean Whether to flag the call as a result of a user interaction calling registered listeners | ***Default:*** false
-	---@param silent? boolean If false, invoke a "colored" event and call registered listeners | ***Default:*** false
+	---@param color? colorData|colorRGBA ***Default:*** { r = 1, g = 1, b = 1, a = 1 } *opaque white:* `{ r = 1, g = 1, b = 1, a = 1 }`
+	---@param user? boolean Whether to flag the call as a result of a user interaction calling registered listeners | ***Default:*** `false`
+	---@param silent? boolean If false, invoke a "colored" event and call registered listeners | ***Default:*** `false`
 	function colormanager.setColor(color, user, silent)
 		value = wt.PackColor(wt.UnpackColor(color))
 
@@ -6353,8 +6451,8 @@ function wt.CreateColormanager(t)
 
 	---Enable or disable the widget based on the specified value
 	---***
-	---@param state? boolean Enable the input if true, disable if not | ***Default:*** true
-	---@param silent? boolean If false, invoke an "enabled" event and call registered listeners | ***Default:*** false
+	---@param state? boolean Enable the input if true, disable if not | ***Default:*** `true`
+	---@param silent? boolean If false, invoke an "enabled" event and call registered listeners | ***Default:*** `false`
 	function colormanager.setEnabled(state, silent)
 		enabled = state ~= false
 
@@ -6401,7 +6499,7 @@ end
 ---@return colorpicker|colormanager # Reference to the new [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame), utility functions and more wrapped in a table
 function wt.CreateColorpicker(t, colormanager)
 	t = type(t) == "table" and t or {}
-	colormanager = colormanager and colormanager.isType and colormanager.isType("Colorpicker") and colormanager or wt.CreateColormanager(t)
+	colormanager = wt.IsWidget(colormanager) == "Colorpicker" and colormanager or wt.CreateColormanager(t)
 
 	if WidgetToolsDB.lite and t.lite ~= false then return colormanager end
 
@@ -6460,7 +6558,7 @@ function wt.CreateColorpicker(t, colormanager)
 		colorpicker.hexBox.widget:SetAlpha(opacity)
 	end
 
-	if not t.value and t.getData then t.value = ut.Clone(t.getData()) else t.value = {} end
+	if not t.value and t.getData then t.value = us.Clone(t.getData()) else t.value = {} end
 
 	if not colorpicker.button.frame then wt.CreateCustomButton({
 		parent = colorpicker.frame,
@@ -6533,7 +6631,7 @@ function wt.CreateColorpicker(t, colormanager)
 		title = wt.strings.color.hex.label,
 		label = false,
 		tooltip = { lines = { {
-			text = wt.strings.color.hex.tooltip .. "\n\n" .. WrapTextInColorCode(wt.strings.example .. ": ", "FF66FF66") .. WrapTextInColorCode(
+			text = wt.strings.color.hex.tooltip .. "\n\n" .. crc(wt.strings.example .. ": ", "FF66FF66") .. crc(
 				"#2266BB" .. (t.value.a and "AA" or ""), "FFFFFFFF"
 			),
 		}, } },
@@ -6615,8 +6713,11 @@ function wt.CreateColorpicker(t, colormanager)
 
 		local defaultValue
 		if t.showDefault ~= false then
-			local texture = "|TInterface/ChatFrame/ChatFrameBackground:12:12:0:0:16:16:0:16:0:16:" .. (t.default.r * 255) .. ":" .. (t.default.g * 255) .. ":" .. (t.default.b * 255) .. "|t "
-			defaultValue = texture .. WrapTextInColorCode(wt.ColorToHex(t.default), "FFFFFFFF")
+			local default = colorpicker.getDefault()
+			local r, g, b = wt.UnpackColor(default)
+
+			local texture = "|TInterface/ChatFrame/ChatFrameBackground:12:12:0:0:16:16:0:16:0:16:" .. (r * 255) .. ":" .. (g * 255) .. ":" .. (b * 255) .. "|t "
+			defaultValue = texture .. crc(wt.ColorToHex(default), "FFFFFFFF")
 		end
 
 		wt.AddWidgetTooltipLines({ colorpicker.frame, colorpicker.button.frame, colorpicker.hexBox.widget }, defaultValue, t.utilityMenu)
@@ -6650,7 +6751,7 @@ function wt.CreateColorpicker(t, colormanager)
 				colorpicker.setColor(wt.clipboard.color, true)
 			end }):SetEnabled(wt.clipboard.color ~= nil)
 			wt.CreateMenuButton(menu, { title = wt.strings.value.revert, action = function() colorpicker.revertData() end })
-			if t.default then wt.CreateMenuButton(menu, { title = wt.strings.value.restore, action = function() colorpicker.resetData() end }) end
+			if t.showDefault then wt.CreateMenuButton(menu, { title = wt.strings.value.restore, action = function() colorpicker.resetData() end }) end
 		end
 	}) end
 
@@ -6766,7 +6867,7 @@ function wt.CreateAboutPage(addon, t)
 								offset = { x = 5 }
 							},
 							width = 140,
-							text = data.version .. (data.day and data.month and data.year and WrapTextInColorCode(" ( " .. wt.strings.about.date .. ": " .. cr(wt.strings.date:gsub(
+							text = data.version .. (data.day and data.month and data.year and crc(" ( " .. wt.strings.about.date .. ": " .. cr(wt.strings.date:gsub(
 								"#DAY", data.day
 							):gsub(
 								"#MONTH", data.month
@@ -6949,7 +7050,7 @@ function wt.CreateAboutPage(addon, t)
 						parent = panel,
 						name = "Changelog",
 						title = wt.strings.about.changelog.label,
-						tooltip = { lines = { { text = wt.strings.about.changelog.tooltip:gsub("#VERSION", WrapTextInColorCode(data.version, "FFFFFFFF")), }, } },
+						tooltip = { lines = { { text = wt.strings.about.changelog.tooltip:gsub("#VERSION", crc(data.version, "FFFFFFFF")), }, } },
 						arrange = {},
 						size = { w = panel:GetWidth() - 225, h = panel:GetHeight() - 25 },
 						font = { normal = "GameFontDisableSmall", },
@@ -7149,7 +7250,7 @@ function wt.CreateDataManagementPage(addon, t)
 			---Find a profile by its display title and return its index
 			---***
 			---@param title string
-			---@param first? boolean ***Default:*** true
+			---@param first? boolean ***Default:*** `true`
 			---@return integer|nil
 			local function findProfile(title, first)
 				for i = 1, #t.accountData.profiles do if t.accountData.profiles[i].title == title then if first ~= false then return i else first = false end end end
@@ -7159,7 +7260,7 @@ function wt.CreateDataManagementPage(addon, t)
 			---***
 			---@param name? string Name tag to use as a base | ***Default:*** "Profile"
 			---@param number? integer Starting value for the incremented number appended to **name** if it's used | ***Default:*** **name** *is unused* and *no number* or 2
-			---@param first? boolean Stop checking for duplicate names at the first result | ***Default:*** true
+			---@param first? boolean Stop checking for duplicate names at the first result | ***Default:*** `true`
 			---@return string title
 			local function checkName(name, number, first)
 				name = name or wt.strings.profiles.select.profile
@@ -7186,9 +7287,9 @@ function wt.CreateDataManagementPage(addon, t)
 			local function checkData(profileData, compareWith)
 				compareWith = compareWith or t.defaultsTable
 
-				ut.Prune(profileData, t.valueChecker)
-				ut.Fill(profileData, compareWith)
-				ut.Filter(profileData, compareWith, t.recoveryMap, t.onRecovery)
+				us.Prune(profileData, t.valueChecker)
+				us.Fill(profileData, compareWith)
+				us.Filter(profileData, compareWith, t.recoveryMap, t.onRecovery)
 			end
 
 			---Clean up a profile list table
@@ -7201,7 +7302,7 @@ function wt.CreateDataManagementPage(addon, t)
 				for key, value in WidgetTools.utilities.SortedPairs(list) do
 					if key == i and type(value) == "table" then
 						--Check profile data
-						if type(list[i].data) == "table" then checkData(list[i].data) else list[i].data = ut.Clone(t.defaultsTable) end
+						if type(list[i].data) == "table" then checkData(list[i].data) else list[i].data = us.Clone(t.defaultsTable) end
 					else
 						--Remove invalid entry
 						list[key] = nil
@@ -7211,7 +7312,7 @@ function wt.CreateDataManagementPage(addon, t)
 				end
 
 				--Fill with default profile
-				if not list[1] then list[1] = { title = wt.strings.profiles.select.main, data = ut.Clone(t.defaultsTable) } end
+				if not list[1] then list[1] = { title = wt.strings.profiles.select.main, data = us.Clone(t.defaultsTable) } end
 
 				--Check profile names
 				for i = 1, #list do list[i].title = checkName(list[i].title, nil, false) end
@@ -7250,7 +7351,7 @@ function wt.CreateDataManagementPage(addon, t)
 			---@param name? string Name tag to use when setting the display title of the new profile | ***Default:*** **duplicate** and **t.accountData.profiles[duplicate].title** or "Profile"
 			---@param number? integer Starting value for the incremented number appended to **name** if it's used | ***Default:*** **duplicate** == nil and **name** *is unused* and *no number* or 2
 			---@param duplicate? integer Index of the profile to create the new profile as a duplicate of instead of using default data values
-			---@param apply? boolean Whether to immediately set the new profile as the active profile or not | ***Default:*** true
+			---@param apply? boolean Whether to immediately set the new profile as the active profile or not | ***Default:*** `true`
 			---@param index? integer Place the new profile under this specified index in **t.accountData.profile** instead of the end of the list | ***Range:*** (1, #**t.accountData.profiles** + 1)
 			function dataManagement.newProfile(name, number, duplicate, index, apply)
 				duplicate = t.accountData.profiles[duplicate] and duplicate or nil
@@ -7259,7 +7360,7 @@ function wt.CreateDataManagementPage(addon, t)
 				--Create profile data
 				table.insert(t.accountData.profiles, index, {
 					title = checkName(duplicate and t.accountData.profiles[duplicate].title or name, number),
-					data = ut.Clone(duplicate and t.accountData.profiles[duplicate] or t.defaultsTable)
+					data = us.Clone(duplicate and t.accountData.profiles[duplicate] or t.defaultsTable)
 				})
 
 				--Update dropdown items
@@ -7275,7 +7376,7 @@ function wt.CreateDataManagementPage(addon, t)
 			---Delete the specified profile
 			---***
 			---@param index? integer Index of the profile to delete the data and dropdown item of | ***Default:*** **t.characterData.activeProfile**
-			---@param unsafe? boolean If false, show a popup confirmation before attempting to delete the specified profile | ***Default:*** false
+			---@param unsafe? boolean If false, show a popup confirmation before attempting to delete the specified profile | ***Default:*** `false`
 			---@return boolean # True on success, false if the operation failed
 			function dataManagement.deleteProfile(index, unsafe)
 				if index and not t.accountData.profiles[index] then return false end
@@ -7308,7 +7409,7 @@ function wt.CreateDataManagementPage(addon, t)
 			---Reset the specified profile data to default values
 			---***
 			---@param index? integer Index of the profile to restore to defaults | ***Default:*** **t.characterData.activeProfile**
-			---@param unsafe? boolean If false, show a popup confirmation before attempting to reset the specified profile | ***Default:*** false
+			---@param unsafe? boolean If false, show a popup confirmation before attempting to reset the specified profile | ***Default:*** `false`
 			---@return boolean # True on success, false if the operation failed
 			function dataManagement.resetProfile(index, unsafe)
 				if index and not t.accountData.profiles[index] then return false end
@@ -7321,7 +7422,7 @@ function wt.CreateDataManagementPage(addon, t)
 					index = index or t.characterData.activeProfile
 
 					--Update the profile in storage (without breaking table references)
-					ut.CopyValues(t.accountData.profiles[index].data, t.defaultsTable)
+					us.CopyValues(t.accountData.profiles[index].data, t.defaultsTable)
 
 					--Call listener
 					if type(t.onProfileReset) == "function" then t.onProfileReset(t.accountData.profiles[index].title, index) end
@@ -7351,7 +7452,7 @@ function wt.CreateDataManagementPage(addon, t)
 					--Update the profile list in storage (without breaking table references)
 					for i = 1, #p.profiles do
 						t.accountData.profiles[i].title = p.profiles[i].title
-						ut.CopyValues(t.accountData.profiles[i].data, p.profiles[i].data)
+						us.CopyValues(t.accountData.profiles[i].data, p.profiles[i].data)
 					end
 				else
 					t.accountData.profiles = type(t.accountData.profiles) == "table" and t.accountData.profiles or {}
@@ -7375,7 +7476,7 @@ function wt.CreateDataManagementPage(addon, t)
 
 				if next(recovered) then
 					--Pack recovered data into the active profile data table (to be removed later if found irrelevant or invalid during validation)
-					ut.Pull(t.accountData.profiles[t.characterData.activeProfile].data, recovered)
+					us.Pull(t.accountData.profiles[t.characterData.activeProfile].data, recovered)
 
 					--Validate active profile data
 					checkData(t.accountData.profiles[t.characterData.activeProfile].data)
@@ -7455,7 +7556,7 @@ function wt.CreateDataManagementPage(addon, t)
 							size = { w = 92, h = 26 },
 							action = function() wt.CreatePopupInputBox({
 								title = wt.strings.profiles.rename.description:gsub(
-									"#PROFILE", WrapTextInColorCode(t.accountData.profiles[t.characterData.activeProfile].title, "FFFFFFFF")
+									"#PROFILE", crc(t.accountData.profiles[t.characterData.activeProfile].title, "FFFFFFFF")
 								),
 								position = {
 									anchor = "TOPRIGHT",
@@ -7581,7 +7682,7 @@ function wt.CreateDataManagementPage(addon, t)
 
 								if success then
 									checkData(load, t.accountData.profiles[t.characterData.activeProfile].data)
-									ut.CopyValues(t.accountData.profiles[t.characterData.activeProfile].data, load)
+									us.CopyValues(t.accountData.profiles[t.characterData.activeProfile].data, load)
 								end
 
 								t.onImport(success, load)
@@ -7948,7 +8049,7 @@ function wt.CreatePositionOptions(addon, frame, t)
 						wt.SetPosition(frame, panel.presets[i].data.position, true)
 
 						--Update the storage
-						ut.CopyValues(t.getData().position, wt.PackPosition(frame:GetPoint()))
+						us.CopyValues(t.getData().position, wt.PackPosition(frame:GetPoint()))
 
 						--Update the settings widgets
 						panel.widgets.position.anchor.loadData(false)
@@ -8056,8 +8157,8 @@ function wt.CreatePositionOptions(addon, frame, t)
 						end
 
 						--Save the custom preset
-						ut.CopyValues(t.presets.custom.getData(), panel.presets[t.presets.custom.index].data)
-						if t.presets.custom.getData() then ut.CopyValues(t.presets.custom.getData(), t.presets.custom.getData()) end
+						us.CopyValues(t.presets.custom.getData(), panel.presets[t.presets.custom.index].data)
+						if t.presets.custom.getData() then us.CopyValues(t.presets.custom.getData(), t.presets.custom.getData()) end
 
 						--Call the specified handler
 						if t.presets.custom.onSave then t.presets.custom.onSave() end
@@ -8066,11 +8167,11 @@ function wt.CreatePositionOptions(addon, frame, t)
 					--Reset the custom preset to its default state
 					function panel.resetCustomPreset()
 						--Reset the custom preset
-						panel.presets[t.presets.custom.index].data = ut.Clone(t.presets.custom.defaultsTable)
+						panel.presets[t.presets.custom.index].data = us.Clone(t.presets.custom.defaultsTable)
 
 						--Save the custom preset
-						ut.CopyValues(t.presets.custom.getData(), panel.presets[t.presets.custom.index].data)
-						if t.presets.custom.getData() then ut.CopyValues(t.presets.custom.getData(), t.presets.custom.getData()) end
+						us.CopyValues(t.presets.custom.getData(), panel.presets[t.presets.custom.index].data)
+						if t.presets.custom.getData() then us.CopyValues(t.presets.custom.getData(), t.presets.custom.getData()) end
 
 						--Call the specified handler
 						if t.presets.custom.onReset then t.presets.custom.onReset() end
@@ -8353,7 +8454,7 @@ function wt.CreatePositionOptions(addon, frame, t)
 				onMove = t.setMovable.events.onMove,
 				onStop = function()
 					--Update the storage
-					ut.CopyValues(t.getData().position, wt.PackPosition(frame:GetPoint()))
+					us.CopyValues(t.getData().position, wt.PackPosition(frame:GetPoint()))
 
 					--Update the settings widgets
 					panel.widgets.position.anchor.loadData(false)
@@ -8434,15 +8535,16 @@ function wt.CreateFontOptions(addon, text, t)
 
 			if not fontItems then
 				fontItems = {}
+				local fonts = us.Clone(rs.fonts)
 
-				for i = 1, #rs.fonts do
+				for i = 1, #fonts do
 					fontItems[i] = {}
-					fontItems[i].title = rs.fonts[i].name
+					fontItems[i].title = fonts[i].name
 					fontItems[i].tooltip = {
-						title = rs.fonts[i].name,
-						lines = i == 1 and { { text = wt.strings.font.path.default, }, } or (i == #rs.fonts and {
+						title = fonts[i].name,
+						lines = i == 1 and { { text = wt.strings.font.path.default, }, } or (i == #fonts and {
 							{ text = wt.strings.font.path.custom:gsub(
-								"#FONTS_DIRECTORY", cr("[WoW]\\Interface\\AddOns\\" .. rs.name .. "\\Fonts\\", { r = 0.185, g = 0.72, b = 0.84 })
+								"#FONTS_DIRECTORY", cr("[WoW]\\Interface\\AddOns\\" .. rs.addon .. "\\Fonts\\", { r = 0.185, g = 0.72, b = 0.84 })
 							):gsub("#FILE_CUSTOM", "CUSTOM.ttf") },
 							{ text = "\n" .. wt.strings.font.path.reminder, color = { r = 0.89, g = 0.65, b = 0.40 }, },
 						} or nil),
@@ -8458,9 +8560,9 @@ function wt.CreateFontOptions(addon, text, t)
 				arrange = {},
 				items = fontItems,
 				dependencies = t.dependencies,
-				getData = function() return ut.FindIndex(rs.fonts, t.getData().path) end,
+				getData = function() return us.FindIndex(rs.fonts, t.getData().path) end,
 				saveData = function(value) t.getData().path = rs.fonts[value].path end,
-				default = ut.FindIndex(rs.fonts, t.defaultsTable.path),
+				default = us.FindIndex(rs.fonts, t.defaultsTable.path),
 				dataManagement = {
 					category = t.dataManagement.category,
 					key = t.dataManagement.key,
@@ -8557,7 +8659,7 @@ function wt.CreateFontOptions(addon, text, t)
 					name = name .. "Colorpicker",
 					title = wt.strings.font.color.label:gsub("#COLOR_TYPE", type(t.colorNames[key]) == "string" and t.colorNames[key] or name),
 					tooltip = { lines = { { text = wt.strings.font.color.tooltip:gsub("#COLOR_TYPE", name), }, } },
-					arrange = { newRow = not next(panel.widgets.colors), column = ut.FindIndex(t.colorOrder, key) },
+					arrange = { newRow = not next(panel.widgets.colors), column = us.FindIndex(t.colorOrder, key) },
 					dependencies = t.dependencies,
 					getData = function() return t.getData().colors[key] end,
 					saveData = function(value) t.getData().colors[key] = value end,

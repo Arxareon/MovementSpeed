@@ -1,17 +1,25 @@
---[[ TOOLBOX ]]
+--[[ REFERENCES ]]
+
+--[ Toolbox ]
 
 ---@class widgetToolbox
 local wt = WidgetTools.toolboxes.initialization[C_AddOns.GetAddOnMetadata(..., "X-WidgetTools-ToolboxVersion")]
 
 if not wt then return end
 
+--[ Shortcuts ]
 
---[[ REFERENCES ]]
-
+---@type widgetToolsResources
 local rs = WidgetTools.resources
-local ut = WidgetTools.utilities
+
+---@type widgetToolsUtilities
+local us = WidgetTools.utilities
+
+---@type widgetToolsDebugging
 local ds = WidgetTools.debugging
+
 local cr = WrapTextInColor
+local crc = WrapTextInColorCode
 
 
 --[[ TABLE MANAGEMENT ]]
@@ -25,9 +33,8 @@ local cr = WrapTextInColor
 function wt.HarmonizeData(targetTable, tableToSample)
 	if type(targetTable) ~= "table" then return tableToSample end
 
-	return ut.Pull(ut.Filter(ut.Prune(targetTable), tableToSample), tableToSample) --REPLACE with combined code
+	return us.Pull(us.Filter(us.Prune(targetTable), tableToSample), tableToSample) --REPLACE with combined code
 end
-
 
 
 --[[ DATA MANAGEMENT ]]
@@ -53,7 +60,7 @@ end
 function wt.PackPosition(anchor, relativeTo, relativePoint, offsetX, offsetY)
 	return {
 		anchor = type(anchor) == "string" and anchor or "TOPLEFT",
-		relativeTo = ut.IsFrame(relativeTo) and relativeTo or nil,
+		relativeTo = us.IsFrame(relativeTo) and relativeTo or nil,
 		relativePoint = type(relativePoint) == "string" and relativePoint or nil,
 		offset = offsetX and offsetY and { x = type(offsetX) == "number" and offsetX or 0, y = type(offsetY) == "number" and offsetY or 0 } or nil
 	}
@@ -75,8 +82,8 @@ function wt.UnpackPosition(t)
 	t.anchor = type(t.anchor) == "string" and t.anchor or "TOPLEFT"
 
 	if t.relativeTo ~= "nil" then
-		if type(t.relativeTo) == "string" then t.relativeTo = ut.ToFrame(t.relativeTo) end
-		if not ut.IsFrame(t.relativeTo) or not (t.relativeTo or {}).GetPoint then t.relativeTo = nil end
+		if type(t.relativeTo) == "string" then t.relativeTo = us.ToFrame(t.relativeTo) end
+		if not us.IsFrame(t.relativeTo) or not (t.relativeTo or {}).GetPoint then t.relativeTo = nil end
 	end
 
 	if type(t.offset) ~= "table" then t.offset = {} else
@@ -96,7 +103,7 @@ end
 ---@return boolean|colorData
 function wt.IsColor(t)
 	if type(t) ~= "table" then
-		ds.Log("Invalid color table: " ..  ut.TableToString(t))
+		ds.Log("Invalid color table: " ..  us.TableToString(t))
 
 		return false
 	elseif type(t.r) ~= "number" or t.r < 0 or t.r > 1 then
@@ -155,7 +162,7 @@ end
 
 ---Extract, verify and return the color values found in a table
 ---***
----@param color? colorData|colorRGBA Table containing the color values | ***Default:*** *(opaque white)*
+---@param color? colorData|colorRGBA Table containing the color values | ***Default:*** *opaque white:* `{ r = 1, g = 1, b = 1, a = 1 }`
 ---@param alpha? boolean Specify whether to return the full RGBA set or just the RGB values | ***Default:*** true
 ---***
 ---@return number r Red | ***Range:*** (0, 1) | ***Default:*** 1
@@ -175,7 +182,7 @@ end
 
 ---Convert RGB(A) color values in Range: (0, 1) to HEX color code
 ---***
----@param color? colorData|colorRGBA The RGB(A) color data with all channels in Range: (0, 1) | ***Default:*** *(opaque white)*
+---@param color? colorData|colorRGBA The RGB(A) color data with all channels in Range: (0, 1) | ***Default:*** *opaque white:* `{ r = 1, g = 1, b = 1, a = 1 }`
 ---@param alphaFirst? boolean Put the alpha value first: ARGB output instead of RGBA | ***Default:*** false
 ---@param hashtag? boolean Whether to add a "#" to the beginning of the color description | ***Default:*** true
 ---***
@@ -372,7 +379,7 @@ function wt.SetHyperlinkHandler(addon, linkType, handler)
 	---@param handlerID string
 	---@param payload string
 	local function callHandler(addonID, handlerID, payload)
-		local handlerFunction = ut.FindValue(ut.FindValue(hyperlinkHandlers, addonID), handlerID)
+		local handlerFunction = us.FindValue(us.FindValue(hyperlinkHandlers, addonID), handlerID)
 
 		if handlerFunction then handlerFunction(strsplit(":", payload)) end
 	end
@@ -422,7 +429,7 @@ local positioningAid
 ---@param unlink? boolean If true, unlink the position of **frame** from **position.relativeTo** (preventing anchor family connections) by moving a positioning aid frame to **position** first, convert its position to absolute, breaking relative links (making it relative to screen points instead), then move **frame** to the position of the aid | ***Default:*** false
 ---@param userPlaced? boolean Remember the position if **frame**:[IsMovable()](https://warcraft.wiki.gg/wiki/API_Frame_IsMovable) | ***Default:*** true
 function wt.SetPosition(frame, position, unlink, userPlaced)
-	if not ut.IsFrame(frame) or not frame.SetPoint then return end
+	if not us.IsFrame(frame) or not frame.SetPoint then return end
 
 	local anchor, relativeTo, relativePoint, offsetX, offsetY = wt.UnpackPosition(position)
 	relativeTo = relativeTo ~= "nil" and relativeTo or nil
@@ -430,7 +437,7 @@ function wt.SetPosition(frame, position, unlink, userPlaced)
 	--Set the position
 	if relativeTo and unlink then
 		if not positioningAid then
-			positioningAid = CreateFrame("Frame", rs.name .. "PositioningAid", UIParent)
+			positioningAid = CreateFrame("Frame", rs.addon .. "PositioningAid", UIParent)
 
 			positioningAid:Hide()
 		end
@@ -475,7 +482,7 @@ end
 ---@return number? offsetY The new vertical offset value | ***Default:*** nil
 ---<hr><p></p>
 function wt.SetAnchor(frame, anchor)
-	if not ut.IsFrame(frame) or type(anchor) ~= "string" then return end
+	if not us.IsFrame(frame) or type(anchor) ~= "string" then return end
 
 	local oldAnchor, relativeTo, relativePoint, offsetX, offsetY = frame:GetPoint()
 	local x, y = 0, 0
@@ -508,7 +515,7 @@ end
 ---@param frame AnyFrameObject Reference to the frame the position of which to be converted to absolute position
 ---@param keepAnchor? boolean If true, restore the original anchor of **frame** (as its closest anchor to the nearest screen point will be chosen after conversion) | ***Default:*** true
 function wt.ConvertToAbsolutePosition(frame, keepAnchor)
-	if not ut.IsFrame(frame) or not frame.IsMovable then return end
+	if not us.IsFrame(frame) or not frame.IsMovable then return end
 
 	local movable = frame:IsMovable()
 	local oldAnchor = frame:GetPoint()
@@ -533,7 +540,7 @@ end
 ---@param container Frame Reference to the parent container frame the child frames of which are to be arranged based on the description in **arrangement**
 ---@param t? arrangementData Arrange the child frames of **container** based on the specifications provided in this table
 function wt.ArrangeContent(container, t)
-	if not ut.IsFrame(container) then return end
+	if not us.IsFrame(container) then return end
 
 	t = type(t) == "table" and t or {}
 	t.margins = t.margins or {}
@@ -641,7 +648,7 @@ end
 ---@param movable? boolean Whether to make the frame movable or unmovable | ***Default:*** false
 ---@param t? movabilityData When specified, set **frame** as movable, dynamically updating the position settings widgets when it's moved by the user
 function wt.SetMovability(frame, movable, t)
-	if not ut.IsFrame(frame) or not frame.SetMovable then return end
+	if not us.IsFrame(frame) or not frame.SetMovable then return end
 
 	movable = movable == true
 	t = type(t) == "table" and t or {}
@@ -678,7 +685,7 @@ function wt.SetMovability(frame, movable, t)
 				if not cursor or not frame:IsMovable() then return end
 
 				if not modifier then SetCursor("Interface/Cursor/ui-cursor-move.crosshair") else
-					if ut.isKeyDown[modifier]() then SetCursor("Interface/Cursor/ui-cursor-move.crosshair") end
+					if us.isKeyDown[modifier]() then SetCursor("Interface/Cursor/ui-cursor-move.crosshair") end
 
 					frame:RegisterEvent("MODIFIER_STATE_CHANGED")
 				end
@@ -698,7 +705,7 @@ function wt.SetMovability(frame, movable, t)
 
 			triggers[i]:HookScript("OnMouseDown", function()
 				if not frame:IsMovable() or isMoving then return end
-				if modifier and not ut.isKeyDown[modifier]() then return end
+				if modifier and not us.isKeyDown[modifier]() then return end
 
 				--Store position
 				position = wt.PackPosition(frame:GetPoint())
@@ -715,7 +722,7 @@ function wt.SetMovability(frame, movable, t)
 
 					--Check if the modifier key is pressed
 					if modifier then
-						if ut.isKeyDown[modifier]() then return end
+						if us.isKeyDown[modifier]() then return end
 
 						--Cancel when the modifier key is released
 						frame:StopMovingOrSizing()
@@ -768,7 +775,7 @@ end
 ---@param frame AnyFrameObject Reference to the frame to hide or show
 ---@param visible? boolean If false, hide the frame, show it if true | ***Default:*** false
 function wt.SetVisibility(frame, visible)
-	if not ut.IsFrame(frame) then return end
+	if not us.IsFrame(frame) then return end
 
 	if visible then frame:Show() else frame:Hide() end
 end
@@ -781,7 +788,7 @@ end
 ---@param backdrop? backdropData Parameters to set the custom backdrop with | ***Default:*** nil *(remove the backdrop)*
 ---@param updates? backdropUpdateRule[] Table of backdrop update rules, modifying the specified parameters on trigger<ul><li>***Note:*** All update rules are additive, calling ***WidgetToolbox*.SetBackdrop(...)** multiple times with **updates** specified *will not* override previously set update rules. The base **backdrop** values used for these old rules *will not* change by setting a new backdrop via ***WidgetToolbox*.SetBackdrop(...)** either!</li></ul>
 function wt.SetBackdrop(frame, backdrop, updates)
-	if not ut.IsFrame(frame) or not frame.SetBackdrop then return end
+	if not us.IsFrame(frame) or not frame.SetBackdrop then return end
 
 	--[ Set Backdrop ]
 
@@ -853,13 +860,13 @@ function wt.SetBackdrop(frame, backdrop, updates)
 				--Fill defaults
 				if fill then
 					--Fill backdrop update table with the base backdrop values
-					backdropUpdate = backdrop and ut.Fill(backdropUpdate, backdrop) or nil
+					backdropUpdate = backdrop and us.Fill(backdropUpdate, backdrop) or nil
 				else
 					--Fill backdrop update table with the current values
 					if frame.backdropInfo then
 						--Background
 						backdropUpdate.background = backdropUpdate.background or {}
-						backdropUpdate.background.texture = backdropUpdate.background.texture or ut.Fill(backdropUpdate.background.texture, {
+						backdropUpdate.background.texture = backdropUpdate.background.texture or us.Fill(backdropUpdate.background.texture, {
 							path = frame.backdropInfo.bgFile,
 							size = frame.backdropInfo.tileSize,
 							tile = frame.backdropInfo.tile,
@@ -874,7 +881,7 @@ function wt.SetBackdrop(frame, backdrop, updates)
 
 						--Border
 						backdropUpdate.border = backdropUpdate.border or {}
-						backdropUpdate.border.texture = backdropUpdate.border.texture or ut.Fill(backdropUpdate.border.texture, {
+						backdropUpdate.border.texture = backdropUpdate.border.texture or us.Fill(backdropUpdate.border.texture, {
 							path = frame.backdropInfo.edgeFile,
 							width = frame.backdropInfo.edgeSize,
 						})
@@ -907,7 +914,7 @@ function wt.AddDependencies(rules, setState)
 	for i = 1, #rules do if rules[i].frame then
 		local t
 
-		if ut.IsFrame(rules[i].frame) then t = rules[i].frame:GetObjectType() else
+		if us.IsFrame(rules[i].frame) then t = rules[i].frame:GetObjectType() else
 			t = wt.IsWidget(rules[i].frame)
 
 			--Watch value load events
@@ -937,7 +944,7 @@ function wt.CheckDependencies(rules)
 	local state = true
 
 	for i = 1, #rules do
-		if ut.IsFrame(rules[i].frame) then --Base Blizzard frame objects
+		if us.IsFrame(rules[i].frame) then --Base Blizzard frame objects
 			if rules[i].frame:IsObjectType("CheckButton") then state = rules[i].evaluate and rules[i].evaluate(rules[i].frame:GetChecked()) or rules[i].frame:GetChecked()
 			elseif rules[i].frame:IsObjectType("EditBox") then state = rules[i].evaluate(rules[i].frame:GetText())
 			elseif rules[i].frame:IsObjectType("Slider") then state = rules[i].evaluate(rules[i].frame:GetValue())
@@ -977,11 +984,11 @@ local tooltipData = {}
 ---***
 ---@return tooltipData|nil # Reference to the tooltip data table registered for **owner** to display the tooltip info by | ***Default:*** nil
 function wt.AddTooltip(frame, t, toggle, duplicate)
-	if not ut.IsFrame(frame) then return nil end
+	if not us.IsFrame(frame) then return nil end
 
 	--| Register tooltip data
 
-	local id = ut.GetID(frame)
+	local id = us.GetID(frame)
 
 	if duplicate ~= true and type(tooltipData[id]) == "table" then return wt.UpdateTooltipData(frame, t) end
 
@@ -1024,15 +1031,15 @@ end
 ---@param frame AnyFrameObject Owner frame the tooltip to be updated for<ul><li>***Note:*** If no entry has been registered for **owner** in the tooltip data registry via ***WidgetToolbox*.AddTooltip(...)** yet, no tooltip will be shown.</li></ul>
 ---@param t? tooltipUpdateData|tooltipData Use this set of parameters to update the tooltip for **owner** with | ***Default:*** *(fill values from the data in the registry)*
 function wt.UpdateTooltip(frame, t)
-	if not ut.IsFrame(frame) then return end
+	if not us.IsFrame(frame) then return end
 
 	--| Verify the tooltip data
 
-	local id = ut.GetID(frame)
+	local id = us.GetID(frame)
 
 	if type(tooltipData[id]) ~= "table" then return end
 
-	if type(t) ~= "table" then t = tooltipData[id] else ut.Pull(t, tooltipData[id]) end
+	if type(t) ~= "table" then t = tooltipData[id] else us.Pull(t, tooltipData[id]) end
 
 	--| Position
 
@@ -1089,22 +1096,22 @@ end
 ---***
 ---@return tooltipData|nil # Reference to the tooltip data table registered for **owner** to display the tooltip info by | ***Default:*** nil
 function wt.UpdateTooltipData(frame, t, linesUpdate)
-	if not ut.IsFrame(frame) then return nil end
+	if not us.IsFrame(frame) then return nil end
 
 	t = type(t) == "table" and t or {}
 
 	--| Verify & update the tooltip data
 
-	local id = ut.GetID(frame)
+	local id = us.GetID(frame)
 
 	if type(tooltipData[id]) ~= "table" then return nil end
 
 	--Tooltip frame
-	if ut.IsFrame(t.tooltip) and t.tooltip:IsObjectType("GameTooltip") then tooltipData[id].tooltip = t.tooltip
-	elseif not tooltipData[id].tooltip or not (ut.IsFrame(tooltipData[id].tooltip) and tooltipData[id].tooltip:IsObjectType("GameTooltip")) then
+	if us.IsFrame(t.tooltip) and t.tooltip:IsObjectType("GameTooltip") then tooltipData[id].tooltip = t.tooltip
+	elseif not tooltipData[id].tooltip or not (us.IsFrame(tooltipData[id].tooltip) and tooltipData[id].tooltip:IsObjectType("GameTooltip")) then
 		--Create the default reusable tooltip
 		if not defaultTooltip then
-			local name = "Widget Toolbox " .. C_AddOns.GetAddOnMetadata(rs.name, "X-WidgetTools-ToolboxVersion") .. "GameTooltip"
+			local name = "Widget Toolbox " .. C_AddOns.GetAddOnMetadata(rs.addon, "X-WidgetTools-ToolboxVersion") .. "GameTooltip"
 
 			defaultTooltip = CreateFrame("GameTooltip", name, nil, "GameTooltipTemplate")
 
@@ -1124,7 +1131,7 @@ function wt.UpdateTooltipData(frame, t, linesUpdate)
 	t.tooltip = nil
 
 	--Update textlines
-	if linesUpdate == true then ut.Filter(tooltipData[id].lines, t.lines)
+	if linesUpdate == true then us.Filter(tooltipData[id].lines, t.lines)
 	elseif linesUpdate == false and type(t.lines) == "table" then
 		if type(tooltipData[id].lines) ~= "table" then tooltipData[id].lines = {} end
 
@@ -1133,7 +1140,7 @@ function wt.UpdateTooltipData(frame, t, linesUpdate)
 		t.lines = nil
 	end
 
-	tooltipData[id] = ut.Pull(tooltipData[id], t)
+	tooltipData[id] = us.Pull(tooltipData[id], t)
 
 	--Position
 	tooltipData[id].position = tooltipData[id].position or {}
@@ -1141,7 +1148,7 @@ function wt.UpdateTooltipData(frame, t, linesUpdate)
 	if not tooltipData[id].anchor then tooltipData[id].anchor = "ANCHOR_CURSOR" end
 
 	--Title
-	if type(tooltipData[id].title) ~= "string" then tooltipData[id].title = frame:GetName() or tostring(ut.GetID(frame)) end
+	if type(tooltipData[id].title) ~= "string" then tooltipData[id].title = frame:GetName() or tostring(us.GetID(frame)) end
 
 	return tooltipData[id]
 end
@@ -1157,7 +1164,7 @@ function wt.AddWidgetTooltipLines(frames, default, utilityNote)
 	---@type tooltipData
 	local tooltip = { lines = { { text = " ", }, } }
 
-	if type(default) == "string" then table.insert(tooltip.lines, { text = WrapTextInColorCode(DEFAULT .. ": ", "FF66FF66") .. default, } ) end
+	if type(default) == "string" then table.insert(tooltip.lines, { text = crc(DEFAULT .. ": ", "FF66FF66") .. default, } ) end
 	if utilityNote ~= false then table.insert(tooltip.lines, { text = wt.strings.value.note, font = GameFontNormalSmall, color = rs.colors.grey[1], }) end
 
 	for i = 1, #frames do wt.UpdateTooltipData(frames[i], tooltip, false) end
@@ -1242,7 +1249,7 @@ function wt.SetUpAddonCompartment(addon, calls, tooltip)
 
 		_G[onEnterName] = function(addonNamespace, frame)
 			--Set tooltip
-			local id = ut.GetID(frame)
+			local id = us.GetID(frame)
 			if type(tooltipData[id]) ~= "table" then tooltipData[id] = tooltip end
 			wt.UpdateTooltipData(frame)
 
@@ -1258,7 +1265,7 @@ function wt.SetUpAddonCompartment(addon, calls, tooltip)
 			if type(calls.onLeave) == "function" then calls.onLeave(addonNamespace, frame) end
 
 			--Hide tooltip
-			local id = ut.GetID(frame)
+			local id = us.GetID(frame)
 			if type(tooltipData[id]) == "table" and tooltipData[id].tooltip then tooltipData[id].tooltip:Hide() end
 		end
 	else
@@ -1467,7 +1474,7 @@ function wt.AddSettingsDataManagementEntry(widget, t)
 		for i = 1, #newKeys do table.insert(t.onChange, newKeys[i]) end
 	end
 
-	t.index = type(t.index) == "number" and Clamp(ut.Round(t.index), 1, #settingsData.rules[key] + 1) or #settingsData.rules[key] + 1
+	t.index = type(t.index) == "number" and Clamp(us.Round(t.index), 1, #settingsData.rules[key] + 1) or #settingsData.rules[key] + 1
 
 	--Add to the registry
 	table.insert(settingsData.rules[key], t.index, { widget = widget, onChange = t.onChange })

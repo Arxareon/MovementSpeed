@@ -1,4 +1,6 @@
---[[ NAMESPACE ]]
+--[[ REFERENCES ]]
+
+--[ Namespace ]
 
 --| Hook into the local addon namespace
 

@@ -1,8 +1,8 @@
---[[ NAMESPACE ]]	
+--[[ REFERENCES ]]
 
----Addon namespace table
+--[ Namespace ]
+
 ---@class addonNamespace
----@field name string Addon namespace name
 local ns = select(2, ...)
 
 ns.name = ...
