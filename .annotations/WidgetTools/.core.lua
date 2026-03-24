@@ -186,7 +186,7 @@ function Thousands(value, decimals, round, trim) return "" end
 ---***
 ---@return string s Formatted output string
 ---@return "Frame"|"FrameScriptObject"|"table"|"boolean"|"number"|"string"|"any" t Recognized object type
----<hr><p></p>
+---<p></p>
 function ToString(object) return "", "any" end
 
 --| TableToString

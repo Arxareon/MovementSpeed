@@ -56,7 +56,7 @@ end
 ---@param offsetY? number | ***Default:*** 0
 ---***
 ---@return positionData # Table containing the position values as used by WidgetTools
----<hr><p></p>
+---<p></p>
 function wt.PackPosition(anchor, relativeTo, relativePoint, offsetX, offsetY)
 	return {
 		anchor = type(anchor) == "string" and anchor or "TOPLEFT",
@@ -75,7 +75,7 @@ end
 ---@return FramePoint? relativePoint
 ---@return number|nil offsetX ***Default:*** 0
 ---@return number|nil offsetY ***Default:*** 0
----<hr><p></p>
+---<p></p>
 function wt.UnpackPosition(t)
 	if type(t) ~= "table" then return "TOPLEFT" end
 
@@ -348,7 +348,7 @@ end
 ---@param text string Clickable text to be displayed as the hyperlink
 ---***
 ---@return string # ***Default:*** ""
----<hr><p></p>
+---<p></p>
 function wt.Hyperlink(linkType, content, text)
 	if not linkType or not content or not text then return "" else return "\124H" .. linkType .. ":" .. (content or "") .. "\124h" .. text .. "\124h" end
 end
@@ -409,7 +409,7 @@ end
 ---@param t any
 ---***
 ---@return boolean|AnyTypeName # Return the type name of the object if recognized, false if not
----<hr><p></p>
+---<p></p>
 function wt.IsWidget(t)
 	return type(t) == "table" and t.isType and t.getType and t.getType() or false
 end
@@ -480,7 +480,7 @@ end
 ---***
 ---@return number? offsetX The new horizontal offset value | ***Default:*** nil
 ---@return number? offsetY The new vertical offset value | ***Default:*** nil
----<hr><p></p>
+---<p></p>
 function wt.SetAnchor(frame, anchor)
 	if not us.IsFrame(frame) or type(anchor) ~= "string" then return end
 
@@ -1427,7 +1427,7 @@ function wt.RegisterSettingsPage(page, parent, icon)
 
 	page.canvas.OnCommit = function() page.save(true) end
 	page.canvas.OnRefresh = function() page.load(nil, true) end
-	page.canvas.OnDefault = function() page.default(true) end
+	page.canvas.OnDefault = function() page.reset(true) end
 
 	if parent and type(parent.category) == "table" then page.category = Settings.RegisterCanvasLayoutSubcategory(parent.category, page.canvas, title)
 	else page.category = Settings.RegisterCanvasLayoutCategory(page.canvas, title) end

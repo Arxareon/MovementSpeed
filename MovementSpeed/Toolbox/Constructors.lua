@@ -389,7 +389,7 @@ end
 function wt.CreateDescription(title, t)
 	t = type(t) == "table" and t or {}
 
-	if not type(title) ~= "table" or not type(title.GetFont) == "function" then return end
+	if type(title) ~= "table" or type(title.GetFont) ~= "function" then return end
 
 	local parent = title:GetParent()
 
@@ -689,9 +689,9 @@ function wt.CreateScrollFrame(t)
 		anchor = "RIGHT",
 		relativeTo = scrollFrame,
 		relativePoint = "RIGHT",
-		offset = { x = -4, y = 0 }
+		offset = { x = -4, y = 1 }
 	})
-	scrollFrame.ScrollBar:SetHeight(t.size.h - 4)
+	scrollFrame.ScrollBar:SetHeight(t.size.h - 10)
 
 	--[ Scroll Child ]
 
@@ -745,7 +745,7 @@ function wt.CreatePanel(t)
 	--| Position & dimensions
 
 	t.size = t.size or {}
-	t.size.w = t.size.w or t.parent and t.parent:GetWidth() - 32 or 0
+	t.size.w = t.size.w or t.parent and t.parent:GetWidth() - 20 or 0
 	t.size.h = t.size.h or 0
 
 	if t.keepInBounds then panel:SetClampedToScreen(true) end
@@ -769,11 +769,10 @@ function wt.CreatePanel(t)
 		font = "GameFontHighlightLarge",
 	}) or nil
 
-	panel.description = t.description and wt.CreateDescription({
-		title = panel.title,
+	if type(t.description) == "string" then panel.description = wt.CreateDescription(panel.title, {
 		widthOffset = -22,
 		text = t.description,
-	}) or nil
+	}) end
 
 	--| Backdrop
 
@@ -1054,7 +1053,9 @@ function wt.CreateSettingsPage(addon, t)
 		t.dataManagement.keys = type((t.dataManagement.keys or {})[1]) == "string" and t.dataManagement.keys or { t.name or addon }
 	end
 	local width, height = 0, 0
-	local defaultsWarning
+
+	---@type string, simpleButton, simpleButton, FontString
+	local resetWarning, resetButton, revertButton, saveNotice
 
 	---@class settingsPage
 	---@field canvas? canvasFrame|Frame The settings page main canvas frame
@@ -1068,18 +1069,30 @@ function wt.CreateSettingsPage(addon, t)
 	---Returns the type of this object
 	---***
 	---@return "SettingsPage" string
-	---<hr><p></p>
+	---<p></p>
 	function page.getType() return "SettingsPage" end
 
 	---Checks and returns if the type of this object is equal to the string provided
 	---@param type string|AnyTypeName
 	---@return boolean
-	---<hr><p></p>
+	---<p></p>
 	function page.isType(type) return type == "SettingsPage" end
 
-	---Returns the unique identifier key representing the defaults warning popup dialog in the global **StaticPopupDialogs** table, and used as the parameter when calling [StaticPopup_Show()](https://warcraft.wiki.gg/wiki/API_StaticPopup_Show) or [StaticPopup_Hide()](https://warcraft.wiki.gg/wiki/API_StaticPopup_Hide)
+	---Toggle the availability of the reset defaults and revert changes cancel buttons for this page
+	---***
+	---@param state boolean? ***Default:*** `true`
+	function page.setStatic(state)
+		state = state == false
+
+		resetButton.setEnabled(state)
+		revertButton.setEnabled(state)
+
+		if state then saveNotice:Show() else saveNotice:Hide() end
+	end
+
+	---Returns the unique identifier key representing the reset defaults warning popup dialog in the global **StaticPopupDialogs** table, and used as the parameter when calling [StaticPopup_Show()](https://warcraft.wiki.gg/wiki/API_StaticPopup_Show) or [StaticPopup_Hide()](https://warcraft.wiki.gg/wiki/API_StaticPopup_Hide)
 	---@return string
-	function page.getDefaultsPopupKey() return defaultsWarning end
+	function page.getResetPopupKey() return resetWarning end
 
 	--| Utilities
 
@@ -1142,7 +1155,7 @@ function wt.CreateSettingsPage(addon, t)
 	---Revert any changes made in this category page and reload all linked widget data
 	---***
 	---@param user? boolean If true, mark the call as being the result of a user interaction | ***Default:*** `false`
-	function page.cancel(user)
+	function page.revert(user)
 		--Update settings widgets
 		if type(t.dataManagement) == "table" then for i = 1, #t.dataManagement.keys do wt.RevertSettingsData(t.dataManagement.category, t.dataManagement.keys[i]) end end
 
@@ -1153,7 +1166,7 @@ function wt.CreateSettingsPage(addon, t)
 	---Reset all settings data of this category page to default values
 	---***
 	---@param user? boolean If true, mark the call as being the result of a user interaction | ***Default:*** `false`
-	function page.default(user)
+	function page.reset(user)
 		--Update with default values
 		if type(t.dataManagement) == "table" then for i = 1, #t.dataManagement.keys do wt.ResetSettingsData(t.dataManagement.category, t.dataManagement.keys[i]) end end
 
@@ -1178,15 +1191,15 @@ function wt.CreateSettingsPage(addon, t)
 		page.content = t.scroll and wt.CreateScrollFrame({
 			parent = page.canvas,
 			name = "Content",
-			size = { w = width - 12, h = height - 50 },
-			position = { offset = { y = -51 }, },
-			scrollSize = { h = t.scroll.height, },
+			size = { w = width - 8, h = height - 51 },
+			position = { offset = { y = -52 }, },
+			scrollSize = { w = width - 24, h = t.scroll.height, },
 			scrollSpeed = t.scroll.speed,
 		}) or wt.CreateFrame({
 			parent = page.canvas,
 			name = "Content",
-			size = { w = width - 12, h = height - 50 },
-			position = { offset = { y = -51 }, },
+			size = { w = width - 12, h = height - 52 },
+			position = { offset = { y = -52 }, },
 		})
 
 		--| Title & description
@@ -1200,8 +1213,7 @@ function wt.CreateSettingsPage(addon, t)
 			font = "GameFontHighlightHuge",
 		})
 
-		if type(t.description) == "string" then page.description = wt.CreateDescription({
-			title = page.title,
+		if type(t.description) == "string" then page.description = wt.CreateDescription(page.title, {
 			widthOffset = -161,
 			spacer = 7,
 			text = t.description,
@@ -1232,13 +1244,14 @@ function wt.CreateSettingsPage(addon, t)
 
 		--| Defaults button
 
-		defaultsWarning = wt.RegisterPopupDialog(addon, (t.name or "") .. "DEFAULT", {
+		resetWarning = wt.RegisterPopupDialog(addon, (t.name or "") .. "DEFAULT", {
 			text = wt.strings.settings.warningSingle:gsub("#PAGE", cr(title, NORMAL_FONT_COLOR)),
 			accept = ACCEPT,
-			onAccept = function() page.default(true) end,
+			onAccept = function() page.reset(true) end,
 		})
 
-		wt.CreateButton({
+		---@type simpleButton
+		resetButton = wt.CreateButton({
 			parent = page.canvas,
 			name = "Defaults",
 			title = DEFAULTS,
@@ -1248,13 +1261,13 @@ function wt.CreateSettingsPage(addon, t)
 				offset = { x = -36, y = -16 }
 			},
 			size = { w = 96, },
-			action = function() StaticPopup_Show(defaultsWarning) end,
+			action = function() StaticPopup_Show(resetWarning) end,
 			disabled = t.static,
 		})
 
-		--| Cancel button
+		--| Revert Changes button
 
-		wt.CreateButton({
+		revertButton = wt.CreateButton({
 			parent = page.canvas,
 			name = "Cancel",
 			title = wt.strings.settings.cancel.label,
@@ -1264,12 +1277,12 @@ function wt.CreateSettingsPage(addon, t)
 				offset = { x = -18, y = -31 }
 			},
 			size = { w = 140, },
-			action = function() page.cancel(true) end,
+			action = function() page.revert(true) end,
 			disabled = t.static,
 		})
 
 		--Add save notice text
-		wt.CreateText({
+		saveNotice = wt.CreateText({
 			parent = page.canvas,
 			name = "SaveNotice",
 			position = {
@@ -1279,6 +1292,8 @@ function wt.CreateSettingsPage(addon, t)
 			text = wt.strings.settings.save,
 			justify = { h = "RIGHT", },
 		})
+
+		if t.static then saveNotice:Hide() end
 	end
 
 	--[ Category Resources ]
@@ -1376,12 +1391,12 @@ function wt.CreateSettingsCategory(addon, parent, pages, t)
 	wt.RegisterSettingsPage(parent)
 
 	--Override defaults warning and add all defaults option to dialog
-	wt.UpdatePopupDialog(parent.getDefaultsPopupKey(), {
+	wt.UpdatePopupDialog(parent.getResetPopupKey(), {
 		text = wt.strings.settings.warning:gsub("#CATEGORY", cr(parentTitle, NORMAL_FONT_COLOR)):gsub("#PAGE", cr(parentTitle, NORMAL_FONT_COLOR)),
 		accept = ALL_SETTINGS,
 		alt = CURRENT_SETTINGS,
 		onAccept = function() category.defaults(true) end,
-		onAlt = function() parent.default(true) end,
+		onAlt = function() parent.reset(true) end,
 	})
 
 	--| Subcategories
@@ -1394,14 +1409,14 @@ function wt.CreateSettingsCategory(addon, parent, pages, t)
 		wt.RegisterSettingsPage(pages[i], parent, pages[i].categorySyncer.titleIcon) --REPLACE
 
 		--Override defaults warning and add all defaults option to dialog
-		wt.UpdatePopupDialog(pages[i].getDefaultsPopupKey(), {
+		wt.UpdatePopupDialog(pages[i].getResetPopupKey(), {
 			text = wt.strings.settings.warning:gsub("#CATEGORY", cr(parentTitle, NORMAL_FONT_COLOR)):gsub(
 				"#PAGE", cr(pages[i].title:GetText() or "", NORMAL_FONT_COLOR)
 			),
 			accept = ALL_SETTINGS,
 			alt = CURRENT_SETTINGS,
 			onAccept = function() category.defaults(true) end,
-			onAlt = function() pages[i].default(true) end,
+			onAlt = function() pages[i].reset(true) end,
 		})
 	end end end
 
@@ -1480,13 +1495,13 @@ function wt.CreateAction(t)
 	---Returns the object type of this widget
 	---***
 	---@return "Action" string
-	---<hr><p></p>
+	---<p></p>
 	function action.getType() return "Action" end
 
 	---Checks and returns if the type of this widget is equal to the string provided
 	---@param type string|AnyTypeName
 	---@return boolean
-	---<hr><p></p>
+	---<p></p>
 	function action.isType(type) return type == "Action" end
 
 	--| Event handling
@@ -1840,13 +1855,13 @@ function wt.CreateToggle(t)
 	---Returns the object type of this widget
 	---***
 	---@return "Toggle" string
-	---<hr><p></p>
+	---<p></p>
 	function toggle.getType() return "Toggle" end
 
 	---Checks and returns if the type of this widget is equal to the string provided
 	---@param type string|AnyTypeName
 	---@return boolean
-	---<hr><p></p>
+	---<p></p>
 	function toggle.isType(type) return type == "Toggle" end
 
 	--| Event handling
@@ -2185,7 +2200,7 @@ function wt.CreateCheckbox(t, toggle)
 				checkbox.setState(wt.clipboard.toggle, true)
 			end }):SetEnabled(wt.clipboard.toggle ~= nil)
 			wt.CreateMenuButton(menu, { title = wt.strings.value.revert, action = function() checkbox.revertData() end })
-			if t.default ~= nil then wt.CreateMenuButton(menu, { title = wt.strings.value.restore, action = function() checkbox.resetData() end }) end
+			if t.showDefault ~= false then wt.CreateMenuButton(menu, { title = wt.strings.value.restore, action = function() checkbox.resetData() end }) end
 		end
 	}) end
 
@@ -2299,7 +2314,7 @@ local function setUpToggleFrame(toggle, title, t)
 				toggle.setState(wt.clipboard.toggle, true)
 			end }):SetEnabled(wt.clipboard.toggle ~= nil)
 			wt.CreateMenuButton(menu, { title = wt.strings.value.revert, action = function() toggle.revertData() end })
-			if t.default ~= nil then wt.CreateMenuButton(menu, { title = wt.strings.value.restore, action = function() toggle.resetData() end }) end
+			if t.showDefault ~= false then wt.CreateMenuButton(menu, { title = wt.strings.value.restore, action = function() toggle.resetData() end }) end
 		end
 	}) end
 
@@ -2614,13 +2629,13 @@ function wt.CreateSelector(t)
 	---Returns the object type of this widget
 	---***
 	---@return "Selector" string
-	---<hr><p></p>
+	---<p></p>
 	function selector.getType() return "Selector" end
 
 	---Checks and returns if the type of this widget is equal to the string provided
 	---@param type string|AnyTypeName
 	---@return boolean
-	---<hr><p></p>
+	---<p></p>
 	function selector.isType(type) return type == "Selector" end
 
 	--| Event handling
@@ -2911,18 +2926,18 @@ function wt.CreateSpecialSelector(itemset, t)
 
 	--| Data
 
-	local default = itemsets[itemset][1].value
+	local default = 1
 
 	---Data verification utility
 	---@param v any
-	---@return specialSelectorValueTypes|nil
 	---@return integer|nil
 	local function verify(v)
-		local index = type(v) == "number" and Clamp(math.floor(v), 1, #itemsets[itemset]) or v
-		if type(v) == "string" then for i = 1, #itemsets[itemset] do if itemsets[itemset][i].value == v then index = i break end end end
-		v = itemsets[itemset][index]
+		if type(v) == "number" then return Clamp(math.floor(v), 1, #itemsets[itemset]) end
 
-		return type(v) == "table" and v.value or not clearable and default or nil, index
+		if type(v) == "table" and type(v.value) == "string" then v = v.value end
+		if type(v) == "string" then for i = 1, #itemsets[itemset] do if itemsets[itemset][i].value == v then return i end end end
+
+		return not clearable and default or nil
 	end
 
 	default = verify(t.default)
@@ -2943,13 +2958,13 @@ function wt.CreateSpecialSelector(itemset, t)
 	---Returns the object type of this widget
 	---***
 	---@return "SpecialSelector" string
-	---<hr><p></p>
+	---<p></p>
 	function selector.getType() return "SpecialSelector" end
 
 	---Checks and returns if the type of this widget is equal to the string provided
 	---@param type string|AnyTypeName
 	---@return boolean
-	---<hr><p></p>
+	---<p></p>
 	function selector.isType(type) return type == "SpecialSelector" end
 
 	---Return the itemset type specified for this special selector on creation
@@ -3026,7 +3041,7 @@ function wt.CreateSpecialSelector(itemset, t)
 	---@param silent? boolean If false, invoke a "loaded" event and call registered listeners | ***Default:*** `false`
 	function selector.saveData(data, silent)
 		if type(t.saveData) == "function" then
-			t.saveData(type(data) == "table" and verify(data.value) or value)
+			t.saveData(itemsets[itemset][verify(data or value)].value)
 
 			if not silent then selector.invoke.saved(true) end
 		elseif not silent then selector.invoke.saved(false) end
@@ -3048,19 +3063,19 @@ function wt.CreateSpecialSelector(itemset, t)
 
 	---Get the currently set default value
 	---@return specialSelectorValueTypes|nil default
-	function selector.getDefault() return default end
+	function selector.getDefault() return itemsets[itemset][default].value end
 
 	---Set the default value
 	---***
 	---@param selected integer|specialSelectorValueTypes|nil | ***Default:*** *no change*
-	---<hr><p></p>
+	---<p></p>
 	function selector.setDefault(selected) default = verify(selected) end
 
 	---Set and load the stored data managed by the widget to the default value specified via **t.default** at construction
 	---***
 	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** `true`
 	---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** `false`
-	function selector.resetData(handleChanges, silent) selector.setData({ value = default }, handleChanges, silent) end
+	function selector.resetData(handleChanges, silent) selector.setData(default, handleChanges, silent) end
 
 	---Set a data snapshot so any changes made to the widget and/or the stored data can be reverted to this value via **selector.revertData()**
 	---***
@@ -3071,23 +3086,23 @@ function wt.CreateSpecialSelector(itemset, t)
 	---***
 	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** `true`
 	---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** `false`
-	function selector.revertData(handleChanges, silent) selector.setData({ value = snapshot }, handleChanges, silent) end
+	function selector.revertData(handleChanges, silent) selector.setData(snapshot, handleChanges, silent) end
 
 	---Returns the value of the currently selected item or nil if there is no selection
 	---@return specialSelectorValueTypes|nil selected
-	---<hr><p></p>
-	function selector.getSelected() return value end
+	---<p></p>
+	function selector.getSelected() return itemsets[itemset][value].value end
 
 	---Set the specified item as selected
 	---***
 	---@param selected? integer|specialSelectorValueTypes|nil The index or the value of the item to be set as selected ***Default:*** nil *(no selection)*
 	---@param user? boolean If true, mark the change as being initiated via a user interaction and call change handlers | ***Default:*** `false`
 	---@param silent? boolean If false, invoke a "selected" event and call registered listeners | ***Default:*** `false`
-	---<hr><p></p>
+	---<p></p>
 	function selector.setSelected(selected, user, silent)
-		_, selected = verify(selected)
+		value = verify(selected)
 
-		for i = 1, #selector.toggles do selector.toggles[i].setState(i == selected, user, silent) end
+		for i = 1, #selector.toggles do selector.toggles[i].setState(i == value, user, silent) end
 
 		if user and t.instantSave ~= false then selector.saveData(nil, silent) end
 
@@ -3213,13 +3228,13 @@ function wt.CreateMultiselector(t)
 	---Returns the object type of this widget
 	---***
 	---@return "Multiselector" string
-	---<hr><p></p>
+	---<p></p>
 	function selector.getType() return "Multiselector" end
 
 	---Checks and returns if the type of this widget is equal to the string provided
 	---@param type string|AnyTypeName
 	---@return boolean
-	---<hr><p></p>
+	---<p></p>
 	function selector.isType(type) return type == "Multiselector" end
 
 	--| Event handling
@@ -3649,7 +3664,7 @@ function wt.CreateRadiogroup(t, selector)
 	---@param item selectorToggle|selectorRadiobutton|checkbox|radiobutton|toggle
 	---@param active boolean
 	local function setRadioButton(item, active)
-		if active and not item.frame then
+		if active and not us.IsFrame(item.frame) then
 			local sameRow = (item.index - 1) % t.columns > 0
 
 			wt.CreateRadiobutton({
@@ -3677,10 +3692,8 @@ function wt.CreateRadiogroup(t, selector)
 			if item.label then item.label:SetText(t.items[item.index].title) end
 
 			--Update tooltip
-			wt.AddTooltip(item.frame, {
-				title = type(
-					t.items[item.index].tooltip.title
-				) == "string" and t.items[item.index].tooltip.title or type(t.title) == "string" and t.title or type(t.name) == "string" and t.name or "Toggle",
+			if type(t.items[item.index].tooltip) == "table" then wt.AddTooltip(item.frame, {
+				title = type(t.items[item.index].tooltip.title) == "string" and t.items[item.index].tooltip.title or type(t.title) == "string" and t.title or type(t.name) == "string" and t.name or "Toggle",
 				lines = t.items[item.index].tooltip.lines,
 				anchor = "ANCHOR_NONE",
 				position = {
@@ -3688,7 +3701,7 @@ function wt.CreateRadiogroup(t, selector)
 					relativeTo = item.button,
 					relativePoint = "TOPRIGHT",
 				},
-			}, { triggers = { item.button, }, })
+			}, { triggers = { item.button, }, }) end
 		else wt.SetVisibility(item.frame, false) end
 	end
 
@@ -3755,7 +3768,7 @@ function wt.CreateRadiogroup(t, selector)
 				radiogroup.setSelected(wt.clipboard.selection.index, true)
 			end }):SetEnabled(wt.clipboard.selection ~= nil)
 			wt.CreateMenuButton(menu, { title = wt.strings.value.revert, action = function() radiogroup.revertData() end })
-			if t.showDefault then wt.CreateMenuButton(menu, { title = wt.strings.value.restore, action = function() radiogroup.resetData() end }) end
+			if t.showDefault ~= false then wt.CreateMenuButton(menu, { title = wt.strings.value.restore, action = function() radiogroup.resetData() end }) end
 		end
 	}) end
 
@@ -4237,7 +4250,7 @@ function wt.CreateDropdownRadiogroup(t, selector)
 				dropdown.setSelected(wt.clipboard.selection.index, true)
 			end }):SetEnabled(wt.clipboard.selection ~= nil)
 			wt.CreateMenuButton(menu, { title = wt.strings.value.revert, action = function() dropdown.revertData() end })
-			if dropdown.getDefault() then wt.CreateMenuButton(menu, { title = wt.strings.value.restore, action = function() dropdown.resetData() end }) end
+			if t.showDefault ~= false then wt.CreateMenuButton(menu, { title = wt.strings.value.restore, action = function() dropdown.resetData() end }) end
 		end
 	}) end
 
@@ -4285,8 +4298,10 @@ function wt.CreateSpecialRadiogroup(itemset, t, selector)
 
 	if WidgetToolsDB.lite and t.lite ~= false then return selector end
 
-	local showDefault = t.showDefault
-	local utilityMenu = t.utilityMenu
+	--[ Properties ]
+
+	local showDefault = t.showDefault ~= false
+	local utilityMenu = t.utilityMenu ~= false
 
 	---@type specialRadiogroupCreationData|radiogroupCreationData
 	t = us.Pull(t or {}, {
@@ -4296,6 +4311,8 @@ function wt.CreateSpecialRadiogroup(itemset, t, selector)
 		utilityMenu = false,
 	})
 
+	--[ Frame Setup ]
+
 	---@type specialRadiogroup
 	local radiogroup = wt.CreateRadiogroup(t, selector)
 
@@ -4303,17 +4320,17 @@ function wt.CreateSpecialRadiogroup(itemset, t, selector)
 
 	if type(t.tooltip) == "table" then
 		local defaultValue
-		if showDefault ~= false then crc(radiogroup.getDefault(), "FFFFFFFF") end
+		if showDefault then defaultValue = crc(radiogroup.getDefault(), "FFFFFFFF") end
 
 		local frames = { radiogroup.frame }
 		for i = 1, #radiogroup.toggles do table.insert(frames, radiogroup.toggles[i].frame) end
 
-		wt.AddWidgetTooltipLines(frames, defaultValue, t.utilityMenu)
+		wt.AddWidgetTooltipLines(frames, defaultValue, utilityMenu)
 	end
 
 	--| Utility menu
 
-	if utilityMenu ~= false then wt.CreateContextMenu({
+	if utilityMenu then wt.CreateContextMenu({
 		triggers = { {
 			frame = radiogroup.frame,
 			condition = radiogroup.isEnabled,
@@ -4413,10 +4430,8 @@ function wt.CreateCheckgroup(t, selector)
 			if item.label then item.label:SetText(t.items[item.index].title) end
 
 			--Update tooltip
-			wt.AddTooltip(item.frame, {
-				title = type(
-					t.items[item.index].tooltip.title
-				) == "string" and t.items[item.index].tooltip.title or type(t.title) == "string" and t.title or type(t.name) == "string" and t.name or "Toggle",
+			if type(t.items[item.index].tooltip) == "table" then wt.AddTooltip(item.frame, {
+				title = type(t.items[item.index].tooltip.title) == "string" and t.items[item.index].tooltip.title or type(t.title) == "string" and t.title or type(t.name) == "string" and t.name or "Toggle",
 				lines = t.items[item.index].tooltip.lines,
 				anchor = "ANCHOR_NONE",
 				position = {
@@ -4424,7 +4439,7 @@ function wt.CreateCheckgroup(t, selector)
 					relativeTo = item.button,
 					relativePoint = "TOPRIGHT",
 				},
-			}, { triggers = { item.button, }, })
+			}, { triggers = { item.button, }, }) end
 		else wt.SetVisibility(item.frame, false) end
 	end
 
@@ -4495,7 +4510,7 @@ function wt.CreateCheckgroup(t, selector)
 				checkgroup.setSelections(wt.clipboard.selections.states, true)
 			end }):SetEnabled(wt.clipboard.selections ~= nil)
 			wt.CreateMenuButton(menu, { title = wt.strings.value.revert, action = function() checkgroup.revertData() end })
-			if t.showDefault then wt.CreateMenuButton(menu, { title = wt.strings.value.restore, action = function() checkgroup.resetData() end }) end
+			if t.showDefault ~= false then wt.CreateMenuButton(menu, { title = wt.strings.value.restore, action = function() checkgroup.resetData() end }) end
 		end
 	}) end
 
@@ -4541,13 +4556,13 @@ function wt.CreateTextbox(t)
 	---Returns the object type of this widget
 	---***
 	---@return "Textbox" string
-	---<hr><p></p>
+	---<p></p>
 	function textbox.getType() return "Textbox" end
 
 	---Checks and returns if the type of this widget is equal to the string provided
 	---@param type string|AnyTypeName
 	---@return boolean
-	---<hr><p></p>
+	---<p></p>
 	function textbox.isType(type) return type == "Textbox" end
 
 	--| Event handling
@@ -4879,7 +4894,7 @@ local function setUpSingleLineEditbox(editbox, title, t)
 				editbox.setText(wt.clipboard.text, true)
 			end }):SetEnabled(wt.clipboard.text ~= nil)
 			wt.CreateMenuButton(menu, { title = wt.strings.value.revert, action = function() editbox.revertData() end })
-			if t.showDefault then wt.CreateMenuButton(menu, { title = wt.strings.value.restore, action = function() editbox.resetData() end }) end
+			if t.showDefault ~= false then wt.CreateMenuButton(menu, { title = wt.strings.value.restore, action = function() editbox.resetData() end }) end
 		end
 	}) end
 end
@@ -5134,7 +5149,7 @@ function wt.CreateMultilineEditbox(t, textbox)
 				editbox.setText(wt.clipboard.text, true)
 			end }):SetEnabled(wt.clipboard.text ~= nil)
 			wt.CreateMenuButton(menu, { title = wt.strings.value.revert, action = function() editbox.revertData() end })
-			if t.showDefault then wt.CreateMenuButton(menu, { title = wt.strings.value.restore, action = function() editbox.resetData() end }) end
+			if t.showDefault ~= false then wt.CreateMenuButton(menu, { title = wt.strings.value.restore, action = function() editbox.resetData() end }) end
 		end
 	}) end
 
@@ -5294,13 +5309,13 @@ function wt.CreateNumeric(t)
 	---Returns the object type of this widget
 	---***
 	---@return "Numeric" string
-	---<hr><p></p>
+	---<p></p>
 	function numeric.getType() return "Numeric" end
 
 	---Checks and returns if the type of this widget is equal to the string provided
 	---@param type string|AnyTypeName
 	---@return boolean
-	---<hr><p></p>
+	---<p></p>
 	function numeric.isType(type) return type == "Numeric" end
 
 	--| Event handling
@@ -5796,7 +5811,7 @@ function wt.CreateSlider(t, numeric)
 				slider.setNumber(wt.clipboard.numeric, true)
 			end }):SetEnabled(wt.clipboard.numeric ~= nil)
 			wt.CreateMenuButton(menu, { title = wt.strings.value.revert, action = function() slider.revertData() end })
-			if t.showDefault then wt.CreateMenuButton(menu, { title = wt.strings.value.restore, action = function() slider.resetData() end }) end
+			if t.showDefault ~= false then wt.CreateMenuButton(menu, { title = wt.strings.value.restore, action = function() slider.resetData() end }) end
 		end
 	}) end
 
@@ -6187,7 +6202,7 @@ function wt.CreateClassicSlider(t, numeric)
 				slider.setNumber(wt.clipboard.numeric, true)
 			end }):SetEnabled(wt.clipboard.numeric ~= nil)
 			wt.CreateMenuButton(menu, { title = wt.strings.value.revert, action = function() slider.revertData() end })
-			if t.showDefault then wt.CreateMenuButton(menu, { title = wt.strings.value.restore, action = function() slider.resetData() end }) end
+			if t.showDefault ~= false then wt.CreateMenuButton(menu, { title = wt.strings.value.restore, action = function() slider.resetData() end }) end
 		end
 	}) end
 
@@ -6265,13 +6280,13 @@ function wt.CreateColormanager(t)
 	---Returns the object type of this widget
 	---***
 	---@return "Colorpicker" string
-	---<hr><p></p>
+	---<p></p>
 	function colormanager.getType() return "Colorpicker" end
 
 	---Checks and returns if the type of this widget is equal to the string provided
 	---@param type string|AnyTypeName
 	---@return boolean
-	---<hr><p></p>
+	---<p></p>
 	function colormanager.isType(type) return type == "Colorpicker" end
 
 	--| Event handling
@@ -6751,7 +6766,7 @@ function wt.CreateColorpicker(t, colormanager)
 				colorpicker.setColor(wt.clipboard.color, true)
 			end }):SetEnabled(wt.clipboard.color ~= nil)
 			wt.CreateMenuButton(menu, { title = wt.strings.value.revert, action = function() colorpicker.revertData() end })
-			if t.showDefault then wt.CreateMenuButton(menu, { title = wt.strings.value.restore, action = function() colorpicker.resetData() end }) end
+			if t.showDefault ~= false then wt.CreateMenuButton(menu, { title = wt.strings.value.restore, action = function() colorpicker.resetData() end }) end
 		end
 	}) end
 
@@ -7210,13 +7225,13 @@ function wt.CreateDataManagementPage(addon, t)
 	---Returns the type of this object
 	---***
 	---@return "DataManagementPage" string
-	---<hr><p></p>
+	---<p></p>
 	function dataManagement.getType() return "DataManagementPage" end
 
 	---Checks and returns if the type of this object is equal to the string provided
 	---@param type string|AnyTypeName
 	---@return boolean
-	---<hr><p></p>
+	---<p></p>
 	function dataManagement.isType(type) return type == "DataManagementPage" end
 
 	--[ Settings Page ]
@@ -7913,13 +7928,13 @@ function wt.CreatePositionOptions(addon, frame, t)
 	---Returns the type of this object
 	---***
 	---@return "PositionOptions" string
-	---<hr><p></p>
+	---<p></p>
 	function panel.getType() return "PositionOptions" end
 
 	---Checks and returns if the type of this object is equal to the string provided
 	---@param type string|AnyTypeName
 	---@return boolean
-	---<hr><p></p>
+	---<p></p>
 	function panel.isType(type) return type == "PositionOptions" end
 
 	--[ Visual Aids ]
@@ -8511,13 +8526,13 @@ function wt.CreateFontOptions(addon, text, t)
 	---Returns the type of this object
 	---***
 	---@return "FontOptions" string
-	---<hr><p></p>
+	---<p></p>
 	function panel.getType() return "FontOptions" end
 
 	---Checks and returns if the type of this object is equal to the string provided
 	---@param type string|AnyTypeName
 	---@return boolean
-	---<hr><p></p>
+	---<p></p>
 	function panel.isType(type) return type == "FontOptions" end
 
 	--[ Options Panel ]
@@ -8544,7 +8559,7 @@ function wt.CreateFontOptions(addon, text, t)
 						title = fonts[i].name,
 						lines = i == 1 and { { text = wt.strings.font.path.default, }, } or (i == #fonts and {
 							{ text = wt.strings.font.path.custom:gsub(
-								"#FONTS_DIRECTORY", cr("[WoW]\\Interface\\AddOns\\" .. rs.addon .. "\\Fonts\\", { r = 0.185, g = 0.72, b = 0.84 })
+								"#FONTS_DIRECTORY", cr("[WoW]\\Fonts\\", { r = 0.185, g = 0.72, b = 0.84 })
 							):gsub("#FILE_CUSTOM", "CUSTOM.ttf") },
 							{ text = "\n" .. wt.strings.font.path.reminder, color = { r = 0.89, g = 0.65, b = 0.40 }, },
 						} or nil),
@@ -8645,8 +8660,7 @@ function wt.CreateFontOptions(addon, text, t)
 
 			--| Font color
 
-			if type(t.colorOrder) ~= "table" then t.colorOrder = {} end
-			if type(t.colorNames) ~= "table" then t.colorNames = {} end
+			if type(t.colorList) ~= "table" then t.colorList = {} end
 
 			---@type (colormanager|colorpicker)[]
 			panel.widgets.colors = {}
@@ -8654,12 +8668,14 @@ function wt.CreateFontOptions(addon, text, t)
 			for key, _ in pairs(t.getData().colors) do
 				local name = key:sub(1,1):upper() .. key:sub(2)
 
+				if type(t.colorList[key]) ~= "table" then t.colorList[key] = {} end
+
 				panel.widgets.colors[key] = wt.CreateColorpicker({
 					parent = panelFrame,
 					name = name .. "Colorpicker",
-					title = wt.strings.font.color.label:gsub("#COLOR_TYPE", type(t.colorNames[key]) == "string" and t.colorNames[key] or name),
+					title = wt.strings.font.color.label:gsub("#COLOR_TYPE", type(t.colorList[key].name) == "string" and t.colorList[key].name or name),
 					tooltip = { lines = { { text = wt.strings.font.color.tooltip:gsub("#COLOR_TYPE", name), }, } },
-					arrange = { newRow = not next(panel.widgets.colors), column = us.FindIndex(t.colorOrder, key) },
+					arrange = { newRow = not next(panel.widgets.colors), column = t.colorList[key].index == "number" and t.colorList[key].index or nil },
 					dependencies = t.dependencies,
 					getData = function() return t.getData().colors[key] end,
 					saveData = function(value) t.getData().colors[key] = value end,

@@ -1077,11 +1077,12 @@ local function CreateSpeedDisplayOptionsPage(display)
 					coords = ns.strings.options.speedValue.units.list[3].label,
 				},
 				colorOrder = {
-					"base",
-					"percent",
-					"yards",
-					"coords",
 				},
+				-- colorsList = {
+				-- 	percent
+				-- 	yards
+				-- 	coords
+				-- },
 				dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
 				getData = function() return MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].font end,
 				defaultsTable = ns.profileDefault[display].font,

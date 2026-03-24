@@ -801,7 +801,7 @@ function Clamp(value, min, max) return value end
 --| Parameters
 
 ---@class sizeData_panel
----@field w? number Width | ***Default:*** **t.parent** and *width of the parent frame* - 32 or 0
+---@field w? number Width | ***Default:*** **t.parent** and *width of the parent frame* - 20 or 0
 ---@field h? number Height | ***Default:*** 0<ul><li>***Note:*** If content is added, arranged and **t.arrangeContent.resize** is true, the height will be set dynamically based on the calculated height of the content.</li></ul>
 
 ---@class backgroundColorData_panel
@@ -1746,6 +1746,10 @@ function Clamp(value, min, max) return value end
 
 --| Text font
 
+---@class textColorInfo
+---@field index? integer Ordering index of the color | ***Default:*** *unspecified*
+---@field name? string Display name to set their widget and tooltip titles paired to their data management keys | ***Default:*** *data management key in Title case*
+
 ---@class textColorData_base
 ---@field base colorData
 
@@ -1759,8 +1763,7 @@ function Clamp(value, min, max) return value end
 ---@field key? string A unique string appended to **category** linking a subset of settings data rules to be handled together | ***Default:*** "Font"
 
 ---@class fontManagementCreationData : settingsWidgetPanel_text
----@field colorOrder? string[] If set, use this array of the data management keys of managed colors to order of their widgets by
----@field colorNames? table<string, string> If set, use this list of color display names paired with their data management keys to set their widget and tooltip titles shown as "Color **t.colorNames[*key*]**" *(localized)* | ***Default:*** *data management **key*****:sub(1,1):upper() .. key:sub(2)**
+---@field colorList? table<string, textColorInfo> If set, use this list of specifications to set the order and displayed name of the colors | ***Default:*** *unspecified order; data management key in Title case*
 ---@field getData fun(): table: fontOptionsData Return a reference to the table within a SavedVariables(PerCharacter) addon database where data is committed to
 ---@field defaultsTable fontOptionsData Reference to the table containing the default values
 ---@field dataManagement? settingsData_font Register the widgets to settings data management to be linked with the specified key under the specified category
