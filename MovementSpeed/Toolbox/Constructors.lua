@@ -329,7 +329,7 @@ end
 ---@return FontString text
 function wt.CreateText(t)
 	t = type(t) == "table" and t or {}
-	t.parent = WidgetTools.utilities.IsFrame(t.parent) and t.parent or UIParent
+	t.parent = us.IsFrame(t.parent) and t.parent or UIParent
 
 	local text = t.parent:CreateFontString((t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "Text"), t.layer, t.font and t.font or "GameFontNormal")
 
@@ -362,7 +362,7 @@ end
 function wt.CreateTitle(frame, t)
 	t = type(t) == "table" and t or {}
 
-	if not WidgetTools.utilities.IsFrame(frame) then return end
+	if not us.IsFrame(frame) then return end
 
 	return wt.CreateText({
 		parent = frame,
@@ -393,7 +393,7 @@ function wt.CreateDescription(title, t)
 
 	local parent = title:GetParent()
 
-	if not WidgetTools.utilities.IsFrame(parent) then return end
+	if not us.IsFrame(parent) then return end
 
 	t.justify = type(t.justify) == "string" and t.justify or "LEFT"
 	local anchor = t.justify ~= "RIGHT" and "LEFT" or "RIGHT"
@@ -447,7 +447,7 @@ end
 ---***
 ---@return Texture? texture ***Default:*** nil
 function wt.CreateTexture(frame, t, updates)
-	if not WidgetTools.utilities.IsFrame(frame) then return end
+	if not us.IsFrame(frame) then return end
 
 	t = type(t) == "table" and t or {}
 
@@ -548,7 +548,7 @@ end
 function wt.CreateLine(frame, t)
 	t = type(t) == "table" and t or {}
 
-	if not WidgetTools.utilities.IsFrame(frame) then return end
+	if not us.IsFrame(frame) then return end
 
 	t.startPosition.offset = t.startPosition.offset or {}
 	t.endPosition.offset = t.endPosition.offset or {}
@@ -849,7 +849,7 @@ function wt.CreateContextMenu(t)
 	--| Trigger events
 
 	if type(t.triggers) ~= "table" then t.triggers = { { frame = UIParent, }, } else for i = 1, #t.triggers do
-		if not WidgetTools.utilities.IsFrame(t.triggers[i].frame) then t.triggers[i].frame = UIParent end
+		if not us.IsFrame(t.triggers[i].frame) then t.triggers[i].frame = UIParent end
 
 		if t.triggers[i].rightClick ~= false or t.triggers[i].leftClick then t.triggers[i].frame:HookScript("OnMouseUp", function(_, button, isInside)
 			if not isInside or (button == "RightButton" and t.triggers[i].rightClick == false) or (button == "LeftButton" and not t.triggers[i].leftClick) then return end
@@ -884,7 +884,7 @@ function wt.CreatePopupMenu(t)
 		events = t.events,
 		onEvent = t.onEvent,
 		initialize = function(frame)
-			wt.CreateText({
+			local label = wt.CreateText({
 				parent = frame,
 				name = "Label",
 				text = t.title,
@@ -894,7 +894,7 @@ function wt.CreatePopupMenu(t)
 				font = "GameFontNormal",
 			})
 
-			wt.CreateText({
+			local arrow = wt.CreateText({
 				parent = frame,
 				name = "Arrow",
 				text = "►",
@@ -926,6 +926,11 @@ function wt.CreatePopupMenu(t)
 			},
 			{ { rules = {
 				OnEnter = function()
+					local r, g, b = HIGHLIGHT_FONT_COLOR:GetRGB()
+
+					label:SetTextColor(r, g, b)
+					arrow:SetTextColor(r, g, b)
+
 					return IsMouseButtonDown("LeftButton") and {
 						background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
 						border = { color = { r = 0.42, g = 0.42, b = 0.42, a = 0.9 } }
@@ -934,7 +939,14 @@ function wt.CreatePopupMenu(t)
 						border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
 					}
 				end,
-				OnLeave = function() return {}, true end,
+				OnLeave = function()
+					local r, g, b = NORMAL_FONT_COLOR:GetRGB()
+
+					label:SetTextColor(r, g, b)
+					arrow:SetTextColor(r, g, b)
+
+					return {}, true
+				end,
 				OnMouseDown = function() return IsMouseButtonDown("LeftButton") and {
 					background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
 					border = { color = { r = 0.42, g = 0.42, b = 0.42, a = 0.9 } }
@@ -1452,7 +1464,7 @@ local function addListener(listeners, event, listener, callIndex)
 	listeners[event] = type(listeners[event]) == "table" and listeners[event] or {}
 
 	if type(callIndex) ~= "number" then table.insert(listeners[event], listener)
-	else table.insert(listeners[event], Clamp(WidgetTools.utilities.Round(callIndex), 1, #listeners[event] + 1), listener) end
+	else table.insert(listeners[event], Clamp(us.Round(callIndex), 1, #listeners[event] + 1), listener) end
 end
 
 ---Call registered listeners for **event**
@@ -1578,8 +1590,10 @@ end
 ---Set the parameters of a GUI button widget frame
 ---@param button simpleButton|customButton
 ---@param t simpleButtonCreationData|customButtonCreationData
+---@param name string
+---@param title string
 ---@param useHighlight boolean
-local function setUpButtonFrame(button, t, useHighlight)
+local function setUpButtonFrame(button, t, name, title, useHighlight)
 
 	--[ Frame Setup ]
 
@@ -1589,29 +1603,37 @@ local function setUpButtonFrame(button, t, useHighlight)
 	t.size.w = t.size.w or 80
 	t.size.h = t.size.h or 22
 
-	if t.arrange then button.frame.arrangementInfo = t.arrange else wt.SetPosition(button.frame, t.position) end
+	if t.arrange then button.widget.arrangementInfo = t.arrange else wt.SetPosition(button.widget, t.position) end
 
-	button.frame:SetSize(t.size.w, t.size.h)
+	button.widget:SetSize(t.size.w, t.size.h)
 
 	--| Visibility
 
-	wt.SetVisibility(button.frame, t.visible ~= false)
+	wt.SetVisibility(button.widget, t.visible ~= false)
 
-	if t.frameStrata then button.frame:SetFrameStrata(t.frameStrata) end
-	if t.frameLevel then button.frame:SetFrameLevel(t.frameLevel) end
-	if t.keepOnTop then button.frame:SetToplevel(t.keepOnTop) end
+	if t.frameStrata then button.widget:SetFrameStrata(t.frameStrata) end
+	if t.frameLevel then button.widget:SetFrameLevel(t.frameLevel) end
+	if t.keepOnTop then button.widget:SetToplevel(t.keepOnTop) end
+
+	--| Hover target
+
+	button.frame = CreateFrame("Frame", name .. "HoverTarget", button.widget)
+	button.frame:SetPoint("TOPLEFT")
+	button.frame:SetSize(button.widget:GetSize())
 
 	--[ Events ]
 
 	--Register script event handlers
 	if t.events then for key, value in pairs(t.events) do
-		if key == "attribute" then button.frame:HookScript("OnAttributeChanged", function(_, attribute, ...) if attribute == value.name then value.handler(...) end end)
-		else button.frame:HookScript(key, value) end
+		if key == "attribute" then button.widget:HookScript("OnAttributeChanged", function(_, attribute, ...) if attribute == value.name then value.handler(...) end end)
+		else button.widget:HookScript(key, value) end
 	end end
 
 	--| UX
 
-	button.frame:HookScript("OnClick", function()
+	button.widget:HookScript("OnClick", function(_, mouseButton)
+		if mouseButton ~= "LeftButton" or not button.widget:IsEnabled() then return end
+
 		PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
 
 		button.trigger(true)
@@ -1622,9 +1644,32 @@ local function setUpButtonFrame(button, t, useHighlight)
 		button.frame:HookScript("OnLeave", function() button.label:SetFontObject(t.font.normal) end)
 	end
 
+	--Linked mouse interactions
+	button.frame:HookScript("OnEnter", function() if button.widget:IsEnabled() then
+		button.widget:LockHighlight()
+		if IsMouseButtonDown("LeftButton") then button.widget:SetButtonState("PUSHED") end
+	end end)
+	button.frame:HookScript("OnLeave", function() if button.widget:IsEnabled() then
+		button.widget:UnlockHighlight()
+		button.widget:SetButtonState("NORMAL")
+	end end)
+	button.frame:HookScript("OnMouseDown", function(_, b) if button.widget:IsEnabled() and b == "LeftButton" then
+		button.widget:SetButtonState("PUSHED")
+	end end)
+	button.frame:HookScript("OnMouseUp", function(_, b, isInside) if button.widget:IsEnabled() then
+		button.widget:SetButtonState("NORMAL")
+
+		if isInside and b == "LeftButton" then button.widget:Click(b) end
+	end end)
+
 	--| Tooltip
 
-	if type(t.tooltip) == "table" then button.setTooltip() end
+	if type(t.tooltip) == "table" then wt.AddTooltip(button.frame, {
+		title = t.tooltip.title or title,
+		lines = t.tooltip.lines,
+		anchor = "ANCHOR_TOPLEFT",
+		offset = { x = 20, },
+	}, { triggers = { button.frame, }, }) end
 
 	--| State
 
@@ -1632,17 +1677,11 @@ local function setUpButtonFrame(button, t, useHighlight)
 	---@param _ simpleButton
 	---@param state boolean
 	local function updateState(_, state)
-		button.frame:SetEnabled(state)
+		button.widget:SetEnabled(state)
 
-		if state then
-			if button.label then
-				if useHighlight and button.frame:IsMouseOver() then button.label:SetFontObject(t.font.highlight) else button.label:SetFontObject(t.font.normal) end
-			end
-			if button.hoverTarget then button.hoverTarget:Hide() end
-		else
-			if button.label then button.label:SetFontObject(t.font.disabled) end
-			if button.hoverTarget then button.hoverTarget:Show() end
-		end
+		if button.label then if state then
+			if useHighlight and button.widget:IsMouseOver() then button.label:SetFontObject(t.font.highlight) else button.label:SetFontObject(t.font.normal) end
+		else button.label:SetFontObject(t.font.disabled) end end
 	end
 
 	--Set up starting state
@@ -1665,20 +1704,20 @@ function wt.CreateButton(t, action)
 	if WidgetToolsDB.lite and t.lite ~= false then return action end
 
 	---@class simpleButton : action
+	---@field frame Frame Frame to catch mouse interactions and serve as a hover trigger to be able to show the tooltip or when the button is disabled
 	local button = action
 
 	--[ Frame Setup ]
 
 	local name = (t.append ~= false and t.parent and t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "Button")
 
-	button.frame = CreateFrame("Button", name, t.parent, "UIPanelButtonTemplate")
+	button.widget = CreateFrame("Button", name, t.parent, "UIPanelButtonTemplate")
 
 	--| Label
 
 	local title = type(t.title) == "string" and t.title or type(t.name) == "string" and t.name or "Button"
 	local customFonts = t.font ~= nil
 	t.font = t.font or {}
-	local useHighlight = t.font.highlight ~= nil
 	t.font.normal = t.font.normal or "GameFontNormal"
 	t.font.highlight = t.font.highlight or "GameFontHighlight"
 	t.font.disabled = t.font.disabled or "GameFontDisable"
@@ -1686,7 +1725,7 @@ function wt.CreateButton(t, action)
 	if t.label ~= false then
 		if customFonts then
 			button.label = wt.CreateText({
-				parent = button.frame,
+				parent = button.widget,
 				name = "Label",
 				position = { anchor = "CENTER", },
 				width = t.size.w,
@@ -1702,36 +1741,9 @@ function wt.CreateButton(t, action)
 		button.label:SetText(title)
 	else _G[name .. "Text"]:Hide() end
 
-	--[ Getters & Setters ]
+	--| Shared setup
 
-	---Modify the tooltip set for the button with this to make sure it works even when the button is disabled
-	---***
-	---@param tooltip? widgetTooltipTextData List of text lines to set as the tooltip of the button | ***Default:*** **t.tooltip** or *no changes will be made*
-	function button.setTooltip(tooltip)
-		tooltip = tooltip or t.tooltip
-
-		if not tooltip then return end
-
-		--Create a trigger to show the tooltip when the button is disabled
-		if not button.hoverTarget then
-			button.hoverTarget = CreateFrame("Frame", name .. "HoverTarget", button.frame)
-			button.hoverTarget:SetPoint("TOPLEFT")
-			button.hoverTarget:SetSize(button.frame:GetSize())
-			button.hoverTarget:Hide()
-		end
-
-		--Set the tooltip
-		wt.AddTooltip(button.frame, {
-			title = tooltip.title or title,
-			lines = tooltip.lines,
-			anchor = "ANCHOR_TOPLEFT",
-			offset = { x = 20, },
-		}, { triggers = { button.hoverTarget, }, })
-	end
-
-	--[ Initialization ]
-
-	setUpButtonFrame(button, t, useHighlight)
+	setUpButtonFrame(button, t, name, title, t.font.highlight ~= nil)
 
 	return button
 end
@@ -1749,13 +1761,14 @@ function wt.CreateCustomButton(t, action)
 	if WidgetToolsDB.lite and t.lite ~= false then return action end
 
 	---@class customButton : action
+	---@field frame Frame Frame to catch mouse interactions and serve as a hover trigger to be able to show the tooltip or when the button is disabled
 	local button = action
 
 	--[ Frame Setup ]
 
 	local name = (t.append ~= false and t.parent and t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "Button")
 
-	button.frame = CreateFrame("Button", name, t.parent, BackdropTemplateMixin and "BackdropTemplate")
+	button.widget = CreateFrame("Button", name, t.parent, BackdropTemplateMixin and "BackdropTemplate")
 
 	--| Label
 
@@ -1767,7 +1780,7 @@ function wt.CreateCustomButton(t, action)
 
 	if t.label ~= false then
 		button.label = wt.CreateText({
-			parent = button.frame,
+			parent = button.widget,
 			name = "Label",
 			position = { anchor = "CENTER", },
 			width = t.size.w,
@@ -1779,40 +1792,18 @@ function wt.CreateCustomButton(t, action)
 		button.label:SetText(title)
 	end
 
+	--| Shared setup
+
+	setUpButtonFrame(button, t, name, title, true)
+
 	--| Backdrop
 
-	wt.SetBackdrop(button.frame, t.backdrop, t.backdropUpdates)
+	if type(t.backdropUpdates) == "table" then for i = 1, #t.backdropUpdates do
+		if type(t.backdropUpdates[i].triggers) ~= "table" then t.backdropUpdates[i].triggers = {} end
+		table.insert(t.backdropUpdates[i].triggers, button.frame)
+	end end
 
-	--[ Getters & Setters ]
-
-	---Modify the tooltip set for the button with this to make sure it works even when the button is disabled
-	---***
-	---@param tooltip? widgetTooltipTextData List of text lines to set as the tooltip of the button | ***Default:*** **t.tooltip** or *no changes will be made*
-	function button.setTooltip(tooltip)
-		tooltip = tooltip or t.tooltip
-
-		if not tooltip then return end
-
-		--Create a trigger to show the tooltip when the button is disabled
-		if not button.hoverTarget then
-			button.hoverTarget = CreateFrame("Frame", name .. "HoverTarget", button.frame)
-			button.hoverTarget:SetPoint("TOPLEFT")
-			button.hoverTarget:SetSize(button.frame:GetSize())
-			button.hoverTarget:Hide()
-		end
-
-		--Set the tooltip
-		wt.AddTooltip(button.frame, {
-			title = tooltip.title or title,
-			lines = tooltip.lines,
-			anchor = "ANCHOR_TOPLEFT",
-			offset = { x = 20, },
-		}, { triggers = { button.hoverTarget, }, })
-	end
-
-	--[ Initialization ]
-
-	setUpButtonFrame(button, t, true)
+	wt.SetBackdrop(button.widget, t.backdrop, t.backdropUpdates)
 
 	return button
 end
@@ -2241,10 +2232,10 @@ local function setUpToggleFrame(toggle, title, t)
 	--| Position & dimensions
 
 	if t.arrange then toggle.frame.arrangementInfo = t.arrange else wt.SetPosition(toggle.frame, t.position) end
-	toggle.button:SetPoint("TOPLEFT")
+	toggle.button:SetPoint("LEFT", (t.size.h - 16) / 2, 0)
 
 	toggle.frame:SetSize(t.size.w, t.size.h)
-	toggle.button:SetSize(t.size.h, t.size.h) --1:1 aspect ratio applies
+	toggle.button:SetSize(16, 16)
 
 	--| Visibility
 
@@ -2465,7 +2456,7 @@ function wt.CreateRadiobutton(t, toggle)
 		radiobutton.label = _G[name .. "RadioButtonText"]
 
 		radiobutton.label:SetPoint("LEFT", radiobutton.button, "RIGHT", 3, 0)
-		radiobutton.label:SetFontObject("GameFontHighlightSmall")
+		radiobutton.label:SetFontObject("GameFontNormal")
 
 		radiobutton.label:SetText(title)
 	else _G[name .. "RadioButtonText"]:Hide() end
@@ -2473,8 +2464,8 @@ function wt.CreateRadiobutton(t, toggle)
 	--| Shared setup
 
 	t.size = t.size or {}
-	t.size.h = t.size.h or 16
-	t.size.w = t.label == false and t.size.h or t.size.w or 160
+	t.size.h = t.size.h or 18
+	t.size.w = t.label == false and t.size.h or t.size.w or 180
 
 	setUpToggleFrame(radiobutton, title, t)
 
@@ -2520,7 +2511,7 @@ function wt.CreateRadiobutton(t, toggle)
 	local function updateState(_, state)
 		radiobutton.button:SetEnabled(state)
 
-		if radiobutton.label then radiobutton.label:SetFontObject(state and "GameFontHighlightSmall" or "GameFontDisableSmall") end
+		if radiobutton.label then radiobutton.label:SetFontObject(state and "GameFontNormal" or "GameFontDisable") end
 	end
 
 	--Handle widget updates
@@ -3803,7 +3794,7 @@ function wt.CreateDropdownRadiogroup(t, selector)
 
 	if t.arrange then holderFrame.arrangementInfo = t.arrange else wt.SetPosition(holderFrame, t.position) end
 
-	holderFrame:SetSize(t.width + 4, 40)
+	holderFrame:SetSize(t.width + 4, 44)
 
 	--| Visibility
 
@@ -3828,7 +3819,7 @@ function wt.CreateDropdownRadiogroup(t, selector)
 		keepInBound = true,
 		background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
 		border =  { color = { r = 0.42, g = 0.42, b = 0.42, a = 0.9 } },
-		size = { w = t.width, h = 12 + #t.items * 16 },
+		size = { w = t.width, h = 12 + #t.items * 18 },
 		initialize = function(panel)
 		end,
 	})
@@ -3841,7 +3832,10 @@ function wt.CreateDropdownRadiogroup(t, selector)
 		name = name,
 		append = false,
 		label = false,
-		position = { anchor = "CENTER", },
+		position = {
+			anchor = "TOP",
+			offset = { y = -6, }
+		},
 		width = t.width - 12,
 		items = t.items,
 		clearable = clearable,
@@ -3882,11 +3876,11 @@ function wt.CreateDropdownRadiogroup(t, selector)
 			{ text = "\n" .. wt.strings.dropdown.open, },
 		} },
 		position = { anchor = "BOTTOM", offset = { y = 2 }, },
-		size = { w = t.width - (t.cycleButtons ~= false and 44 or 0), },
+		size = { w = t.width - (t.cycleButtons ~= false and 46 or 0), h = 24 },
 		font = {
-			normal = "GameFontNormalSmall2",
-			highlight = "GameFontHighlightSmall2",
-			disabled = "GameFontDisableSmall2",
+			normal = "GameFontNormal",
+			highlight = "GameFontHighlight",
+			disabled = "GameFontDisable",
 		},
 		backdrop = {
 			background = {
@@ -3922,13 +3916,13 @@ function wt.CreateDropdownRadiogroup(t, selector)
 					} end
 					return {}, true
 				end,
-				OnMouseDown = function(self)
-					return IsMouseButtonDown("LeftButton") and self:IsEnabled() and {
+				OnMouseDown = function(frame)
+					return IsMouseButtonDown("LeftButton") and frame:IsEnabled() and {
 						background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
 						border = { color = { r = 0.42, g = 0.42, b = 0.42, a = 0.9 } }
 					} or {}
 				end,
-				OnMouseUp = function(_, button)
+				OnMouseUp = function(_, _, button)
 					if button == "LeftButton" then return {} end
 
 					return (open and {
@@ -3942,10 +3936,10 @@ function wt.CreateDropdownRadiogroup(t, selector)
 			}, },
 			{
 				triggers = { dropdown.holderFrame },
-				rules = { OnAttributeChanged = function(_, attribute, state)
+				rules = { OnAttributeChanged = function(_, _, attribute, state)
 					if attribute ~= "open" then return {} end
 
-					if dropdown.toggle.frame:IsMouseOver() then return state and {
+					if dropdown.toggle.widget:IsMouseOver() then return state and {
 						border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
 					} or {
 						background = { color = { r = 0.15, g = 0.15, b = 0.15, a = 0.9 } },
@@ -3956,7 +3950,7 @@ function wt.CreateDropdownRadiogroup(t, selector)
 			},
 		},
 		events = clearable and t.utilityMenu == false and { OnMouseUp = function(_, button, isInside)
-			if button == "RightButton" and isInside and dropdown.toggle.frame:IsEnabled() then dropdown.setText(nil, true) end
+			if button == "RightButton" and isInside and dropdown.toggle.widget:IsEnabled() then dropdown.setText(nil, true) end
 		end, } or nil,
 		dependencies = t.dependencies
 	})
@@ -3966,15 +3960,16 @@ function wt.CreateDropdownRadiogroup(t, selector)
 	local previousDependencies, nextDependencies
 
 	if t.cycleButtons ~= false then
+
 		--| Create a custom fonts
 
-		wt.CreateFont("ChatFontNormalSmall", {
-			template = "ChatFontSmall",
+		wt.CreateFont("ChatFontGold", {
+			template = "ChatFontNormal",
 			color = wt.PackColor(GameFontNormal:GetTextColor()),
 		})
 
-		wt.CreateFont("ChatFontDisableSmall", {
-			template = "ChatFontSmall",
+		wt.CreateFont("ChatFontDisable", {
+			template = "ChatFontNormal",
 			color = wt.PackColor(GameFontDisable:GetTextColor()),
 		})
 
@@ -3989,17 +3984,17 @@ function wt.CreateDropdownRadiogroup(t, selector)
 			parent = dropdown.holderFrame,
 			name = "SelectPrevious",
 			title = "◄",
-			titleOffset = { x = -1, y = 0.5 },
+			titleOffset = { x = -1, },
 			tooltip = {
 				title = wt.strings.dropdown.previous.label,
 				lines = { { text = wt.strings.dropdown.previous.tooltip, }, },
 			},
 			position = { anchor = "BOTTOMLEFT", offset = { x = 2, y = 2 }, },
-			size = { w = 22, },
+			size = { w = 24, h = 24 },
 			font = {
-				normal = "ChatFontNormalSmall",
-				highlight = "ChatFontSmall",
-				disabled = "ChatFontDisableSmall",
+				normal = "ChatFontGold",
+				highlight = "ChatFontNormal",
+				disabled = "ChatFontDisable",
 			},
 			backdrop = {
 				background = {
@@ -4025,14 +4020,14 @@ function wt.CreateDropdownRadiogroup(t, selector)
 					}
 				end,
 				OnLeave = function() return {}, true end,
-				OnMouseDown = function(self)
-					return IsMouseButtonDown("LeftButton") and self:IsEnabled() and {
+				OnMouseDown = function(frame)
+					return IsMouseButtonDown("LeftButton") and frame:IsEnabled() and {
 						background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
 						border = { color = { r = 0.42, g = 0.42, b = 0.42, a = 0.9 } }
 					} or {}
 				end,
-				OnMouseUp = function(self)
-					return self:IsEnabled() and self:IsMouseOver() and {
+				OnMouseUp = function(frame, self)
+					return frame:IsEnabled() and self:IsMouseOver() and {
 						background = { color = { r = 0.15, g = 0.15, b = 0.15, a = 0.9 } },
 						border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
 					} or {}
@@ -4057,17 +4052,17 @@ function wt.CreateDropdownRadiogroup(t, selector)
 			parent = dropdown.holderFrame,
 			name = "SelectNext",
 			title = "►",
-			titleOffset = { x = 2, y = 0.5 },
+			titleOffset = { x = 1, },
 			tooltip = {
 				title = wt.strings.dropdown.next.label,
 				lines = { { text = wt.strings.dropdown.next.tooltip, }, }
 			},
 			position = { anchor = "BOTTOMRIGHT", offset = { x = -2, y = 2 }, },
-			size = { w = 22, },
+			size = { w = 24, h = 24 },
 			font = {
-				normal = "ChatFontNormalSmall",
-				highlight = "ChatFontSmall",
-				disabled = "ChatFontDisableSmall",
+				normal = "ChatFontGold",
+				highlight = "ChatFontNormal",
+				disabled = "ChatFontDisable",
 			},
 			backdrop = {
 				background = {
@@ -4093,14 +4088,14 @@ function wt.CreateDropdownRadiogroup(t, selector)
 					}
 				end,
 				OnLeave = function() return {}, true end,
-				OnMouseDown = function(self)
-					return IsMouseButtonDown("LeftButton") and self:IsEnabled() and {
+				OnMouseDown = function(frame)
+					return IsMouseButtonDown("LeftButton") and frame:IsEnabled() and {
 						background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
 						border = { color = { r = 0.42, g = 0.42, b = 0.42, a = 0.9 } }
 					} or {}
 				end,
-				OnMouseUp = function(self)
-					return self:IsEnabled() and self:IsMouseOver() and {
+				OnMouseUp = function(frame, self)
+					return frame:IsEnabled() and self:IsMouseOver() and {
 						background = { color = { r = 0.15, g = 0.15, b = 0.15, a = 0.9 } },
 						border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
 					} or {}
@@ -4125,17 +4120,9 @@ function wt.CreateDropdownRadiogroup(t, selector)
 		local index = dropdown.getSelected()
 		local item = t.items[index] or {}
 		text = type(text) == "string" and text or item.title or "…"
-		local tooltip = us.Clone(item.tooltip) or {}
-		tooltip = us.Fill(tooltip, {
-			title = text,
-			lines = {
-				{ text = index and wt.strings.dropdown.selected or wt.strings.dropdown.none, },
-				{ text = "\n" .. wt.strings.dropdown.open, },
-			}
-		})
 
 		dropdown.toggle.label:SetText(text)
-		dropdown.toggle.setTooltip(tooltip)
+		wt.UpdateTooltipData(dropdown.toggle.frame, { title = text, })
 
 		if not silent then dropdown.invoke._("labeled", text) end
 	end
@@ -4167,7 +4154,7 @@ function wt.CreateDropdownRadiogroup(t, selector)
 
 	---@diagnostic disable-next-line: inject-field
 	function dropdown.menu:GLOBAL_MOUSE_DOWN()
-		if dropdown.toggle.frame:IsMouseOver() then return end
+		if dropdown.toggle.widget:IsMouseOver() then return end
 
 		dropdown.menu:UnregisterEvent("GLOBAL_MOUSE_DOWN")
 		dropdown.menu:RegisterEvent("GLOBAL_MOUSE_UP")
@@ -4187,7 +4174,10 @@ function wt.CreateDropdownRadiogroup(t, selector)
 
 		if t.autoClose then dropdown.toggleMenu(false) end
 	end, 1)
-	dropdown.setListener._("open", function(state) if not state then PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_OFF) end end)
+	dropdown.setListener._("open", function(state)
+		dropdown.holderFrame:SetAttribute("open", state)
+		if not state then PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_OFF) end
+	end)
 	dropdown.setListener.updated(function(self) self.menu:SetHeight(#self.toggles * 16 + 12) end, 1)
 
 	--| Backdrop
@@ -4196,7 +4186,7 @@ function wt.CreateDropdownRadiogroup(t, selector)
 		texture = { size = 5, },
 		color = { r = 1, g = 1, b = 1, a = 0 }
 	}, }, { {
-		triggers = { dropdown.holderFrame, dropdown.toggle.frame, dropdown.previous.frame, dropdown.next.frame },
+		triggers = { dropdown.holderFrame, dropdown.toggle.widget, dropdown.previous.widget, dropdown.next.widget },
 		rules = {
 			OnEnter = function() return dropdown.isEnabled() and { background = { color = { a = 0.1 } } } or {} end,
 			OnLeave = "",
@@ -4218,7 +4208,7 @@ function wt.CreateDropdownRadiogroup(t, selector)
 			defaultValue = crc(default and t.items[default].title or tostring(default), "FFFFFFFF")
 		end
 
-		wt.AddWidgetTooltipLines({ dropdown.holderFrame, dropdown.toggle.frame, dropdown.previous.frame, dropdown.next.frame }, defaultValue, t.utilityMenu)
+		wt.AddWidgetTooltipLines({ dropdown.holderFrame, dropdown.toggle.widget, dropdown.previous.widget, dropdown.next.widget }, defaultValue, t.utilityMenu)
 	end
 
 	--| Utility menu
@@ -5684,18 +5674,18 @@ function wt.CreateSlider(t, numeric)
 				}
 			},
 			backdropUpdates = { { rules = {
-				OnEnter = function(self) return self:IsEnabled() and { border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } } } or {} end,
+				OnEnter = function(frame) return frame:IsEnabled() and { border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } } } or {} end,
 				OnLeave = "",
 			}, }, },
 			events = {
-				OnChar = function(self, _, text) self:SetText(text:gsub(matchPattern, replacePattern)) end,
-				OnEnterPressed = function(self)
-					local v = self:GetNumber()
+				OnChar = function(frame, _, _, text) frame:SetText(text:gsub(matchPattern, replacePattern)) end,
+				OnEnterPressed = function(frame)
+					local v = frame:GetNumber()
 					if t.increment then v = max(slider.getMin(), min(floor(v * (1 / t.increment) + 0.5) / (1 / t.increment)), slider.getMax()) end
 
 					slider.setNumber(v, true)
 				end,
-				OnEscapePressed = function(self) self.setText(tostring(WidgetTools.utilities.Round(slider.widget.Slider:GetValue(), decimals)):gsub(matchPattern, replacePattern)) end,
+				OnEscapePressed = function(frame) frame:SetText(tostring(us.Round(slider.widget.Slider:GetValue(), decimals)):gsub(matchPattern, replacePattern)) end,
 			},
 			value = tostring(slider.getNumber()):gsub(matchPattern, replacePattern),
 			showDefault = false,
@@ -5705,7 +5695,7 @@ function wt.CreateSlider(t, numeric)
 		--| UX
 
 		--Handle widget updates
-		slider.setListener.changed(function(_, number) slider.valuebox.setText(tostring(WidgetTools.utilities.Round(number, decimals)):gsub(matchPattern, replacePattern)) end)
+		slider.setListener.changed(function(_, number) slider.valuebox.setText(tostring(us.Round(number, decimals)):gsub(matchPattern, replacePattern)) end)
 	end
 
 	--[ Events ]
@@ -5969,18 +5959,18 @@ function wt.CreateClassicSlider(t, numeric)
 				}
 			},
 			backdropUpdates = { { rules = {
-				OnEnter = function(self) return self:IsEnabled() and { border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } } } or {} end,
+				OnEnter = function(frame) return frame:IsEnabled() and { border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } } } or {} end,
 				OnLeave = "",
 			}, }, },
 			events = {
-				OnChar = function(self, _, text) self:SetText(text:gsub(matchPattern, replacePattern)) end,
-				OnEnterPressed = function(self)
-					local v = self:GetNumber()
+				OnChar = function(frame, _, _, text) frame:SetText(text:gsub(matchPattern, replacePattern)) end,
+				OnEnterPressed = function(frame)
+					local v = frame:GetNumber()
 					if t.increment then v = max(slider.getMin(), min(floor(v * (1 / t.increment) + 0.5) / (1 / t.increment)), slider.getMax()) end
 
 					slider.setNumber(v, true)
 				end,
-				OnEscapePressed = function(self) self.setText(tostring(WidgetTools.utilities.Round(slider.widget:GetValue(), decimals)):gsub(matchPattern, replacePattern)) end,
+				OnEscapePressed = function(frame) frame:SetText(tostring(us.Round(slider.widget:GetValue(), decimals)):gsub(matchPattern, replacePattern)) end,
 			},
 			value = tostring(slider.getNumber()):gsub(matchPattern, replacePattern),
 			showDefault = false,
@@ -5990,7 +5980,7 @@ function wt.CreateClassicSlider(t, numeric)
 		--| UX
 
 		--Handle widget updates
-		slider.setListener.changed(function(_, number) slider.valuebox.setText(tostring(WidgetTools.utilities.Round(number, decimals)):gsub(matchPattern, replacePattern)) end)
+		slider.setListener.changed(function(_, number) slider.valuebox.setText(tostring(us.Round(number, decimals)):gsub(matchPattern, replacePattern)) end)
 	end
 
 	--| Side buttons
@@ -6046,14 +6036,14 @@ function wt.CreateClassicSlider(t, numeric)
 					}
 				end,
 				OnLeave = function() return {}, true end,
-				OnMouseDown = function(self)
-					return self:IsEnabled() and {
+				OnMouseDown = function(frame)
+					return frame:IsEnabled() and {
 						background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
 						border = { color = { r = 0.42, g = 0.42, b = 0.42, a = 0.9 } }
 					} or {}
 				end,
-				OnMouseUp = function(self)
-					return self:IsEnabled() and self:IsMouseOver() and {
+				OnMouseUp = function(frame, self)
+					return frame:IsEnabled() and self:IsMouseOver() and {
 						background = { color = { r = 0.15, g = 0.15, b = 0.15, a = 0.9 } },
 						border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
 					} or {}
@@ -6112,14 +6102,14 @@ function wt.CreateClassicSlider(t, numeric)
 					}
 				end,
 				OnLeave = function() return {}, true end,
-				OnMouseDown = function(self)
-					return self:IsEnabled() and {
+				OnMouseDown = function(frame)
+					return frame:IsEnabled() and {
 						background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
 						border = { color = { r = 0.42, g = 0.42, b = 0.42, a = 0.9 } }
 					} or {}
 				end,
-				OnMouseUp = function(self)
-					return self:IsEnabled() and self:IsMouseOver() and {
+				OnMouseUp = function(frame, self)
+					return frame:IsEnabled() and self:IsMouseOver() and {
 						background = { color = { r = 0.15, g = 0.15, b = 0.15, a = 0.9 } },
 						border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
 					} or {}
@@ -6562,7 +6552,7 @@ function wt.CreateColorpicker(t, colormanager)
 	---Toggle the interactability of the color picker elements when [ColorPickerFrame](https://warcraft.wiki.gg/wiki/Using_the_ColorPickerFrame) is opened
 	---@param unlocked boolean
 	local function setLock(unlocked)
-		colorpicker.button.frame:EnableMouse(unlocked)
+		colorpicker.button.widget:EnableMouse(unlocked)
 		colorpicker.hexBox.widget:EnableMouse(unlocked)
 
 		--| Fade inactive color pickers
@@ -6575,7 +6565,7 @@ function wt.CreateColorpicker(t, colormanager)
 
 	if not t.value and t.getData then t.value = us.Clone(t.getData()) else t.value = {} end
 
-	if not colorpicker.button.frame then wt.CreateCustomButton({
+	if not colorpicker.button.widget then wt.CreateCustomButton({
 		parent = colorpicker.frame,
 		name = "PickerButton",
 		label = false,
@@ -6612,13 +6602,13 @@ function wt.CreateColorpicker(t, colormanager)
 			OnMouseDown = function() return {
 				border = { color = { r = 0.42, g = 0.42, b = 0.42, a = 0.9 } }
 			} end,
-			OnMouseUp = function(self) return self:IsMouseOver() and {
+			OnMouseUp = function(_, self) return self:IsMouseOver() and {
 				border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
 			} or {} end,
 		}, }, },
 	}, colorpicker.button) end
 
-	colorpicker.button.gradient = wt.CreateTexture(colorpicker.button.frame, {
+	colorpicker.button.gradient = wt.CreateTexture(colorpicker.button.widget, {
 		name = "ColorGradient",
 		position = { offset = { x = 2.5, y = -2.5 } },
 		size = { w = 17, h = 17 },
@@ -6627,7 +6617,7 @@ function wt.CreateColorpicker(t, colormanager)
 		level = -7,
 	})
 
-	colorpicker.button.checker = wt.CreateTexture(colorpicker.button.frame, {
+	colorpicker.button.checker = wt.CreateTexture(colorpicker.button.widget, {
 		name = "AlphaBG",
 		position = { offset = { x = 2.5, y = -2.5 } },
 		size = { w = 29, h = 17 },
@@ -6651,10 +6641,10 @@ function wt.CreateColorpicker(t, colormanager)
 			),
 		}, } },
 		position = {
-			relativeTo = colorpicker.button.frame,
+			relativeTo = colorpicker.button.widget,
 			relativePoint = "TOPRIGHT",
 		},
-		size = { w = t.width - colorpicker.button.frame:GetWidth(), h = colorpicker.button.frame:GetHeight() },
+		size = { w = t.width - colorpicker.button.widget:GetWidth(), h = colorpicker.button.widget:GetHeight() },
 		insets = { l = 6, },
 		font = {
 			normal = "GameFontNormalSmall2",
@@ -6676,11 +6666,11 @@ function wt.CreateColorpicker(t, colormanager)
 			}
 		},
 		backdropUpdates = { { rules = {
-			OnEnter = function(self) return self:IsEnabled() and { border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } } } or {} end,
+			OnEnter = function(frame) return frame:IsEnabled() and { border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } } } or {} end,
 			OnLeave = "",
 		}, }, },
 		events = {
-			OnChar = function(self, _, text) self.setText(text:gsub("^(#?)([%x]*).*", "%1%2"), false) end,
+			OnChar = function(frame, _, _, text) frame:SetText(text:gsub("^(#?)([%x]*).*", "%1%2"), false) end,
 			OnEnterPressed = function(_, text) colorpicker.setColor(wt.PackColor(wt.HexToColor(text)), true) end,
 			OnEscapePressed = function(self) self.setText(wt.ColorToHex(colorpicker.getColor())) end,
 		},
@@ -6705,7 +6695,7 @@ function wt.CreateColorpicker(t, colormanager)
 	---Update the widget UI based on the color value
 	---@param color colorData|colorRGBA
 	local function updateColor(color)
-		colorpicker.button.frame:SetBackdropColor(color.r, color.g, color.b, color.a)
+		colorpicker.button.widget:SetBackdropColor(color.r, color.g, color.b, color.a)
 		colorpicker.button.gradient:SetVertexColor(color.r, color.g, color.b, 1)
 		colorpicker.hexBox.setText(wt.ColorToHex(color))
 	end
@@ -6735,7 +6725,7 @@ function wt.CreateColorpicker(t, colormanager)
 			defaultValue = texture .. crc(wt.ColorToHex(default), "FFFFFFFF")
 		end
 
-		wt.AddWidgetTooltipLines({ colorpicker.frame, colorpicker.button.frame, colorpicker.hexBox.widget }, defaultValue, t.utilityMenu)
+		wt.AddWidgetTooltipLines({ colorpicker.frame, colorpicker.button.widget, colorpicker.hexBox.widget }, defaultValue, t.utilityMenu)
 	end
 
 	--| Utility menu
@@ -7314,7 +7304,7 @@ function wt.CreateDataManagementPage(addon, t)
 				local i = 1
 
 				--Check profile list
-				for key, value in WidgetTools.utilities.SortedPairs(list) do
+				for key, value in us.SortedPairs(list) do
 					if key == i and type(value) == "table" then
 						--Check profile data
 						if type(list[i].data) == "table" then checkData(list[i].data) else list[i].data = us.Clone(t.defaultsTable) end
@@ -7623,7 +7613,7 @@ function wt.CreateDataManagementPage(addon, t)
 
 						--Update the backup box and load the current profile data of the selected scope to the backup string, formatted based on the compact setting
 						function dataManagement.refreshBackupBox()
-							dataManagement.backup.box.setText(WidgetTools.utilities.TableToString(t.accountData.profiles[t.characterData.activeProfile].data, t.settingsData.compactBackup))
+							dataManagement.backup.box.setText(us.TableToString(t.accountData.profiles[t.characterData.activeProfile].data, t.settingsData.compactBackup))
 
 							--Set focus after text change to set the scroll to the top and refresh the position character counter
 							dataManagement.backup.box.scrollFrame.EditBox:SetFocus()
@@ -7632,7 +7622,7 @@ function wt.CreateDataManagementPage(addon, t)
 
 						--Update the backup box and load all addon profile data of the selected scope to the backup string, formatted based on the compact setting
 						function dataManagement.refreshAllProfilesBackupBox()
-							dataManagement.backupAllProfiles.box.setText(WidgetTools.utilities.TableToString({
+							dataManagement.backupAllProfiles.box.setText(us.TableToString({
 								activeProfile = t.characterData.activeProfile,
 								profiles = t.accountData.profiles
 							}, t.settingsData.compactBackup))
@@ -7729,7 +7719,7 @@ function wt.CreateDataManagementPage(addon, t)
 							tooltip = { lines = { { text = wt.strings.backup.reset.tooltip, }, } },
 							position = {
 								anchor = "RIGHT",
-								relativeTo = dataManagement.backup.load.frame,
+								relativeTo = dataManagement.backup.load.widget,
 								relativePoint = "LEFT",
 								offset = { x = -8, }
 							},
@@ -7881,7 +7871,7 @@ function wt.CreateDataManagementPage(addon, t)
 							tooltip = { lines = { { text = wt.strings.backup.reset.tooltip, }, } },
 							position = {
 								anchor = "RIGHT",
-								relativeTo = dataManagement.backupAllProfiles.load.frame,
+								relativeTo = dataManagement.backupAllProfiles.load.widget,
 								relativePoint = "LEFT",
 								offset = { x = -8, }
 							},
@@ -7911,7 +7901,7 @@ local positioningVisualAids = {}
 ---***
 ---@return positionPanel? table Components of the settings panel wrapped in a table | ***Default:*** nil
 function wt.CreatePositionOptions(addon, frame, t)
-	if not addon or not C_AddOns.IsAddOnLoaded(addon) or not WidgetTools.utilities.IsFrame(frame) or type(t) ~= "table" then return end
+	if not addon or not C_AddOns.IsAddOnLoaded(addon) or not us.IsFrame(frame) or type(t) ~= "table" then return end
 
 	if type(t.name) ~= "string" then t.name = frame:GetName() end
 	t.dataManagement = t.dataManagement or {}

@@ -811,11 +811,11 @@ local function CreateSpeedDisplayOptionsPage(display)
 				}
 			end,
 			OnLeave = function() return {}, true end,
-			OnMouseDown = function(self) return IsMouseButtonDown("LeftButton") and self:IsEnabled() and {
+			OnMouseDown = function(frame) return IsMouseButtonDown("LeftButton") and frame:IsEnabled() and {
 				background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
 				border = { color = { r = 0.42, g = 0.42, b = 0.42, a = 0.9 } }
 			} or {} end,
-			OnMouseUp = function(self) return self:IsEnabled() and self:IsMouseOver() and {
+			OnMouseUp = function(frame, self) return frame:IsEnabled() and self:IsMouseOver() and {
 				background = { color = { r = 0.15, g = 0.15, b = 0.15, a = 0.9 } },
 				border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
 			} or {} end,

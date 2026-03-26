@@ -841,7 +841,7 @@ function wt.SetBackdrop(frame, backdrop, updates)
 				end
 
 				--Conditional: Evaluate the rule
-				local backdropUpdate, fill = value(self, ...)
+				local backdropUpdate, fill = value(frame, self, ...)
 
 				--Remove the backdrop
 				if type(backdropUpdate) ~= "table" then
@@ -1111,7 +1111,7 @@ function wt.UpdateTooltipData(frame, t, linesUpdate)
 	elseif not tooltipData[id].tooltip or not (us.IsFrame(tooltipData[id].tooltip) and tooltipData[id].tooltip:IsObjectType("GameTooltip")) then
 		--Create the default reusable tooltip
 		if not defaultTooltip then
-			local name = "Widget Toolbox " .. C_AddOns.GetAddOnMetadata(rs.addon, "X-WidgetTools-ToolboxVersion") .. "GameTooltip"
+			local name = "WidgetToolbox" .. C_AddOns.GetAddOnMetadata(rs.addon, "X-WidgetTools-ToolboxVersion"):gsub("[^%w]", "_") .. "GameTooltip"
 
 			defaultTooltip = CreateFrame("GameTooltip", name, nil, "GameTooltipTemplate")
 
