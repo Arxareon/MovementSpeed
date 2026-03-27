@@ -144,22 +144,26 @@ end
 local function FormatSpeedText(type, units, colors)
 	units = units or MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[type].value.units
 	colors = colors or MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[type].font.colors
+	local secondaryColors = us.Clone(colors)
+	wt.AdjustGamma(secondaryColors.percent)
+	wt.AdjustGamma(secondaryColors.yards)
+	wt.AdjustGamma(secondaryColors.coords)
 
 	speedText[type] = ""
 
 	if units[1] then
 		local sign = (type == "targetSpeed" and "%%" or "%")
-		speedText[type] = speedText[type] .. cr("#PERCENT" .. sign, colors.percent)
+		speedText[type] = speedText[type] .. cr("#PERCENT", secondaryColors.percent) .. cr(sign, colors.percent)
 	end
 	if units[2] then
 		speedText[type] = speedText[type] .. ns.strings.speedValue.separator .. cr(ns.strings.speedValue.yps:gsub(
-			"#YARDS", cr("#YARDS", colors.yards)
-		), colors.yards) --ADD support for secondary color
+			"#YARDS", cr("#YARDS", secondaryColors.yards)
+		), colors.yards)
 	end
 	if units[3] then
 		speedText[type] = speedText[type] .. ns.strings.speedValue.separator .. cr(ns.strings.speedValue.cps:gsub(
-			"#COORDS", cr(ns.strings.speedValue.coordPair, colors.coords)
-		), colors.coords) --ADD support for secondary color
+			"#COORDS", cr(ns.strings.speedValue.coordPair, secondaryColors.coords)
+		), colors.coords)
 	end
 
 	speedText[type] = speedText[type]:gsub("^" .. ns.strings.speedValue.separator, "")
@@ -197,7 +201,7 @@ local function GetSpeedText(type)
 end
 
 --Update the Player Speed values
-update.playerSpeed = function()
+function update.playerSpeed()
 	local advanced, _, flightSpeed = C_PlayerInfo.GetGlidingInfo()
 	local r = GetPlayerFacing() or 0
 	speed.playerSpeed.yards = advanced and flightSpeed or GetUnitSpeed(UnitInVehicle("player") and "vehicle" or "player")
@@ -217,8 +221,8 @@ end
 
 ---Updates the Travel Speed values since the last sample
 ---@param deltaTime number Time since last update
-update.travelSpeed = function(deltaTime)
-	local currentPosition = map.id and C_Map.GetPlayerMapPosition(map.id, "player") or nil --NOTE: this generates a lot of memory garbage over time (that eventually gets collected). Using UnitPosition() produces less accurate calculation results.
+function update.travelSpeed(deltaTime)
+	local currentPosition = map.id and C_Map.GetPlayerMapPosition(map.id, "player") or nil --NOTE: this generates memory garbage over time (that eventually gets collected). Using UnitPosition() produces less accurate calculation results.
 
 	if currentPosition and pastPosition.x then
 		local dX, dY, dT = pastPosition.x - currentPosition.x, pastPosition.y - currentPosition.y, max(deltaTime, 0.01)
@@ -268,7 +272,7 @@ local function SetDisplaySize(display, displayData, height)
 	for i = 1, 3 do if displayData.value.units[i] then ratio = ratio + 0.2 end end --Separators
 
 	--Resize the display
-	display.display:SetSize(height * ratio * rs.fonts[us.FindIndex(rs.fonts, displayData.font.path)].widthRatio - 4, height)
+	display.display:SetSize(height * ratio * 1.2 - 4, height)
 end
 
 ---Set the backdrop of the specified speed display elements
@@ -801,7 +805,9 @@ local function CreateSpeedDisplayOptionsPage(display)
 			}
 		},
 		backdropUpdates = { { rules = {
-			OnEnter = function()
+			OnEnter = function(frame)
+				if not frame:IsEnabled() then return {} end
+
 				return IsMouseButtonDown("LeftButton") and {
 					background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
 					border = { color = { r = 0.42, g = 0.42, b = 0.42, a = 0.9 } }
@@ -810,15 +816,27 @@ local function CreateSpeedDisplayOptionsPage(display)
 					border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
 				}
 			end,
-			OnLeave = function() return {}, true end,
-			OnMouseDown = function(frame) return IsMouseButtonDown("LeftButton") and frame:IsEnabled() and {
-				background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
-				border = { color = { r = 0.42, g = 0.42, b = 0.42, a = 0.9 } }
-			} or {} end,
-			OnMouseUp = function(frame, self) return frame:IsEnabled() and self:IsMouseOver() and {
-				background = { color = { r = 0.15, g = 0.15, b = 0.15, a = 0.9 } },
-				border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
-			} or {} end,
+			OnLeave = function(frame)
+				if not frame:IsEnabled() then return {} end
+
+				return {}, true
+			end,
+			OnMouseDown = function(frame)
+				if not frame:IsEnabled() then return {} end
+
+				return IsMouseButtonDown("LeftButton") and {
+					background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
+					border = { color = { r = 0.42, g = 0.42, b = 0.42, a = 0.9 } }
+				} or {}
+			end,
+			OnMouseUp = function(frame, self)
+				if not frame:IsEnabled() then return {} end
+
+				return frame:IsEnabled() and self:IsMouseOver() and {
+					background = { color = { r = 0.15, g = 0.15, b = 0.15, a = 0.9 } },
+					border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
+				} or {}
+			end,
 		}, }, },
 	}
 
@@ -1258,7 +1276,7 @@ local function CreateTargetSpeedOptionsPage()
 			wt.CreatePanel({
 				parent = canvas,
 				name = "Font",
-				title = wt.strings.font.color.label,
+				title = wt.strings.font.title,
 				arrange = {},
 				arrangement = {},
 				initialize = function(panel)
@@ -1266,11 +1284,13 @@ local function CreateTargetSpeedOptionsPage()
 					options.targetSpeed.font.colors = {}
 
 					for key, _ in pairs(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.targetSpeed.font.colors) do
+						local name = key:sub(1,1):upper() .. key:sub(2)
+
 						options.targetSpeed.font.colors[key] = wt.CreateColorpicker({
 							parent = panel,
 							name = "Color",
-							title = wt.strings.font.color.label,
-							tooltip = { lines = { { text = wt.strings.font.color.tooltip, }, } },
+							title = wt.strings.font.color.label:gsub("#COLOR_TYPE", name),
+							tooltip = { lines = { { text = wt.strings.font.color.tooltip:gsub("#COLOR_TYPE", name), }, } },
 							arrange = { newRow = not next(options.targetSpeed.font.colors), },
 							dependencies = { { frame = options.targetSpeed.enabled, }, },
 							getData = function() return MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.targetSpeed.font.colors[key] end,
@@ -1733,7 +1753,7 @@ frames.main = wt.CreateFrame({
 	},
 	initialize = function(frame, _, _, name)
 		--Custom Tooltip
-		local tooltip = wt.CreateGameTooltip(ns.name) --TODO restore when fixed --FIX custom tooltip now being usable
+		local tooltip = wt.CreateGameTooltip(ns.name)
 
 		--| Player Speed
 
@@ -1747,7 +1767,7 @@ frames.main = wt.CreateFrame({
 			initialize = function(display, _, height)
 				--Tooltip
 				frames.playerSpeed.tooltipData = wt.AddTooltip(display, {
-					tooltip = tooltip, --TODO restore when fixed
+					tooltip = tooltip,
 					title = ns.strings.speedTooltip.title:gsub("#SPEED", ns.strings.options.playerSpeed.title),
 					anchor = "ANCHOR_BOTTOMRIGHT",
 					offset = { y = height },
@@ -1780,7 +1800,7 @@ frames.main = wt.CreateFrame({
 			initialize = function(display, _ , height)
 				--Tooltip
 				frames.travelSpeed.tooltipData = wt.AddTooltip(display, {
-					tooltip = tooltip, --TODO restore when fixed
+					tooltip = tooltip,
 					title = ns.strings.speedTooltip.title:gsub("#SPEED", ns.strings.options.travelSpeed.title),
 					anchor = "ANCHOR_BOTTOMRIGHT",
 					offset = { y = height },

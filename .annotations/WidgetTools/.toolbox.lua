@@ -1366,7 +1366,8 @@ function Clamp(value, min, max) return value end
 
 ---@class dropdownRadiogroupCreationData : radiogroupCreationData, widgetWidthValue, tooltipDescribableSettingsWidget
 ---@field name? string Unique string used to set the frame name | ***Default:*** "Dropdown"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
----@field width number The width of the dropdown frame containing the toggle (and optionally) cycle buttons and the label (if **t.label** is true) | ***Default:*** 180
+---@field width? number The width of the dropdown frame containing the toggle (and optionally) cycle buttons and the label (if **t.label** is true) | ***Default:*** 180
+---@field scrollThreshold? integer Number of items to show before changing the dropdown menu to be scrollable | ***Default:*** 15
 ---@field text? string The default text to display on the dropdown when no item is selected | ***Default:*** ""
 ---@field clearable? boolean If true, the selector input should be clearable by right clicking on its radio buttons, or, if **t.utilityMenu** is false, the dropdown toggle button itself (if true, a clear selection option is added to the utility menu instead), setting the selected value to nil | ***Default:*** `false`
 ---@field autoClose? boolean Close the dropdown menu after an item is selected by the user | ***Default:*** `true`

@@ -668,6 +668,7 @@ end
 ---@return ScrollFrame scrollFrame
 function wt.CreateScrollFrame(t)
 	t = type(t) == "table" and t or {}
+	t.scrollSize = type(t.scrollSize) == "table" and t.scrollSize or {}
 
 	--[ Frame Setup ]
 
@@ -1233,8 +1234,10 @@ function wt.CreateSettingsPage(addon, t)
 
 		--| Icon texture
 
+		page.iconTexture = type(t.icon) == "string" and t.icon or C_AddOns.GetAddOnMetadata(addon, "IconTexture")
+
 		page.icon = wt.CreateTexture(page.canvas, {
-			name = "Logo",
+			name = "Icon",
 			position = {
 				anchor = "BOTTOMLEFT",
 				relativeTo = SettingsPanel.Container,
@@ -1242,7 +1245,7 @@ function wt.CreateSettingsPage(addon, t)
 				offset = { x = 8, }
 			},
 			size = { w = 42, h = 42 },
-			path = type(t.icon) == "string" and t.icon or C_AddOns.GetAddOnMetadata(addon, "IconTexture"),
+			path = page.iconTexture,
 		})
 
 		--| Divider texture
@@ -1345,7 +1348,7 @@ end
 ---***
 ---@return settingsCategory|nil category Table containing references to settings pages and utility functions or nil if the specified **parent** was invalid
 function wt.CreateSettingsCategory(addon, parent, pages, t)
-	if not addon or not C_AddOns.IsAddOnLoaded(addon) or type(parent) ~= "table" and not parent.category then return end
+	if not addon or not C_AddOns.IsAddOnLoaded(addon) or wt.IsWidget(parent) ~= "SettingsPage" and not parent.category then return end
 
 	t = type(t) == "table" and t or {}
 
@@ -1395,8 +1398,6 @@ function wt.CreateSettingsCategory(addon, parent, pages, t)
 	--| Parent
 
 	local parentTitle = parent.title:GetText() or ""
-
-	-- if type(parent.isType) ~= "function" and not parent.isType("SettingsPage") then parent = wt.CreateSettingsPage(addon, parent) end --CHECK if needed
 
 	table.insert(category.pages, parent)
 
@@ -1639,19 +1640,16 @@ local function setUpButtonFrame(button, t, name, title, useHighlight)
 		button.trigger(true)
 	end)
 
-	if button.label and useHighlight then
-		button.frame:HookScript("OnEnter", function() button.label:SetFontObject(t.font.highlight) end)
-		button.frame:HookScript("OnLeave", function() button.label:SetFontObject(t.font.normal) end)
-	end
-
 	--Linked mouse interactions
 	button.frame:HookScript("OnEnter", function() if button.widget:IsEnabled() then
 		button.widget:LockHighlight()
 		if IsMouseButtonDown("LeftButton") then button.widget:SetButtonState("PUSHED") end
+		if button.label and useHighlight then button.label:SetFontObject(t.font.highlight) end
 	end end)
 	button.frame:HookScript("OnLeave", function() if button.widget:IsEnabled() then
 		button.widget:UnlockHighlight()
 		button.widget:SetButtonState("NORMAL")
+		if button.label and useHighlight then button.label:SetFontObject(t.font.normal) end
 	end end)
 	button.frame:HookScript("OnMouseDown", function(_, b) if button.widget:IsEnabled() and b == "LeftButton" then
 		button.widget:SetButtonState("PUSHED")
@@ -3806,37 +3804,16 @@ function wt.CreateDropdownRadiogroup(t, selector)
 
 	--| Dropdown menu
 
-	local menuPanel = wt.CreatePanel({
-		parent = holderFrame,
-		label = false,
-		position = {
-			anchor = "TOP",
-			relativeTo = holderFrame,
-			relativePoint = "BOTTOM",
-		},
-		visible = false,
-		frameStrata = "DIALOG",
-		keepInBound = true,
-		background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
-		border =  { color = { r = 0.42, g = 0.42, b = 0.42, a = 0.9 } },
-		size = { w = t.width, h = 12 + #t.items * 18 },
-		initialize = function(panel)
-		end,
-	})
+	t.scrollThreshold = t.scrollThreshold or 15
 
 	---@class dropdownRadiogroup : radiogroup
 	---@field holderFrame Frame Main holder frame for the dropdown toggle, buttons and title
 	---@field menu panel|Frame Panel frame holding the dropdown selector widget
 	local dropdown = wt.CreateRadiogroup({
-		parent = menuPanel,
 		name = name,
 		append = false,
 		label = false,
-		position = {
-			anchor = "TOP",
-			offset = { y = -6, }
-		},
-		width = t.width - 12,
+		width = t.width - (#t.items > t.scrollThreshold and 28 or 12),
 		items = t.items,
 		clearable = clearable,
 		listeners = t.listeners,
@@ -3846,10 +3823,41 @@ function wt.CreateDropdownRadiogroup(t, selector)
 		default = t.default,
 		instantSave = t.instantSave,
 		dataManagement = t.dataManagement,
+		utilityMenu = false,
 	}, selector)
 
 	dropdown.holderFrame = holderFrame
-	dropdown.menu = menuPanel
+
+	dropdown.menu = wt.CreatePanel({
+		parent = UIParent,
+		name = dropdown.frame:GetName() .. "Menu",
+		label = false,
+		position = {
+			anchor = "TOP",
+			relativeTo = dropdown.holderFrame,
+			relativePoint = "BOTTOM",
+			offset = { y = 3 }
+		},
+		visible = false,
+		frameStrata = "DIALOG",
+		keepInBound = true,
+		background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
+		border =  { color = { r = 0.42, g = 0.42, b = 0.42, a = 0.9 } },
+		size = { w = t.width, h = 12 + min(#t.items, t.scrollThreshold) * dropdown.toggles[1].frame:GetHeight() },
+	})
+
+	dropdown.menu:SetClampedToScreen(true)
+
+	dropdown.content = #t.items > t.scrollThreshold and wt.CreateScrollFrame({
+		parent = dropdown.menu,
+		position = { anchor = "CENTER", },
+		size = { w = dropdown.menu:GetWidth() - 12, h = dropdown.menu:GetHeight() - 12 },
+		scrollSize = { h = dropdown.frame:GetHeight() },
+		scrollSpeed = 0.38,
+	}) or dropdown.menu
+
+	dropdown.frame:SetParent(dropdown.content)
+	wt.SetPosition(dropdown.frame, { relativeTo = dropdown.content, })
 
 	--| Label
 
@@ -3897,7 +3905,9 @@ function wt.CreateDropdownRadiogroup(t, selector)
 		},
 		backdropUpdates = {
 			{ rules = {
-				OnEnter = function()
+				OnEnter = function(frame)
+					if not frame:IsEnabled() then return {} end
+
 					return IsMouseButtonDown("LeftButton") and {
 						background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
 						border = { color = { r = 0.42, g = 0.42, b = 0.42, a = 0.9 } }
@@ -3909,7 +3919,9 @@ function wt.CreateDropdownRadiogroup(t, selector)
 						border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
 					})
 				end,
-				OnLeave = function()
+				OnLeave = function(frame)
+					if not frame:IsEnabled() then return {} end
+
 					if open then return {
 						background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
 						border = { color = { r = 0.6, g = 0.6, b = 0.6, a = 0.9 } }
@@ -3917,13 +3929,15 @@ function wt.CreateDropdownRadiogroup(t, selector)
 					return {}, true
 				end,
 				OnMouseDown = function(frame)
-					return IsMouseButtonDown("LeftButton") and frame:IsEnabled() and {
+					if not frame:IsEnabled() then return {} end
+
+					return IsMouseButtonDown("LeftButton") and {
 						background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
 						border = { color = { r = 0.42, g = 0.42, b = 0.42, a = 0.9 } }
 					} or {}
 				end,
-				OnMouseUp = function(_, _, button)
-					if button == "LeftButton" then return {} end
+				OnMouseUp = function(frame, _, button)
+					if not frame:IsEnabled() or button == "LeftButton" then return {} end
 
 					return (open and {
 						background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
@@ -3936,8 +3950,8 @@ function wt.CreateDropdownRadiogroup(t, selector)
 			}, },
 			{
 				triggers = { dropdown.holderFrame },
-				rules = { OnAttributeChanged = function(_, _, attribute, state)
-					if attribute ~= "open" then return {} end
+				rules = { OnAttributeChanged = function(frame, _, attribute, state)
+					if not frame:IsEnabled() or attribute ~= "open" then return {} end
 
 					if dropdown.toggle.widget:IsMouseOver() then return state and {
 						border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
@@ -4010,7 +4024,9 @@ function wt.CreateDropdownRadiogroup(t, selector)
 				}
 			},
 			backdropUpdates = { { rules = {
-				OnEnter = function()
+				OnEnter = function(frame)
+					if not frame:IsEnabled() then return {} end
+
 					return IsMouseButtonDown("LeftButton") and {
 						background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
 						border = { color = { r = 0.42, g = 0.42, b = 0.42, a = 0.9 } }
@@ -4019,15 +4035,23 @@ function wt.CreateDropdownRadiogroup(t, selector)
 						border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
 					}
 				end,
-				OnLeave = function() return {}, true end,
+				OnLeave = function(frame)
+					if not frame:IsEnabled() then return {} end
+
+					return {}, true
+				end,
 				OnMouseDown = function(frame)
-					return IsMouseButtonDown("LeftButton") and frame:IsEnabled() and {
+					if not frame:IsEnabled() then return {} end
+
+					return IsMouseButtonDown("LeftButton") and {
 						background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
 						border = { color = { r = 0.42, g = 0.42, b = 0.42, a = 0.9 } }
 					} or {}
 				end,
 				OnMouseUp = function(frame, self)
-					return frame:IsEnabled() and self:IsMouseOver() and {
+					if not frame:IsEnabled() then return {} end
+
+					return self:IsMouseOver() and {
 						background = { color = { r = 0.15, g = 0.15, b = 0.15, a = 0.9 } },
 						border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
 					} or {}
@@ -4078,7 +4102,9 @@ function wt.CreateDropdownRadiogroup(t, selector)
 				}
 			},
 			backdropUpdates = { { rules = {
-				OnEnter = function()
+				OnEnter = function(frame)
+					if not frame:IsEnabled() then return {} end
+
 					return IsMouseButtonDown("LeftButton") and {
 						background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
 						border = { color = { r = 0.42, g = 0.42, b = 0.42, a = 0.9 } }
@@ -4087,15 +4113,23 @@ function wt.CreateDropdownRadiogroup(t, selector)
 						border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
 					}
 				end,
-				OnLeave = function() return {}, true end,
+				OnLeave = function(frame)
+					if not frame:IsEnabled() then return {} end
+
+					return {}, true
+				end,
 				OnMouseDown = function(frame)
-					return IsMouseButtonDown("LeftButton") and frame:IsEnabled() and {
+					if not frame:IsEnabled() then return {} end
+
+					return IsMouseButtonDown("LeftButton") and {
 						background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
 						border = { color = { r = 0.42, g = 0.42, b = 0.42, a = 0.9 } }
 					} or {}
 				end,
 				OnMouseUp = function(frame, self)
-					return frame:IsEnabled() and self:IsMouseOver() and {
+					if not frame:IsEnabled() then return {} end
+
+					return self:IsMouseOver() and {
 						background = { color = { r = 0.15, g = 0.15, b = 0.15, a = 0.9 } },
 						border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
 					} or {}
@@ -4186,7 +4220,7 @@ function wt.CreateDropdownRadiogroup(t, selector)
 		texture = { size = 5, },
 		color = { r = 1, g = 1, b = 1, a = 0 }
 	}, }, { {
-		triggers = { dropdown.holderFrame, dropdown.toggle.widget, dropdown.previous.widget, dropdown.next.widget },
+		triggers = { dropdown.holderFrame, dropdown.toggle.frame, dropdown.previous.frame, dropdown.next.frame, },
 		rules = {
 			OnEnter = function() return dropdown.isEnabled() and { background = { color = { a = 0.1 } } } or {} end,
 			OnLeave = "",
@@ -6026,7 +6060,9 @@ function wt.CreateClassicSlider(t, numeric)
 				}
 			},
 			backdropUpdates = { { rules = {
-				OnEnter = function()
+				OnEnter = function(frame)
+					if not frame:IsEnabled() then return {} end
+
 					return IsMouseButtonDown() and {
 						background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
 						border = { color = { r = 0.42, g = 0.42, b = 0.42, a = 0.9 } }
@@ -6035,15 +6071,23 @@ function wt.CreateClassicSlider(t, numeric)
 						border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
 					}
 				end,
-				OnLeave = function() return {}, true end,
+				OnLeave = function(frame)
+					if not frame:IsEnabled() then return {} end
+
+					return {}, true
+				end,
 				OnMouseDown = function(frame)
-					return frame:IsEnabled() and {
+					if not frame:IsEnabled() then return {} end
+
+					return {
 						background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
 						border = { color = { r = 0.42, g = 0.42, b = 0.42, a = 0.9 } }
-					} or {}
+					}
 				end,
 				OnMouseUp = function(frame, self)
-					return frame:IsEnabled() and self:IsMouseOver() and {
+					if not frame:IsEnabled() then return {} end
+
+					return self:IsMouseOver() and {
 						background = { color = { r = 0.15, g = 0.15, b = 0.15, a = 0.9 } },
 						border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
 					} or {}
@@ -6092,7 +6136,9 @@ function wt.CreateClassicSlider(t, numeric)
 				}
 			},
 			backdropUpdates = { { rules = {
-				OnEnter = function()
+				OnEnter = function(frame)
+					if not frame:IsEnabled() then return {} end
+
 					return IsMouseButtonDown() and {
 						background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
 						border = { color = { r = 0.42, g = 0.42, b = 0.42, a = 0.9 } }
@@ -6101,15 +6147,23 @@ function wt.CreateClassicSlider(t, numeric)
 						border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
 					}
 				end,
-				OnLeave = function() return {}, true end,
+				OnLeave = function(frame)
+					if not frame:IsEnabled() then return {} end
+
+					return {}, true
+				end,
 				OnMouseDown = function(frame)
-					return frame:IsEnabled() and {
+					if not frame:IsEnabled() then return {} end
+
+					return {
 						background = { color = { r = 0.06, g = 0.06, b = 0.06, a = 0.9 } },
 						border = { color = { r = 0.42, g = 0.42, b = 0.42, a = 0.9 } }
 					} or {}
 				end,
 				OnMouseUp = function(frame, self)
-					return frame:IsEnabled() and self:IsMouseOver() and {
+					if not frame:IsEnabled() then return {} end
+
+					return self:IsMouseOver() and {
 						background = { color = { r = 0.15, g = 0.15, b = 0.15, a = 0.9 } },
 						border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
 					} or {}
@@ -6589,22 +6643,30 @@ function wt.CreateColorpicker(t, colormanager)
 			}
 		},
 		backdropUpdates = { { rules = {
-			OnEnter = function()
+			OnEnter = function(frame)
+				if not frame:IsEnabled() then return {} end
+
 				return IsMouseButtonDown() and {
 					border = { color = { r = 0.42, g = 0.42, b = 0.42, a = 0.9 } }
 				} or {
 					border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
 				}
 			end,
-			OnLeave = function() return {
-				border = { color = { r = 0.5, g = 0.5, b = 0.5, a = 0.9 } }
-			} end,
-			OnMouseDown = function() return {
-				border = { color = { r = 0.42, g = 0.42, b = 0.42, a = 0.9 } }
-			} end,
-			OnMouseUp = function(_, self) return self:IsMouseOver() and {
-				border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } }
-			} or {} end,
+			OnLeave = function(frame)
+				if not frame:IsEnabled() then return {} end
+
+				return { border = { color = { r = 0.5, g = 0.5, b = 0.5, a = 0.9 } } }
+			end,
+			OnMouseDown = function(frame)
+				if not frame:IsEnabled() then return {} end
+
+				return { border = { color = { r = 0.42, g = 0.42, b = 0.42, a = 0.9 } } }
+			end,
+			OnMouseUp = function(frame, self)
+				if not frame:IsEnabled() then return {} end
+
+				return self:IsMouseOver() and { border = { color = { r = 0.8, g = 0.8, b = 0.8, a = 0.9 } } } or {}
+			end,
 		}, }, },
 	}, colorpicker.button) end
 
@@ -6670,7 +6732,7 @@ function wt.CreateColorpicker(t, colormanager)
 			OnLeave = "",
 		}, }, },
 		events = {
-			OnChar = function(frame, _, _, text) frame:SetText(text:gsub("^(#?)([%x]*).*", "%1%2"), false) end,
+			OnChar = function(frame, _, text) frame:SetText(text:gsub("^(#?)([%x]*).*", "%1%2"), false) end,
 			OnEnterPressed = function(_, text) colorpicker.setColor(wt.PackColor(wt.HexToColor(text)), true) end,
 			OnEscapePressed = function(self) self.setText(wt.ColorToHex(colorpicker.getColor())) end,
 		},
@@ -8490,7 +8552,7 @@ end
 
 --| Text font
 
-local fontItems
+local fonts, fontItems
 
 ---Create and set up font management for a specified text object ([FontString](https://warcraft.wiki.gg/wiki/UIOBJECT_FontString)) including access to a font family selector dropdown to pick a custom font from the Widget Tools fonts list
 ---***
@@ -8538,22 +8600,54 @@ function wt.CreateFontOptions(addon, text, t)
 
 			--| Font family
 
-			if not fontItems then
+			if not fonts or not fontItems then
 				fontItems = {}
-				local fonts = us.Clone(rs.fonts)
+
+				--| Add base fonts
+
+				fonts = us.Clone(rs.fonts)
+
+				table.insert(fonts, 1, {
+					name = wt.strings.font.path.default.label,
+					path = STANDARD_TEXT_FONT:gsub("\\", "/"),
+				})
 
 				for i = 1, #fonts do
 					fontItems[i] = {}
 					fontItems[i].title = fonts[i].name
 					fontItems[i].tooltip = {
 						title = fonts[i].name,
-						lines = i == 1 and { { text = wt.strings.font.path.default, }, } or (i == #fonts and {
-							{ text = wt.strings.font.path.custom:gsub(
-								"#FONTS_DIRECTORY", cr("[WoW]\\Fonts\\", { r = 0.185, g = 0.72, b = 0.84 })
-							):gsub("#FILE_CUSTOM", "CUSTOM.ttf") },
-							{ text = "\n" .. wt.strings.font.path.reminder, color = { r = 0.89, g = 0.65, b = 0.40 }, },
-						} or nil),
+						lines = {
+							{ text = fonts[i].path:match(rs.addon) and wt.strings.font.path.otf or wt.strings.font.path.base },
+							{ text = "\n" .. wt.strings.font.path.file:gsub("#PATH", crc(fonts[i].path, "FFFFFFFF")), color = { r = 0.4, g = 1, b = 0.4 }, },
+						}
 					}
+				end
+				fontItems[1].tooltip.lines[1] = { text = wt.strings.font.path.default.tooltip, }
+
+				--| Add custom fonts
+
+				if type(WidgetToolsDB.customFonts) == "table" then
+					for i = 1, #WidgetToolsDB.customFonts do table.insert(fonts, {
+						name = WidgetToolsDB.customFonts[i],
+						path = "Fonts/" .. WidgetToolsDB.customFonts[i] .. ".ttf",
+					}) end
+
+					for i = #fonts - #WidgetToolsDB.customFonts + 1, #fonts do
+						fontItems[i] = {}
+						fontItems[i].title = fonts[i].name
+						fontItems[i].tooltip = {
+							title = fonts[i].name,
+							lines = {
+								{ text = wt.strings.font.path.custom, },
+								{ text = "\n" .. wt.strings.font.path.replace:gsub( --TODO update the tooltip when full custom font management support is added
+									"#FONTS_DIRECTORY", cr("[WoW]\\Fonts\\", { r = 0.185, g = 0.72, b = 0.84 })
+								):gsub("#FILE_CUSTOM", "CUSTOM.ttf") },
+								{ text = "\n" .. wt.strings.font.path.reminder, color = { r = 0.89, g = 0.65, b = 0.40 }, }, --TODO update the tooltip when full custom font management support is added
+								{ text = "\n" .. wt.strings.font.path.file:gsub("#PATH", crc(fonts[i].path, "FFFFFFFF")), color = { r = 0.4, g = 1, b = 0.4 }, },
+							}
+						}
+					end
 				end
 			end
 
@@ -8562,42 +8656,46 @@ function wt.CreateFontOptions(addon, text, t)
 				name = "Path",
 				title = wt.strings.font.path.label,
 				tooltip = { lines = { { text = wt.strings.font.path.tooltip, }, } },
+				width = 184,
 				arrange = {},
 				items = fontItems,
 				dependencies = t.dependencies,
-				getData = function() return us.FindIndex(rs.fonts, t.getData().path) end,
-				saveData = function(value) t.getData().path = rs.fonts[value].path end,
-				default = us.FindIndex(rs.fonts, t.defaultsTable.path),
+				getData = function() return us.FindIndex(fonts, t.getData().path) end,
+				saveData = function(value) t.getData().path = fonts[value].path end,
+				default = us.FindIndex(fonts, t.defaultsTable.path),
 				dataManagement = {
 					category = t.dataManagement.category,
 					key = t.dataManagement.key,
 					onChange = {
 						CustomFontChangeHandler = function() if type(t.onChangeFont) == "function" then t.onChangeFont() end end,
 						UpdateTextFont = function() text:SetFont(t.getData().path, t.getData().size, "OUTLINE") end,
-						RefreshText = function() --WATCH if the text still needs to be refreshed so the font will be applied right away (if the font is loaded)
-							local s = text:GetText()
-							text:SetText("")
-							text:SetText(s)
-						end,
 						UpdateFontDropdownText = not WidgetToolsDB.lite and function()
 							--Update the font of the dropdown toggle button label
 							local _, size, flags = panel.widgets.path.toggle.label:GetFont()
-							panel.widgets.path.toggle.label:SetFont(rs.fonts[panel.widgets.path.getSelected() or 1].path, size, flags)
-
-							--WATCH if its still needed to: Refresh the text so the font will be applied right away (if the font is loaded)
-							local s = panel.widgets.path.toggle.label:GetText()
-							panel.widgets.path.toggle.label:SetText("")
-							panel.widgets.path.toggle.label:SetText(s)
+							panel.widgets.path.toggle.label:SetFont(fonts[panel.widgets.path.getSelected() or 1].path, size, flags)
 						end or nil,
 					},
 				},
+				events = { OnShow = function()
+					--Update the font of the dropdown toggle button label
+					local _, size, flags = panel.widgets.path.toggle.label:GetFont()
+					panel.widgets.path.toggle.label:SetFont(fonts[panel.widgets.path.getSelected() or 1].path, size, flags)
+				end },
 			})
 
 			--Update the font of the dropdown items
-			if panel.widgets.path.frame then for i = 1, #panel.widgets.path.toggles do if panel.widgets.path.toggles[i].label then
-				local _, size, flags = panel.widgets.path.toggles[i].label:GetFont()
-				panel.widgets.path.toggles[i].label:SetFont(rs.fonts[i].path, size, flags)
-			end end end
+			if panel.widgets.path.frame then
+				for i = 1, #panel.widgets.path.toggles do if panel.widgets.path.toggles[i].label then
+					local _, size, flags = panel.widgets.path.toggles[i].label:GetFont()
+					panel.widgets.path.toggles[i].label:SetFont(fonts[i].path, size, flags)
+				end end
+
+				if panel.widgets.path.toggles[1].label then panel.widgets.path.toggles[1].label:SetTextColor(0.4, 1, 0.4) end
+
+				if type(WidgetToolsDB.customFonts) == "table" then for i = #fonts - #WidgetToolsDB.customFonts + 1, #fonts do
+					if panel.widgets.path.toggles[i].label then panel.widgets.path.toggles[i].label:SetTextColor(1, 0.4, 0.4) end
+				end end
+			end
 
 			--| Size
 

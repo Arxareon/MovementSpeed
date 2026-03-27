@@ -214,7 +214,6 @@ end
 ---@return number|nil a Alpha | ***Range:*** (0, 1)
 function wt.HexToColor(hex)
 	if type(hex) ~= "string" then return 1, 1, 1 else hex = hex:gsub("#", "") end
-	if hex:len() ~= 6 or hex:len() ~= 8 then return 1, 1, 1 end
 
 	local r = tonumber(hex:sub(1, 2), 16) / 255
 	local g = tonumber(hex:sub(3, 4), 16) / 255
@@ -1422,8 +1421,10 @@ function wt.RegisterSettingsPage(page, parent, icon)
 	if WidgetToolsDB.lite or wt.IsWidget(page) ~= "SettingsPage" or page.category then return end
 
 	parent = wt.IsWidget(parent) == "SettingsPage" and parent or nil
-	icon = (icon or not parent and type(page.icon) == "table" and type(page.icon.GetTexture) == "function" and ("  " .. wt.Texture(page.icon:GetTexture())) or "")
-	local title = (type(page.title) == "table" and type(page.title.GetText) == "function" and page.title:GetText() or "") .. icon
+	if icon == nil then icon = parent == nil end
+
+	local iconTexture = (icon and type(page.iconTexture) == "string" and (" |T" .. page.iconTexture .. ":14:14:3:-1|t") or "")
+	local title = (type(page.title) == "table" and type(page.title.GetText) == "function" and page.title:GetText() or "") .. iconTexture
 
 	page.canvas.OnCommit = function() page.save(true) end
 	page.canvas.OnRefresh = function() page.load(nil, true) end

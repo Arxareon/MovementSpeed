@@ -407,10 +407,10 @@ ns.profileDefault = {
 			size = 11,
 			alignment = "CENTER",
 			colors = {
-				base = { r = 0.7, g = 0.7, b = 0.7 },
-				percent = { r = 0.56, g = 0.91, b = 0.49 },
-				yards = { r = 1, g = 0.98, b = 0.60 },
-				coords = { r = 0.62, g = 0.83, b = 0.96 },
+				base = { r = 0.54, g = 0.54, b = 0.54 },
+				percent = { r = 0.31, g = 0.85, b = 0.21 },
+				yards = { r = 1, g = 0.87, b = 0.28 },
+				coords = { r = 0.33, g = 0.69, b = 0.91 },
 			},
 		},
 		background = {
@@ -451,10 +451,10 @@ ns.profileDefault = {
 			size = 11,
 			alignment = "CENTER",
 			colors = {
-				base = { r = 0.7, g = 0.7, b = 0.7 },
-				percent = { r = 0.56, g = 0.91, b = 0.49 },
-				yards = { r = 1, g = 0.98, b = 0.60 },
-				coords = { r = 0.62, g = 0.83, b = 0.96 },
+				base = { r = 0.54, g = 0.54, b = 0.54 },
+				percent = { r = 0.31, g = 0.85, b = 0.21 },
+				yards = { r = 1, g = 0.87, b = 0.28 },
+				coords = { r = 0.33, g = 0.69, b = 0.91 },
 			},
 		},
 		background = {
@@ -474,10 +474,10 @@ ns.profileDefault = {
 		},
 		font = {
 			colors = {
-				base = { r = 0.7, g = 0.7, b = 0.7 },
-				percent = { r = 0.56, g = 0.91, b = 0.49 },
-				yards = { r = 1, g = 0.98, b = 0.60 },
-				coords = { r = 0.62, g = 0.83, b = 0.96 },
+				base = { r = 0.54, g = 0.54, b = 0.54 },
+				percent = { r = 0.31, g = 0.85, b = 0.21 },
+				yards = { r = 1, g = 0.87, b = 0.28 },
+				coords = { r = 0.33, g = 0.69, b = 0.91 },
 			},
 		},
 	},

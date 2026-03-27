@@ -315,7 +315,7 @@ function Clone(object) end
 ---@alias Merge_param2 # source
 ---| table
 
----Merge a table to another table, deep copying all its values over under new integer keys
+---Merge a table into an array, deep copying all its values over under new integer keys
 ---***
 ---@param target Merge_param1 Table to add the values to
 ---@param source Merge_param2 Table to copy all values from
