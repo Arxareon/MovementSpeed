@@ -36,7 +36,7 @@ ns.chat = {
 --Changelog
 ns.changelog = {
 	{
-		"#V_Version 3.3_# #H_(5/3/2026)_#",
+		"#V_Version 3.3_# #H_(28/3/2026)_#",
 		"#N_New:_#",
 		"Added new speed display text coloring options, now the speed value type coloring can be fully customized.",
 		"#C_Changes:_#",

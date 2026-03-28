@@ -19,7 +19,7 @@ local rs = WidgetTools.resources
 ---@type widgetToolsUtilities
 local us = WidgetTools.utilities
 
----@type widgetToolsUtilities
+---@type widgetToolsDebugging
 local ds = WidgetTools.debugging
 
 local cr = WrapTextInColor
@@ -1089,18 +1089,20 @@ local function CreateSpeedDisplayOptionsPage(display)
 
 			options[display].font = wt.CreateFontOptions(ns.name, frames[display].text, {
 				canvas = canvas,
-				colorNames = {
-					percent = ns.strings.options.speedValue.units.list[1].label,
-					yards = ns.strings.options.speedValue.units.list[2].label,
-					coords = ns.strings.options.speedValue.units.list[3].label,
+				colors = {
+					percent = {
+						name = ns.strings.options.speedValue.units.list[1].label,
+						index = 1,
+					},
+					yards = {
+						name = ns.strings.options.speedValue.units.list[2].label,
+						index = 2,
+					},
+					coords = {
+						name = ns.strings.options.speedValue.units.list[3].label,
+						index = 3,
+					},
 				},
-				colorOrder = {
-				},
-				-- colorsList = {
-				-- 	percent
-				-- 	yards
-				-- 	coords
-				-- },
 				dependencies = { { frame = options[display].visibility.hidden, evaluate = function(state) return not state end }, },
 				getData = function() return MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data[display].font end,
 				defaultsTable = ns.profileDefault[display].font,
@@ -1280,18 +1282,39 @@ local function CreateTargetSpeedOptionsPage()
 				arrange = {},
 				arrangement = {},
 				initialize = function(panel)
+					local colors = {
+						percent = {
+							name = ns.strings.options.speedValue.units.list[1].label,
+							index = 1,
+						},
+						yards = {
+							name = ns.strings.options.speedValue.units.list[2].label,
+							index = 2,
+						},
+						coords = {
+							name = ns.strings.options.speedValue.units.list[3].label,
+							index = 3,
+						},
+						base = {
+							name = "Base",
+							index = 4,
+						}
+					}
+
 					---@type (colormanager|colorpicker)[]
 					options.targetSpeed.font.colors = {}
 
-					for key, _ in pairs(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.targetSpeed.font.colors) do
-						local name = key:sub(1,1):upper() .. key:sub(2)
+					for key in pairs(MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.targetSpeed.font.colors) do
+						if type(colors[key]) ~= "table" then colors[key] = {} end
+
+						local name = colors[key].name == "string" and colors[key].name or (key:sub(1,1):upper() .. key:sub(2))
 
 						options.targetSpeed.font.colors[key] = wt.CreateColorpicker({
 							parent = panel,
 							name = "Color",
 							title = wt.strings.font.color.label:gsub("#COLOR_TYPE", name),
 							tooltip = { lines = { { text = wt.strings.font.color.tooltip:gsub("#COLOR_TYPE", name), }, } },
-							arrange = { newRow = not next(options.targetSpeed.font.colors), },
+							arrange = { newRow = not next(options.targetSpeed.font.colors), column = colors[key].index == "number" and colors[key].index or nil },
 							dependencies = { { frame = options.targetSpeed.enabled, }, },
 							getData = function() return MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.targetSpeed.font.colors[key] end,
 							saveData = function(value) MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.targetSpeed.font.colors[key] = value end,

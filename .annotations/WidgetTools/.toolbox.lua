@@ -1367,7 +1367,7 @@ function Clamp(value, min, max) return value end
 ---@class dropdownRadiogroupCreationData : radiogroupCreationData, widgetWidthValue, tooltipDescribableSettingsWidget
 ---@field name? string Unique string used to set the frame name | ***Default:*** "Dropdown"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
 ---@field width? number The width of the dropdown frame containing the toggle (and optionally) cycle buttons and the label (if **t.label** is true) | ***Default:*** 180
----@field scrollThreshold? integer Number of items to show before changing the dropdown menu to be scrollable | ***Default:*** 15
+---@field scrollThreshold? integer Number of items to show before changing the dropdown menu to be scrollable | ***Default:*** 15<ul><li>***Note:*** Scrollability does not change when the number of items change after the initial setup.</li></ul>
 ---@field text? string The default text to display on the dropdown when no item is selected | ***Default:*** ""
 ---@field clearable? boolean If true, the selector input should be clearable by right clicking on its radio buttons, or, if **t.utilityMenu** is false, the dropdown toggle button itself (if true, a clear selection option is added to the utility menu instead), setting the selected value to nil | ***Default:*** `false`
 ---@field autoClose? boolean Close the dropdown menu after an item is selected by the user | ***Default:*** `true`
@@ -1765,7 +1765,7 @@ function Clamp(value, min, max) return value end
 ---@field key? string A unique string appended to **category** linking a subset of settings data rules to be handled together | ***Default:*** "Font"
 
 ---@class fontManagementCreationData : settingsWidgetPanel_text
----@field colorList? table<string, textColorInfo> If set, use this list of specifications to set the order and displayed name of the colors | ***Default:*** *unspecified order; data management key in Title case*
+---@field colors? table<string, textColorInfo> If set, use this list of specifications to set the order and displayed name of the colors | ***Default:*** *unspecified order; data management key in Title case*
 ---@field getData fun(): table: fontOptionsData Return a reference to the table within a SavedVariables(PerCharacter) addon database where data is committed to
 ---@field defaultsTable fontOptionsData Reference to the table containing the default values
 ---@field dataManagement? settingsData_font Register the widgets to settings data management to be linked with the specified key under the specified category

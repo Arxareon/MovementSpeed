@@ -1397,7 +1397,7 @@ function wt.CreateSettingsCategory(addon, parent, pages, t)
 
 	--| Parent
 
-	local parentTitle = parent.title:GetText() or ""
+	local parentTitle = parent.title and parent.title:GetText() or ""
 
 	table.insert(category.pages, parent)
 
@@ -1424,7 +1424,7 @@ function wt.CreateSettingsCategory(addon, parent, pages, t)
 		--Override defaults warning and add all defaults option to dialog
 		wt.UpdatePopupDialog(pages[i].getResetPopupKey(), {
 			text = wt.strings.settings.warning:gsub("#CATEGORY", cr(parentTitle, NORMAL_FONT_COLOR)):gsub(
-				"#PAGE", cr(pages[i].title:GetText() or "", NORMAL_FONT_COLOR)
+				"#PAGE", cr(pages[i].title and pages[i].title:GetText() or "", NORMAL_FONT_COLOR)
 			),
 			accept = ALL_SETTINGS,
 			alt = CURRENT_SETTINGS,
@@ -2720,7 +2720,7 @@ function wt.CreateSelector(t)
 
 	---Update the list of items currently set for the selector widget, updating its parameters and toggle widgets
 	--- - ***Note:*** The size of the selector widget may change if the number of provided items differs from the number of currently set items. Make sure to rearrange and/or resize other relevant frames potentially impacted by this if needed!
-	--- - ***Note:*** The currently selected item may not be the same after item were removed. In that case, the new item at the same index will be selected instead. If one or more items from the last indexes were removed, the new last item at the reduced count index will be selected. Make sure to use **selector.setSelected(...)** to correct the selection if needed!
+	--- - ***Note:*** The currently selected item may not be the same after an item was removed. In that case, the item at the same index will be selected instead. If one or more items from the last indexes were removed, the new last item at the reduced count index will be selected. Make sure to use **selector.setSelected(...)** to correct the selection if needed!
 	---***
 	---@param newItems (selectorItem|toggle|selectorToggle)[] Table containing subtables with data used to update the toggle widgets, or already existing toggle widgets
 	---@param silent? boolean If false, invoke "updated" or "added" events and call registered listeners | ***Default:*** `false`
@@ -2746,7 +2746,7 @@ function wt.CreateSelector(t)
 
 		if not silent then selector.invoke.updated() end
 
-		selector.setSelected(value)
+		selector.setSelected(value, nil, silent)
 	end
 
 	--| Options data management
@@ -3357,7 +3357,7 @@ function wt.CreateMultiselector(t)
 		if t.limits.min > #t.items then t.limits.min = #t.items end
 		if t.limits.max > #t.items then t.limits.max = #t.items end
 
-		selector.setSelections(value, silent)
+		selector.setSelections(value, nil, silent)
 	end
 
 	--| Options data management
@@ -3691,6 +3691,8 @@ function wt.CreateRadiogroup(t, selector)
 					relativePoint = "TOPRIGHT",
 				},
 			}, { triggers = { item.button, }, }) end
+
+			wt.SetVisibility(item.frame, true)
 		else wt.SetVisibility(item.frame, false) end
 	end
 
@@ -3704,7 +3706,7 @@ function wt.CreateRadiogroup(t, selector)
 
 	--Handle item list updates
 	if radiogroup.setListener.updated and radiogroup.setListener.added then
-		radiogroup.setListener.updated(function() radiogroup.frame:SetHeight(math.ceil((#radiogroup.toggles) / t.columns) * 16 + (t.label ~= false and 14 or 0)) end, 1)
+		radiogroup.setListener.updated(function() radiogroup.frame:SetHeight(math.ceil((#radiogroup.toggles) / t.columns) * 18 + (t.label ~= false and 14 or 0)) end, 1)
 		radiogroup.setListener.added(function (_, toggle)
 			setRadioButton(toggle, true)
 
@@ -3857,7 +3859,10 @@ function wt.CreateDropdownRadiogroup(t, selector)
 	}) or dropdown.menu
 
 	dropdown.frame:SetParent(dropdown.content)
-	wt.SetPosition(dropdown.frame, { relativeTo = dropdown.content, })
+	wt.SetPosition(dropdown.frame, {
+		relativeTo = dropdown.content,
+		offset = #t.items <= t.scrollThreshold and { x = 6, y = -6 } or nil
+	})
 
 	--| Label
 
@@ -4212,7 +4217,7 @@ function wt.CreateDropdownRadiogroup(t, selector)
 		dropdown.holderFrame:SetAttribute("open", state)
 		if not state then PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_OFF) end
 	end)
-	dropdown.setListener.updated(function(self) self.menu:SetHeight(#self.toggles * 16 + 12) end, 1)
+	dropdown.setListener.updated(function(self) self.menu:SetHeight(#self.toggles * 18 + 12) end, 1) --TODO add size & scroll update
 
 	--| Backdrop
 
@@ -7405,11 +7410,7 @@ function wt.CreateDataManagementPage(addon, t)
 			---@param index integer Index of the profile to set as the currently active settings profile
 			---@return boolean # True on success, false if the operation failed
 			function dataManagement.activateProfile(index)
-				if not activateProfile(index) then return false end
-
-				--Update dropdown selection
-				if dataManagement.profiles then dataManagement.profiles.apply.setText(tostring(index)) end
-
+				if dataManagement.profiles then dataManagement.profiles.apply.setSelected(index) elseif not activateProfile(index) then return false end
 				return true
 			end
 
@@ -8748,22 +8749,22 @@ function wt.CreateFontOptions(addon, text, t)
 
 			--| Font color
 
-			if type(t.colorList) ~= "table" then t.colorList = {} end
+			if type(t.colors) ~= "table" then t.colors = {} end
 
 			---@type (colormanager|colorpicker)[]
 			panel.widgets.colors = {}
 
-			for key, _ in pairs(t.getData().colors) do
-				local name = key:sub(1,1):upper() .. key:sub(2)
+			for key in pairs(t.getData().colors) do
+				if type(t.colors[key]) ~= "table" then t.colors[key] = {} end
 
-				if type(t.colorList[key]) ~= "table" then t.colorList[key] = {} end
+				local name = t.colors[key].name == "string" and t.colors[key].name or (key:sub(1,1):upper() .. key:sub(2))
 
 				panel.widgets.colors[key] = wt.CreateColorpicker({
 					parent = panelFrame,
 					name = name .. "Colorpicker",
-					title = wt.strings.font.color.label:gsub("#COLOR_TYPE", type(t.colorList[key].name) == "string" and t.colorList[key].name or name),
+					title = wt.strings.font.color.label:gsub("#COLOR_TYPE", name),
 					tooltip = { lines = { { text = wt.strings.font.color.tooltip:gsub("#COLOR_TYPE", name), }, } },
-					arrange = { newRow = not next(panel.widgets.colors), column = t.colorList[key].index == "number" and t.colorList[key].index or nil },
+					arrange = { newRow = not next(panel.widgets.colors), column = t.colors[key].index == "number" and t.colors[key].index or nil },
 					dependencies = t.dependencies,
 					getData = function() return t.getData().colors[key] end,
 					saveData = function(value) t.getData().colors[key] = value end,
