@@ -571,6 +571,8 @@ end
 --[[ CONTAINERS ]]
 
 ---Set the parameters of a frame
+---@param frame Frame
+---@param t frameCreationData
 local function setUpFrame(frame, t)
 	t.size = t.size or {}
 	t.size.w = t.size.w or 0
@@ -578,8 +580,12 @@ local function setUpFrame(frame, t)
 
 	--| Position & dimensions
 
+	local arrange = type(t.arrange) == "table" and t.arrange or {}
+
+	if not t.arrange and t.position then wt.SetPosition(frame, t.position) end
+	wt.SetArrangementDirective(frame, arrange.index, arrange.wrap ~= false, t.arrange == nil)
+
 	if t.keepInBounds then frame:SetClampedToScreen(true) end
-	if t.arrange then frame.arrangementInfo = t.arrange elseif t.position then wt.SetPosition(frame, t.position) end
 
 	if t.size then frame:SetSize(t.size.w, t.size.h) end
 
@@ -740,7 +746,6 @@ function wt.CreatePanel(t)
 	---@class panel : Frame
 	---@field title? FontString Reference to the title textline appearing above the panel
 	---@field description? FontString Reference to the description textline appearing in the panel
-	---@field arrangementInfo? arrangementRules These parameters specify how to position the panel within its parent container frame during automatic content arrangement
 	local panel = CreateFrame("Frame", name, t.parent, BackdropTemplateMixin and "BackdropTemplate")
 
 	--| Position & dimensions
@@ -748,9 +753,12 @@ function wt.CreatePanel(t)
 	t.size = t.size or {}
 	t.size.w = t.size.w or t.parent and t.parent:GetWidth() - 20 or 0
 	t.size.h = t.size.h or 0
+	local arrange = type(t.arrange) == "table" and t.arrange or {}
+
+	if not t.arrange and t.position then wt.SetPosition(panel, t.position) end
+	wt.SetArrangementDirective(panel, arrange.index, arrange.wrap ~= false, t.arrange == nil)
 
 	if t.keepInBounds then panel:SetClampedToScreen(true) end
-	if t.arrange then panel.arrangementInfo = t.arrange else wt.SetPosition(panel, t.position) end
 
 	panel:SetSize(t.size.w, t.size.h)
 
@@ -1603,8 +1611,10 @@ local function setUpButtonFrame(button, t, name, title, useHighlight)
 	t.size = t.size or {}
 	t.size.w = t.size.w or 80
 	t.size.h = t.size.h or 22
+	local arrange = type(t.arrange) == "table" and t.arrange or {}
 
-	if t.arrange then button.widget.arrangementInfo = t.arrange else wt.SetPosition(button.widget, t.position) end
+	if not t.arrange and t.position then wt.SetPosition(button.widget, t.position) end
+	wt.SetArrangementDirective(button.widget, arrange.index, arrange.wrap ~= false, t.arrange == nil)
 
 	button.widget:SetSize(t.size.w, t.size.h)
 
@@ -2067,8 +2077,11 @@ function wt.CreateCheckbox(t, toggle)
 	t.size = t.size or {}
 	t.size.h = t.size.h or checkbox.button:GetHeight()
 	t.size.w = t.label == false and t.size.h * (30 / 29) or t.size.w or 190
+	local arrange = type(t.arrange) == "table" and t.arrange or {}
 
-	if t.arrange then checkbox.frame.arrangementInfo = t.arrange else wt.SetPosition(checkbox.frame, t.position) end
+	if not t.arrange and t.position then wt.SetPosition(checkbox.frame, t.position) end
+	wt.SetArrangementDirective(checkbox.frame, arrange.index, arrange.wrap ~= false, t.arrange == nil)
+
 	checkbox.button:SetPoint("LEFT")
 	wt.SetPosition(checkbox.button.HoverBackground, {
 		anchor = "LEFT",
@@ -2229,7 +2242,11 @@ local function setUpToggleFrame(toggle, title, t)
 
 	--| Position & dimensions
 
-	if t.arrange then toggle.frame.arrangementInfo = t.arrange else wt.SetPosition(toggle.frame, t.position) end
+	local arrange = type(t.arrange) == "table" and t.arrange or {}
+
+	if not t.arrange and t.position then wt.SetPosition(toggle.frame, t.position) end
+	wt.SetArrangementDirective(toggle.frame, arrange.index, arrange.wrap ~= false, t.arrange == nil)
+
 	toggle.button:SetPoint("LEFT", (t.size.h - 16) / 2, 0)
 
 	toggle.frame:SetSize(t.size.w, t.size.h)
@@ -3559,8 +3576,10 @@ local function setUpSelectorFrame(selector, t, name, title)
 	--| Position & dimensions
 
 	t.columns = t.columns or 1
+	local arrange = type(t.arrange) == "table" and t.arrange or {}
 
-	if t.arrange then selector.frame.arrangementInfo = t.arrange else wt.SetPosition(selector.frame, t.position) end
+	if not t.arrange and t.position then wt.SetPosition(selector.frame, t.position) end
+	wt.SetArrangementDirective(selector.frame, arrange.index, arrange.wrap ~= false, t.arrange == nil)
 
 	selector.frame:SetWidth(t.width or max(t.label ~= false and 160 or 0, (t.labels ~= false and 160 or 16) * t.columns))
 	selector.frame:SetHeight(math.ceil((#t.items) / t.columns) * 16 + (t.label ~= false and 14 or 0))
@@ -3791,8 +3810,10 @@ function wt.CreateDropdownRadiogroup(t, selector)
 	--| Position & dimensions
 
 	t.width = t.width or 180
+	local arrange = type(t.arrange) == "table" and t.arrange or {}
 
-	if t.arrange then holderFrame.arrangementInfo = t.arrange else wt.SetPosition(holderFrame, t.position) end
+	if not t.arrange and t.position then wt.SetPosition(holderFrame, t.position) end
+	wt.SetArrangementDirective(holderFrame, arrange.index, arrange.wrap ~= false, t.arrange == nil)
 
 	holderFrame:SetSize(t.width + 4, 44)
 
@@ -4885,7 +4906,11 @@ local function setUpSingleLineEditbox(editbox, title, t)
 
 	--| Position
 
-	if t.arrange then editbox.frame.arrangementInfo = t.arrange else wt.SetPosition(editbox.frame, t.position) end
+	local arrange = type(t.arrange) == "table" and t.arrange or {}
+
+	if not t.arrange and t.position then wt.SetPosition(editbox.frame, t.position) end
+	wt.SetArrangementDirective(editbox.frame, arrange.index, arrange.wrap ~= false, t.arrange == nil)
+
 	editbox.widget:SetPoint("BOTTOMRIGHT")
 
 	--| Shared setup
@@ -5063,8 +5088,11 @@ function wt.CreateMultilineEditbox(t, textbox)
 	--| Position & dimensions
 
 	local scrollFrameHeight = t.size.h - (t.label ~= false and 28 or 10)
+	local arrange = type(t.arrange) == "table" and t.arrange or {}
 
-	if t.arrange then editbox.frame.arrangementInfo = t.arrange else wt.SetPosition(editbox.frame, t.position) end
+	if not t.arrange and t.position then wt.SetPosition(editbox.frame, t.position) end
+	wt.SetArrangementDirective(editbox.frame, arrange.index, arrange.wrap ~= false, t.arrange == nil)
+
 	editbox.scrollFrame:SetPoint("BOTTOM", 0, 5)
 	wt.SetPosition(editbox.scrollFrame.ScrollBar, {
 		anchor = "RIGHT",
@@ -5212,8 +5240,10 @@ function wt.CreateCopybox(t)
 		t.size = t.size or {}
 		t.size.w = t.size.w or 180
 		t.size.h = t.size.h or 18
+		local arrange = type(t.arrange) == "table" and t.arrange or {}
 
-		if t.arrange then copybox.frame.arrangementInfo = t.arrange else wt.SetPosition(copybox.frame, t.position) end
+		if not t.arrange and t.position then wt.SetPosition(copybox.frame, t.position) end
+		wt.SetArrangementDirective(copybox.frame, arrange.index, arrange.wrap ~= false, t.arrange == nil)
 
 		copybox.frame:SetSize(t.size.w, t.size.h + (t.label ~= false and 12 or 0))
 
@@ -5596,8 +5626,11 @@ function wt.CreateSlider(t, numeric)
 	--| Position & dimensions
 
 	t.width = t.width or 180
+	local arrange = type(t.arrange) == "table" and t.arrange or {}
 
-	if t.arrange then slider.frame.arrangementInfo = t.arrange else wt.SetPosition(slider.frame, t.position) end
+	if not t.arrange and t.position then wt.SetPosition(slider.frame, t.position) end
+	wt.SetArrangementDirective(slider.frame, arrange.index, arrange.wrap ~= false, t.arrange == nil)
+
 	slider.widget:SetPoint("TOP", 0, -8)
 
 	slider.frame:SetSize(t.width, t.valuebox ~= false and 64 or 52)
@@ -5908,8 +5941,11 @@ function wt.CreateClassicSlider(t, numeric)
 	--| Position & dimensions
 
 	t.width = t.width or 160
+	local arrange = type(t.arrange) == "table" and t.arrange or {}
 
-	if t.arrange then slider.frame.arrangementInfo = t.arrange else wt.SetPosition(slider.frame, t.position) end
+	if not t.arrange and t.position then wt.SetPosition(slider.frame, t.position) end
+	wt.SetArrangementDirective(slider.frame, arrange.index, arrange.wrap ~= false, t.arrange == nil)
+
 	slider.widget:SetPoint("TOP", 0, -15)
 	slider.min:SetPoint("TOPLEFT", slider.widget, "BOTTOMLEFT")
 	slider.max:SetPoint("TOPRIGHT", slider.widget, "BOTTOMRIGHT")
@@ -6584,8 +6620,10 @@ function wt.CreateColorpicker(t, colormanager)
 	--| Position & dimensions
 
 	t.width = t.width or 120
+	local arrange = type(t.arrange) == "table" and t.arrange or {}
 
-	if t.arrange then colorpicker.frame.arrangementInfo = t.arrange else wt.SetPosition(colorpicker.frame, t.position) end
+	if not t.arrange and t.position then wt.SetPosition(colorpicker.frame, t.position) end
+	wt.SetArrangementDirective(colorpicker.frame, arrange.index, arrange.wrap ~= false, t.arrange == nil)
 
 	colorpicker.frame:SetSize(t.width, 36)
 
@@ -8263,7 +8301,7 @@ function wt.CreatePositionOptions(addon, frame, t)
 						tooltip = { lines = {
 							{ text = wt.strings.presets.save.tooltip:gsub("#FRAME", t.name):gsub("#CUSTOM", panel.presets[t.presets.custom.index].title), },
 						} },
-						arrange = { newRow = false, },
+						arrange = { wrap = false, },
 						size = { w = 170, h = 26 },
 						action = function() StaticPopup_Show(savePopup) end,
 						dependencies = t.dependencies
@@ -8280,7 +8318,7 @@ function wt.CreatePositionOptions(addon, frame, t)
 						name = "ResetPreset",
 						title = wt.strings.presets.reset.label:gsub("#CUSTOM", panel.presets[t.presets.custom.index].title),
 						tooltip = { lines = { { text = wt.strings.presets.reset.tooltip:gsub("#CUSTOM", panel.presets[t.presets.custom.index].title), }, } },
-						arrange = { newRow = false, },
+						arrange = { wrap = false, },
 						size = { w = 170, h = 26 },
 						action = function() StaticPopup_Show(resetPopup) end,
 					})
@@ -8320,7 +8358,7 @@ function wt.CreatePositionOptions(addon, frame, t)
 				name = "AnchorPoint",
 				title = wt.strings.position.anchor.label,
 				tooltip = { lines = { { text = wt.strings.position.anchor.tooltip:gsub("#FRAME", t.name), }, } },
-				arrange = { newRow = false, },
+				arrange = { wrap = false, },
 				width = 140,
 				dependencies = t.dependencies,
 				getData = function() return t.getData().position.anchor end,
@@ -8349,7 +8387,7 @@ function wt.CreatePositionOptions(addon, frame, t)
 				name = "KeepInPlace",
 				title = wt.strings.position.keepInPlace.label,
 				tooltip = { lines = { { text = wt.strings.position.keepInPlace.tooltip:gsub("#FRAME", t.name), }, } },
-				arrange = { newRow = false, },
+				arrange = { wrap = false, },
 				dependencies = t.dependencies,
 				getData = function() return t.settingsData.keepInPlace end,
 				saveData = function(state) t.settingsData.keepInPlace = state end,
@@ -8393,7 +8431,7 @@ function wt.CreatePositionOptions(addon, frame, t)
 				name = "OffsetY",
 				title = wt.strings.position.offsetY.label,
 				tooltip = { lines = { { text = wt.strings.position.offsetY.tooltip:gsub("#FRAME", t.name), }, } },
-				arrange = { newRow = false, },
+				arrange = { wrap = false, },
 				min = -500,
 				max = 500,
 				fractional = 2,
@@ -8419,7 +8457,7 @@ function wt.CreatePositionOptions(addon, frame, t)
 				name = "KeepInBounds",
 				title = wt.strings.position.keepInBounds.label,
 				tooltip = { lines = { { text = wt.strings.position.keepInBounds.tooltip:gsub("#FRAME", t.name), }, } },
-				arrange = { newRow = false, },
+				arrange = { wrap = false, },
 				dependencies = t.dependencies,
 				getData = function() return t.getData().keepInBounds end,
 				saveData = function(state) t.getData().keepInBounds = state end,
@@ -8467,7 +8505,7 @@ function wt.CreatePositionOptions(addon, frame, t)
 					name = "KeepOnTop",
 					title = wt.strings.layer.keepOnTop.label,
 					tooltip = { lines = { { text = wt.strings.layer.keepOnTop.tooltip:gsub("#FRAME", t.name), }, } },
-					arrange = { newRow = false, },
+					arrange = { wrap = false, },
 					dependencies = t.dependencies,
 					getData = function() return t.getData().layer.keepOnTop end,
 					saveData = function(state) t.getData().layer.keepOnTop = state end,
@@ -8487,7 +8525,7 @@ function wt.CreatePositionOptions(addon, frame, t)
 					name = "FrameLevel",
 					title = wt.strings.layer.level.label,
 					tooltip = { lines = { { text = wt.strings.layer.level.tooltip:gsub("#FRAME", t.name), }, } },
-					arrange = { newRow = false, },
+					arrange = { wrap = false, },
 					min = 0,
 					max = 10000,
 					step = 1,
@@ -8705,7 +8743,7 @@ function wt.CreateFontOptions(addon, text, t)
 				name = "Size",
 				title = wt.strings.font.size.label,
 				tooltip = { lines = { { text = wt.strings.font.size.tooltip, }, } },
-				arrange = { newRow = false, },
+				arrange = { wrap = false, },
 				min = 8,
 				max = 64,
 				increment = 1,
@@ -8731,7 +8769,7 @@ function wt.CreateFontOptions(addon, text, t)
 				name = "Alignment",
 				title = wt.strings.font.alignment.label,
 				tooltip = { lines = { { text = wt.strings.font.alignment.tooltip, }, } },
-				arrange = { newRow = false, },
+				arrange = { wrap = false, },
 				width = 140,
 				dependencies = t.dependencies,
 				getData = function() return t.getData().alignment end,
@@ -8764,7 +8802,7 @@ function wt.CreateFontOptions(addon, text, t)
 					name = name .. "Colorpicker",
 					title = wt.strings.font.color.label:gsub("#COLOR_TYPE", name),
 					tooltip = { lines = { { text = wt.strings.font.color.tooltip:gsub("#COLOR_TYPE", name), }, } },
-					arrange = { newRow = not next(panel.widgets.colors), column = t.colors[key].index == "number" and t.colors[key].index or nil },
+					arrange = { wrap = not next(panel.widgets.colors), index = t.colors[key].index == "number" and t.colors[key].index or nil },
 					dependencies = t.dependencies,
 					getData = function() return t.getData().colors[key] end,
 					saveData = function(value) t.getData().colors[key] = value end,

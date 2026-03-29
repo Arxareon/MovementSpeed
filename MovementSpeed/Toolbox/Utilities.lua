@@ -416,7 +416,7 @@ end
 
 --[[ FRAME MANAGEMENT ]]
 
---| Position
+--[ Position ]
 
 --Used for a transitional step to avoid anchor family connections during safe frame positioning
 local positioningAid
@@ -533,11 +533,47 @@ function wt.ConvertToAbsolutePosition(frame, keepAnchor)
 	wt.SetAnchor(frame, oldAnchor)
 end
 
+--| Arrangement
+
+---List of container content element positioning arrangement ordering directives
+---@type table<AnyFrameObject, arrangementDirective>
+local arrangementOrdering = {}
+
+---List of container content element positioning arrangement wrapping directives
+---@type table<AnyFrameObject, arrangementDirective>
+local arrangementWrapping = {}
+
+---List of child frame references to skip when arranging the children of their parents
+---@type AnyFrameObject[]
+local arrangementSkipping = {}
+
+---Set the arrangement ordering description of a child frame by which to automatically position it in a columns within rows arrangement in its parent container via ***WidgetToolbox*.ArrangeContent(...)**
+---@param frame AnyFrameObject Reference to the child frame to set the arrangement ordering description for
+---@param index integer|nil If set, use this ordering index for **frame** by which to schedule placing it during arrangement (instead of relying on its child index), or if nil, delete the ordering directive set for **frame**
+---@param wrap boolean|nil If true, place **frame** into a new row within its container instead of adding it to the current row being filled, or if nil, delete the wrapping directive set for **frame**<ul><li>***Note:*** If the item would not fit in the row with other items in there, it will automatically be placed in a new row.</li></ul>
+---@param skip boolean|nil If true, ignore all other directives and don't include **frame** in the arrangement when positioning the children of the parent frame, or if nil, delete the skipping directive set for **frame**
+function wt.SetArrangementDirective(frame, index, wrap, skip)
+	if not us.IsFrame(frame) or not frame:GetParent() then return end
+
+	if index == nil then arrangementOrdering[frame] = nil else
+		if type(arrangementOrdering[frame]) ~= "table" then arrangementOrdering[frame] = {} end
+		arrangementOrdering[frame] = type(index) == "number" and us.Round(index) or nil
+	end
+	if wrap == nil then arrangementWrapping[frame] = nil else
+		if type(arrangementWrapping[frame]) ~= "table" then arrangementWrapping[frame] = {} end
+		arrangementWrapping[frame] = wrap == true
+	end
+	if skip == nil then arrangementSkipping[frame] = nil else
+		if type(arrangementSkipping[frame]) ~= "table" then arrangementSkipping[frame] = {} end
+		arrangementSkipping[frame] = skip == true
+	end
+end
+
 ---Arrange the child frames of a container frame into stacked rows based on the parameters provided
 --- - ***Note:*** The frames will be arranged into columns based on the the number of child frames assigned to a given row, anchored to "TOPLEFT", "TOP" and "TOPRIGHT" in order (by default) up to 3 frames. Columns in rows with more frames will be attempted to be spaced out evenly between the frames placed at the main 3 anchors.
 ---***
----@param container Frame Reference to the parent container frame the child frames of which are to be arranged based on the description in **arrangement**
----@param t? arrangementData Arrange the child frames of **container** based on the specifications provided in this table
+---@param container Frame Reference to the parent container frame the child frames of which are to be arranged based on their arrangement descriptions
+---@param t? arrangementRules Arrange the child frames of **container** based on the specifications provided in this table
 function wt.ArrangeContent(container, t)
 	if not us.IsFrame(container) then return end
 
@@ -553,82 +589,72 @@ function wt.ArrangeContent(container, t)
 	local flipper = t.flip and -1 or 1
 	local height = t.margins.t
 
-	---@class arrangedFrame
-	---@field arrangementInfo? arrangementRules These parameters specify how to position the panel within its parent container frame during automatic content arrangement
+	--| Scaffold the arrangement based on the directives set
 
-	---@type (arrangedFrame|Frame)[]
-	local frames = { container:GetChildren() }
+	---@type Frame[]
+	local frames = us.Reorder({ container:GetChildren() }, arrangementOrdering)
+	local arrangement = { {} }
 
-	--Assemble the arrangement descriptions
-	if not t.order then
-		t.order = {}
+	for i = 1, #frames do if not arrangementSkipping[frames[i]] then
+		--Start a new row
+		if #arrangement[#arrangement] >= 1 and arrangementWrapping[frames[i]] then table.insert(arrangement, {}) end
 
-		--Check the child frames for descriptions
-		for i = 1, #frames do if frames[i].arrangementInfo then
-			if frames[i].arrangementInfo.newRow ~= false or #t.order == 0 then table.insert(t.order, { i })
-			elseif t.margins.l + t.margins.r + #t.order * t.gaps + frames[i]:GetWidth() >= container:GetWidth() then table.insert(t.order, { i }) else
-				--Assign row
-				frames[i].arrangementInfo.row = frames[i].arrangementInfo.row and (
-					frames[i].arrangementInfo.row < #t.order and frames[i].arrangementInfo.row
-				) or #t.order
+		--Add the child frame to the currently filling row
+		table.insert(arrangement[#arrangement], frames[i])
+	end end
 
-				--Assign column
-				frames[i].arrangementInfo.column = frames[i].arrangementInfo.column and (
-					frames[i].arrangementInfo.column <= #t.order[frames[i].arrangementInfo.row or 1] and frames[i].arrangementInfo.column
-				) or #t.order[frames[i].arrangementInfo.row or 1] + 1
+	--Remove last rows that got left empty
+	if #arrangement[#arrangement] < 1 then arrangement[#arrangement] = nil end
 
-				--To be place in the specified spot
-				table.insert(t.order[frames[i].arrangementInfo.row], frames[i].arrangementInfo.column, i)
-			end
-		end end
-	end
+	ds.Dump(arrangement)
 
-	--Arrange the frames in each row
-	for i = 1, #t.order do
+	--| Arrange the child frames & resize the parent
+
+	for i = 1, #arrangement do
 		local rowHeight = 0
 
-		--Find the tallest widget
-		for j = 1, #t.order[i] do
-			local frameHeight = frames[t.order[i][j]]:GetHeight()
+		--Find the tallest frame
+		for j = 1, #arrangement[i] do
+			local frameHeight = arrangement[i][j]:GetHeight()
 			if frameHeight > rowHeight then rowHeight = frameHeight end
 
 			--Clear positions
-			frames[t.order[i][j]]:ClearAllPoints()
+			arrangement[i][j]:ClearAllPoints()
 		end
 
 		--Increase the content height by the space between rows
 		height = height + (i > 1 and t.gaps or 0)
 
 		--First frame goes to the top left (or right if flipped)
-		frames[t.order[i][1]]:SetPoint(t.flip and "TOPRIGHT" or "TOPLEFT", t.margins.l * flipper, -height)
+		arrangement[i][1]:SetPoint(t.flip and "TOPRIGHT" or "TOPLEFT", t.margins.l * flipper, -height)
 
 		--Place the rest of the frames
-		if #t.order[i] > 1 then
-			local odd = #t.order[i] % 2 ~= 0
+		if #arrangement[i] > 1 then
+			local odd = #arrangement[i] % 2 ~= 0
 
 			--Middle frame goes to the top center
-			local two = #t.order[i] == 2
-			if odd or two then frames[t.order[i][two and 2 or math.ceil(#t.order[i] / 2)]]:SetPoint("TOP", container, "TOP", 0, -height) end
+			local two = #arrangement[i] == 2
+			if odd or two then arrangement[i][two and 2 or math.ceil(#arrangement[i] / 2)]:SetPoint("TOP", container, "TOP", 0, -height) end
 
-			if #t.order[i] > 2 then
+			if #arrangement[i] > 2 then
 				--Last frame goes to the top right (or left if flipped)
-				frames[t.order[i][#t.order[i]]]:SetPoint(t.flip and "TOPLEFT" or "TOPRIGHT", -t.margins.r * flipper, -height)
+				arrangement[i][#arrangement[i]]:SetPoint(t.flip and "TOPLEFT" or "TOPRIGHT", -t.margins.r * flipper, -height)
 
 				--Fill the space between the main anchor points with the remaining frames
-				if #t.order[i] > 3 then
+				if #arrangement[i] > 3 then
 					local shift = odd and 0 or 0.5
 					local w = container:GetWidth() / 2
-					local n = (#t.order[i] - (odd and 1 or 0)) / 2 - shift
-					local leftFillWidth = (w - frames[t.order[i][1]]:GetWidth() / 2 - t.margins.l) / -n * flipper
-					local rightFillWidth = (w - frames[t.order[i][#t.order[i]]]:GetWidth() / 2 - t.margins.r) / n * flipper
+					local n = (#arrangement[i] - (odd and 1 or 0)) / 2 - shift
+					local leftFillWidth = (w - arrangement[i][1]:GetWidth() / 2 - t.margins.l) / -n * flipper
+					local rightFillWidth = (w - arrangement[i][#arrangement[i]]:GetWidth() / 2 - t.margins.r) / n * flipper
 
 					--Fill the left half
-					local last = math.floor(#t.order[i] / 2)
-					for j = 2, last do frames[t.order[i][j]]:SetPoint("TOP", leftFillWidth * (math.abs(last - j) + (1 - shift)), -height) end
+					local last = math.floor(#arrangement[i] / 2)
+					for j = 2, last do arrangement[i][j]:SetPoint("TOP", leftFillWidth * (math.abs(last - j) + (1 - shift)), -height) end
 
 					--Fill the right half
-					local first = math.ceil(#t.order[i] / 2) + 1
-					for j = first, #t.order[i] - 1 do frames[t.order[i][j]]:SetPoint("TOP", rightFillWidth * (math.abs(first - j) + (1 - shift)), -height) end
+					local first = math.ceil(#arrangement[i] / 2) + 1
+					for j = first, #arrangement[i] - 1 do arrangement[i][j]:SetPoint("TOP", rightFillWidth * (math.abs(first - j) + (1 - shift)), -height) end
 				end
 			end
 		end
@@ -640,6 +666,8 @@ function wt.ArrangeContent(container, t)
 	--Set the height of the container frame
 	if t.resize ~= false then container:SetHeight(height + t.margins.b) end
 end
+
+--| Movability
 
 ---Set the movability of a frame based in the specified values
 ---***
@@ -767,7 +795,7 @@ function wt.SetMovability(frame, movable, t)
 	else for i = 1, #triggers do triggers[i]:EnableMouse(false) end end
 end
 
---| Visibility
+--[ Visibility ]
 
 ---Set the visibility of a frame based on the value provided
 ---***
@@ -779,7 +807,7 @@ function wt.SetVisibility(frame, visible)
 	if visible then frame:Show() else frame:Hide() end
 end
 
---| Backdrop
+--[ Backdrop ]
 
 ---Set the backdrop of a frame with BackdropTemplate with the specified parameters
 ---***
@@ -897,7 +925,7 @@ function wt.SetBackdrop(frame, backdrop, updates)
 	end end
 end
 
---| Dependencies
+--[ Dependencies ]
 
 ---Assign dependency rule listeners from a defined a ruleset
 ---***
@@ -987,11 +1015,9 @@ function wt.AddTooltip(frame, t, toggle, duplicate)
 
 	--| Register tooltip data
 
-	local id = us.GetID(frame)
+	if duplicate ~= true and type(tooltipData[frame]) == "table" then return wt.UpdateTooltipData(frame, t) end
 
-	if duplicate ~= true and type(tooltipData[id]) == "table" then return wt.UpdateTooltipData(frame, t) end
-
-	tooltipData[id] = type(t) == "table" and t or {}
+	tooltipData[frame] = type(t) == "table" and t or {}
 
 	wt.UpdateTooltipData(frame)
 
@@ -1006,23 +1032,23 @@ function wt.AddTooltip(frame, t, toggle, duplicate)
 		--Show tooltip
 		if toggle.triggers[i] ~= frame and toggle.replace == false then
 			toggle.triggers[i]:HookScript("OnEnter", function()
-				if type(tooltipData[id]) == "table" then if not tooltipData[id].tooltip:IsVisible() then wt.UpdateTooltip(frame) end end
+				if type(tooltipData[frame]) == "table" then if not tooltipData[frame].tooltip:IsVisible() then wt.UpdateTooltip(frame) end end
 			end)
 		else toggle.triggers[i]:HookScript("OnEnter", function() wt.UpdateTooltip(frame) end) end
 
 		--Hide tooltip
 		if toggle.triggers[i] ~= frame and toggle.checkParent ~= false then
 			toggle.triggers[i]:HookScript("OnLeave", function()
-				if not frame:IsMouseOver() then if type(tooltipData[id]) == "table" then tooltipData[id].tooltip:Hide() end end
+				if not frame:IsMouseOver() then if type(tooltipData[frame]) == "table" then tooltipData[frame].tooltip:Hide() end end
 			end)
-		else toggle.triggers[i]:HookScript("OnLeave", function() if type(tooltipData[id]) == "table" then tooltipData[id].tooltip:Hide() end end) end
+		else toggle.triggers[i]:HookScript("OnLeave", function() if type(tooltipData[frame]) == "table" then tooltipData[frame].tooltip:Hide() end end) end
 	end
 
 	--| Hide with owner
 
-	frame:HookScript("OnHide", function() if type(tooltipData[id]) == "table" then tooltipData[id].tooltip:Hide() end end)
+	frame:HookScript("OnHide", function() if type(tooltipData[frame]) == "table" then tooltipData[frame].tooltip:Hide() end end)
 
-	return tooltipData[id]
+	return tooltipData[frame]
 end
 
 ---Update and show a GameTooltip already set up to be toggled for a frame
@@ -1034,11 +1060,9 @@ function wt.UpdateTooltip(frame, t)
 
 	--| Verify the tooltip data
 
-	local id = us.GetID(frame)
+	if type(tooltipData[frame]) ~= "table" then return end
 
-	if type(tooltipData[id]) ~= "table" then return end
-
-	if type(t) ~= "table" then t = tooltipData[id] else us.Pull(t, tooltipData[id]) end
+	if type(t) ~= "table" then t = tooltipData[frame] else us.Pull(t, tooltipData[frame]) end
 
 	--| Position
 
@@ -1101,13 +1125,11 @@ function wt.UpdateTooltipData(frame, t, linesUpdate)
 
 	--| Verify & update the tooltip data
 
-	local id = us.GetID(frame)
-
-	if type(tooltipData[id]) ~= "table" then return nil end
+	if type(tooltipData[frame]) ~= "table" then return nil end
 
 	--Tooltip frame
-	if us.IsFrame(t.tooltip) and t.tooltip:IsObjectType("GameTooltip") then tooltipData[id].tooltip = t.tooltip
-	elseif not tooltipData[id].tooltip or not (us.IsFrame(tooltipData[id].tooltip) and tooltipData[id].tooltip:IsObjectType("GameTooltip")) then
+	if us.IsFrame(t.tooltip) and t.tooltip:IsObjectType("GameTooltip") then tooltipData[frame].tooltip = t.tooltip
+	elseif not tooltipData[frame].tooltip or not (us.IsFrame(tooltipData[frame].tooltip) and tooltipData[frame].tooltip:IsObjectType("GameTooltip")) then
 		--Create the default reusable tooltip
 		if not defaultTooltip then
 			local name = "WidgetToolbox" .. C_AddOns.GetAddOnMetadata(rs.addon, "X-WidgetTools-ToolboxVersion"):gsub("[^%w]", "_") .. "GameTooltip"
@@ -1125,31 +1147,31 @@ function wt.UpdateTooltipData(frame, t, linesUpdate)
 			_G[defaultTooltip:GetName() .. "TextRight" .. 1]:SetFontObject("GameFontNormalMed1")
 		end
 
-		tooltipData[id].tooltip = defaultTooltip
+		tooltipData[frame].tooltip = defaultTooltip
 	end
 	t.tooltip = nil
 
 	--Update textlines
-	if linesUpdate == true then us.Filter(tooltipData[id].lines, t.lines)
+	if linesUpdate == true then us.Filter(tooltipData[frame].lines, t.lines)
 	elseif linesUpdate == false and type(t.lines) == "table" then
-		if type(tooltipData[id].lines) ~= "table" then tooltipData[id].lines = {} end
+		if type(tooltipData[frame].lines) ~= "table" then tooltipData[frame].lines = {} end
 
-		for i = 1, #t.lines do table.insert(tooltipData[id].lines, t.lines[i]) end
+		for i = 1, #t.lines do table.insert(tooltipData[frame].lines, t.lines[i]) end
 
 		t.lines = nil
 	end
 
-	tooltipData[id] = us.Pull(tooltipData[id], t)
+	tooltipData[frame] = us.Pull(tooltipData[frame], t)
 
 	--Position
-	tooltipData[id].position = tooltipData[id].position or {}
-	tooltipData[id].position.offset = tooltipData[id].offset or {}
-	if not tooltipData[id].anchor then tooltipData[id].anchor = "ANCHOR_CURSOR" end
+	tooltipData[frame].position = tooltipData[frame].position or {}
+	tooltipData[frame].position.offset = tooltipData[frame].offset or {}
+	if not tooltipData[frame].anchor then tooltipData[frame].anchor = "ANCHOR_CURSOR" end
 
 	--Title
-	if type(tooltipData[id].title) ~= "string" then tooltipData[id].title = frame:GetName() or tostring(us.GetID(frame)) end
+	if type(tooltipData[frame].title) ~= "string" then tooltipData[frame].title = frame:GetName() or tostring(frame) end
 
-	return tooltipData[id]
+	return tooltipData[frame]
 end
 
 ---Add default value and utility menu hint tooltip lines to widget tooltip tables
@@ -1248,8 +1270,7 @@ function wt.SetUpAddonCompartment(addon, calls, tooltip)
 
 		_G[onEnterName] = function(addonNamespace, frame)
 			--Set tooltip
-			local id = us.GetID(frame)
-			if type(tooltipData[id]) ~= "table" then tooltipData[id] = tooltip end
+			if type(tooltipData[frame]) ~= "table" then tooltipData[frame] = tooltip end
 			wt.UpdateTooltipData(frame)
 
 			--Call handler
@@ -1264,8 +1285,7 @@ function wt.SetUpAddonCompartment(addon, calls, tooltip)
 			if type(calls.onLeave) == "function" then calls.onLeave(addonNamespace, frame) end
 
 			--Hide tooltip
-			local id = us.GetID(frame)
-			if type(tooltipData[id]) == "table" and tooltipData[id].tooltip then tooltipData[id].tooltip:Hide() end
+			if type(tooltipData[frame]) == "table" and tooltipData[frame].tooltip then tooltipData[frame].tooltip:Hide() end
 		end
 	else
 		if onEnterName and type(calls.onEnter) == "function" then _G[onEnterName] = calls.onEnter end

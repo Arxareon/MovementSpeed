@@ -245,30 +245,25 @@ function Clamp(value, min, max) return value end
 ---@field t? number Space to leave at the top (doesn't need to be negated) | ***Default:*** 12
 ---@field b? number Space to leave at the bottom | ***Default:*** 12
 
----@class arrangementInfo
--- -@field
-
----@class arrangementData
+---@class arrangementRules
 ---@field margins? spacingData Inset the content inside the container frame by the specified amount on each side
 ---@field gaps? number The amount of space to leave between rows and items within rows | ***Default:*** 8
 ---@field flip? boolean Fill the rows from right to left instead of left to right | ***Default:*** `false`
 ---@field resize? boolean Set the height of the container frame to match the space taken up by the arranged content (including margins) | ***Default:*** `true`
----@field order? { [table[]] : integer[] } If set, position the child frames by into columns within rows in the order specified in a nested structure, an array of subtables representing rows, and their values representing the index of a given child frame in { **container**:[GetChildren()](https://warcraft.wiki.gg/wiki/API_Frame_GetChildren) }<ul><li>***Note:*** If not set, assemble the arrangement from the individual arrangement descriptions of child frames stored in their **arrangementInfo** custom table property.</li></ul>
 
 ---@class initializableContainer
----@field arrangement? arrangementData If set, arrange the content added to the container frame during initialization into stacked rows based on the specifications provided in this table
+---@field arrangement? arrangementRules If set, arrange the content added to the container frame during initialization into stacked rows based on the specifications provided in this table
 ---@field initialize? fun(container?: Frame, width: number, height: number, name?: string) This function will be called while setting up the container frame to perform specific tasks like creating content child frames right away<hr><p>@*param* `container`? AnyFrameObject ― Reference to the frame to be set as the parent for child objects created during initialization (nil if **WidgetToolsDB.lite** is true)</p><p>@*param* `width` number The current width of the container frame (0 if **WidgetToolsDB.lite** is true)</p><p>@*param* `height` number The current height of the container frame (0 if **WidgetToolsDB.lite** is true)</p><p>@*param* `name`? string The name parameter of the container specified at construction</p>
 
 ---@class initializableOptionsContainer : initializableContainer
 ---@field initialize? fun(container?: Frame, width: number, height: number, category?: string, keys?: string[], name?: string) This function will be called while setting up the container frame to perform specific tasks like creating content child frames right away<hr><p>@*param* `container`? AnyFrameObject ― Reference to the frame to be set as the parent for child objects created during initialization (nil if **WidgetToolsDB.lite** is true)</p><p>@*param* `width` number The current width of the container frame (0 if **WidgetToolsDB.lite** is true)</p><p>@*param* `height` number The current height of the container frame (0 if **WidgetToolsDB.lite** is true)</p><p>@*param* `category`? string A unique string used for categorizing settings data management rules & change handler scripts</p><p>@*param* `keys`? string[] Reference to **t.dataManagement.keys**, a list of unique strings appended to **category** linking a subset of settings data rules to be handled together in the specified order</p><p>@*param* `name`? string The name parameter of the container specified at construction</p>
 
----@class arrangementRules
----@field newRow? boolean Place the frame into a new row within its container instead of adding it to a specified row | ***Default:*** `true`<ul><li>***Note:*** If the item would not fit in the row with other items in there, it will automatically be placed in a new row.</li></ul>
----@field row? integer Place the frame in the specified existing row | ***Default:*** *last row*<ul><li>***Note:*** If the value provided is larger than the number current rows, it will be placed in the last row.</li></ul>
----@field column? integer Place the frame at this position within its row | ***Default:*** *new column at the end of the row*<ul><li>***Note:*** If the value provided is larger than the number of widgets assigned to the specified row, it will be placed at the end of the row.</li></ul>
+---@class arrangementDirective
+---@field wrap? boolean Place the frame into a new row within its container instead of adding it to the current row being filled | ***Default:*** `true`<ul><li>***Note:*** If the item would not fit in the row with other items in there, it will automatically be placed in a new row.</li></ul>
+---@field index? integer The ordering index of the frame by which to be placed during arrangement | ***Default:*** *use the ordering of the children of the parent container frame*
 
 ---@class arrangeableObject
----@field arrange? arrangementRules When set, automatically position the frame in a columns within rows arrangement in its parent container via ***WidgetToolbox*.ArrangeContent(**t.parent**, ...)**
+---@field arrange? arrangementDirective When set, automatically position the frame in a columns within rows arrangement in its parent container via ***WidgetToolbox*.ArrangeContent(**t.parent**, ...)**
 
 --| Size
 
@@ -913,7 +908,7 @@ function Clamp(value, min, max) return value end
 ---@field t? number Space to leave at the top (doesn't need to be negated) | ***Default:*** 44
 ---@field b? number Space to leave at the bottom | ***Default:*** 44
 
----@class arrangementData_settingsPage : arrangementData
+---@class arrangementData_settingsPage : arrangementRules
 ---@field margins? spacingData_settingsPage Inset the content inside the canvas frame by the specified amount on each side
 ---@field gaps? number The amount of space to leave between rows | ***Default:*** 44
 ---@field resize? boolean Set the height of the canvas frame to match the space taken up by the arranged content (including margins) | ***Default:*** **t.scroll** ~= nil

@@ -46,10 +46,10 @@ widgetTools = {
 		ToString = ToString,
 		TableToString = TableToString,
 		Protect = Protect,
-		GetID = GetID,
 		FindIndex = FindIndex,
 		FindKey = FindKey,
 		FindValue = FindValue,
+		Reorder = Reorder,
 		Clone = Clone,
 		Merge = Merge,
 		CopyValues = CopyValues,
@@ -227,18 +227,6 @@ function TableToString(table, compact) return "" end
 ---@return any # Reference to the new proxy table or `t` itself
 function Protect(t) end
 
---| GetID
-
----Reference to the table to get the ID of
----@alias GetID_param # t
----| table
-
----Get the unique internal runtime ID of the table
----***
----@param t GetID_param Reference to the table to get the ID of
----@return string # Return empty string of t is not a table | ***Default:*** `""`
-function GetID(t) return "" end
-
 --| FindIndex
 
 ---Array to search
@@ -292,6 +280,24 @@ function FindKey(t, value) end
 ---@return any|nil match The first match of the value found at `key` | ***Default:*** `nil`
 function FindValue(t, key) end
 
+--| Reorder
+
+---Reference to the array to reorder the elements of
+---@alias Reorder_param1 # t
+---| table
+
+---List of directives: value, index pairs to reorder select elements by (placing matching values at the specified new index)
+---@alias Reorder_param2 # t
+---| table<any, integer>
+
+---Reorder select elements in an array based on a list of directives
+---***
+---@param t Reorder_param1 Reference to the array to reorder the elements of
+---@param directives Reorder_param2 List of directives: value, index pairs to reorder select elements by (placing matching values at the specified new index)
+---***
+---@return any t Reference to `t` (it was already overwritten during the operation, no need for setting it again)
+function Reorder(t, directives) end
+
 --| Clone
 
 ---Reference to the object to create a copy of
@@ -307,11 +313,11 @@ function Clone(object) end
 
 --| Merge
 
----Table to add the values to
+---Reference to table to add the values to
 ---@alias Merge_param1 # target
 ---| table
 
----Table to copy all values from
+---Reference to table to copy all values from
 ---@alias Merge_param2 # source
 ---| table
 
