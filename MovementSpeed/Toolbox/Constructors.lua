@@ -8788,6 +8788,8 @@ function wt.CreateFontOptions(addon, text, t)
 			--| Font color
 
 			if type(t.colors) ~= "table" then t.colors = {} end
+			local widgetCount = 0
+			for _ in pairs(panel.widgets) do widgetCount = widgetCount + 1 end
 
 			---@type (colormanager|colorpicker)[]
 			panel.widgets.colors = {}
@@ -8796,13 +8798,14 @@ function wt.CreateFontOptions(addon, text, t)
 				if type(t.colors[key]) ~= "table" then t.colors[key] = {} end
 
 				local name = t.colors[key].name == "string" and t.colors[key].name or (key:sub(1,1):upper() .. key:sub(2))
+				local index = type(t.colors[key].index) == "number" and t.colors[key].index + widgetCount or nil
 
 				panel.widgets.colors[key] = wt.CreateColorpicker({
 					parent = panelFrame,
 					name = name .. "Colorpicker",
 					title = wt.strings.font.color.label:gsub("#COLOR_TYPE", name),
 					tooltip = { lines = { { text = wt.strings.font.color.tooltip:gsub("#COLOR_TYPE", name), }, } },
-					arrange = { wrap = not next(panel.widgets.colors), index = t.colors[key].index == "number" and t.colors[key].index or nil },
+					arrange = { wrap = index == widgetCount + 1, index = index },
 					dependencies = t.dependencies,
 					getData = function() return t.getData().colors[key] end,
 					saveData = function(value) t.getData().colors[key] = value end,

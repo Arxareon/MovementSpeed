@@ -1314,7 +1314,7 @@ local function CreateTargetSpeedOptionsPage()
 							name = "Color",
 							title = wt.strings.font.color.label:gsub("#COLOR_TYPE", name),
 							tooltip = { lines = { { text = wt.strings.font.color.tooltip:gsub("#COLOR_TYPE", name), }, } },
-							arrange = { wrap = not next(options.targetSpeed.font.colors), index = colors[key].index == "number" and colors[key].index or nil },
+							arrange = { wrap = false, index = colors[key].index },
 							dependencies = { { frame = options.targetSpeed.enabled, }, },
 							getData = function() return MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.targetSpeed.font.colors[key] end,
 							saveData = function(value) MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.targetSpeed.font.colors[key] = value end,
