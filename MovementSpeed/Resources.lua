@@ -36,13 +36,16 @@ ns.chat = {
 --Changelog
 ns.changelog = {
 	{
-		"#V_Version 3.3_# #H_(29/3/2026)_#",
+		"#V_Version 3.3_# #H_(30/3/2026)_#",
 		"#N_New:_#",
-		"Added new speed display text coloring options, now the speed value type coloring can be fully customized.",
+		"Added new speed display text coloring options (now also available for the Target Speed feature), now the speed value type coloring can be fully customized.",
 		"#C_Changes:_#",
 		"Removed the Value Coloring toggle option, now value coloring is enabled at all times by default but now each value color can be freely specified.",
 		"Font files have been moved to Widget Tools addon, Movement Speed is built on. #H_The CUSTOM.ttf font file to be replaced when using the custom font family option can now be found in the WidgetTools/Fonts folder._#",
-		"Under the hood improvements.",
+		"Several other under the hood changes & improvements.",
+		"#F_Hotfix:_#",
+		"Further improved the Target Speed feature to stop it generating any errors in Delves or other private gamespaces.",
+		"Many other smaller fixes & translation improvements.",
 	},
 	{
 		"#V_Version 3.2_# #H_(23/2/2026)_#",

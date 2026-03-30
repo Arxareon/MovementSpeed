@@ -19,9 +19,6 @@ local rs = WidgetTools.resources
 ---@type widgetToolsUtilities
 local us = WidgetTools.utilities
 
----@type widgetToolsDebugging
-local ds = WidgetTools.debugging
-
 local cr = WrapTextInColor
 
 --[ Locals ]

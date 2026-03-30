@@ -34,14 +34,14 @@ ns.localizations.enUS = {
 				list = {
 					{
 						label = "Percentage",
-						tooltip = "Show the speed value as a percentage of the base running speed (which is 7 yards per second)."
+						tooltip = "Show the speed value as a percentage of the base running speed (which is 7 yards per second).",
 					},
 					{
-						label = "Yards/second",
+						label = "Yards/s",
 						tooltip = "Show the speed value as distance in yards traveled per second.",
 					},
 					{
-						label = "Coordinates/second",
+						label = "Coordinates/s",
 						tooltip = "Show the speed value as distance in coordinates traveled per second.",
 					},
 				},
@@ -260,11 +260,11 @@ ns.localizations.ptBR = {
 						tooltip = "Mostra o valor de velocidade como uma porcentagem da velocidade base de corrida (que é 7 jardas por segundo)."
 					},
 					{
-						label = "Jardas/segundo",
+						label = "Jardas/s",
 						tooltip = "Mostra o valor de velocidade como distância em jardas percorridas por segundo.",
 					},
 					{
-						label = "Coordenadas/segundo",
+						label = "Coordenadas/s",
 						tooltip = "Mostra o valor de velocidade como distância em coordenadas percorridas por segundo.",
 					},
 				},
@@ -480,14 +480,14 @@ ns.localizations.deDE = {
 				list = {
 					{
 						label = "Prozent",
-						tooltip = "Zeige den Geschwindigkeitswert als Prozentsatz der Basislaufgeschwindigkeit (7 Meter pro Sekunde)."
+						tooltip = "Zeige den Geschwindigkeitswert als Prozentsatz der Basislaufgeschwindigkeit (7 Yards pro Sekunde)."
 					},
 					{
-						label = "Meter/Sekunde",
-						tooltip = "Zeige den Geschwindigkeitswert als zurückgelegte Meter pro Sekunde an.",
+						label = "Yards/s",
+						tooltip = "Zeige den Geschwindigkeitswert als zurückgelegte Yards pro Sekunde an.",
 					},
 					{
-						label = "Koordinaten/Sekunde",
+						label = "Koordinaten/s",
 						tooltip = "Zeige den Geschwindigkeitswert als zurückgelegte Koordinaten pro Sekunde an.",
 					},
 				},
@@ -664,10 +664,10 @@ ns.localizations.deDE = {
 		hintMove = "Halte SHIFT & ziehe zum Verschieben.",
 	},
 	speedValue = {
-		yardsps = "#YARDS m/s",
-		yps = "#YARDS m/s",
-		coordsps = "#COORDS Koord./s",
-		cps = "#COORDS K/s",
+		yardsps = "#YARDS yards/s",
+		yps = "#YARDS y/s",
+		coordsps = "#COORDS koord/s",
+		cps = "#COORDS k/s",
 		coordPair = "(#X, #Y)",
 		separator = " | ",
 	},
@@ -706,11 +706,11 @@ ns.localizations.frFR = {
 						tooltip = "Afficher la valeur de vitesse en pourcentage de la vitesse de course de base (qui est de 7 yards par seconde)."
 					},
 					{
-						label = "Yards/seconde",
+						label = "Yards/s",
 						tooltip = "Afficher la valeur de vitesse comme distance en yards parcourue par seconde.",
 					},
 					{
-						label = "Coordonnées/seconde",
+						label = "Coordonnées/s",
 						tooltip = "Afficher la valeur de vitesse comme distance en coordonnées parcourue par seconde.",
 					},
 				},
@@ -929,11 +929,11 @@ ns.localizations.esES = {
 						tooltip = "Muestra el valor de velocidad como porcentaje de la velocidad base de carrera (que es 7 yardas por segundo)."
 					},
 					{
-						label = "Yardas/segundo",
+						label = "Yardas/s",
 						tooltip = "Muestra el valor de velocidad como distancia en yardas recorridas por segundo.",
 					},
 					{
-						label = "Coordenadas/segundo",
+						label = "Coordenadas/s",
 						tooltip = "Muestra el valor de velocidad como distancia en coordenadas recorridas por segundo.",
 					},
 				},
@@ -1152,11 +1152,11 @@ ns.localizations.esMX = {
 						tooltip = "Muestra el valor de velocidad como porcentaje de la velocidad base de carrera (que es 7 yardas por segundo)."
 					},
 					{
-						label = "Yardas/segundo",
+						label = "Yardas/s",
 						tooltip = "Muestra el valor de velocidad como distancia en yardas recorridas por segundo.",
 					},
 					{
-						label = "Coordenadas/segundo",
+						label = "Coordenadas/s",
 						tooltip = "Muestra el valor de velocidad como distancia en coordenadas recorridas por segundo.",
 					},
 				},
@@ -1372,15 +1372,15 @@ ns.localizations.itIT = {
 				list = {
 					{
 						label = "Percentuale",
-						tooltip = "Mostra il valore della velocità come percentuale della velocità base di corsa (che è 7 yard al secondo)."
+						tooltip = "Mostra il valore della velocità come percentuale della velocità base di corsa (che è 7 iarde al secondo)."
 					},
 					{
-						label = "Yard/secondo",
-						tooltip = "Mostra il valore della velocità come distanza in yard percorse al secondo.",
+						label = "Iarde/s",
+						tooltip = "Mostra il valore della velocità come distanza in iarde percorre  al secondo.",
 					},
 					{
-						label = "Coordinate/secondo",
-						tooltip = "Mostra il valore della velocità come distanza in coordinate percorse al secondo.",
+						label = "Coordinate/s",
+						tooltip = "Mostra il valore della velocità come distanza in coordinate percorre al secondo.",
 					},
 				},
 			},
@@ -1556,8 +1556,8 @@ ns.localizations.itIT = {
 		hintMove = "Tieni premuto SHIFT e trascina per riposizionare.",
 	},
 	speedValue = {
-		yardsps = "#YARDS yard/s",
-		yps = "#YARDS y/s",
+		yardsps = "#YARDS iarde/s",
+		yps = "#YARDS i/s",
 		coordsps = "#COORDS coord/s",
 		cps = "#COORDS c/s",
 		coordPair = "(#X, #Y)",
@@ -2267,11 +2267,11 @@ ns.localizations.ruRU = {
 						tooltip = "Показывать значение скорости в процентах от базовой скорости бега (7 ярдов в секунду)."
 					},
 					{
-						label = "Ярды/секунда",
+						label = "Ярды/с",
 						tooltip = "Показывать значение скорости как расстояние в ярдах, пройденное за секунду.",
 					},
 					{
-						label = "Координаты/секунда",
+						label = "Координаты/с",
 						tooltip = "Показывать значение скорости как расстояние в координатах, пройденное за секунду.",
 					},
 				},
