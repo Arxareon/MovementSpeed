@@ -8596,14 +8596,14 @@ local fonts, fontItems
 ---Create and set up font management for a specified text object ([FontString](https://warcraft.wiki.gg/wiki/UIOBJECT_FontString)) including access to a font family selector dropdown to pick a custom font from the Widget Tools fonts list
 ---***
 ---@param addon string The name of the addon's folder (the addon namespace, not its displayed title)
----@param text FontString Reference to the text object to create font options for
+---@param textline FontString Reference to the text object to create font options for
 ---@param t fontManagementCreationData Parameters are to be provided in this table
 ---***
 ---@return fontPanel? table References to the new [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame), an array of its child [CheckButton](https://warcraft.wiki.gg/wiki/UIOBJECT_CheckButton) widget items, a toggle [Button](https://warcraft.wiki.gg/wiki/UIOBJECT_Button), utility functions and more wrapped in a table | ***Default:*** nil
-function wt.CreateFontOptions(addon, text, t)
-	if not addon or not C_AddOns.IsAddOnLoaded(addon) or type(text) ~= "table" or type(text.GetFont) ~= "function" or type(t) ~= "table" then return end
+function wt.CreateFontOptions(addon, textline, t)
+	if not addon or not C_AddOns.IsAddOnLoaded(addon) or type(textline) ~= "table" or type(textline.GetFont) ~= "function" or type(t) ~= "table" then return end
 
-	if type(t.name) ~= "string" then t.name = text:GetName() end
+	if type(t.name) ~= "string" then t.name = textline:GetName() end
 	t.dataManagement = t.dataManagement or {}
 	t.dataManagement.category = t.dataManagement.category or addon
 	t.dataManagement.key = t.dataManagement.key or "Font"
@@ -8636,6 +8636,7 @@ function wt.CreateFontOptions(addon, text, t)
 		arrangement = {},
 		initialize = function(panelFrame)
 			panel.widgets = {}
+			local widgetCount = 0
 
 			--| Font family
 
@@ -8707,7 +8708,7 @@ function wt.CreateFontOptions(addon, text, t)
 					key = t.dataManagement.key,
 					onChange = {
 						CustomFontChangeHandler = function() if type(t.onChangeFont) == "function" then t.onChangeFont() end end,
-						UpdateTextFont = function() text:SetFont(t.getData().path, t.getData().size, "OUTLINE") end,
+						UpdateTextFont = function() textline:SetFont(t.getData().path, t.getData().size, "OUTLINE") end,
 						UpdateFontDropdownText = not WidgetToolsDB.lite and function()
 							--Update the font of the dropdown toggle button label
 							local _, size, flags = panel.widgets.path.toggle.label:GetFont()
@@ -8736,6 +8737,8 @@ function wt.CreateFontOptions(addon, text, t)
 				end end
 			end
 
+			widgetCount = widgetCount + 1
+
 			--| Size
 
 			panel.widgets.size = wt.CreateSlider({
@@ -8762,7 +8765,11 @@ function wt.CreateFontOptions(addon, text, t)
 				},
 			})
 
+			widgetCount = widgetCount + 1
+
 			--| Alignment
+
+			panel.widgets.alignment = {}
 
 			panel.widgets.alignment = wt.CreateSpecialRadiogroup("justifyH", {
 				parent = panelFrame,
@@ -8780,16 +8787,17 @@ function wt.CreateFontOptions(addon, text, t)
 					key = t.dataManagement.key,
 					onChange = {
 						CustomAlignmentChangeHandler = function() if type(t.onChangeAlignment) == "function" then t.onChangeAlignment() end end,
-						UpdateTextAlignment = function() text:SetJustifyH(t.getData().alignment) end,
+						UpdateTextAlignment = function() textline:SetJustifyH(t.getData().alignment) end,
 					},
 				},
 			})
 
+			widgetCount = widgetCount + 1
+
 			--| Font color
 
 			if type(t.colors) ~= "table" then t.colors = {} end
-			local widgetCount, wrapper = 0, nil
-			for _ in pairs(panel.widgets) do widgetCount = widgetCount + 1 end
+			local wrapper
 			for k, v in pairs(t.colors) do if v.index == 1 then wrapper = k break end end
 
 			---@type (colormanager|colorpicker)[]
@@ -8816,7 +8824,7 @@ function wt.CreateFontOptions(addon, text, t)
 						key = t.dataManagement.key,
 						onChange = {
 							CustomColorChangeHandler = function() if type(t.onChangeColor) == "function" then t.onChangeColor(key) end end,
-							UpdateTextColor = function() text:SetTextColor(wt.UnpackColor(t.getData().colors[key])) end,
+							UpdateTextColor = function() textline:SetTextColor(wt.UnpackColor(t.getData().colors[key])) end,
 						},
 					},
 				})
