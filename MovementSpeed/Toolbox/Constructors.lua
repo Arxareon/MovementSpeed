@@ -5334,20 +5334,25 @@ function wt.CreateNumeric(t)
 
 	--[ Properties ]
 
+	local limitMin = type(t.min) == "number" and t.min or 0
+	local limitMax = type(t.max) == "number" and t.max or 100
+	local step = max(type(t.step) == "number" and t.step or ((limitMin - limitMax) / 10), 0)
+	local altStep = type(t.altStep) == "number" and max(t.altStep, 0) or nil
+	local hardStep = t.hardStep ~= false
+
 	--| Data
 
-	local limitMin = t.min or 0
-	local limitMax = t.max or 100
-	t.step = t.step or t.increment or ((limitMin - limitMax) / 10)
 	local default = limitMin
 
 	---Data verification utility
 	---@param v any
 	---@return number|nil
 	local function verify(v)
-		v = Clamp(type(v) == "number" and v or default, limitMin, limitMax)
+		v = type(v) == "number" and v or default
 
-		return v
+		if hardStep then v = limitMin + floor((v - limitMin) / step + 0.5) * step end
+
+		return Clamp(v, limitMin, limitMax)
 	end
 
 	default = verify(t.default)
@@ -5518,17 +5523,17 @@ function wt.CreateNumeric(t)
 		if user and type(t.dataManagement) == "table" then wt.HandleWidgetChanges(t.dataManagement.index, t.dataManagement.category, t.dataManagement.key) end
 	end
 
-	---Decrease the value of the widget by the specified **t.step** or **t.altStep** amount
-	---@param alt? boolean If true, use **t.altStep** instead of **t.step** to decrease the value by | ***Default:*** `false`
+	---Decrease the value of the widget by the specified step or alt step amount
+	---@param alt? boolean If true, use alt step instead of step to decrease the value by | ***Default:*** `false`
 	---@param user? boolean If true, mark the change as being initiated via a user interaction and call change handlers | ***Default:*** `false`
 	---@param silent? boolean If false, invoke a "changed" event and call registered listeners | ***Default:*** `false`
-	function numeric.decrease(alt, user, silent) numeric.setNumber(value - (alt and t.altStep or t.step), user, silent) end
+	function numeric.decrease(alt, user, silent) numeric.setNumber(value - (alt and altStep or step), user, silent) end
 
-	---Increase the value of the widget by the specified **t.step** or **t.altStep** amount
-	---@param alt? boolean If true, use **t.altStep** instead of **t.step** to increase the value by | ***Default:*** `false`
+	---Increase the value of the widget by the specified step or alt step amount
+	---@param alt? boolean If true, use alt step instead of step to increase the value by | ***Default:*** `false`
 	---@param user? boolean If true, mark the change as being initiated via a user interaction and call change handlers | ***Default:*** `false`
 	---@param silent? boolean If false, invoke a "changed" event and call registered listeners | ***Default:*** `false`
-	function numeric.increase(alt, user, silent) numeric.setNumber(value + (alt and t.altStep or t.step), user, silent) end
+	function numeric.increase(alt, user, silent) numeric.setNumber(value + (alt and altStep or step), user, silent) end
 
 	--| State
 
@@ -5548,6 +5553,9 @@ function wt.CreateNumeric(t)
 
 	--| Value limits
 
+	--ADD annotations
+	function numeric.getMin() return limitMin end
+
 	---Set the lower value limit of the widget
 	---***
 	---@param number number Updates the lower limit value | ***Range:*** (any, *current upper limit*) *capped automatically*
@@ -5558,7 +5566,8 @@ function wt.CreateNumeric(t)
 		if not silent then numeric.invoke.min() end
 	end
 
-	function numeric.getMin() return limitMin end
+	--ADD annotations
+	function numeric.getMax() return limitMax end
 
 	---Set the upper value limit of the widget
 	---***
@@ -5570,7 +5579,23 @@ function wt.CreateNumeric(t)
 		if not silent then numeric.invoke.max() end
 	end
 
-	function numeric.getMax() return limitMax end
+	--| Value step
+
+	--ADD annotations
+	function numeric.getStep() return step end
+
+	--ADD annotations
+	-- function numeric.setStep(number)
+	-- 	step = number
+	-- end
+
+	--ADD annotations
+	function numeric.getAltStep() return altStep end
+
+	--ADD annotations
+	-- function numeric.setAltStep(number)
+	-- 	altStep = number
+	-- end
 
 	--[ Initialization ]
 
@@ -5659,8 +5684,8 @@ function wt.CreateSlider(t, numeric)
 
 	--| Value step
 
-	if t.increment then
-		slider.widget.Slider:SetValueStep(t.increment)
+	if t.hardStep ~= false then
+		slider.widget.Slider:SetValueStep(slider.getStep())
 		slider.widget.Slider:SetObeyStepOnDrag(true)
 	end
 
@@ -5669,8 +5694,8 @@ function wt.CreateSlider(t, numeric)
 	wt.AddTooltip(slider.widget.Back, {
 		title = wt.strings.slider.decrease.label,
 		lines = {
-			{ text = wt.strings.slider.decrease.tooltip[1]:gsub("#VALUE", t.step), },
-			t.altStep and { text = wt.strings.slider.decrease.tooltip[2]:gsub("#VALUE", t.altStep), } or nil,
+			{ text = wt.strings.slider.decrease.tooltip[1]:gsub("#VALUE", slider.getStep()), },
+			slider.getAltStep() and { text = wt.strings.slider.decrease.tooltip[2]:gsub("#VALUE", slider.getAltStep()), } or nil,
 		},
 		anchor = "ANCHOR_TOPLEFT",
 	})
@@ -5682,8 +5707,8 @@ function wt.CreateSlider(t, numeric)
 	wt.AddTooltip(slider.widget.Forward, {
 		title = wt.strings.slider.increase.label,
 		lines = {
-			{ text = wt.strings.slider.increase.tooltip[1]:gsub("#VALUE", t.step), },
-			t.altStep and { text = wt.strings.slider.increase.tooltip[2]:gsub("#VALUE", t.altStep), } or nil,
+			{ text = wt.strings.slider.increase.tooltip[1]:gsub("#VALUE", slider.getStep()), },
+			slider.getAltStep() and { text = wt.strings.slider.increase.tooltip[2]:gsub("#VALUE", slider.getAltStep()), } or nil,
 		},
 		anchor = "ANCHOR_TOPLEFT",
 	})
@@ -5698,10 +5723,10 @@ function wt.CreateSlider(t, numeric)
 
 		--| Calculate the required number of fractal digits, assemble string patterns for value validation
 
-		local decimals = t.fractional or max(
-			tostring(minValue):gsub("-?[%d]+[%.]?([%d]*).*", "%1"):len(),
-			tostring(maxValue):gsub("-?[%d]+[%.]?([%d]*).*", "%1"):len(),
-			tostring(t.step or 0):gsub("-?[%d]+[%.]?([%d]*).*", "%1"):len()
+		local decimals = type(t.fractional) == "number" and floor(t.fractional + 0.5) or max(
+			(tostring(minValue):match("%.(%d+)") or ""):len(),
+			(tostring(maxValue):match("%.(%d+)") or ""):len(),
+			(tostring(slider.getStep()):match("%.(%d+)") or ""):len()
 		)
 		local decimalPattern = ""
 		for _ = 1, decimals do decimalPattern = decimalPattern .. "[%d]?" end
@@ -5731,7 +5756,7 @@ function wt.CreateSlider(t, numeric)
 				disabled = "GameFontDisableSmall2",
 			},
 			justify = { h = "CENTER", },
-			charLimit = max(tostring(math.floor(t.step)):len(), tostring(math.floor(minValue)):len(), tostring(math.floor(maxValue)):len()) + (decimals > 0 and decimals + 1 or 0),
+			charLimit = max(tostring(math.floor(slider.getStep())):len(), tostring(math.floor(minValue)):len(), tostring(math.floor(maxValue)):len()) + (decimals > 0 and decimals + 1 or 0),
 			backdrop = {
 				background = {
 					texture = {
@@ -5750,13 +5775,8 @@ function wt.CreateSlider(t, numeric)
 				OnLeave = "",
 			}, }, },
 			events = {
-				OnChar = function(frame, _, _, text) frame:SetText(text:gsub(matchPattern, replacePattern)) end,
-				OnEnterPressed = function(frame)
-					local v = frame:GetNumber()
-					if t.increment then v = max(slider.getMin(), min(floor(v * (1 / t.increment) + 0.5) / (1 / t.increment)), slider.getMax()) end
-
-					slider.setNumber(v, true)
-				end,
+				OnChar = function(frame, _, text) frame:SetText(text:gsub(matchPattern, replacePattern)) end,
+				OnEnterPressed = function(frame) slider.setNumber(frame:GetNumber(), true) end,
 				OnEscapePressed = function(frame) frame:SetText(tostring(us.Round(slider.widget.Slider:GetValue(), decimals)):gsub(matchPattern, replacePattern)) end,
 			},
 			value = tostring(slider.getNumber()):gsub(matchPattern, replacePattern),
@@ -5976,8 +5996,8 @@ function wt.CreateClassicSlider(t, numeric)
 
 	--| Value step
 
-	if t.increment then
-		slider.widget:SetValueStep(t.increment)
+	if t.hardStep ~= false then
+		slider.widget:SetValueStep(slider.getStep())
 		slider.widget:SetObeyStepOnDrag(true)
 	end
 
@@ -5988,10 +6008,10 @@ function wt.CreateClassicSlider(t, numeric)
 	if t.valuebox ~= false then
 
 		--| Calculate the required number of fractal digits, assemble string patterns for value validation
-		local decimals = t.fractional or max(
-			tostring(minValue):gsub("-?[%d]+[%.]?([%d]*).*", "%1"):len(),
-			tostring(maxValue):gsub("-?[%d]+[%.]?([%d]*).*", "%1"):len(),
-			tostring(t.step or 0):gsub("-?[%d]+[%.]?([%d]*).*", "%1"):len()
+		local decimals = type(t.fractional) == "number" and floor(t.fractional + 0.5) or max(
+			(tostring(minValue):match("%.(%d+)") or ""):len(),
+			(tostring(maxValue):match("%.(%d+)") or ""):len(),
+			(tostring(slider.getStep()):match("%.(%d+)") or ""):len()
 		)
 		local decimalPattern = ""
 		for _ = 1, decimals do decimalPattern = decimalPattern .. "[%d]?" end
@@ -6019,7 +6039,7 @@ function wt.CreateClassicSlider(t, numeric)
 				disabled = "GameFontDisableSmall",
 			},
 			justify = { h = "CENTER", },
-			charLimit = max(tostring(math.floor(t.step)):len(), tostring(math.floor(minValue)):len(), tostring(math.floor(maxValue)):len()) + (decimals > 0 and decimals + 1 or 0),
+			charLimit = max(tostring(math.floor(slider.getStep())):len(), tostring(math.floor(minValue)):len(), tostring(math.floor(maxValue)):len()) + (decimals > 0 and decimals + 1 or 0),
 			backdrop = {
 				background = {
 					texture = {
@@ -6038,13 +6058,8 @@ function wt.CreateClassicSlider(t, numeric)
 				OnLeave = "",
 			}, }, },
 			events = {
-				OnChar = function(frame, _, _, text) frame:SetText(text:gsub(matchPattern, replacePattern)) end,
-				OnEnterPressed = function(frame)
-					local v = frame:GetNumber()
-					if t.increment then v = max(slider.getMin(), min(floor(v * (1 / t.increment) + 0.5) / (1 / t.increment)), slider.getMax()) end
-
-					slider.setNumber(v, true)
-				end,
+				OnChar = function(frame, _, text) frame:SetText(text:gsub(matchPattern, replacePattern)) end,
+				OnEnterPressed = function(frame) slider.setNumber(frame:GetNumber(), true) end,
 				OnEscapePressed = function(frame) frame:SetText(tostring(us.Round(slider.widget:GetValue(), decimals)):gsub(matchPattern, replacePattern)) end,
 			},
 			value = tostring(slider.getNumber()):gsub(matchPattern, replacePattern),
@@ -6071,8 +6086,8 @@ function wt.CreateClassicSlider(t, numeric)
 			tooltip = {
 				title = wt.strings.slider.decrease.label,
 				lines = {
-					{ text = wt.strings.slider.decrease.tooltip[1]:gsub("#VALUE", t.step), },
-					t.altStep and { text = wt.strings.slider.decrease.tooltip[2]:gsub("#VALUE", t.altStep), } or nil,
+					{ text = wt.strings.slider.decrease.tooltip[1]:gsub("#VALUE", slider.getStep()), },
+					slider.getAltStep() and { text = wt.strings.slider.decrease.tooltip[2]:gsub("#VALUE", slider.getAltStep()), } or nil,
 				}
 			},
 			position = {
@@ -6147,8 +6162,8 @@ function wt.CreateClassicSlider(t, numeric)
 			tooltip = {
 				title = wt.strings.slider.increase.label,
 				lines = {
-					{ text = wt.strings.slider.increase.tooltip[1]:gsub("#VALUE", t.step), },
-					t.altStep and { text = wt.strings.slider.increase.tooltip[2]:gsub("#VALUE", t.altStep), } or nil,
+					{ text = wt.strings.slider.increase.tooltip[1]:gsub("#VALUE", slider.getStep()), },
+					slider.getAltStep() and { text = wt.strings.slider.increase.tooltip[2]:gsub("#VALUE", slider.getAltStep()), } or nil,
 				}
 			},
 			position = {
@@ -8411,6 +8426,7 @@ function wt.CreatePositionOptions(addon, frame, t)
 				fractional = 2,
 				step = 1,
 				altStep = 25,
+				hardStep = false,
 				dependencies = t.dependencies,
 				getData = function() return t.getData().position.offset.x end,
 				saveData = function(value) t.getData().position.offset.x = value end,
@@ -8437,6 +8453,7 @@ function wt.CreatePositionOptions(addon, frame, t)
 				fractional = 2,
 				step = 1,
 				altStep = 25,
+				hardStep = false,
 				dependencies = t.dependencies,
 				getData = function() return t.getData().position.offset.y end,
 				saveData = function(value) t.getData().position.offset.y = value end,
@@ -8741,6 +8758,7 @@ function wt.CreateFontOptions(addon, textline, t)
 
 			--| Size
 
+			-- panel.widgets.size = wt.CreateClassicSlider({
 			panel.widgets.size = wt.CreateSlider({
 				parent = panelFrame,
 				name = "Size",
@@ -8749,7 +8767,7 @@ function wt.CreateFontOptions(addon, textline, t)
 				arrange = { wrap = false, },
 				min = 8,
 				max = 64,
-				increment = 1,
+				step = 1,
 				altStep = 3,
 				dependencies = t.dependencies,
 				getData = function() return t.getData().size end,

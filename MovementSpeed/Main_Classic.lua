@@ -431,7 +431,7 @@ local function CreateUpdateOptions(panel, category, key)
 		arrange = { wrap = false, },
 		min = 0.05,
 		max = 1,
-		increment = 0.05,
+		step = 0.05,
 		altStep = 0.2,
 		dependencies = {
 			{ frame = options.playerSpeed.visibility.hidden, evaluate = function(state) return not state end },
@@ -479,7 +479,7 @@ local function CreateSpeedValueOptions(panel, category, key)
 		arrange = { wrap = false, },
 		min = 0,
 		max = 4,
-		increment = 1,
+		step = 1,
 		dependencies = { { frame = options.playerSpeed.visibility.hidden, evaluate = function(state) return not state end }, },
 		getData = function() return MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.value.fractionals end,
 		saveData = function(value) MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.value.fractionals = value end,
@@ -695,7 +695,7 @@ local function CreateSpeedDisplayOptionsPage()
 				title = ns.strings.options.speedDisplay.update.title,
 				arrange = {},
 				arrangement = {},
-				initialize = function(panel, _, _, key) CreateUpdateOptions(panel, category, key) end
+				initialize = function(panel, _, _, key) CreateUpdateOptions(panel, category, key) end,
 			})
 
 			--[ Value ]
@@ -740,7 +740,7 @@ local function CreateSpeedDisplayOptionsPage()
 				onChangeAlignment = function()
 					wt.SetPosition(frames.playerSpeed.text, { anchor = MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.playerSpeed.font.alignment, })
 				end,
-				onChangeColor = function() FormatSpeedText("playerSpeed") end
+				onChangeColor = function() FormatSpeedText("playerSpeed") end,
 			})
 
 			--[ Background ]
@@ -837,7 +837,7 @@ local function CreateTargetSpeedOptionsPage()
 						arrange = { wrap = false, },
 						min = 0,
 						max = 4,
-						increment = 1,
+						step = 1,
 						dependencies = { { frame = options.targetSpeed.enabled, }, },
 						getData = function() return MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.targetSpeed.value.fractionals end,
 						saveData = function(value) MovementSpeedDB.profiles[MovementSpeedDBC.activeProfile].data.targetSpeed.value.fractionals = value end,
@@ -1216,7 +1216,7 @@ frames.main = wt.CreateFrame({
 
 							if not size then return false end
 
-							options.playerSpeed.font.size.setData(size)
+							options.playerSpeed.font.widgets.size.setData(size)
 
 							return true, size
 						end,

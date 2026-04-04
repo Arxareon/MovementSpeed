@@ -71,11 +71,11 @@ end
 ---@param t? positionData Table containing parameters to call [Region:SetPoint(...)](https://warcraft.wiki.gg/wiki/API_ScriptRegionResizing_SetPoint) with
 ---***
 ---@return FramePoint anchor ***Default:*** "TOPLEFT"
----@return AnyFrameObject|nil relativeTo ***Default:*** "nil" *(anchor relative to screen dimensions)*<ul><li>***Note:*** When omitting the value by providing nil, instead of the string "nil", anchoring will use the parent region (if possible, otherwise the default behavior of anchoring relative to the screen dimensions will be used).
+---@return AnyFrameObject|nil relativeTo ***Default:*** "nil" *(anchor relative to screen dimensions)*<ul><li>***Note:*** When omitting the value by providing nil, instead of the string "nil", anchoring will use the parent region (if possible, otherwise the default behavior of anchoring relative to the screen dimensions will be used).</li></ul>
 ---@return FramePoint? relativePoint
 ---@return number|nil offsetX ***Default:*** 0
 ---@return number|nil offsetY ***Default:*** 0
----<p></p>
+---<hr><p></p>
 function wt.UnpackPosition(t)
 	if type(t) ~= "table" then return "TOPLEFT" end
 
@@ -469,7 +469,7 @@ function wt.SetPosition(frame, position, unlink, userPlaced)
 	end
 
 	--Set user placed
-	if frame.SetUserPlaced and frame:IsMovable() then frame:SetUserPlaced(userPlaced ~= false) end
+	if frame.IsMovable and frame:IsMovable() then frame:SetUserPlaced(userPlaced ~= false) end
 end
 
 ---Set the anchor of a frame while keeping its positioning by updating its relative offsets

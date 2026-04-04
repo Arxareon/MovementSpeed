@@ -1549,12 +1549,12 @@ function Clamp(value, min, max) return value end
 --| Constructors
 
 ---@class numericCreationData : togglableObject, settingsWidget
----@field fractional? integer If the value is fractional, display this many decimal digits | ***Default:*** *the most amount of digits present in the fractional part of* **t.min**, **t.max** *or* **t.increment**
+---@field fractional? integer If the value is fractional, display this many decimal digits | ***Default:*** *the most amount of digits present in the fractional part of* **t.min**, **t.max** *or* **t.step**
 ---@field min? number Lower numeric value limit | ***Range:*** (any, **t.max**) | ***Default:*** 0
 ---@field max? number Upper numeric value limit | ***Range:*** (**t.min**, any) | ***Default:*** 100
----@field increment? number Size of value increment | ***Range:*** (> 0) | ***Default:*** *the value can be freely changed within range*
----@field step? number Add/subtract this much when calling **numeric.increase(...)** or **numeric.decrease(...)** | ***Default:*** 10% of range (**t.min**, **t.max**)
----@field altStep? number If set, add/subtract this much when calling **numeric.increase(...)** or **numeric.decrease(...)** with **alt** == true | ***Default:*** *no alternative step value*
+---@field step? number Add/subtract this much when calling **numeric.increase(...)** or **numeric.decrease(...)** | ***Range:*** (> 0) | ***Default:*** 10% of range (**t.min**, **t.max**)
+---@field altStep? number If set, add/subtract this much when calling **numeric.increase(...)** or **numeric.decrease(...)** with **alt** == true | ***Range:*** (> 0) | ***Default:*** *no alternative step value*
+---@field hardStep? boolean Use **t.step** to force the slider jump to step values on drag | ***Default:*** `true`
 ---@field listeners? numericEventListeners Table of key, value pairs of custom widget event tags and functions to assign as event handlers to call on trigger
 ---@field getData? fun(): value: number|nil Called to (if needed, modify and) load the widget data from storage<hr><p>@*return* `value` number|nil | ***Default:*** **t.min**</p>
 ---@field saveData? fun(value: number) Called to (if needed, modify and) save the widget data to storage<hr><p>@*param* `value` number</p>
