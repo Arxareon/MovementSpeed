@@ -36,7 +36,7 @@ ns.chat = {
 --Changelog
 ns.changelog = {
 	{
-		"#V_Version 3.3_# #H_(4/4/2026)_#",
+		"#V_Version 3.3_# #H_(8/4/2026)_#",
 		"#N_New:_#",
 		"Added new speed display text coloring options (now also available for the Target Speed feature), now the speed value type coloring can be fully customized (more Font customization options are coming in future updates).",
 		"The previously added right-click menus for settings have been further enhanced with copy & paste functionality to be able to easily move values across similar types of settings.",

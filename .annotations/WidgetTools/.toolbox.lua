@@ -123,6 +123,7 @@ local toolbox
 ---| textbox
 ---| numeric
 ---| colormanager
+---| profilemanager
 
 ---@alias AnyGUIWidgetType
 ---| checkbox
@@ -145,11 +146,27 @@ local toolbox
 ---| "Multiselector"
 ---| "Textbox"
 ---| "Numeric"
+---| "Colormanager"
+---| "Profilemanager"
+
+---@alias MutatedWidgetTypeName
+---| "Button"
+---| "CustomButton"
+---| "Radiobutton"
+---| "Checkbox"
+---| "Radiogroup"
+---| "DropdownRadiogroup"
+---| "SpecialRadiogroup"
+---| "Checkgroup"
+---| "Editbox"
+---| "MultilineEditbox"
+---| "Slider"
+---| "ClassicSlider"
 ---| "Colorpicker"
 
 ---@alias SettingsPageTypeName
 ---| "SettingsPage"
----| "DataManagementPage"
+---| "ProfilesPage"
 
 ---@alias OptionsTemplateTypeName
 ---| "PositionOptions"
@@ -157,24 +174,11 @@ local toolbox
 
 ---@alias AnyTypeName
 ---| WidgetTypeName
+---| MutatedWidgetTypeName
 ---| SettingsPageTypeName
 ---| OptionsTemplateTypeName
+---| "SettingsCategory"
 
---| Global functions
-
----Create a colored string via escape sequences
----***
----@param value string|number Value to add coloring to
----@param color colorData|colorRGBA Table containing the color values
----@return string
-function WrapTextInColor(value, color) return value end
-
----Clamp a number between two limits
----@param value number
----@param min number
----@param max number
----@return number
-function Clamp(value, min, max) return value end
 
 --[[ TABLE MANAGEMENT ]]
 
@@ -585,10 +589,10 @@ function Clamp(value, min, max) return value end
 ---| "description"
 
 ---@class chatCommandColors
----@field title colorData Color for the addon title used for branding chat messages
----@field content colorData Color for chat message contents appended after the title (used for success & error responses)
----@field command colorData Used to color the registered chat commands when they are being listed
----@field description colorData Used to color the description of registered chat commands when they are being listed
+---@field title? colorData Color for the addon title used for branding chat messages | ***Default:*** `YELLOW_FONT_COLOR`
+---@field content? colorData Color for chat message contents appended after the title (used for success & error responses) | ***Default:*** `WHITE_FONT_COLOR`
+---@field command? colorData Used to color the registered chat commands when they are being listed | ***Default:*** `LIGHTBLUE_FONT_COLOR`
+---@field description? colorData Used to color the description of registered chat commands when they are being listed | ***Default:*** `LIGHTGRAY_FONT_COLOR`
 
 ---@class chatCommandData
 ---@field command string Name of the slash command word (no spaces) to recognize after the keyword (separated by a space character)
@@ -603,8 +607,8 @@ function Clamp(value, min, max) return value end
 ---@field onHelp? function Function to call after a specified help command has been triggered or an invalid command is typed with the specified keywords
 
 ---@class chatCommandManagerCreationData
----@field commands chatCommandData[] Indexed table with the list of commands to register under the specified **keywords**
----@field colors chatCommandColors Color palette used when printing out default-formatted chat messages
+---@field commands? chatCommandData[] Indexed table with the list of commands to register under the specified **keywords**
+---@field colors? chatCommandColors Color palette used when printing out default-formatted chat messages
 ---@field defaultHandler? fun(commandManager: chatCommandManager, command: string, ...: string) Default handler function to call when an unrecognized command is typed, executed before a help command is triggered, listing all registered commands<hr><p>@*param* `commandManager` commandManager ― Reference to the command manager</p><p>@*param* `command` string ― The unrecognized command typed after the keyword (separated by a space character)</p><p>@*param* `...` string Payload of the command typed, any words following the command name separated by spaces (split, returned unpacked)</p>
 ---@field onWelcome? function Called when the welcome message with keyword hints is printed out
 
@@ -786,7 +790,7 @@ function Clamp(value, min, max) return value end
 ---@class scrollSpeedData
 ---@field scrollSpeed? number Percentage of one page of content to scroll at a time | ***Range:*** (0, 1) | ***Default:*** 0.25
 
----@class scrollFrameCreationData : childObject, positionableObject, initializableContainer, scrollSpeedData
+---@class scrollframeCreationData : childObject, positionableObject, initializableContainer, scrollSpeedData
 ---@field name? string Unique string used to append to the name of **t.parent** when setting the names of the name of the scroll parent and its scrollable child frame | ***Default:*** "Scroller" *(for the scrollable child frame)*<ul><li>***Note:*** Space characters will be removed when used for setting the frame names.</li></ul>
 ---@field size? sizeData_parentDefault|sizeData ***Default:*** **t.parent** and *size of the parent frame* or *no size*
 ---@field scrollSize? sizeData_scroll|sizeData ***Default:*** *size of the parent frame*
@@ -954,7 +958,7 @@ function Clamp(value, min, max) return value end
 
 ---@alias ButtonType
 ---| action
----| simpleButton
+---| actionButton
 ---| customButton
 
 ---@alias ButtonEventTag
@@ -965,13 +969,13 @@ function Clamp(value, min, max) return value end
 --| Event handlers
 
 ---@alias ButtonEventHandler_enabled
----| fun(self: ButtonType, state: boolean) Called when an "enabled" event is invoked after **button.setEnabled(...)** was called<hr><p>@*param* `self` ButtonType ― Reference to the widget</p><p>@*param* `state` boolean ― True if the widget is enabled</p>
+---| fun(self: ButtonType, state: boolean) Called when an "enabled" event is invoked after **button.setEnabled(...)** was called<hr><p>@*param* `self` ButtonType ― Reference to the widget table</p><p>@*param* `state` boolean ― True if the widget is enabled</p>
 
 ---@alias ButtonEventHandler_trigger
----| fun(self: ButtonType) Called when a "trigger" event is invoked after **button.trigger(...)** was called<hr><p>@*param* `self` ButtonType ― Reference to the widget</p><p>@*param* `user` boolean ― True if the event was invoked by an action taken by the user</p>
+---| fun(self: ButtonType) Called when a "trigger" event is invoked after **button.trigger(...)** was called<hr><p>@*param* `self` ButtonType ― Reference to the widget table</p><p>@*param* `user` boolean ― True if the event was flagged as invoked by an action taken by the user</p>
 
 ---@alias ButtonEventHandler_any
----| fun(self: ButtonType, ...: any) Called when a custom event is invoked<hr><p>@*param* `self` ButtonType ― Reference to the widget</p><p>@*param* `...` any — Any leftover arguments</p>
+---| fun(self: ButtonType, ...: any) Called when a custom event is invoked<hr><p>@*param* `self` ButtonType ― Reference to the widget table</p><p>@*param* `...` any — Any leftover arguments</p>
 
 --| Parameters
 
@@ -999,16 +1003,16 @@ function Clamp(value, min, max) return value end
 --| Constructors
 
 ---@class actionCreationData : togglableObject
----@field action? fun(self: action, user?: boolean) Function to call when the button is triggered (clicked by the user or triggered programmatically)<ul><li>***Note:*** This function will be called when an "[OnClick](https://warcraft.wiki.gg/wiki/UIHANDLER_OnClick)" script event happens, there's no need to register it again under **t.events.OnClick**.</li></ul><hr><p>@*param* `self` action — Reference to the button widget</p><p>@*param* `user`? boolean — Marking whether the call is due to a user interaction or not | ***Default:*** `false`</p>
+---@field action? fun(self: action, user?: boolean) Function to call when the button is triggered (clicked by the user or triggered programmatically)<ul><li>***Note:*** This function will be called when an "[OnClick](https://warcraft.wiki.gg/wiki/UIHANDLER_OnClick)" script event happens, there's no need to register it again under **t.events.OnClick**.</li></ul><hr><p>@*param* `self` action — Reference to the widget table</p><p>@*param* `user`? boolean — Marking whether the call is due to a user interaction or not | ***Default:*** `false`</p>
 ---@field listeners? buttonEventListeners Table of key, value pairs of custom widget event tags and functions to assign as event handlers to call on trigger
 
----@class simpleButtonCreationData : actionCreationData, labeledChildObject, tooltipDescribableWidget, arrangeableObject, positionableObject, visibleObject_base, buttonScriptEvents, liteObject
+---@class actionButtonCreationData : actionCreationData, labeledChildObject, tooltipDescribableWidget, arrangeableObject, positionableObject, visibleObject_base, buttonScriptEvents, liteObject
 ---@field name? string Unique string used to set the frame name | ***Default:*** "Button"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
 ---@field titleOffset? offsetData Offset the position of the label of the button
 ---@field size? sizeData_button|sizeData
 ---@field font? labelFontOptions_highlight List of the [FontObject](https://warcraft.wiki.gg/wiki/UIOBJECT_Font#List_of_Font_Objects) object names to be used for the label | ***Default:*** *normal sized default Blizzard UI fonts*<ul><li>***Note:*** A new font object (or a modified copy of an existing one) can be created via ***WidgetToolbox*.CreateFont(...)** (even within this table definition).</li></ul>
 
----@class customButtonCreationData : simpleButtonCreationData, customizableObject
+---@class customButtonCreationData : actionButtonCreationData, customizableObject
 ---@field font? labelFontOptions_small_highlight Table of the [FontObject](https://warcraft.wiki.gg/wiki/UIOBJECT_Font#List_of_Font_Objects) object names to be used for the label | ***Default:*** *small default Blizzard UI fonts*<ul><li>***Note:*** A new font object (or a modified copy of an existing one) can be created via ***WidgetToolbox*.CreateFont(...)** (even within this table definition).</li></ul>
 
 --[ Toggle ]
@@ -1027,19 +1031,19 @@ function Clamp(value, min, max) return value end
 --| Event handlers
 
 ---@alias ToggleEventHandler_enabled
----| fun(self: ToggleType, state: boolean) Called when an "enabled" event is invoked after **toggle.setEnabled(...)** was called<hr><p>@*param* `self` ToggleType ― Reference to the button widget</p><p>@*param* `state` boolean ― True if the widget is enabled</p>
+---| fun(self: ToggleType, state: boolean) Called when an "enabled" event is invoked after **toggle.setEnabled(...)** was called<hr><p>@*param* `self` ToggleType ― Reference to the widget table</p><p>@*param* `state` boolean ― True if the widget is enabled</p>
 
 ---@alias ToggleEventHandler_loaded
----| fun(self: ToggleType, success: boolean) Called when an "loaded" event is invoked after the data of this widget has been loaded from storage<hr><p>@*param* `self` ToggleType ― Reference to the widget</p><p>@*param* `success` boolean ― True if data was returned by **t.getData()** and it was loaded to the widget</p>
+---| fun(self: ToggleType, success: boolean) Called when an "loaded" event is invoked after the data of this widget has been loaded from storage<hr><p>@*param* `self` ToggleType ― Reference to the widget table</p><p>@*param* `success` boolean ― True if data was returned by **t.getData()** and it was loaded to the widget</p>
 
 ---@alias ToggleEventHandler_saved
----| fun(self: ToggleType, success: boolean) Called when an "saved" event is invoked after the data of this widget has been saved to storage<hr><p>@*param* `self` ToggleType ― Reference to the widget</p><p>@*param* `success` boolean ― True if data was committed successfully via **t.saveData(...)**</p>
+---| fun(self: ToggleType, success: boolean) Called when an "saved" event is invoked after the data of this widget has been saved to storage<hr><p>@*param* `self` ToggleType ― Reference to the widget table</p><p>@*param* `success` boolean ― True if data was committed successfully via **t.saveData(...)**</p>
 
 ---@alias ToggleEventHandler_toggled
----| fun(self: ToggleType, state: boolean, user: boolean) Called when an "toggled" event is invoked after **toggle.setState(...)** was called<hr><p>@*param* `self` ToggleType ― Reference to the toggle widget</p><p>@*param* `state` boolean ― True if the widget is enabled</p><p>@*param* `user` boolean ― True if the event was invoked by an action taken by the user</p>
+---| fun(self: ToggleType, state: boolean, user: boolean) Called when an "toggled" event is invoked after **toggle.setState(...)** was called<hr><p>@*param* `self` ToggleType ― Reference to the toggle widget</p><p>@*param* `state` boolean ― True if the widget is enabled</p><p>@*param* `user` boolean ― True if the event was flagged as invoked by an action taken by the user</p>
 
 ---@alias ToggleEventHandler_any
----| fun(self: ToggleType, ...: any) Called when a custom event is invoked<hr><p>@*param* `self` ToggleType ― Reference to the widget</p><p>@*param* `...` any — Any leftover arguments</p>
+---| fun(self: ToggleType, ...: any) Called when a custom event is invoked<hr><p>@*param* `self` ToggleType ― Reference to the widget table</p><p>@*param* `...` any — Any leftover arguments</p>
 
 --| Parameters
 
@@ -1144,7 +1148,7 @@ function Clamp(value, min, max) return value end
 ---| fun(self: SelectorType, success: boolean) Called when an "saved" event is invoked after the data of this widget has been saved to storage<hr><p>@*param* `self` SelectorType ― Reference to the selector widget</p><p>@*param* `success` boolean ― True if data was committed successfully via **t.saveData(...)**</p>
 
 ---@alias SelectorEventHandler_selected
----| fun(self: SelectorType, selected?: integer, user: boolean) Called when an "selected" event is invoked after **selector.setSelected(...)** was called or an option was clicked or cleared<hr><p>@*param* `self` SelectorType ― Reference to the selector widget</p><p>@*param* `selected` integer ― The index of the currently selected item</p><p>@*param* `user` boolean ― True if the event was invoked by an action taken by the user</p>
+---| fun(self: SelectorType, selected?: integer, user: boolean) Called when an "selected" event is invoked after **selector.setSelected(...)** was called or an option was clicked or cleared<hr><p>@*param* `self` SelectorType ― Reference to the selector widget</p><p>@*param* `selected` integer ― The index of the currently selected item</p><p>@*param* `user` boolean ― True if the event was flagged as invoked by an action taken by the user</p>
 
 ---@alias SelectorEventHandler_updated
 ---| fun(self: SelectorType) Called when an "updated" event is invoked after **selector.updatedItems(...)** was called<hr><p>@*param* `self` SelectorType ― Reference to the selector widget</p>
@@ -1153,7 +1157,7 @@ function Clamp(value, min, max) return value end
 ---| fun(self: SelectorType, toggle: toggle) Called when a new toggle item is added to the selector via **selector.updatedItems(...)**<hr><p>@*param* `self` SelectorType ― Reference to the selector widget</p><p>@*param* `toggle` toggle ― Reference to the toggle widget added to the selector</p>
 
 ---@alias SelectorEventHandler_any
----| fun(self: SelectorType, ...: any) Called when a custom event is invoked<hr><p>@*param* `self` SelectorType ― Reference to the widget</p><p>@*param* `...` any — Any leftover arguments</p>
+---| fun(self: SelectorType, ...: any) Called when a custom event is invoked<hr><p>@*param* `self` SelectorType ― Reference to the widget table</p><p>@*param* `...` any — Any leftover arguments</p>
 
 ---@alias SpecialSelectorEventHandler_enabled
 ---| fun(self: SpecialSelectorType, state: boolean) Called when an "enabled" event is invoked after **selector.setEnabled(...)** was called<hr><p>@*param* `self` SelectorType ― Reference to the selector widget</p><p>@*param* `state` boolean ― True if the widget is enabled</p>
@@ -1165,10 +1169,10 @@ function Clamp(value, min, max) return value end
 ---| fun(self: SpecialSelectorType, success: boolean) Called when an "saved" event is invoked after the data of this widget has been saved to storage<hr><p>@*param* `self` SelectorType ― Reference to the selector widget</p><p>@*param* `success` boolean ― True if data was committed successfully via **t.saveData(...)**</p>
 
 ---@alias SpecialSelectorEventHandler_selected
----| fun(self: SpecialSelectorType, selected?: FramePoint|JustifyHorizontal|JustifyVertical|FrameStrata, user: boolean) Called when an "selected" event is invoked after **selector.setSelected(...)** was called or an option was clicked or cleared<hr><p>@*param* `self` SelectorType ― Reference to the selector widget</p><p>@*param* `selected` AnchorPoint|JustifyH|JustifyV|FrameStrata ― The currently selected value</p><p>@*param* `user` boolean ― True if the event was invoked by an action taken by the user</p>
+---| fun(self: SpecialSelectorType, selected?: FramePoint|JustifyHorizontal|JustifyVertical|FrameStrata, user: boolean) Called when an "selected" event is invoked after **selector.setSelected(...)** was called or an option was clicked or cleared<hr><p>@*param* `self` SelectorType ― Reference to the selector widget</p><p>@*param* `selected` AnchorPoint|JustifyH|JustifyV|FrameStrata ― The currently selected value</p><p>@*param* `user` boolean ― True if the event was flagged as invoked by an action taken by the user</p>
 
 ---@alias SpecialSelectorEventHandler_any
----| fun(self: SpecialSelectorType, ...: any) Called when a custom event is invoked<hr><p>@*param* `self` SpecialSelectorType ― Reference to the widget</p><p>@*param* `...` any — Any leftover arguments</p>
+---| fun(self: SpecialSelectorType, ...: any) Called when a custom event is invoked<hr><p>@*param* `self` SpecialSelectorType ― Reference to the widget table</p><p>@*param* `...` any — Any leftover arguments</p>
 
 ---@alias MultiselectorEventHandler_enabled
 ---| fun(self: MultiselectorType, state: boolean) Called when an "enabled" event is invoked after **selector.setEnabled(...)** was called<hr><p>@*param* `self` MultiselectorType ― Reference to the selector widget</p><p>@*param* `state` boolean ― True if the widget is enabled</p>
@@ -1180,7 +1184,7 @@ function Clamp(value, min, max) return value end
 ---| fun(self: MultiselectorType, success: boolean) Called when an "saved" event is invoked after the data of this widget has been saved to storage<hr><p>@*param* `self` MultiselectorType ― Reference to the selector widget</p><p>@*param* `success` boolean ― True if data was committed successfully via **t.saveData(...)**</p>
 
 ---@alias MultiselectorEventHandler_selected
----| fun(self: MultiselectorType, selections: boolean[], user: boolean) Called when an "selected" event is invoked after **selector.setSelected(...)** was called or an option was clicked or cleared<hr><p>@*param* `self` MultiselectorType ― Reference to the selector widget</p><p>@*param* `selections` boolean[] ― Indexed list of the current item states</p><p>@*param* `user` boolean ― True if the event was invoked by an action taken by the user</p>
+---| fun(self: MultiselectorType, selections: boolean[], user: boolean) Called when an "selected" event is invoked after **selector.setSelected(...)** was called or an option was clicked or cleared<hr><p>@*param* `self` MultiselectorType ― Reference to the selector widget</p><p>@*param* `selections` boolean[] ― Indexed list of the current item states</p><p>@*param* `user` boolean ― True if the event was flagged as invoked by an action taken by the user</p>
 
 ---@alias MultiselectorEventHandler_updated
 ---| fun(self: MultiselectorType) Called when an "updated" event is invoked after **selector.updatedItems(...)** was called<hr><p>@*param* `self` MultiselectorType ― Reference to the selector widget</p>
@@ -1192,7 +1196,7 @@ function Clamp(value, min, max) return value end
 ---| fun(self: MultiselectorType, min: boolean, max: boolean, passed: boolean) Called when a "limited" event is invoked after a limit update occurs<hr><p>@*param* `self` MultiselectorType ― Reference to the selector widget</p><p>@*param* `min` boolean ― True, if the number of selected items is equal to lower than the specified lower limit</p><p>@*param* `max` boolean ― True, if the number of selected items is equal to higher than the specified upper limit</p><p>@*param* `passed` boolean ― True, if the number of selected items is below or over the specified lower or upper limit</p>
 
 ---@alias MultiselectorEventHandler_any
----| fun(self: MultiselectorType, ...: any) Called when a custom event is invoked<hr><p>@*param* `self` MultiselectorType ― Reference to the widget</p><p>@*param* `...` any — Any leftover arguments</p>
+---| fun(self: MultiselectorType, ...: any) Called when a custom event is invoked<hr><p>@*param* `self` MultiselectorType ― Reference to the widget table</p><p>@*param* `...` any — Any leftover arguments</p>
 
 --| Data value types
 
@@ -1333,10 +1337,10 @@ function Clamp(value, min, max) return value end
 ---@field items? (selectorItem|toggle)[] Table containing subtables with data used to create item widgets, or already existing toggles
 ---@field limits? limitValues Parameters to specify the limits of the number of selectable items
 ---@field listeners? multiselectorEventListeners Table of key, value pairs of custom widget event tags and functions to assign as event handlers to call on trigger
----@field getData? fun(): selections: boolean[]|nil Called to (if needed, modify and) load the widget data from storage<hr><p>@*return* `selections` boolean[]|nil | ***Default:*** `false`[] *(no selected items)*</p>
----@field saveData? fun(selections?: boolean[]) Called to (if needed, modify and) save the widget data to storage<hr><p>@*param* `selections`? boolean[]</p>
+---@field getData? fun(): selections: boolean[] Called to (if needed, modify and) load the widget data from storage<hr><p>@*return* `selections` boolean[] | ***Default:*** *no selected items: `false[]`*</p>
+---@field saveData? fun(selections?: boolean[]) Called to (if needed, modify and) save the widget data to storage<hr><p>@*param* `selections`? boolean[] | ***Default:*** *no selected items: `false[]`*</p>
 ---@field value? boolean[] Ordered list of item states to set during initialization | ***Default:*** **t.getData()** or **t.default** if invalid
----@field default? boolean[] Default value of the widget | ***Default:*** `false`[] *(no selected items)*
+---@field default? boolean[] Default value of the widget | ***Default:*** *no selected items: `false[]`*
 
 ---@class selectorFrameCreationData : labeledChildObject, tooltipDescribableWidget, arrangeableObject, positionableObject, visibleObject_base, liteObject
 ---@field name? string Unique string used to set the frame name | ***Default:*** "Selector"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
@@ -1385,19 +1389,19 @@ function Clamp(value, min, max) return value end
 --| Event handlers
 
 ---@alias TextboxEventHandler_enabled
----| fun(self: TextboxType, state: boolean) Called when an "enabled" event is invoked after **textbox.setEnabled(...)** was called<hr><p>@*param* `self` TextboxType ― Reference to the button widget</p><p>@*param* `state` boolean ― True if the widget is enabled</p>
+---| fun(self: TextboxType, state: boolean) Called when an "enabled" event is invoked after **textbox.setEnabled(...)** was called<hr><p>@*param* `self` TextboxType ― Reference to the widget table</p><p>@*param* `state` boolean ― True if the widget is enabled</p>
 
 ---@alias TextboxEventHandler_loaded
----| fun(self: TextboxType, success: boolean) Called when an "loaded" event is invoked after the data of this widget has been loaded from storage<hr><p>@*param* `self` TextboxType ― Reference to the widget</p><p>@*param* `success` boolean ― True if data was returned by **t.getData()** and it was loaded to the widget</p>
+---| fun(self: TextboxType, success: boolean) Called when an "loaded" event is invoked after the data of this widget has been loaded from storage<hr><p>@*param* `self` TextboxType ― Reference to the widget table</p><p>@*param* `success` boolean ― True if data was returned by **t.getData()** and it was loaded to the widget</p>
 
 ---@alias TextboxEventHandler_saved
----| fun(self: TextboxType, success: boolean) Called when an "saved" event is invoked after the data of this widget has been saved to storage<hr><p>@*param* `self` TextboxType ― Reference to the widget</p><p>@*param* `success` boolean ― True if data was committed successfully via **t.saveData(...)**</p>
+---| fun(self: TextboxType, success: boolean) Called when an "saved" event is invoked after the data of this widget has been saved to storage<hr><p>@*param* `self` TextboxType ― Reference to the widget table</p><p>@*param* `success` boolean ― True if data was committed successfully via **t.saveData(...)**</p>
 
 ---@alias TextboxEventHandler_changed
----| fun(self: TextboxType, text: string, user: boolean) Called when an "changed" event is invoked after **textbox.setText(...)** was called<hr><p>@*param* `self` TextboxType ― Reference to the toggle widget</p><p>@*param* `text` string ― The current value of the widget</p><p>@*param* `user` boolean ― True if the event was invoked by an action taken by the user</p>
+---| fun(self: TextboxType, text: string, user: boolean) Called when an "changed" event is invoked after **textbox.setText(...)** was called<hr><p>@*param* `self` TextboxType ― Reference to the toggle widget</p><p>@*param* `text` string ― The current value of the widget</p><p>@*param* `user` boolean ― True if the event was flagged as invoked by an action taken by the user</p>
 
 ---@alias TextboxEventHandler_any
----| fun(self: TextboxType, ...: any) Called when a custom event is invoked<hr><p>@*param* `self` TextboxType ― Reference to the widget</p><p>@*param* `...` any — Any leftover arguments</p>
+---| fun(self: TextboxType, ...: any) Called when a custom event is invoked<hr><p>@*param* `self` TextboxType ― Reference to the widget table</p><p>@*param* `...` any — Any leftover arguments</p>
 
 --| Parameters
 
@@ -1455,8 +1459,6 @@ function Clamp(value, min, max) return value end
 ---@field unfocusOnEnter? boolean Whether to automatically clear the focus from the editbox when the ENTER key is pressed | ***Default:*** `true`
 ---@field resetCursor? boolean If true, set the cursor position to the beginning of the string after setting the text via **textbox.setText(...)** | ***Default:*** `true`
 ---@field events? table<ScriptEditBox, fun(...: any)|attributeEventData> Table of key, value pairs of the names of script event handlers to be set for the editbox frame and the functions to assign as event handlers called when they trigger<ul><li>***Note:*** "[OnChar](https://warcraft.wiki.gg/wiki/UIHANDLER_OnChar)" will be called with custom parameters:<p>@*param* `self` AnyFrameObject ― Reference to the editbox frame</p><p>@*param* `char` string ― The UTF-8 character that was typed</p><p>@*param* `text` string ― The text typed into the editbox</p></li><li>***Note:*** "[OnTextChanged](https://warcraft.wiki.gg/wiki/UIHANDLER_OnTextChanged)" will be called with custom parameters:<p>@*param* `self` AnyFrameObject ― Reference to the editbox frame</p><p>@*param* `text` string ― The text typed into the editbox</p><p>@*param* `user` string ― True if the value was changed by the user, false if it was done programmatically</p></li><li>***Note:*** "[OnEnterPressed](https://warcraft.wiki.gg/wiki/UIHANDLER_OnEnterPressed)" will be called with custom parameters:<p>@*param* `self` AnyFrameObject ― Reference to the editbox frame</p><p>@*param* `text` string ― The text typed into the editbox</p></li></ul>
----@field onLoad? fun(self: textbox|multilineEditbox, text?: string) Function to be be called after the data of this widget has been loaded (when settings are opened or changes/defaults are reset)<hr><p>@*param* `self` textbox|multilineTextbox ― Reference to the widget</p><hr><p>@*param* `text`? string ― The loaded value</p>
----@field onSave? fun(self: textbox|multilineEditbox, data?: any) Function to be be called on settings data update (after the data of this widget has been saved to storage)<hr><p>@*param* `self` textbox|multilineTextbox ― Reference to the widget</p><hr><p>@*param* `data`? any ― The saved value | ***Default:*** *the current value of the widget*</p>
 
 ---@class customEditboxCreationData : editboxCreationData, customizableObject
 
@@ -1475,7 +1477,7 @@ function Clamp(value, min, max) return value end
 ---@field justify? JustifyHorizontal Set the horizontal text alignment of the label (overriding **t.font**) | ***Default:*** "LEFT"
 ---@field flipOnMouse? boolean Hide/Reveal the editbox on mouseover instead of after a click | ***Default:*** `false`
 ---@field colorOnMouse? colorData If set, change the color of the text on mouseover to the specified color (if **t.flipOnMouse** is false) | ***Default:*** *no color change*
----@field value string The copyable text to be shown
+---@field value? string The copyable text to be shown | ***Default:*** `""`
 
 --[ Numeric ]
 
@@ -1494,16 +1496,16 @@ function Clamp(value, min, max) return value end
 --| Event handlers
 
 ---@alias NumericEventHandler_enabled
----| fun(self: NumericType, state: boolean) Called when an "enabled" event is invoked after **numeric.setEnabled(...)** was called<hr><p>@*param* `self` NumericType ― Reference to the button widget</p><p>@*param* `state` boolean ― True if the widget is enabled</p>
+---| fun(self: NumericType, state: boolean) Called when an "enabled" event is invoked after **numeric.setEnabled(...)** was called<hr><p>@*param* `self` NumericType ― Reference to the widget table</p><p>@*param* `state` boolean ― True if the widget is enabled</p>
 
 ---@alias NumericEventHandler_loaded
----| fun(self: NumericType, success: boolean) Called when an "loaded" event is invoked after the data of this widget has been loaded from storage<hr><p>@*param* `self` NumericType ― Reference to the widget</p><p>@*param* `success` boolean ― True if data was returned by **t.getData()** and it was loaded to the widget</p>
+---| fun(self: NumericType, success: boolean) Called when an "loaded" event is invoked after the data of this widget has been loaded from storage<hr><p>@*param* `self` NumericType ― Reference to the widget table</p><p>@*param* `success` boolean ― True if data was returned by **t.getData()** and it was loaded to the widget</p>
 
 ---@alias NumericEventHandler_saved
----| fun(self: NumericType, success: boolean) Called when an "saved" event is invoked after the data of this widget has been saved to storage<hr><p>@*param* `self` NumericType ― Reference to the widget</p><p>@*param* `success` boolean ― True if data was committed successfully via **t.saveData(...)**</p>
+---| fun(self: NumericType, success: boolean) Called when an "saved" event is invoked after the data of this widget has been saved to storage<hr><p>@*param* `self` NumericType ― Reference to the widget table</p><p>@*param* `success` boolean ― True if data was committed successfully via **t.saveData(...)**</p>
 
 ---@alias NumericEventHandler_changed
----| fun(self: NumericType, number: number, user: boolean) Called when an "changed" event is invoked after **numeric.setNumber(...)** was called<hr><p>@*param* `self` NumericType ― Reference to the toggle widget</p><p>@*param* `number` number ― The current value of the widget</p><p>@*param* `user` boolean ― True if the event was invoked by an action taken by the user</p>
+---| fun(self: NumericType, number: number, user: boolean) Called when an "changed" event is invoked after **numeric.setNumber(...)** was called<hr><p>@*param* `self` NumericType ― Reference to the toggle widget</p><p>@*param* `number` number ― The current value of the widget</p><p>@*param* `user` boolean ― True if the event was flagged as invoked by an action taken by the user</p>
 
 ---@alias NumericEventHandler_min
 ---| fun(self: NumericType, limitMin: number) Called when an "min" event is invoked after **numeric.setMin(...)** was called<hr><p>@*param* `self` NumericType ― Reference to the toggle widget</p><p>@*param* `limitMin` number ― The current lower limit of the number value of the widget</p>
@@ -1512,7 +1514,7 @@ function Clamp(value, min, max) return value end
 ---| fun(self: NumericType, limitMax: number) Called when an "max" event is invoked after **numeric.setMax(...)** was called<hr><p>@*param* `self` NumericType ― Reference to the toggle widget</p><p>@*param* `limitMax` number ― The current upper limit of the number value of the widget</p>
 
 ---@alias NumericEventHandler_any
----| fun(self: NumericType, ...: any) Called when a custom event is invoked<hr><p>@*param* `self` NumericType ― Reference to the widget</p><p>@*param* `...` any — Any leftover arguments</p>
+---| fun(self: NumericType, ...: any) Called when a custom event is invoked<hr><p>@*param* `self` NumericType ― Reference to the widget table</p><p>@*param* `...` any — Any leftover arguments</p>
 
 --| Parameters
 
@@ -1585,19 +1587,19 @@ function Clamp(value, min, max) return value end
 --| Event handlers
 
 ---@alias ColorpickerEventHandler_enabled
----| fun(self: ColorpickerType, state: boolean) Called when an "enabled" event is invoked after **colorpicker.setEnabled(...)** was called<hr><p>@*param* `self` ColorPickerType ― Reference to the button widget</p><p>@*param* `state` boolean ― True if the widget is enabled</p>
+---| fun(self: ColorpickerType, state: boolean) Called when an "enabled" event is invoked after **colorpicker.setEnabled(...)** was called<hr><p>@*param* `self` ColorPickerType ― Reference to the widget table</p><p>@*param* `state` boolean ― True if the widget is enabled</p>
 
 ---@alias ColorpickerEventHandler_loaded
----| fun(self: ColorpickerType, success: boolean) Called when an "loaded" event is invoked after the data of this widget has been loaded from storage<hr><p>@*param* `self` ColorPickerType ― Reference to the widget</p><p>@*param* `success` boolean ― True if data was returned by **t.getData()** and it was loaded to the widget</p>
+---| fun(self: ColorpickerType, success: boolean) Called when an "loaded" event is invoked after the data of this widget has been loaded from storage<hr><p>@*param* `self` ColorPickerType ― Reference to the widget table</p><p>@*param* `success` boolean ― True if data was returned by **t.getData()** and it was loaded to the widget</p>
 
 ---@alias ColorpickerEventHandler_saved
----| fun(self: ColorpickerType, success: boolean) Called when an "saved" event is invoked after the data of this widget has been saved to storage<hr><p>@*param* `self` ColorPickerType ― Reference to the widget</p><p>@*param* `success` boolean ― True if data was committed successfully via **t.saveData(...)**</p>
+---| fun(self: ColorpickerType, success: boolean) Called when an "saved" event is invoked after the data of this widget has been saved to storage<hr><p>@*param* `self` ColorPickerType ― Reference to the widget table</p><p>@*param* `success` boolean ― True if data was committed successfully via **t.saveData(...)**</p>
 
 ---@alias ColorpickerEventHandler_colored
----| fun(self: ColorpickerType, color: colorData, user: boolean) Called when an "colored" event is invoked after **colorpicker.setColor(...)** was called<hr><p>@*param* `self` ColorPickerType ― Reference to the toggle widget</p><p>@*param* `number` number ― The current value of the widget</p><p>@*param* `user` boolean ― True if the event was invoked by an action taken by the user</p>
+---| fun(self: ColorpickerType, color: colorData, user: boolean) Called when an "colored" event is invoked after **colorpicker.setColor(...)** was called<hr><p>@*param* `self` ColorPickerType ― Reference to the toggle widget</p><p>@*param* `number` number ― The current value of the widget</p><p>@*param* `user` boolean ― True if the event was flagged as invoked by an action taken by the user</p>
 
 ---@alias ColorpickerEventHandler_any
----| fun(self: ColorpickerType, ...: any) Called when a custom event is invoked<hr><p>@*param* `self` ColorPickerType ― Reference to the widget</p><p>@*param* `...` any — Any leftover arguments</p>
+---| fun(self: ColorpickerType, ...: any) Called when a custom event is invoked<hr><p>@*param* `self` ColorPickerType ― Reference to the widget table</p><p>@*param* `...` any — Any leftover arguments</p>
 
 --| Parameters
 
@@ -1638,44 +1640,107 @@ function Clamp(value, min, max) return value end
 ---@field width? number The height is defaulted to 36, the width may be specified | ***Default:*** 120
 ---@field events? table<ScriptFrame, fun(...: any)|attributeEventData> Table of key, value pairs of the names of script event handlers to be set for the color picker frame and the functions to assign as event handlers called when they trigger
 
+--[ Data Profile Manager ]
 
---[[ TEMPLATES ]]
+---@alias ProfilemanagerType
+---| profilemanager
+---| profilesPage
 
---[ Settings Pages ]
+---@alias ProfilemanagerEventTag
+---| "loaded"
+---| "activated"
+---| "created"
+---| "renamed"
+---| "deleted"
+---| "reset"
+---| string
 
---| About
+--| Event handlers
+
+---@alias ProfilemanagerEventHandler_loaded
+---| fun(self: ProfilemanagerType, user: boolean) Called when an "loaded" event is invoked after the data profile list has been loaded and verified<hr><p>@*param* `self` ProfilemanagerType ― Reference to the widget table</p><p>@*param* `user` boolean ― True if the event was flagged as invoked by an action taken by the user</p>
+
+---@alias ProfilemanagerEventHandler_activated
+---| fun(self: ProfilemanagerType, index: integer, title: string, success: boolean, user: boolean) Called when an "activated" event is invoked after a profile has been activated<hr><p>@*param* `self` ProfilemanagerType ― Reference to the widget table</p><p>@*param* `index` integer — The index of the active profile</p><p>@*param* `title` string — The title of the active profile</p><p>@*param* `success` boolean ― True if the active profile was changed successfully</p><p>@*param* `user` boolean ― True if the event was flagged as invoked by an action taken by the user</p>
+
+---@alias ProfilemanagerEventHandler_created
+---| fun(self: ProfilemanagerType, index: integer, title: string, user: boolean) Called when an "created" event is invoked after a new data profile has been initialized<hr><p>@*param* `self` ProfilemanagerType ― Reference to the widget table</p><p>@*param* `index` integer — The index of the new profile</p><p>@*param* `title` string — The title of the new profile</p><p>@*param* `user` boolean ― True if the event was flagged as invoked by an action taken by the user</p>
+
+---@alias ProfilemanagerEventHandler_renamed
+---| fun(self: ProfilemanagerType, success: boolean, index: any, title?: string, user: boolean) Called when an "renamed" event is invoked after a data profile has been renamed<hr><p>@*param* `self` ProfilemanagerType ― Reference to the widget table</p><p>@*param* `success` boolean ― True if the profile was renamed successfully</p><p>@*param* `index` any — The index of the profile attempted to be renamed</p><p>@*param* `title`? string — The new title of the profile attempted to be renamed</p><p>@*param* `user` boolean ― True if the event was flagged as invoked by an action taken by the user</p>
+
+---@alias ProfilemanagerEventHandler_deleted
+---| fun(self: ProfilemanagerType, success: boolean, index: any, title?: string, user: boolean) Called when an "deleted" event is invoked after a data profile has been removed from the database<hr><p>@*param* `self` ProfilemanagerType ― Reference to the widget table</p><p>@*param* `success` boolean ― True if the profile was deleted successfully</p><p>@*param* `index` any — The original index of the profile attempted to be deleted</p><p>@*param* `title`? string — The title of the  profile attempted to be deleted</p><p>@*param* `user` boolean ― True if the event was flagged as invoked by an action taken by the user</p>
+
+---@alias ProfilemanagerEventHandler_reset
+---| fun(self: ProfilemanagerType, success: boolean, index: any, title?: string, user: boolean) Called when an "reset" event is invoked after a data profile has been reset to defaults<hr><p>@*param* `self` ProfilemanagerType ― Reference to the widget table</p><p>@*param* `success` boolean ― True if the profile data was reset successfully</p><p>@*param* `index` any — The index of the profile attempted to be reset</p><p>@*param* `title`? string — The title of the profile attempted to be reset</p><p>@*param* `user` boolean ― True if the event was flagged as invoked by an action taken by the user</p>
+
+---@alias ProfilemanagerEventHandler_any
+---| fun(self: ProfilemanagerType, ...: any) Called when a custom event is invoked<hr><p>@*param* `self` ProfilemanagerType ― Reference to the widget table</p><p>@*param* `...` any — Any leftover arguments</p>
+
+--| Parameters
+
+---@class profilemanagerEventListener_loaded : eventHandlerIndex
+---@field handler ProfilemanagerEventHandler_loaded Handler function to register for call
+
+---@class profilemanagerEventListener_activated : eventHandlerIndex
+---@field handler ProfilemanagerEventHandler_activated Handler function to register for call
+
+---@class profilemanagerEventListener_created : eventHandlerIndex
+---@field handler ProfilemanagerEventHandler_created Handler function to register for call
+
+---@class profilemanagerEventListener_renamed : eventHandlerIndex
+---@field handler ProfilemanagerEventHandler_renamed Handler function to register for call
+
+---@class profilemanagerEventListener_deleted : eventHandlerIndex
+---@field handler ProfilemanagerEventHandler_deleted Handler function to register for call
+
+---@class profilemanagerEventListener_reset : eventHandlerIndex
+---@field handler ProfilemanagerEventHandler_reset Handler function to register for call
+
+---@class profilemanagerEventListener_any : eventTag, eventHandlerIndex
+---@field handler ProfilemanagerEventHandler_any Handler function to register for call
+
+---@class profilemanagerEventListeners
+---@field loaded? profilemanagerEventListener_loaded[] List of functions to call in order when an "loaded" event is invoked after the data profile list has been loaded and verified
+---@field activated? profilemanagerEventListener_activated[] List of functions to call in order when an "activated" event is invoked after a profile has been activated
+---@field created? profilemanagerEventListener_created[] List of functions to call in order when a "created" event is invoked after a new data profile has been initialized
+---@field renamed? profilemanagerEventListener_renamed[] List of functions to call in order when a "renamed" event is invoked after a data profile has been renamed
+---@field deleted? profilemanagerEventListener_deleted[] List of functions to call in order when a "deleted" event is invoked after a data profile has been removed from the database
+---@field reset? profilemanagerEventListener_reset[] List of functions to call in order when a "reset" event is invoked after a data profile has been reset to defaults
+---@field [string]? profilemanagerEventListener_any[] List of functions to call in order when a custom event is invoked
+
+
+--| Parameters
+
+---@class characterProfileData
+---@field activeProfile integer The index of the currently active profile | ***Default:*** 1
+
+---@class backupboxSettingsData
+---@field compactBackup boolean Whether to skip including additional white spaces to the backup string for more readability
+
+--| Constructors
+
+---@class profilemanagerCreationData
+---@field category? string Category name to be used for identifying this group of profile data when modified in popups and chat messages | ***Default:*** `"Addon"`
+---@field valueChecker? fun(key: number|string, value: any): boolean Helper function for validating values when checking profile data, returning true if the value is to be accepted as valid
+---@field recoveryMap? table<string, recoveryData>|fun(tableToCheck: table, recoveredData: recoveredData): recoveryMap: table<string, recoveryData>|nil Static map or function returning a dynamically creatable map for removed but recoverable data
+---@field onRecovery? fun(tableToCheck: table) Function called after the data has been has been recovered via the **recoveryMap**
+---@field listeners? profilemanagerEventListeners Table of key, value pairs of custom widget event tags and functions to assign as event handlers to call on trigger
+
+---@class profilesPageCreationData : profilemanagerCreationData, settingsPageCreationData_base, settingsPageEvents, liteObject
+---@field name? string Unique string used to set the name of the canvas frame | ***Default:*** "Profiles"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
+---@field title? string Text to be shown as the title of the settings page | ***Default:*** "Data Management"
+---@field description? string Text to be shown as the description below the title of the settings page | ***Default:*** *describing profiles & backup*
+---@field onImport? fun(success: boolean, data: table) Called after a settings backup string import has been performed by the user loading data for the currently active profile<hr><p>@*param* `success` boolean — Whether the imported string was successfully processed</p><p>@*param* `data` table — The table containing the imported backup data</p>
+---@field onImportAllProfiles? fun(success: boolean, data: table) Called after a settings backup string import has been performed by the user loading data for all profiles<p>@*param* `success` boolean — Whether the imported string was successfully processed</p><p>@*param* `data` table — The table containing the imported backup data</p>
+
+--[ About Page ]
 
 ---@class aboutPageCreationData : settingsPageCreationData_base
 ---@field description? string Text to be shown as the description below the title of the settings page | ***Default:*** [GetAddOnMetadata(**addon**, "Notes")](https://warcraft.wiki.gg/wiki/API_GetAddOnMetadata)
 ---@field changelog? { [table[]] : string[] } String arrays nested in subtables representing a version containing the raw changelog data, lines of text with formatting directives included<ul><li>***Note:*** The first line is expected to be the title containing the version number and/or the date of release.</li><li>***Note:*** Version tables are expected to be listed in ascending order by date of release (latest release last).</li><li>***Examples:***<ul><li>**Title formatting - version title:** `#V_`*Title text*`_#` (*it will appear as:* • Title text)</li><li>**Color formatting - highlighted text:** `#H_`*text to be colored*`_#` (*it will be colored white*)</li><li>**Color formatting - new updates:** `#N_`*text to be colored*`_#` (*it will be colored with:* #FF66EE66)</li><li>**Color formatting - fixes:** `#F_`*text to be colored*`_#` (*it will be colored with:* #FFEE4444)</li><li>**Color formatting - changes:** `#C_`*text to be colored*`_#` (*it will be colored with:* #FF8888EE)</li><li>**Color formatting - note:** `#O_`*text to be colored*`_#` (*it will be colored with:* #FFEEEE66)</li></ul></li></ul>
 ---@field static? boolean If true, disable the "Restore Defaults" & "Revert Changes" buttons | ***Default:*** `true`
-
---| Data Management
-
----@class characterProfileData
----@field activeProfile integer The index of the currently active profile | ***Default:*** 1
-
----@class dataManagementSettingsData
----@field compactBackup boolean Whether to skip including additional white spaces to the backup string for more readability
-
----@class dataManagementPageCreationData : settingsPageCreationData_base, settingsPageEvents, liteObject
----@field name? string Unique string used to set the name of the canvas frame | ***Default:*** "Profiles"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
----@field title? string Text to be shown as the title of the settings page | ***Default:*** "Data Management"
----@field description? string Text to be shown as the description below the title of the settings page | ***Default:*** *describing profiles & backup*
----@field accountData profileStorage|table Reference to the account-bound SavedVariables addon database where profile data is to be stored<ul><li>***Note:*** A subtable will be created under the key **profiles** if it doesn't already exist, any other keys will be removed (any possible old data will be recovered and incorporated into the active profile data).</li></ul>
----@field characterData characterProfileData|table Reference to the character-specific SavedVariablesPerCharacter addon database where selected profiles are to be specified<ul><li>***Note:*** An integer value will be created under the key **activeProfile** if it doesn't already exist in this table.</li></ul>
----@field settingsData dataManagementSettingsData|table Reference to the SavedVariables or SavedVariablesPerCharacter table where settings specifications are to be stored and loaded from<ul><li>***Note:*** A boolean value will be created under the key **compactBackup** if it didn't already exist in this table.</li></ul>
----@field defaultsTable table A static table containing all default settings values to be cloned when creating a new profile
----@field valueChecker? fun(key: number|string, value: any): boolean Helper function for validating values when checking profile data, returning true if the value is to be accepted as valid
----@field recoveryMap? table<string, recoveryData>|fun(tableToCheck: table, recoveredData: recoveredData): recoveryMap: table<string, recoveryData>|nil Static map or function returning a dynamically creatable map for removed but recoverable data
----@field onRecovery? fun(tableToCheck: table) Function called after the data has been has been recovered via the **recoveryMap**
----@field onProfilesLoaded? function Called during profiles initialization and data validation (with **t.onImportAllProfiles(...)** also being called later when profiles data is imported via user interaction through the backup all profiles box)
----@field onProfileActivated? fun(title: string, index: integer) Called after a profile was activated<ul><li>***Note:*** It will not be called during profiles initialization.</li></ul><hr><p>@*param* `title` string — The title of the profile</p><p>@*param* `index` integer — The index of the profile that was activated</p>
----@field onProfileCreated? fun(title: string, index: integer) Called after a new profile was created<hr><p>@*param* `title` string — The title of the new profile</p><p>@*param* `index` integer — The index of the new profile</p>
----@field onProfileDeleted? fun(title: string, index: integer) Called after the active profile was deleted<hr><p>@*param* `title` string — The old title of the deleted profile</p><p>@*param* `index` integer — The old index of the deleted profile</p>
----@field onProfileReset? fun(title: string, index: integer) Called after the data of a profile was reset to defaults<hr><p>@*param* `title` string — The title of the profile</p><p>@*param* `index` integer — The index of the profile that was reset</p>
----@field onImport? fun(success: boolean, data: table) Called after a settings backup string import has been performed by the user loading data for the currently active profile<hr><p>@*param* `success` boolean — Whether the imported string was successfully processed</p><p>@*param* `data` table — The table containing the imported backup data</p>
----@field onImportAllProfiles? fun(success: boolean, data: table) Called after a settings backup string import has been performed by the user loading data for all profiles<ul><li>***Note:*** *t.onProfilesLoaded will also be called if the import was successful.</li></ul><hr><p>@*param* `success` boolean — Whether the imported string was successfully processed</p><p>@*param* `data` table — The table containing the imported backup data</p>
 
 --[ Settings Widget Panels ]
 
@@ -1731,9 +1796,6 @@ function Clamp(value, min, max) return value end
 ---@class positionManagementCreationData : settingsWidgetPanel_frame
 ---@field presets? presetItemList Reference to the table containing **frame** position presets to be managed by settings widgets added when set
 ---@field setMovable? movabilityData_positioning When specified, set **frame** as movable, dynamically updating the position settings widgets when it's moved by the user
----@field getData fun(): table: positionPresetData Return a reference to the table within a SavedVariables(PerCharacter) addon database where data is committed to
----@field defaultsTable positionPresetData Reference to the table containing the default values<ul><li>***Note:*** The defaults table should contain values under matching keys to the values within *t.getData()*.</li></ul>
----@field settingsData positionOptionsSettingsData|table Reference to the SavedVariables or SavedVariablesPerCharacter table where settings specifications are to be stored and loaded from<ul><li>***Note:*** A boolean value will be created under the key **keepInPlace** if it didn't already exist in this table.</li></ul>
 ---@field dataManagement? settingsData_position Register the widgets to settings data management to be linked with the specified key under the specified category
 ---@field onChangePosition? function Function to call after the value of **panel.widgets.position.anchor**, **panel.widgets.position.relativeTo**, **panel.widgets.position.relativePoint**, **panel.widgets.position.offset.x** or **panel.widgets.position.offset.y** was changed by the user or via settings data management before the base onChange handler is called built-in to the functionality of the settings panel template updating the position of **frame**
 ---@field onChangeKeepInBounds? function Function to call after the value of **panel.widgets.position.keepInBounds** was changed by the user or via settings data management before the base onChange handlers are called built-in to the functionality of the settings panel template updating **frame**
@@ -1761,8 +1823,6 @@ function Clamp(value, min, max) return value end
 
 ---@class fontManagementCreationData : settingsWidgetPanel_text
 ---@field colors? table<string, textColorInfo> If set, use this list of specifications to set the order and displayed name of the colors | ***Default:*** *unspecified order; data management key in Title case*
----@field getData fun(): table: fontOptionsData Return a reference to the table within a SavedVariables(PerCharacter) addon database where data is committed to
----@field defaultsTable fontOptionsData Reference to the table containing the default values
 ---@field dataManagement? settingsData_font Register the widgets to settings data management to be linked with the specified key under the specified category
 ---@field onChangeFont? function Function to call after the value of **panel.widgets.path** or **panel.widgets.size** was changed by the user or via settings data management before the base onChange handler is called built-in to the functionality of the settings panel template updating the position of **text**
 ---@field onChangeSize? function Function to call after the value of **panel.widgets.position.keepInBounds** was changed by the user or via settings data management before the base onChange handlers are called built-in to the functionality of the settings panel template updating **text**

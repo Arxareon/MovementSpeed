@@ -22,9 +22,7 @@ local cr = WrapTextInColor
 local crc = WrapTextInColorCode
 
 
---[[ UX HELPERS ]]
-
---[ Tooltip]
+--[[ TOOLTIP ]]
 
 ---Create and set up a new custom GameTooltip frame
 ---***
@@ -46,7 +44,8 @@ function wt.CreateGameTooltip(name)
 	return tooltip
 end
 
---[ Popup ]
+
+--[[ POPUP ]]
 
 --| Input Box
 
@@ -54,7 +53,7 @@ local customPopupInputBoxFrame
 
 ---Show a movable input window with a textbox, accept and cancel buttons
 ---***
----@param t? popupInputBoxData Parameters are to be provided in this table
+---@param t? popupInputBoxData Optional parameters
 function wt.CreatePopupInputBox(t)
 	t = type(t) == "table" and t or {}
 	t.position = type(t.position) == "table" and t.position or {
@@ -181,7 +180,7 @@ local reloadFrame
 
 ---Show a movable reload notice window on screen with a reload now and cancel button
 ---***
----@param t? reloadFrameData Parameters are to be provided in this table
+---@param t? reloadFrameData Optional parameters
 ---***
 ---@return Frame reload Reference to the reload notice panel frame
 function wt.CreateReloadNotice(t)
@@ -268,14 +267,14 @@ function wt.CreateReloadNotice(t)
 end
 
 
---[[ ART ELEMENTS ]]
+--[[ TEXT ]]
 
 --[ Font ]
 
 ---Create a new [Font](https://warcraft.wiki.gg/wiki/UIOBJECT_Font) object to be used when setting the look of a [FontString](https://warcraft.wiki.gg/wiki/UIOBJECT_FontString) using a [FontInstance](https://warcraft.wiki.gg/wiki/UIOBJECT_FontInstance)
 ---***
 ---@param name string A unique identifier name to set for the hew font object to be accessed by and referred to later<ul><li>***Note:*** If a font object with that name already exists, it will *not* be overwritten and its reference key will be returned.</li><li>***Example:*** Access the reference to the font object created via the globals table: `local customFont = _G["CustomFontName"]`.</li></ul>
----@param t? fontCreationData Parameters are to be provided in this table
+---@param t? fontCreationData Optional parameters
 ---***
 ---@return string name, Font font ***Default*** *(on invalid input)****:*** "GameFontNormal", **GameFontNormal**
 function wt.CreateFont(name, t)
@@ -321,11 +320,11 @@ if wt.classic then
 	wt.CreateFont("NumberFont_Shadow_Large", { font = { path = "Fonts/ARIALN.TTF", size = 20, style = "OUTLINE" }, })
 end
 
---[ Text ]
+--[ Textline ]
 
 ---Create a text object ([FontString](https://warcraft.wiki.gg/wiki/UIOBJECT_FontString)) with the specified parameters
 ---***
----@param t? textCreationData Parameters are to be provided in this table
+---@param t? textCreationData Optional parameters
 ---@return FontString text
 function wt.CreateText(t)
 	t = type(t) == "table" and t or {}
@@ -356,7 +355,7 @@ end
 ---Add a title to a frame
 ---***
 ---@param frame AnyFrameObject Reference to the frame to add the title textline to
----@param t? titleCreationData Parameters are to be provided in this table
+---@param t? titleCreationData Optional parameters
 ---***
 ---@return FontString? # ***Default:*** nil
 function wt.CreateTitle(frame, t)
@@ -437,12 +436,13 @@ function wt.CreateDescription(title, t)
 	})
 end
 
---[ Texture ]
+
+--[[ TEXTURE ]]
 
 ---Create a [Texture](https://warcraft.wiki.gg/wiki/UIOBJECT_Texture) image [TextureBase](https://warcraft.wiki.gg/wiki/UIOBJECT_TextureBase) object
 ---***
 ---@param frame AnyFrameObject Reference to the frame to set as the parent of the new texture
----@param t textureCreationData Parameters are to be provided in this table
+---@param t textureCreationData Optional parameters
 ---@param updates? table<AnyScriptType, textureUpdateRule> Table of key, value pairs containing the list of events to link texture changes to, and what parameters to change
 ---***
 ---@return Texture? texture ***Default:*** nil
@@ -542,7 +542,7 @@ end
 ---Create a [Line](https://warcraft.wiki.gg/wiki/UIOBJECT_Line) [TextureBase](https://warcraft.wiki.gg/wiki/UIOBJECT_TextureBase) object
 ---***
 ---@param frame AnyFrameObject Reference to the frame to set as the parent of the new line
----@param t lineCreationData Parameters are to be provided in this table
+---@param t lineCreationData Optional parameters
 ---***
 ---@return Line? line ***Default:*** nil
 function wt.CreateLine(frame, t)
@@ -568,7 +568,7 @@ function wt.CreateLine(frame, t)
 end
 
 
---[[ CONTAINERS ]]
+--[[ CONTAINER FRAME ]]
 
 ---Set the parameters of a frame
 ---@param frame Frame
@@ -629,7 +629,7 @@ end
 
 ---Create & set up a new base frame
 ---***
----@param t? frameCreationData Parameters are to be provided in this table
+---@param t? frameCreationData Optional parameters
 ---@return Frame frame
 function wt.CreateFrame(t)
 	t = type(t) == "table" and t or {}
@@ -648,7 +648,7 @@ end
 
 ---Create & set up a new customizable frame with BackdropTemplate
 ---***
----@param t? frameCreationData Parameters are to be provided in this table
+---@param t? frameCreationData Optional parameters
 ---@return Frame|BackdropTemplate frame
 function wt.CreateCustomFrame(t)
 	t = type(t) == "table" and t or {}
@@ -665,14 +665,14 @@ function wt.CreateCustomFrame(t)
 	return frame
 end
 
---[ Scrollable Frame ]
+--[ Scrollframe ]
 
 ---Create an empty vertically scrollable frame
 ---***
----@param t? scrollFrameCreationData Parameters are to be provided in this table
+---@param t? scrollframeCreationData Optional parameters
 ---@return Frame scrollChild
----@return ScrollFrame scrollFrame
-function wt.CreateScrollFrame(t)
+---@return ScrollFrame scrollframe
+function wt.CreateScrollframe(t)
 	t = type(t) == "table" and t or {}
 	t.scrollSize = type(t.scrollSize) == "table" and t.scrollSize or {}
 
@@ -681,57 +681,57 @@ function wt.CreateScrollFrame(t)
 	local parentName = t.parent and t.parent:GetName() or ""
 	local name = t.name and t.name:gsub("%s+", "")
 
-	local scrollFrame = CreateFrame("ScrollFrame", parentName .. (name or "") .. "ScrollParent", t.parent, ScrollControllerMixin and "ScrollFrameTemplate")
+	local scrollframe = CreateFrame("ScrollFrame", parentName .. (name or "") .. "ScrollParent", t.parent, ScrollControllerMixin and "ScrollFrameTemplate")
 
 	--| Position & dimensions
 
 	t.size = t.size or t.parent and { w = t.parent:GetWidth(), h = t.parent:GetHeight() } or { w = 0, h = 0 }
 
-	wt.SetPosition(scrollFrame, t.position)
+	wt.SetPosition(scrollframe, t.position)
 
-	scrollFrame:SetSize(t.size.w, t.size.h)
+	scrollframe:SetSize(t.size.w, t.size.h)
 
 	--Scrollbar
-	wt.SetPosition(scrollFrame.ScrollBar, {
+	wt.SetPosition(scrollframe.ScrollBar, {
 		anchor = "RIGHT",
-		relativeTo = scrollFrame,
+		relativeTo = scrollframe,
 		relativePoint = "RIGHT",
 		offset = { x = -4, y = 1 }
 	})
-	scrollFrame.ScrollBar:SetHeight(t.size.h - 10)
+	scrollframe.ScrollBar:SetHeight(t.size.h - 10)
 
 	--[ Scroll Child ]
 
 	--Create scrollable child frame
 	local scrollChild = wt.CreateFrame({
-		parent = scrollFrame,
+		parent = scrollframe,
 		name = parentName .. (name or "Scroller"),
 		append = false,
-		size = { w = t.scrollSize.w or scrollFrame:GetWidth() - (wt.classic and 32 or 16), h = t.scrollSize.h },
+		size = { w = t.scrollSize.w or scrollframe:GetWidth() - (wt.classic and 32 or 16), h = t.scrollSize.h },
 		initialize = t.initialize,
 		arrangement = t.arrangement
 	})
 
 	--Register for scroll
-	scrollFrame:SetScrollChild(scrollChild)
+	scrollframe:SetScrollChild(scrollChild)
 
 	--Update scroll speed
 	t.scrollSpeed = (t.scrollSpeed or 0.25)
 
 	--Override the built-in update function
-	scrollFrame.ScrollBar.SetPanExtentPercentage = function() --WATCH: Change when Blizzard provides a better way to overriding the built-in update function
-		local height = scrollFrame:GetHeight()
-		scrollFrame.ScrollBar.panExtentPercentage = height * t.scrollSpeed / math.abs(scrollChild:GetHeight() - height)
+	scrollframe.ScrollBar.SetPanExtentPercentage = function() --WATCH: Change when Blizzard provides a better way to overriding the built-in update function
+		local height = scrollframe:GetHeight()
+		scrollframe.ScrollBar.panExtentPercentage = height * t.scrollSpeed / math.abs(scrollChild:GetHeight() - height)
 	end
 
-	return scrollChild, scrollFrame
+	return scrollChild, scrollframe
 end
 
---[ Panel Frame ]
+--[ Panel ]
 
 ---Create a new simple panel frame
 ---***
----@param t? panelCreationData Parameters are to be provided in this table
+---@param t? panelCreationData Optional parameters
 ---***
 ---@return panel|Frame panel Reference to the new [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame) overloaded with custom fields or none if **WidgetToolsDB.lite** is true**
 function wt.CreatePanel(t)
@@ -820,11 +820,12 @@ function wt.CreatePanel(t)
 	return panel
 end
 
---[ Context Menu ]
+
+--[[ CONTEXT MENU ]]
 
 ---Create a Blizzard context menu
 ---***
----@param t contextMenuCreationData Parameters are to be provided in this table
+---@param t? contextMenuCreationData Optional parameters
 ---***
 ---@return contextMenu menu Table containing a reference to the root description of the context menu
 function wt.CreateContextMenu(t)
@@ -841,7 +842,7 @@ function wt.CreateContextMenu(t)
 	---Open the context menu
 	---***
 	---@param trigger? integer Index of the trigger to activate to have the menu opened defined in **t.triggers** | ***Default:*** 1
-	---@param action "click"|"hover"|nil The action that prompted the menu to be opened | ***Default:*** nil *(no action)*
+	---@param action "click"|"hover"|nil The action that prompted the menu to be opened | ***Default:*** *no action:* `nil`
 	function menu.open(trigger, action)
 		trigger = type(trigger) == "number" and Clamp(trigger, 1, #t.triggers) or 1
 
@@ -874,10 +875,10 @@ end
 
 ---Create a Blizzard context menu attached to a custom button frame to open it
 ---***
----@param t popupMenuCreationData Parameters are to be provided in this table
+---@param t? popupMenuCreationData Optional parameters
 ---***
 ---@return Frame menu Table containing a reference to the root description of the context menu
----@return contextMenu|nil menu Table containing a reference to the root description of the context menu
+---@return contextMenu menu Table containing a reference to the root description of the context menu
 function wt.CreatePopupMenu(t)
 	t = type(t) == "table" and t or {}
 	t.size = t.size or {}
@@ -979,11 +980,11 @@ end
 ---Create a submenu item for an already existing Blizzard context menu
 ---***
 ---@param menu contextMenu|contextSubmenu Reference to the parent menu to add the new submenu to
----@param t contextSubmenuCreationData Parameters are to be provided in this table
+---@param t? contextSubmenuCreationData Optional parameters
 ---***
 ---@return contextSubmenu|nil menu Table containing a reference to the root description of the context menu
 function wt.CreateSubmenu(menu, t)
-	if not menu then return end
+	if type(menu) ~= "table" then return nil end
 
 	t = type(t) == "table" and t or {}
 
@@ -1003,11 +1004,11 @@ end
 ---Create a textline item for an already existing Blizzard context menu
 ---***
 ---@param menu contextMenu|contextSubmenu Reference to the parent menu to add the new item to
----@param t? menuTextlineCreationData Parameters are to be provided in this table
+---@param t? menuTextlineCreationData Optional parameters
 ---***
 ---@return ElementMenuDescriptionProxy|nil textline Reference to the context textline UI object
 function wt.CreateMenuTextline(menu, t)
-	if not menu then return end
+	if type(menu) ~= "table" then return nil end
 
 	t = type(t) == "table" and t or {}
 
@@ -1017,11 +1018,11 @@ end
 ---Create a divider item for an already existing Blizzard context menu
 ---***
 ---@param menu contextMenu|contextSubmenu Reference to the parent menu to add the new item to
----@param t? queuedMenuItem Parameters are to be provided in this table
+---@param t? queuedMenuItem Optional parameters
 ---***
 ---@return ElementMenuDescriptionProxy|nil divider Reference to the context divider UI object
 function wt.CreateMenuDivider(menu, t)
-	if not menu then return end
+	if type(menu) ~= "table" then return nil end
 
 	t = type(t) == "table" and t or {}
 
@@ -1031,11 +1032,11 @@ end
 ---Create a spacer item for an already existing Blizzard context menu
 ---***
 ---@param menu contextMenu|contextSubmenu Reference to the parent menu to add the new item to
----@param t? queuedMenuItem Parameters are to be provided in this table
+---@param t? queuedMenuItem Optional parameters
 ---***
 ---@return ElementMenuDescriptionProxy|nil spacer Reference to the context spacer UI object
 function wt.CreateMenuSpacer(menu, t)
-	if not menu then return end
+	if type(menu) ~= "table" then return nil end
 
 	t = type(t) == "table" and t or {}
 
@@ -1045,27 +1046,28 @@ end
 ---Create a button item for an already existing Blizzard context menu
 ---***
 ---@param menu contextMenu|contextSubmenu Reference to the parent menu to add the new item to
----@param t? menuButtonCreationData Parameters are to be provided in this table
+---@param t? menuButtonCreationData Optional parameters
 ---***
 ---@return ElementMenuDescriptionProxy|nil button Reference to the context button UI object
 function wt.CreateMenuButton(menu, t)
-	if not menu then return end
+	if type(menu) ~= "table" then return nil end
 
 	t = type(t) == "table" and t or {}
 
 	return menu.rootDescription:CreateButton(t.title or "Button", t.action)
 end
 
---[ Settings Pages ]
+
+--[[ SETTINGS PAGE ]]
 
 ---Create an new Settings Panel frame and add it to the Options
 ---***
 ---@param addon string The name of the addon's folder (the addon namespace, not its displayed title)
----@param t? settingsPageCreationData Parameters are to be provided in this table
+---@param t? settingsPageCreationData Optional parameters
 ---***
 ---@return settingsPage|nil page Table containing references to the settings canvas [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame), category page and utility functions
 function wt.CreateSettingsPage(addon, t)
-	if type(addon) ~= "string" or not C_AddOns.IsAddOnLoaded(addon) then return end
+	if type(addon) ~= "string" or not C_AddOns.IsAddOnLoaded(addon) then return nil end
 
 	t = type(t) == "table" and t or {}
 	t.name = t.name and t.name:gsub("%s+", "")
@@ -1075,7 +1077,7 @@ function wt.CreateSettingsPage(addon, t)
 	end
 	local width, height = 0, 0
 
-	---@type string, simpleButton, simpleButton, FontString
+	---@type string, actionButton, actionButton, FontString
 	local resetWarning, resetButton, revertButton, saveNotice
 
 	---@class settingsPage
@@ -1089,7 +1091,7 @@ function wt.CreateSettingsPage(addon, t)
 
 	---Returns the type of this object
 	---***
-	---@return "SettingsPage" string
+	---@return "SettingsPage"
 	---<p></p>
 	function page.getType() return "SettingsPage" end
 
@@ -1209,7 +1211,7 @@ function wt.CreateSettingsPage(addon, t)
 			visible = false,
 		})
 
-		page.content = t.scroll and wt.CreateScrollFrame({
+		page.content = t.scroll and wt.CreateScrollframe({
 			parent = page.canvas,
 			name = "Content",
 			size = { w = width - 8, h = height - 51 },
@@ -1267,13 +1269,13 @@ function wt.CreateSettingsPage(addon, t)
 
 		--| Defaults button
 
-		resetWarning = wt.RegisterPopupDialog(addon, (t.name or "") .. "DEFAULT", {
+		resetWarning = wt.RegisterPopupDialog(addon .. "_" .. (t.name or "") .. "DEFAULT", {
 			text = wt.strings.settings.warningSingle:gsub("#PAGE", cr(title, NORMAL_FONT_COLOR)),
 			accept = ACCEPT,
 			onAccept = function() page.reset(true) end,
 		})
 
-		---@type simpleButton
+		---@type actionButton
 		resetButton = wt.CreateButton({
 			parent = page.canvas,
 			name = "Defaults",
@@ -1352,17 +1354,31 @@ end
 ---@param addon string The name of the addon's folder (the addon namespace, not its displayed title)
 ---@param parent settingsPageCreationData|settingsPage Settings page creation parameters to create, or reference to an existing *unregistered* settings page to set as the parent page for the new category<ul><li>***Note:*** If the provided parent candidate page is already registered (containing a **category** value), it will be dismissed and no new category will be created at all.</li></ul>
 ---@param pages? settingsPageCreationData[]|settingsPage[] List of settings page creation parameters to create, or references to an existing *unregistered* settings pages to add as subcategories under **parent**<ul><li>***Note:*** Already registered pages (which contain a **category** value) will be skipped and won't be included in the new category.</li></ul>
----@param t? settingsCategoryCreationData Parameters are to be provided in this table
+---@param t? settingsCategoryCreationData Optional parameters
 ---***
 ---@return settingsCategory|nil category Table containing references to settings pages and utility functions or nil if the specified **parent** was invalid
 function wt.CreateSettingsCategory(addon, parent, pages, t)
-	if not addon or not C_AddOns.IsAddOnLoaded(addon) or wt.IsWidget(parent) ~= "SettingsPage" and not parent.category then return end
+	if not addon or not C_AddOns.IsAddOnLoaded(addon) or wt.IsWidget(parent) ~= "SettingsPage" and not parent.category then return nil end
 
 	t = type(t) == "table" and t or {}
 
 	---@class settingsCategory
 	---@field pages settingsPage[]
 	local category = { pages = {} }
+
+	--[ Getters & Setters ]
+
+	---Returns the type of this object
+	---***
+	---@return "SettingsCategory"
+	---<p></p>
+	function category.getType() return "SettingsCategory" end
+
+	---Checks and returns if the type of this object is equal to the string provided
+	---@param type string|AnyTypeName
+	---@return boolean
+	---<p></p>
+	function category.isType(type) return type == "SettingsCategory" end
 
 	--[ Utilities ]
 
@@ -1445,7 +1461,7 @@ function wt.CreateSettingsCategory(addon, parent, pages, t)
 end
 
 
---[[ WIDGETS ]]
+--[[ DATA MANAGER WIDGETS ]]
 
 --| Value clipboard
 
@@ -1491,7 +1507,7 @@ end
 
 ---Create a non-GUI action widget
 ---***
----@param t? actionCreationData Parameters are to be provided in this table
+---@param t? actionCreationData Optional parameters
 ---***
 ---@return action action Reference to the new action widget, utility functions and more wrapped in a table
 function wt.CreateAction(t)
@@ -1513,13 +1529,13 @@ function wt.CreateAction(t)
 
 	--[ Getters & Setters ]
 
-	---Returns the object type of this widget
+	---Returns the type of this object
 	---***
-	---@return "Action" string
+	---@return "Action"
 	---<p></p>
 	function action.getType() return "Action" end
 
-	---Checks and returns if the type of this widget is equal to the string provided
+	---Checks and returns if the type of this object is equal to the string provided
 	---@param type string|AnyTypeName
 	---@return boolean
 	---<p></p>
@@ -1573,7 +1589,7 @@ function wt.CreateAction(t)
 	--| Action
 
 	---Trigger the action registered for the button (if it is enabled)
-	---@param user? boolean Whether to flag the action as being initiated by a user interaction or not | ***Default:*** `false`
+	---@param user? boolean If true, mark the call as being the result of a user interaction | ***Default:*** `false`
 	---@param silent? boolean If false, invoke a "trigger" event and call registered listeners | ***Default:*** `false`
 	function action.trigger(user, silent)
 		if enabled and t.action then t.action(action, user) end
@@ -1597,8 +1613,8 @@ end
 --| GUI
 
 ---Set the parameters of a GUI button widget frame
----@param button simpleButton|customButton
----@param t simpleButtonCreationData|customButtonCreationData
+---@param button actionButton|customButton
+---@param t actionButtonCreationData|customButtonCreationData
 ---@param name string
 ---@param title string
 ---@param useHighlight boolean
@@ -1682,7 +1698,7 @@ local function setUpButtonFrame(button, t, name, title, useHighlight)
 	--| State
 
 	---Update the widget UI based on its enabled state
-	---@param _ simpleButton
+	---@param _ actionButton
 	---@param state boolean
 	local function updateState(_, state)
 		button.widget:SetEnabled(state)
@@ -1701,19 +1717,34 @@ end
 
 ---Create a Blizzard button GUI frame with enhanced widget functionality
 ---***
----@param t? simpleButtonCreationData Parameters are to be provided in this table
----@param action? action Reference to an already existing action button to set up as a simple button instead of creating a new base widget
+---@param t? actionButtonCreationData Optional parameters
+---@param action? action Reference to an already existing action manager to mutate into a button instead of creating a new base widget
 ---***
----@return simpleButton|action # References to the new [Button](https://warcraft.wiki.gg/wiki/UIOBJECT_Button), utility functions and more wrapped in a table
+---@return actionButton|action # References to the new [Button](https://warcraft.wiki.gg/wiki/UIOBJECT_Button), utility functions and more wrapped in a table
 function wt.CreateButton(t, action)
 	t = type(t) == "table" and t or {}
 	action = action and action.isType and action.isType("Action") and action or wt.CreateAction(t)
 
 	if WidgetToolsDB.lite and t.lite ~= false then return action end
 
-	---@class simpleButton : action
+	---@class actionButton : action
 	---@field frame Frame Frame to catch mouse interactions and serve as a hover trigger to be able to show the tooltip or when the button is disabled
 	local button = action
+
+	--[ Getters & Setters ]
+
+	---Returns all object types of this mutated widget
+	---***
+	---@return "Action"
+	---@return "Button"
+	---<p></p>
+	function button.getType() return "Action", "Button" end
+
+	---Checks and returns if the a type of this mutated widget matches the string provided
+	---@param type string|AnyTypeName
+	---@return boolean
+	---<p></p>
+	function button.isType(type) return type == "Action" or type == "Button" end
 
 	--[ Frame Setup ]
 
@@ -1758,8 +1789,8 @@ end
 
 ---Create a Blizzard button GUI frame with customizable backdrop and enhanced widget functionality
 ---***
----@param t? customButtonCreationData Parameters are to be provided in this table
----@param action? action Reference to an already existing action button to set up as a custom button instead of creating a new base widget
+---@param t? customButtonCreationData Optional parameters
+---@param action? action Reference to an already existing action button to mutate into a custom button instead of creating a new base widget
 ---***
 ---@return customButton|action # References to the new [Button](https://warcraft.wiki.gg/wiki/UIOBJECT_Button) (inheriting [BackdropTemplate](https://warcraft.wiki.gg/wiki/BackdropTemplate)), utility functions and more wrapped in a table
 function wt.CreateCustomButton(t, action)
@@ -1771,6 +1802,21 @@ function wt.CreateCustomButton(t, action)
 	---@class customButton : action
 	---@field frame Frame Frame to catch mouse interactions and serve as a hover trigger to be able to show the tooltip or when the button is disabled
 	local button = action
+
+	--[ Getters & Setters ]
+
+	---Returns all object types of this mutated widget
+	---***
+	---@return "Action"
+	---@return "CustomButton"
+	---<p></p>
+	function button.getType() return "Action", "CustomButton" end
+
+	---Checks and returns if the a type of this mutated widget matches the string provided
+	---@param type string|AnyTypeName
+	---@return boolean
+	---<p></p>
+	function button.isType(type) return type == "Action" or type == "CustomButton" end
 
 	--[ Frame Setup ]
 
@@ -1820,7 +1866,7 @@ end
 
 ---Create a non-GUI toggle widget with boolean data management logic
 ---***
----@param t? toggleCreationData Parameters are to be provided in this table
+---@param t? toggleCreationData Optional parameters
 ---***
 ---@return toggle toggle Reference to the new toggle widget, utility functions and more wrapped in a table
 function wt.CreateToggle(t)
@@ -1851,13 +1897,13 @@ function wt.CreateToggle(t)
 
 	--[ Getters & Setters ]
 
-	---Returns the object type of this widget
+	---Returns the type of this object
 	---***
-	---@return "Toggle" string
+	---@return "Toggle"
 	---<p></p>
 	function toggle.getType() return "Toggle" end
 
-	---Checks and returns if the type of this widget is equal to the string provided
+	---Checks and returns if the type of this object is equal to the string provided
 	---@param type string|AnyTypeName
 	---@return boolean
 	---<p></p>
@@ -1943,7 +1989,7 @@ function wt.CreateToggle(t)
 
 	---Get the currently stored data via **t.getData()**
 	---@return boolean|nil
-	function toggle.getData() return type(t.getData) == "function" and t.getData() end
+	function toggle.getData() return type(t.getData) == "function" and t.getData() or nil end
 
 	---Verify and save the provided data to storage via **t.saveData(...)** then load it to the widget via **t.loadData()**
 	---***
@@ -1984,7 +2030,7 @@ function wt.CreateToggle(t)
 	---Verify and set the toggle value of the widget to the provided state
 	---***
 	---@param state? boolean ***Default:*** `false`
-	---@param user? boolean If true, mark the change as being initiated via a user interaction and call change handlers | ***Default:*** `false`
+	---@param user? boolean If true, mark the call as being the result of a user interaction | ***Default:*** `false`
 	---@param silent? boolean If false, invoke a "toggled" event and call registered listeners | ***Default:*** `false`
 	function toggle.setState(state, user, silent)
 		value = state == true
@@ -1998,7 +2044,7 @@ function wt.CreateToggle(t)
 
 	---Flip the current toggle state of the widget
 	---***
-	---@param user? boolean If true, mark the change as being initiated via a user interaction and call change handlers | ***Default:*** `false`
+	---@param user? boolean If true, mark the call as being the result of a user interaction | ***Default:*** `false`
 	---@param silent? boolean If false, invoke a "toggled" event and call registered listeners | ***Default:*** `false`
 	function toggle.toggleState(user, silent) toggle.setState(not value, user, silent) end
 
@@ -2051,8 +2097,8 @@ end
 
 ---Create a Blizzard checkbox GUI frame with enhanced widget functionality
 ---***
----@param t? checkboxCreationData Parameters are to be provided in this table
----@param toggle? toggle Reference to an already existing toggle to set up as a checkbox instead of creating a new base widget
+---@param t? checkboxCreationData Optional parameters
+---@param toggle? toggle Reference to an already existing toggle to mutate into a checkbox instead of creating a new base widget
 ---***
 ---@return checkbox|toggle # References to the new [CheckButton](https://warcraft.wiki.gg/wiki/UIOBJECT_CheckButton), its holder [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame), utility functions and more wrapped in a table
 function wt.CreateCheckbox(t, toggle)
@@ -2064,6 +2110,21 @@ function wt.CreateCheckbox(t, toggle)
 	---@class checkbox: toggle
 	---@field label FontString|nil
 	local checkbox = toggle
+
+	--[ Getters & Setters ]
+
+	---Returns all object types of this mutated widget
+	---***
+	---@return "Toggle"
+	---@return "Checkbox"
+	---<p></p>
+	function checkbox.getType() return "Toggle", "Checkbox" end
+
+	---Checks and returns if the a type of this mutated widget matches the string provided
+	---@param type string|AnyTypeName
+	---@return boolean
+	---<p></p>
+	function checkbox.isType(type) return type == "Toggle" or type == "Checkbox" end
 
 	--[ Frame Setup ]
 
@@ -2332,8 +2393,8 @@ end
 
 ---Create a classic Blizzard checkbox GUI frame with enhanced widget functionality
 ---***
----@param t? checkboxCreationData Parameters are to be provided in this table
----@param toggle? toggle Reference to an already existing toggle to set up as a checkbox instead of creating a new base widget
+---@param t? checkboxCreationData Optional parameters
+---@param toggle? toggle Reference to an already existing toggle to mutate into a checkbox instead of creating a new base widget
 ---***
 ---@return checkbox|toggle # References to the new [CheckButton](https://warcraft.wiki.gg/wiki/UIOBJECT_CheckButton), its holder [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame), utility functions and more wrapped in a table
 function wt.CreateClassicCheckbox(t, toggle)
@@ -2344,6 +2405,21 @@ function wt.CreateClassicCheckbox(t, toggle)
 
 	---@type checkbox|toggle
 	local checkbox = toggle
+
+	--[ Getters & Setters ]
+
+	---Returns all object types of this mutated widget
+	---***
+	---@return "Toggle"
+	---@return "ClassicCheckbox"
+	---<p></p>
+	function checkbox.getType() return "Toggle", "ClassicCheckbox" end
+
+	---Checks and returns if the a type of this mutated widget matches the string provided
+	---@param type string|AnyTypeName
+	---@return boolean
+	---<p></p>
+	function checkbox.isType(type) return type == "Toggle" or type == "ClassicCheckbox" end
 
 	--[ Frame Setup ]
 
@@ -2435,8 +2511,8 @@ end
 
 ---Create a Blizzard radio button GUI frame with enhanced widget functionality
 ---***
----@param t? radiobuttonCreationData Parameters are to be provided in this table
----@param toggle? toggle Reference to an already existing toggle to set up as a radio button instead of creating a new base widget
+---@param t? radiobuttonCreationData Optional parameters
+---@param toggle? toggle Reference to an already existing toggle to mutate into a radio button instead of creating a new base widget
 ---***
 ---@return radiobutton|toggle # References to the new [CheckButton](https://warcraft.wiki.gg/wiki/UIOBJECT_CheckButton), its holder [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame), utility functions and more wrapped in a table
 function wt.CreateRadiobutton(t, toggle)
@@ -2448,6 +2524,21 @@ function wt.CreateRadiobutton(t, toggle)
 	---@class radiobutton: toggle
 	---@field label? FontString
 	local radiobutton = toggle
+
+	--[ Getters & Setters ]
+
+	---Returns all object types of this mutated widget
+	---***
+	---@return "Toggle"
+	---@return "Radiobutton"
+	---<p></p>
+	function radiobutton.getType() return "Toggle", "Radiobutton" end
+
+	---Checks and returns if the a type of this mutated widget matches the string provided
+	---@param type string|AnyTypeName
+	---@return boolean
+	---<p></p>
+	function radiobutton.isType(type) return type == "Toggle" or type == "Radiobutton" end
 
 	--[ Properties ]
 
@@ -2581,7 +2672,7 @@ local itemsets = {
 
 ---Create a non-GUI selector widget (managing a collection of toggle widgets) with integer (selection index) data management logic
 ---***
----@param t? selectorCreationData Parameters are to be provided in this table
+---@param t? selectorCreationData Optional parameters
 ---***
 ---@return selector selector Reference to the new selector widget, utility functions and more wrapped in a table
 function wt.CreateSelector(t)
@@ -2632,13 +2723,13 @@ function wt.CreateSelector(t)
 
 	--[ Getters & Setters ]
 
-	---Returns the object type of this widget
+	---Returns the type of this object
 	---***
-	---@return "Selector" string
+	---@return "Selector"
 	---<p></p>
 	function selector.getType() return "Selector" end
 
-	---Checks and returns if the type of this widget is equal to the string provided
+	---Checks and returns if the type of this object is equal to the string provided
 	---@param type string|AnyTypeName
 	---@return boolean
 	---<p></p>
@@ -2800,7 +2891,7 @@ function wt.CreateSelector(t)
 
 	---Get the currently stored data via **t.getData()**
 	---@return integer|nil
-	function selector.getData() return type(t.getData) == "function" and t.getData() end
+	function selector.getData() return type(t.getData) == "function" and t.getData() or nil end
 
 	---Verify and save the provided data to storage via **t.saveData(...)** then load it to the widget via **t.loadData()**
 	---***
@@ -2841,7 +2932,7 @@ function wt.CreateSelector(t)
 	---Verify and set the specified item as selected
 	---***
 	---@param index? integer ***Default:*** nil *(no selection)*
-	---@param user? boolean If true, mark the change as being initiated via a user interaction and call change handlers | ***Default:*** `false`
+	---@param user? boolean If true, mark the call as being the result of a user interaction | ***Default:*** `false`
 	---@param silent? boolean If false, invoke a "selected" event and call registered listeners | ***Default:*** `false`
 	function selector.setSelected(index, user, silent)
 		value = verify(index)
@@ -2899,7 +2990,7 @@ end
 ---Create a non-GUI special selector widget (managing a collection of toggle widgets) with data management logic specific to the specified **itemset**
 ---***
 ---@param itemset SpecialSelectorItemset Specify what type of selector should be created
----@param t? specialSelectorCreationData Parameters are to be provided in this table
+---@param t? specialSelectorCreationData Optional parameters
 ---***
 ---@return specialSelector selector Reference to the new selector widget, utility functions and more wrapped in a table
 function wt.CreateSpecialSelector(itemset, t)
@@ -2961,13 +3052,13 @@ function wt.CreateSpecialSelector(itemset, t)
 
 	--[ Getters & Setters ]
 
-	---Returns the object type of this widget
+	---Returns the type of this object
 	---***
-	---@return "SpecialSelector" string
+	---@return "SpecialSelector"
 	---<p></p>
 	function selector.getType() return "SpecialSelector" end
 
-	---Checks and returns if the type of this widget is equal to the string provided
+	---Checks and returns if the type of this object is equal to the string provided
 	---@param type string|AnyTypeName
 	---@return boolean
 	---<p></p>
@@ -3055,7 +3146,7 @@ function wt.CreateSpecialSelector(itemset, t)
 
 	---Get the currently stored data via **t.getData()**
 	---@return specialSelectorValueTypes|nil
-	function selector.getData() return type(t.getData) == "function" and t.getData() end
+	function selector.getData() return type(t.getData) == "function" and t.getData() or nil end
 
 	---Verify and save the provided data to storage via **t.saveData(...)** then load it to the widget via **t.loadData()**
 	---***
@@ -3069,7 +3160,7 @@ function wt.CreateSpecialSelector(itemset, t)
 
 	---Get the currently set default value
 	---@return specialSelectorValueTypes|nil default
-	function selector.getDefault() return itemsets[itemset][default].value end
+	function selector.getDefault() return itemsets[itemset][default] and itemsets[itemset][default].value or nil end
 
 	---Set the default value
 	---***
@@ -3097,12 +3188,12 @@ function wt.CreateSpecialSelector(itemset, t)
 	---Returns the value of the currently selected item or nil if there is no selection
 	---@return specialSelectorValueTypes|nil selected
 	---<p></p>
-	function selector.getSelected() return itemsets[itemset][value].value end
+	function selector.getSelected() return itemsets[itemset][value] and itemsets[itemset][value].value or nil end
 
 	---Set the specified item as selected
 	---***
-	---@param selected? integer|specialSelectorValueTypes|nil The index or the value of the item to be set as selected ***Default:*** nil *(no selection)*
-	---@param user? boolean If true, mark the change as being initiated via a user interaction and call change handlers | ***Default:*** `false`
+	---@param selected integer|specialSelectorValueTypes|nil The index or the value of the item to be set as selected | ***Default:*** *no selection:* `nil`
+	---@param user? boolean If true, mark the call as being the result of a user interaction | ***Default:*** `false`
 	---@param silent? boolean If false, invoke a "selected" event and call registered listeners | ***Default:*** `false`
 	---<p></p>
 	function selector.setSelected(selected, user, silent)
@@ -3179,7 +3270,7 @@ end
 
 ---Create a non-GUI multiselector widget (managing a collection of toggle widgets) with boolean mask data management logic
 ---***
----@param t? multiselectorCreationData Parameters are to be provided in this table
+---@param t? multiselectorCreationData Optional parameters
 ---***
 ---@return multiselector selector Reference to the new multiselector widget, utility functions and more wrapped in a table
 function wt.CreateMultiselector(t)
@@ -3206,18 +3297,20 @@ function wt.CreateMultiselector(t)
 	--| Data
 
 	local default = {}
+
 	for i = 1, #t.items do default[i] = false end
 
 	---Data verification utility
 	---@param v any
-	---@return boolean[]|nil
+	---@return boolean[]
 	local function verify(v)
 		return us.Fill(us.Prune(type(v) == "table" and us.Clone(v) or {}, function(_, itemValue) return type(itemValue) == "boolean" end), default)
 	end
 
 	default = verify(t.default)
 	local value = verify(t.value or type(t.getData) == "function" and t.getData() or nil)
-	---@type boolean[]|nil
+
+	---@type boolean[]
 	local snapshot = us.Clone(value)
 
 	--| State
@@ -3231,13 +3324,13 @@ function wt.CreateMultiselector(t)
 
 	--[ Getters & Setters ]
 
-	---Returns the object type of this widget
+	---Returns the type of this object
 	---***
-	---@return "Multiselector" string
+	---@return "Multiselector"
 	---<p></p>
 	function selector.getType() return "Multiselector" end
 
-	---Checks and returns if the type of this widget is equal to the string provided
+	---Checks and returns if the type of this object is equal to the string provided
 	---@param type string|AnyTypeName
 	---@return boolean
 	---<p></p>
@@ -3411,7 +3504,7 @@ function wt.CreateMultiselector(t)
 
 	---Get the currently stored data via **t.getData()**
 	---@return boolean[]|nil
-	function selector.getData() return type(t.getData) == "function" and t.getData() end
+	function selector.getData() return type(t.getData) == "function" and t.getData() or nil end
 
 	---Verify and save the provided data to storage via **t.saveData(...)** then load it to the widget via **t.loadData()**
 	---***
@@ -3428,8 +3521,8 @@ function wt.CreateMultiselector(t)
 	function selector.getDefault() return default end
 
 	---Set the default value
-	---@param index boolean[]|nil | ***Default:*** *no change*
-	function selector.setDefault(index) default = verify(index) end
+	---@param selections? boolean[] | ***Default:*** *no selected items: `false[]`*
+	function selector.setDefault(selections) default = verify(selections) end
 
 	---Set and load the stored data managed by the widget to the last saved data snapshot set via **selector.snapshotData()**
 	---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** `true`
@@ -3452,8 +3545,8 @@ function wt.CreateMultiselector(t)
 
 	---Set the specified items as selected
 	---***
-	---@param selections? boolean[]|nil  Indexed list of item states | ***Default:*** `false`[] *(no selected items)*
-	---@param user? boolean If true, mark the change as being initiated via a user interaction and call change handlers | ***Default:*** `false`
+	---@param selections? boolean[] Indexed list of item states | ***Default:*** *no selected items: `false[]`*
+	---@param user? boolean If true, mark the call as being the result of a user interaction | ***Default:*** `false`
 	---@param silent? boolean If false, invoke "selected" and "limited" events and call registered listeners | ***Default:*** `false`
 	function selector.setSelections(selections, user, silent)
 		value = verify(selections)
@@ -3481,7 +3574,7 @@ function wt.CreateMultiselector(t)
 	---***
 	---@param index integer Index of the item | ***Range:*** (1, #selector.toggles)
 	---@param selected? boolean If true, set the item at this index as selected | ***Default:*** `false`
-	---@param user? boolean If true, mark the change as being initiated via a user interaction and call change handlers | ***Default:*** `false`
+	---@param user? boolean If true, mark the call as being the result of a user interaction | ***Default:*** `false`
 	---@param silent? boolean If false, invoke "selected" and "limited" events and call registered listeners | ***Default:*** `false`
 	function selector.setSelected(index, selected, user, silent)
 		if not selector.toggles[index] then return end
@@ -3625,8 +3718,8 @@ end
 
 ---Create a radio button selector GUI frame to pick one out of multiple options with enhanced widget functionality
 ---***
----@param t? radiogroupCreationData Parameters are to be provided in this table
----@param selector? selector|specialSelector Reference to an already existing selector to set up as a radio selector instead of creating a new base widget
+---@param t? radiogroupCreationData Optional parameters
+---@param selector? selector|specialSelector Reference to an already existing selector to mutate into a radio selector instead of creating a new base widget
 ---***
 ---@return radiogroup|specialRadiogroup|selector|specialSelector # References to the new [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame), an array of its child [CheckButton](https://warcraft.wiki.gg/wiki/UIOBJECT_CheckButton) widget items, utility functions and more wrapped in a table
 function wt.CreateRadiogroup(t, selector)
@@ -3652,6 +3745,21 @@ function wt.CreateRadiogroup(t, selector)
 		---@field toggles? selectorRadiobutton[] The list of radio button widgets linked together in this selector
 		radiogroup = selector
 	end
+
+	--[ Getters & Setters ]
+
+	---Returns all object types of this mutated widget
+	---***
+	---@return "Selector"
+	---@return "Radiogroup"
+	---<p></p>
+	function radiogroup.getType() return "Selector", "Radiogroup" end
+
+	---Checks and returns if the a type of this mutated widget matches the string provided
+	---@param type string|AnyTypeName
+	---@return boolean
+	---<p></p>
+	function radiogroup.isType(type) return type == "Selector" or type == "Radiogroup" end
 
 	--[ Properties ]
 
@@ -3787,8 +3895,8 @@ end
 
 ---Create a dropdown radio button selector GUI frame to pick one out of multiple options with enhanced widget functionality
 ---***
----@param t? dropdownRadiogroupCreationData Parameters are to be provided in this table
----@param selector? selector Reference to an already existing selector to set up as a radio selector instead of creating a new base widget
+---@param t? dropdownRadiogroupCreationData Optional parameters
+---@param selector? selector Reference to an already existing selector to mutate into a radio selector instead of creating a new base widget
 ---***
 ---@return dropdownRadiogroup|selector # References to the new [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame), an array of its child [CheckButton](https://warcraft.wiki.gg/wiki/UIOBJECT_CheckButton) widget items, a toggle [Button](https://warcraft.wiki.gg/wiki/UIOBJECT_Button), utility functions and more wrapped in a table
 function wt.CreateDropdownRadiogroup(t, selector)
@@ -3825,9 +3933,11 @@ function wt.CreateDropdownRadiogroup(t, selector)
 	if t.frameLevel then holderFrame:SetFrameLevel(t.frameLevel) end
 	if t.keepOnTop then holderFrame:SetToplevel(t.keepOnTop) end
 
-	--| Dropdown menu
+	--| Scroll
 
 	t.scrollThreshold = t.scrollThreshold or 15
+
+	--[ Dropdown Menu ]
 
 	---@class dropdownRadiogroup : radiogroup
 	---@field holderFrame Frame Main holder frame for the dropdown toggle, buttons and title
@@ -3871,7 +3981,7 @@ function wt.CreateDropdownRadiogroup(t, selector)
 
 	dropdown.menu:SetClampedToScreen(true)
 
-	dropdown.content = #t.items > t.scrollThreshold and wt.CreateScrollFrame({
+	dropdown.content = #t.items > t.scrollThreshold and wt.CreateScrollframe({
 		parent = dropdown.menu,
 		position = { anchor = "CENTER", },
 		size = { w = dropdown.menu:GetWidth() - 12, h = dropdown.menu:GetHeight() - 12 },
@@ -4172,6 +4282,20 @@ function wt.CreateDropdownRadiogroup(t, selector)
 
 	--[ Getters & Setters ]
 
+	---Returns all object types of this mutated widget
+	---***
+	---@return "Selector"
+	---@return "Radiogroup"
+	---@return "DropdownRadiogroup"
+	---<p></p>
+	function dropdown.getType() return "Selector", "Radiogroup", "DropdownRadiogroup" end
+
+	---Checks and returns if the a type of this mutated widget matches the string provided
+	---@param type string|AnyTypeName
+	---@return boolean
+	---<p></p>
+	function dropdown.isType(type) return type == "Selector" or type == "Radiogroup" or type == "DropdownRadiogroup" end
+
 	---Set the text displayed on the label of the toggle button
 	---***
 	---@param text? string ***Default:*** **t.items[*index*].title** *(the title of the currently selected item)* or "…" *(if there is no selection)*
@@ -4330,7 +4454,7 @@ function wt.CreateDropdownRadiogroup(t, selector)
 	updateState(nil, dropdown.isEnabled())
 
 	--Set up starting selection
-	dropdown.setText(t.text)
+	dropdown.setText(t.text, true)
 
 	return dropdown
 end
@@ -4338,8 +4462,8 @@ end
 ---Create a special radio button selector GUI frame to pick an Anchor Point, a horizontal or vertical text alignment or Frame Strata value with enhanced widget functionality
 ---***
 ---@param itemset SpecialSelectorItemset Specify what type of selector should be created
----@param t? specialRadiogroupCreationData Parameters are to be provided in this table
----@param selector? specialSelector|selector Reference to an already existing special selector widget to set up as a special selector frame instead of creating a new base widget
+---@param t? specialRadiogroupCreationData Optional parameters
+---@param selector? specialSelector|selector Reference to an already existing special selector widget to mutate into a special selector frame instead of creating a new base widget
 ---***
 ---@return specialSelector|specialRadiogroup # References to the new [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame), an array of its child [CheckButton](https://warcraft.wiki.gg/wiki/UIOBJECT_CheckButton) widget items, utility functions and more wrapped in a table
 function wt.CreateSpecialRadiogroup(itemset, t, selector)
@@ -4396,13 +4520,28 @@ function wt.CreateSpecialRadiogroup(itemset, t, selector)
 		end
 	}) end
 
+	--[ Getters & Setters ]
+
+	---Returns all object types of this mutated widget
+	---***
+	---@return "SpecialSelector"
+	---@return "SpecialRadiogroup"
+	---<p></p>
+	function radiogroup.getType() return "SpecialSelector", "SpecialRadiogroup" end
+
+	---Checks and returns if the a type of this mutated widget matches the string provided
+	---@param type string|AnyTypeName
+	---@return boolean
+	---<p></p>
+	function radiogroup.isType(type) return type == "SpecialSelector" or type == "SpecialRadiogroup" end
+
 	return radiogroup
 end
 
 ---Create a checkbox selector GUI frame to pick multiple options out of a list with enhanced widget functionality
 ---***
----@param t? checkgroupCreationData Parameters are to be provided in this table
----@param selector? multiselector Reference to an already existing selector to set up as a multiple selector instead of creating a new base widget
+---@param t? checkgroupCreationData Optional parameters
+---@param selector? multiselector Reference to an already existing selector to mutate into a multiple selector instead of creating a new base widget
 ---***
 ---@return checkgroup|multiselector # References to the new [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame), an array of its child [CheckButton](https://warcraft.wiki.gg/wiki/UIOBJECT_CheckButton) widget items, utility functions and more wrapped in a table
 function wt.CreateCheckgroup(t, selector)
@@ -4418,6 +4557,21 @@ function wt.CreateCheckgroup(t, selector)
 	---@field label FontString|nil
 	---@field toggles? selectorCheckbox[] The list of checkbox widgets linked together in this selector
 	local checkgroup = selector
+
+	--[ Getters & Setters ]
+
+	---Returns all object types of this mutated widget
+	---***
+	---@return "Multiselector"
+	---@return "Checkgroup"
+	---<p></p>
+	function checkgroup.getType() return "Multiselector", "Checkgroup" end
+
+	---Checks and returns if the a type of this mutated widget matches the string provided
+	---@param type string|AnyTypeName
+	---@return boolean
+	---<p></p>
+	function checkgroup.isType(type) return type == "Multiselector" or type == "Checkgroup" end
 
 	--[ Frame Setup ]
 
@@ -4571,7 +4725,7 @@ end
 
 ---Create a non-GUI textbox widget with string data management logic
 ---***
----@param t? textboxCreationData Parameters are to be provided in this table
+---@param t? textboxCreationData Optional parameters
 ---***
 ---@return textbox textbox Reference to the new textbox widget, utility functions and more wrapped in a table
 function wt.CreateTextbox(t)
@@ -4603,13 +4757,13 @@ function wt.CreateTextbox(t)
 
 	--[ Getters & Setters ]
 
-	---Returns the object type of this widget
+	---Returns the type of this object
 	---***
-	---@return "Textbox" string
+	---@return "Textbox"
 	---<p></p>
 	function textbox.getType() return "Textbox" end
 
-	---Checks and returns if the type of this widget is equal to the string provided
+	---Checks and returns if the type of this object is equal to the string provided
 	---@param type string|AnyTypeName
 	---@return boolean
 	---<p></p>
@@ -4693,7 +4847,7 @@ function wt.CreateTextbox(t)
 
 	---Get the currently stored data via **t.getData()**
 	---@return string|nil
-	function textbox.getData() return type(t.getData) == "function" and t.getData() end
+	function textbox.getData() return type(t.getData) == "function" and t.getData() or nil end
 
 	---Verify and save the provided data to storage via **t.saveData(...)** then load it to the widget via **t.loadData()**
 	---***
@@ -4734,7 +4888,7 @@ function wt.CreateTextbox(t)
 	---Set the text value of the widget
 	---***
 	---@param text? string ***Default:*** ""
-	---@param user? boolean If true, mark the change as being initiated via a user interaction and call change handlers | ***Default:*** `false`
+	---@param user? boolean If true, mark the call as being the result of a user interaction | ***Default:*** `false`
 	---@param silent? boolean If false, invoke a "changed" event and call registered listeners | ***Default:*** `false`
 	function textbox.setText(text, user, silent)
 		value = type(text) == "string" and text or ""
@@ -4776,7 +4930,7 @@ function wt.CreateTextbox(t)
 	if t.dependencies then wt.AddDependencies(t.dependencies, textbox.setEnabled) end
 
 	--Set starting value
-	textbox.setText(t.color and cr(value, t.color) or value)
+	textbox.setText(t.color and cr(value, t.color) or value, false, true)
 
 	return textbox
 end
@@ -4899,7 +5053,7 @@ end
 ---@param editbox customEditbox|customEditbox
 ---@param title string
 ---@param t editboxCreationData
-local function setUpSingleLineEditbox(editbox, title, t)
+local function setUpEditbox(editbox, title, t)
 
 	--Set as single line
 	editbox.widget:SetMultiLine(false)
@@ -4955,8 +5109,8 @@ end
 
 ---Create a default single-line Blizzard editbox GUI frame with enhanced widget functionality
 ---***
----@param t? editboxCreationData Parameters are to be provided in this table
----@param textbox? selector Reference to an already existing selector to set up as a radio selector instead of creating a new base widget
+---@param t? editboxCreationData Optional parameters
+---@param textbox? textbox Reference to an already existing textbox to mutate into an editbox instead of creating a new base widget
 ---***
 ---@return customEditbox|textbox # Reference to the new [EditBox](hhttps://warcraft.wiki.gg/wiki/UIOBJECT_EditBox), its holder [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame), utility functions and more wrapped in a table
 function wt.CreateEditbox(t, textbox)
@@ -4967,6 +5121,21 @@ function wt.CreateEditbox(t, textbox)
 
 	---@class customEditbox : textbox
 	local editbox = textbox
+
+	--[ Getters & Setters ]
+
+	---Returns all object types of this mutated widget
+	---***
+	---@return "Textbox"
+	---@return "Editbox"
+	---<p></p>
+	function editbox.getType() return "Textbox", "Editbox" end
+
+	---Checks and returns if the a type of this mutated widget matches the string provided
+	---@param type string|AnyTypeName
+	---@return boolean
+	---<p></p>
+	function editbox.isType(type) return type == "Textbox" or type == "Editbox" end
 
 	--[ Frame Setup ]
 
@@ -4995,15 +5164,15 @@ function wt.CreateEditbox(t, textbox)
 
 	--| Shared setup
 
-	setUpSingleLineEditbox(editbox, title, t)
+	setUpEditbox(editbox, title, t)
 
 	return editbox
 end
 
 ---Create a single-line Blizzard editbox frame with custom GUI and enhanced widget functionality
 ---***
----@param t? customEditboxCreationData Parameters are to be provided in this table
----@param textbox? selector Reference to an already existing selector to set up as a radio selector instead of creating a new base widget
+---@param t? customEditboxCreationData Optional parameters
+---@param textbox? textbox Reference to an already existing textbox to mutate into a customizable editbox instead of creating a new base widget
 ---***
 ---@return customEditbox|textbox # Reference to the new [EditBox](hhttps://warcraft.wiki.gg/wiki/UIOBJECT_EditBox), its holder [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame), utility functions and more wrapped in a table
 function wt.CreateCustomEditbox(t, textbox)
@@ -5014,6 +5183,21 @@ function wt.CreateCustomEditbox(t, textbox)
 
 	---@class customEditbox : textbox
 	local editbox = textbox
+
+	--[ Getters & Setters ]
+
+	---Returns all object types of this mutated widget
+	---***
+	---@return "Textbox"
+	---@return "CustomEditbox"
+	---<p></p>
+	function editbox.getType() return "Textbox", "CustomEditbox" end
+
+	---Checks and returns if the a type of this mutated widget matches the string provided
+	---@param type string|AnyTypeName
+	---@return boolean
+	---<p></p>
+	function editbox.isType(type) return type == "Textbox" or type == "CustomEditbox" end
 
 	--[ Frame Setup ]
 
@@ -5046,7 +5230,7 @@ function wt.CreateCustomEditbox(t, textbox)
 
 	--| Shared setup
 
-	setUpSingleLineEditbox(editbox, title, t)
+	setUpEditbox(editbox, title, t)
 
 	--[ Events ]
 
@@ -5060,7 +5244,8 @@ end
 
 ---Create a default multiline Blizzard editbox GUI frame with enhanced widget functionality
 ---***
----@param t? multilineEditboxCreationData Parameters are to be provided in this table
+---@param t? multilineEditboxCreationData Optional parameters
+---@param textbox? textbox Reference to an already existing textbox to mutate into a multiline editbox instead of creating a new base widget
 ---***
 ---@return multilineEditbox|textbox # Reference to the new [EditBox](hhttps://warcraft.wiki.gg/wiki/UIOBJECT_EditBox), its holder [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame), utility functions and more wrapped in a table
 function wt.CreateMultilineEditbox(t, textbox)
@@ -5072,39 +5257,54 @@ function wt.CreateMultilineEditbox(t, textbox)
 	---@class multilineEditbox : textbox
 	local editbox = textbox
 
+	--[ Getters & Setters ]
+
+	---Returns all object types of this mutated widget
+	---***
+	---@return "Textbox"
+	---@return "MultilineEditbox"
+	---<p></p>
+	function editbox.getType() return "Textbox", "MultilineEditbox" end
+
+	---Checks and returns if the a type of this mutated widget matches the string provided
+	---@param type string|AnyTypeName
+	---@return boolean
+	---<p></p>
+	function editbox.isType(type) return type == "Textbox" or type == "MultilineEditbox" end
+
 	--[ Frame Setup ]
 
 	local name = (t.append ~= false and t.parent and t.parent ~= UIParent and t.parent:GetName() or "") .. (t.name and t.name:gsub("%s+", "") or "Textbox")
 
 	editbox.frame = CreateFrame("Frame", name, t.parent)
-	editbox.scrollFrame = CreateFrame("ScrollFrame", name .. "ScrollFrame", editbox.frame, ScrollControllerMixin and "InputScrollFrameTemplate")
+	editbox.scrollframe = CreateFrame("ScrollFrame", name .. "ScrollFrame", editbox.frame, ScrollControllerMixin and "InputScrollFrameTemplate")
 
 	---@type EditBox|nil
-	editbox.widget = editbox.scrollFrame.EditBox
+	editbox.widget = editbox.scrollframe.EditBox
 
 	--Set as multiline
 	editbox.widget:SetMultiLine(true)
 
 	--| Position & dimensions
 
-	local scrollFrameHeight = t.size.h - (t.label ~= false and 28 or 10)
+	local scrollframeHeight = t.size.h - (t.label ~= false and 28 or 10)
 	local arrange = type(t.arrange) == "table" and t.arrange or {}
 
 	if not t.arrange and t.position then wt.SetPosition(editbox.frame, t.position) end
 	wt.SetArrangementDirective(editbox.frame, arrange.index, arrange.wrap ~= false, t.arrange == nil)
 
-	editbox.scrollFrame:SetPoint("BOTTOM", 0, 5)
-	wt.SetPosition(editbox.scrollFrame.ScrollBar, {
+	editbox.scrollframe:SetPoint("BOTTOM", 0, 5)
+	wt.SetPosition(editbox.scrollframe.ScrollBar, {
 		anchor = "RIGHT",
-		relativeTo = editbox.scrollFrame,
+		relativeTo = editbox.scrollframe,
 		relativePoint = "RIGHT",
 		offset = { x = -4, y = 0 }
 	})
 
 	editbox.frame:SetSize(t.size.w, t.size.h)
-	editbox.scrollFrame:SetSize(t.size.w - 10, scrollFrameHeight)
-	editbox.scrollFrame.ScrollBar:SetHeight(scrollFrameHeight - 4)
-	editbox.scrollFrame.EditBox:SetWidth(editbox.scrollFrame:GetWidth())
+	editbox.scrollframe:SetSize(t.size.w - 10, scrollframeHeight)
+	editbox.scrollframe.ScrollBar:SetHeight(scrollframeHeight - 4)
+	editbox.scrollframe.EditBox:SetWidth(editbox.scrollframe:GetWidth())
 
 	--| Label
 
@@ -5119,16 +5319,16 @@ function wt.CreateMultilineEditbox(t, textbox)
 
 	t.scrollSpeed = t.scrollSpeed or 0.25
 
-	editbox.scrollFrame.ScrollBar.SetPanExtentPercentage = function() --WATCH: Change when Blizzard provides a better way to overriding the built-in update function
-		local height = editbox.scrollFrame:GetHeight()
+	editbox.scrollframe.ScrollBar.SetPanExtentPercentage = function() --WATCH: Change when Blizzard provides a better way to overriding the built-in update function
+		local height = editbox.scrollframe:GetHeight()
 
-		editbox.scrollFrame.ScrollBar.panExtentPercentage = height * t.scrollSpeed / math.abs(editbox.widget:GetHeight() - height)
+		editbox.scrollframe.ScrollBar.panExtentPercentage = height * t.scrollSpeed / math.abs(editbox.widget:GetHeight() - height)
 	end
 
 	--| Character counter
 
-	editbox.scrollFrame.CharCount:SetFontObject("GameFontDisableTiny2")
-	if t.charCount == false or (t.charLimit or 0) == 0 then editbox.scrollFrame.CharCount:Hide() end
+	editbox.scrollframe.CharCount:SetFontObject("GameFontDisableTiny2")
+	if t.charCount == false or (t.charLimit or 0) == 0 then editbox.scrollframe.CharCount:Hide() end
 
 	---@diagnostic disable-next-line: inject-field
 	editbox.widget.cursorOffset = 0 --WATCH: Remove when the character counter gets fixed..
@@ -5141,7 +5341,7 @@ function wt.CreateMultilineEditbox(t, textbox)
 
 	--| UX
 
-	editbox.widget:HookScript("OnTextChanged", function(_, _, user) if not user and t.scrollToTop then editbox.scrollFrame:SetVerticalScroll(0) end end)
+	editbox.widget:HookScript("OnTextChanged", function(_, _, user) if not user and t.scrollToTop then editbox.scrollframe:SetVerticalScroll(0) end end)
 	editbox.widget:HookScript("OnEditFocusGained", function(self) self:HighlightText() end)
 	editbox.widget:HookScript("OnEditFocusLost", function(self) self:ClearHighlightText() end)
 
@@ -5151,24 +5351,24 @@ function wt.CreateMultilineEditbox(t, textbox)
 		local scrollBarOffset = scrolling and (wt.classic and 32 or 16) or 0
 		local charCountWidth = t.charCount ~= false and (t.charLimit or 0) > 0 and tostring(t.charLimit - editbox.getText():len()):len() * 6 + 3 or 0
 
-		editbox.widget:SetWidth(editbox.scrollFrame:GetWidth() - scrollBarOffset - charCountWidth)
+		editbox.widget:SetWidth(editbox.scrollframe:GetWidth() - scrollBarOffset - charCountWidth)
 
 		--Update the character counter
-		if editbox.scrollFrame.CharCount:IsVisible() and t.charLimit then --WATCH: Remove when the character counter gets fixed..
-			editbox.scrollFrame.CharCount:SetWidth(charCountWidth)
-			editbox.scrollFrame.CharCount:SetText(t.charLimit - editbox.getText():len())
-			editbox.scrollFrame.CharCount:SetPoint("BOTTOMRIGHT", editbox.scrollFrame, "BOTTOMRIGHT", -scrollBarOffset + 1, 0)
+		if editbox.scrollframe.CharCount:IsVisible() and t.charLimit then --WATCH: Remove when the character counter gets fixed..
+			editbox.scrollframe.CharCount:SetWidth(charCountWidth)
+			editbox.scrollframe.CharCount:SetText(t.charLimit - editbox.getText():len())
+			editbox.scrollframe.CharCount:SetPoint("BOTTOMRIGHT", editbox.scrollframe, "BOTTOMRIGHT", -scrollBarOffset + 1, 0)
 		end
 	end
 
 	--Resize updates
-	editbox.scrollFrame.ScrollBar:HookScript("OnShow", function() resizeEditbox(true) end)
-	editbox.scrollFrame.ScrollBar:HookScript("OnHide", function() resizeEditbox(false) end)
+	editbox.scrollframe.ScrollBar:HookScript("OnShow", function() resizeEditbox(true) end)
+	editbox.scrollframe.ScrollBar:HookScript("OnHide", function() resizeEditbox(false) end)
 
 	--| Tooltip
 
 	if type(t.tooltip) == "table" then
-		wt.AddTooltip(editbox.scrollFrame, {
+		wt.AddTooltip(editbox.scrollframe, {
 			title = t.tooltip.title or title,
 			lines = t.tooltip.lines,
 			anchor = "ANCHOR_RIGHT",
@@ -5178,7 +5378,7 @@ function wt.CreateMultilineEditbox(t, textbox)
 			local defaultValue
 			if t.showDefault ~= false then defaultValue = crc(editbox.getDefault(), "FF55DD55") end
 
-			wt.AddWidgetTooltipLines({ editbox.scrollFrame, editbox.widget }, defaultValue, t.utilityMenu)
+			wt.AddWidgetTooltipLines({ editbox.scrollframe, editbox.widget }, defaultValue, t.utilityMenu)
 		end
 	end
 
@@ -5215,12 +5415,12 @@ end
 
 ---Create a custom button with a toggled textline & editbox from which text can be copied
 ---***
----@param t? copyboxCreationData Parameters are to be provided in this table
+---@param t? copyboxCreationData Optional parameters
 ---***
 ---@return copybox copybox References to the new [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame), its child widgets & their custom values, utility functions and more wrapped in a table
 function wt.CreateCopybox(t)
 	t = type(t) == "table" and t or {}
-	t.value = t.value or ""
+	local text = type(t.value) == "string" and t.value or ""
 
 	---@class copybox
 	local copybox = {}
@@ -5287,18 +5487,18 @@ function wt.CreateCopybox(t)
 				OnTextChanged = function(self, _, user)
 					if not user then return end
 
-					self:SetText(cr(t.value, t.colorOnMouse))
+					self:SetText(cr(text, t.colorOnMouse))
 					self:SetCursorPosition(0)
 					self:HighlightText()
 				end,
 				OnEnter = function(self)
-					self:SetText(cr(t.value, t.colorOnMouse))
+					self:SetText(cr(text, t.colorOnMouse))
 					self:SetCursorPosition(0)
 					self:HighlightText()
 					self:SetFocus()
 				end,
 				OnLeave = function(self)
-					self:SetText(cr(t.value, t.color))
+					self:SetText(cr(text, t.color))
 					self:SetCursorPosition(0)
 					self:ClearHighlightText()
 					self:ClearFocus()
@@ -5308,7 +5508,7 @@ function wt.CreateCopybox(t)
 					self:HighlightText()
 				end,
 			},
-			value = t.value,
+			value = text,
 			showDefault = false,
 			utilityMenu = false,
 		})
@@ -5321,7 +5521,7 @@ end
 
 ---Create a non-GUI numeric widget with number data management logic
 ---***
----@param t? numericCreationData Parameters are to be provided in this table
+---@param t? numericCreationData Optional parameters
 ---***
 ---@return numeric numeric Reference to the new numeric widget, utility functions and more wrapped in a table
 function wt.CreateNumeric(t)
@@ -5346,7 +5546,7 @@ function wt.CreateNumeric(t)
 
 	---Data verification utility
 	---@param v any
-	---@return number|nil
+	---@return number
 	local function verify(v)
 		v = type(v) == "number" and v or default
 
@@ -5370,13 +5570,13 @@ function wt.CreateNumeric(t)
 
 	--[ Getters & Setters ]
 
-	---Returns the object type of this widget
+	---Returns the type of this object
 	---***
-	---@return "Numeric" string
+	---@return "Numeric"
 	---<p></p>
 	function numeric.getType() return "Numeric" end
 
-	---Checks and returns if the type of this widget is equal to the string provided
+	---Checks and returns if the type of this object is equal to the string provided
 	---@param type string|AnyTypeName
 	---@return boolean
 	---<p></p>
@@ -5472,7 +5672,7 @@ function wt.CreateNumeric(t)
 
 	---Get the currently stored data via **t.getData()**
 	---@return number|nil
-	function numeric.getData() return type(t.getData) == "function" and t.getData() end
+	function numeric.getData() return type(t.getData) == "function" and t.getData() or nil end
 
 	---Verify and save the provided data to storage via **t.saveData(...)** then load it to the widget via **t.loadData()**
 	---***
@@ -5513,6 +5713,7 @@ function wt.CreateNumeric(t)
 	---Set the value of the widget
 	---***
 	---@param number? number A valid number value within the specified **t.min**, **t.max** range | ***Default:*** **t.min**
+	---@param user? boolean If true, mark the call as being the result of a user interaction | ***Default:*** `false`
 	function numeric.setNumber(number, user, silent)
 		value = verify(number)
 
@@ -5525,13 +5726,13 @@ function wt.CreateNumeric(t)
 
 	---Decrease the value of the widget by the specified step or alt step amount
 	---@param alt? boolean If true, use alt step instead of step to decrease the value by | ***Default:*** `false`
-	---@param user? boolean If true, mark the change as being initiated via a user interaction and call change handlers | ***Default:*** `false`
+	---@param user? boolean If true, mark the call as being the result of a user interaction | ***Default:*** `false`
 	---@param silent? boolean If false, invoke a "changed" event and call registered listeners | ***Default:*** `false`
 	function numeric.decrease(alt, user, silent) numeric.setNumber(value - (alt and altStep or step), user, silent) end
 
 	---Increase the value of the widget by the specified step or alt step amount
 	---@param alt? boolean If true, use alt step instead of step to increase the value by | ***Default:*** `false`
-	---@param user? boolean If true, mark the change as being initiated via a user interaction and call change handlers | ***Default:*** `false`
+	---@param user? boolean If true, mark the call as being the result of a user interaction | ***Default:*** `false`
 	---@param silent? boolean If false, invoke a "changed" event and call registered listeners | ***Default:*** `false`
 	function numeric.increase(alt, user, silent) numeric.setNumber(value + (alt and altStep or step), user, silent) end
 
@@ -5553,7 +5754,8 @@ function wt.CreateNumeric(t)
 
 	--| Value limits
 
-	--ADD annotations
+	---Return the current lower value limit of the widget
+	---@return number
 	function numeric.getMin() return limitMin end
 
 	---Set the lower value limit of the widget
@@ -5566,7 +5768,8 @@ function wt.CreateNumeric(t)
 		if not silent then numeric.invoke.min() end
 	end
 
-	--ADD annotations
+	---Return the current upper value limit of the widget
+	---@return number
 	function numeric.getMax() return limitMax end
 
 	---Set the upper value limit of the widget
@@ -5581,21 +5784,13 @@ function wt.CreateNumeric(t)
 
 	--| Value step
 
-	--ADD annotations
+	---Return the current value step of the widget
+	---@return number
 	function numeric.getStep() return step end
 
-	--ADD annotations
-	-- function numeric.setStep(number)
-	-- 	step = number
-	-- end
-
-	--ADD annotations
+	---Return the current alternative value step of the widget
+	---@return number|nil
 	function numeric.getAltStep() return altStep end
-
-	--ADD annotations
-	-- function numeric.setAltStep(number)
-	-- 	altStep = number
-	-- end
 
 	--[ Initialization ]
 
@@ -5620,8 +5815,8 @@ end
 
 ---Create a Blizzard slider GUI frame with enhanced widget functionality
 ---***
----@param t? sliderCreationData Parameters are to be provided in this table
----@param numeric? numeric Reference to an already existing numeric widget to set up as a slider instead of creating a new base widget
+---@param t? sliderCreationData Optional parameters
+---@param numeric? numeric Reference to an already existing numeric widget to mutate into a slider instead of creating a new base widget
 ---***
 ---@return customSlider|numeric # References to the new [Slider](https://warcraft.wiki.gg/wiki/UIOBJECT_Slider), its holder [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame), child widgets, utility functions and more wrapped in a table
 function wt.CreateSlider(t, numeric)
@@ -5632,6 +5827,21 @@ function wt.CreateSlider(t, numeric)
 
 	---@class customSlider : numeric
 	local slider = numeric
+
+	--[ Getters & Setters ]
+
+	---Returns all object types of this mutated widget
+	---***
+	---@return "Numeric"
+	---@return "Slider"
+	---<p></p>
+	function slider.getType() return "Numeric", "Slider" end
+
+	---Checks and returns if the a type of this mutated widget matches the string provided
+	---@param type string|AnyTypeName
+	---@return boolean
+	---<p></p>
+	function slider.isType(type) return type == "Numeric" or type == "Slider" end
 
 	--[ Frame Setup ]
 
@@ -5933,8 +6143,8 @@ end
 
 ---Create a classic Blizzard slider GUI frame with enhanced widget functionality
 ---***
----@param t? classicSliderCreationData Parameters are to be provided in this table
----@param numeric? numeric Reference to an already existing numeric widget to set up as a slider instead of creating a new base widget
+---@param t? classicSliderCreationData Optional parameters
+---@param numeric? numeric Reference to an already existing numeric widget to mutate into a slider instead of creating a new base widget
 ---***
 ---@return classicSlider|numeric # References to the new [Slider](https://warcraft.wiki.gg/wiki/UIOBJECT_Slider), its holder [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame), child widgets, utility functions and more wrapped in a table
 function wt.CreateClassicSlider(t, numeric)
@@ -5945,6 +6155,21 @@ function wt.CreateClassicSlider(t, numeric)
 
 	---@class classicSlider : numeric
 	local slider = numeric
+
+	--[ Getters & Setters ]
+
+	---Returns all object types of this mutated widget
+	---***
+	---@return "Numeric"
+	---@return "ClassicSlider"
+	---<p></p>
+	function slider.getType() return "Numeric", "ClassicSlider" end
+
+	---Checks and returns if the a type of this mutated widget matches the string provided
+	---@param type string|AnyTypeName
+	---@return boolean
+	---<p></p>
+	function slider.isType(type) return type == "Numeric" or type == "ClassicSlider" end
 
 	--[ Frame Setup ]
 
@@ -6344,7 +6569,7 @@ end
 
 ---Create a non-GUI color pick manager widget with color data management logic
 ---***
----@param t? colormanagerCreationData Parameters are to be provided in this table
+---@param t? colormanagerCreationData Optional parameters
 ---***
 ---@return colormanager colorer Reference to the new color pick manager widget, utility functions and more wrapped in a table
 function wt.CreateColormanager(t)
@@ -6377,17 +6602,17 @@ function wt.CreateColormanager(t)
 
 	--[ Getters & Setters ]
 
-	---Returns the object type of this widget
+	---Returns the type of this object
 	---***
-	---@return "Colorpicker" string
+	---@return "Colormanager"
 	---<p></p>
-	function colormanager.getType() return "Colorpicker" end
+	function colormanager.getType() return "Colormanager" end
 
-	---Checks and returns if the type of this widget is equal to the string provided
+	---Checks and returns if the type of this object is equal to the string provided
 	---@param type string|AnyTypeName
 	---@return boolean
 	---<p></p>
-	function colormanager.isType(type) return type == "Colorpicker" end
+	function colormanager.isType(type) return type == "Colormanager" end
 
 	--| Event handling
 
@@ -6467,7 +6692,7 @@ function wt.CreateColormanager(t)
 
 	---Get the currently stored data via **t.getData()**
 	---@return colorData|nil
-	function colormanager.getData() return type(t.getData) == "function" and t.getData() end
+	function colormanager.getData() return type(t.getData) == "function" and t.getData() or nil end
 
 	---Verify and save the provided data to storage via **t.saveData(...)** then load it to the widget via **t.loadData()**
 	---***
@@ -6508,7 +6733,7 @@ function wt.CreateColormanager(t)
 	---Set the managed color values
 	---***
 	---@param color? colorData|colorRGBA ***Default:*** { r = 1, g = 1, b = 1, a = 1 } *opaque white:* `{ r = 1, g = 1, b = 1, a = 1 }`
-	---@param user? boolean Whether to flag the call as a result of a user interaction calling registered listeners | ***Default:*** `false`
+	---@param user? boolean If true, mark the call as being the result of a user interaction | ***Default:*** `false`
 	---@param silent? boolean If false, invoke a "colored" event and call registered listeners | ***Default:*** `false`
 	function colormanager.setColor(color, user, silent)
 		value = wt.PackColor(wt.UnpackColor(color))
@@ -6608,8 +6833,8 @@ end
 
 ---Create a color picker GUI frame with HEX(A) & RGB(A) input while utilizing the [ColorPickerFrame](https://warcraft.wiki.gg/wiki/Using_the_ColorPickerFrame) wheel
 ---***
----@param t? colorpickerCreationData Parameters are to be provided in this table
----@param colormanager? colormanager Reference to an already existing color picker to set up instead of creating a new base widget
+---@param t? colorpickerCreationData Optional parameters
+---@param colormanager? colormanager Reference to an already existing color data manager to mutate into a colorpicker instead of creating a new base widget
 ---***
 ---@return colorpicker|colormanager # Reference to the new [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame), utility functions and more wrapped in a table
 function wt.CreateColorpicker(t, colormanager)
@@ -6625,6 +6850,21 @@ function wt.CreateColorpicker(t, colormanager)
 	---@class colorpicker : colormanager
 	---@field button colorpickerButton|customButton|action
 	local colorpicker = colormanager
+
+	--[ Getters & Setters ]
+
+	---Returns all object types of this mutated widget
+	---***
+	---@return "Colormanager"
+	---@return "Colorpicker"
+	---<p></p>
+	function colormanager.getType() return "Colormanager", "Colorpicker" end
+
+	---Checks and returns if the a type of this mutated widget matches the string provided
+	---@param type string|AnyTypeName
+	---@return boolean
+	---<p></p>
+	function colormanager.isType(type) return type == "Colormanager" or type == "Colorpicker" end
 
 	--[ Frame Setup ]
 
@@ -6907,19 +7147,927 @@ function wt.CreateColorpicker(t, colormanager)
 	return colorpicker
 end
 
+--[ Profile Data Manager ]
 
---[[ TEMPLATES ]]
+---Create a non-GUI profile data manager widget with live database management and profile selection logic
+---***
+---@param accountData profileStorage|table Reference to the account-bound SavedVariables addon database where profile data is to be stored<ul><li>***Note:*** A subtable will be created under the key `profiles` if it doesn't already exist, any other keys will be removed (any possible old data will be recovered and incorporated into the active profile data).</li></ul>
+---@param characterData characterProfileData|table Reference to the character-specific SavedVariablesPerCharacter addon database where selected profiles are to be specified<ul><li>***Note:*** An integer value will be created under the key `activeProfile` if it doesn't already exist in this table.</li></ul>
+---@param defaultData table A static table containing all default settings values to be cloned when creating a new profile or resetting one
+---@param t? profilemanagerCreationData Optional parameters
+---***
+---@return profilemanager? profilemanager Reference to the new profile data manager widget, utility functions and more wrapped in a table | ***Default:*** nil
+function wt.CreateProfilemanager(accountData, characterData, defaultData, t)
+	if type(accountData) ~= "table" or type(characterData) ~= "table" or type(defaultData) ~= "table" then return end
 
---[ Settings Pages ]
+	t = type(t) == "table" and t or {}
+	t.category = type(t.category) == "string" and t.category or ""
+
+	--[ Wrapper table ]
+
+	---@class profilemanager
+	---@field data table Reference to live data table of the currently active profile
+	---@field firstLoad boolean True, if the `accountData.profiles` table did not exist yet
+	---@field newCharacter boolean True, if the `characterData.activeProfile` integer did not exist yet
+	local profilemanager = {
+		firstLoad = type(accountData.profiles) ~= "table",
+		newCharacter = type(characterData.activeProfile) ~= "number"
+	}
+
+	--[ Properties ]
+
+	local category = t.category:len() > 0 and t.category or "Addon"
+	local valueChecker = t.valueChecker
+	local onRecovery = t.onRecovery
+	local recoveryMap = t.recoveryMap
+
+	--| Data
+
+	local activeIndex = 1
+
+	--| Utilities
+
+	--Profile delete confirmation
+	local deleteProfilePopup = wt.RegisterPopupDialog(t.category .. "_DELETE_PROFILE", { accept = DELETE, })
+
+	--Profile reset confirmation
+	local resetProfilePopup = wt.RegisterPopupDialog(t.category .. "RESET_PROFILE")
+
+	--| Events
+
+	---@type table<string, function[]>
+	local listeners = {}
+
+	--[ Getters & Setters ]
+
+	---Returns the type of this object
+	---***
+	---@return "Profilemanager"
+	---<p></p>
+	function profilemanager.getType() return "Profilemanager" end
+
+	---Checks and returns if the type of this object is equal to the string provided
+	---@param type string|AnyTypeName
+	---@return boolean
+	---<p></p>
+	function profilemanager.isType(type) return type == "Profilemanager" end
+
+	--| Event handling
+
+	--Get a trigger function to call all registered listeners for the specified custom widget event with
+	profilemanager.invoke = {
+		---@param user boolean
+		loaded = function(user) callListeners(profilemanager, listeners, "loaded", user) end,
+
+		---@param success boolean
+		---@param user boolean
+		activated = function(success, user) callListeners(profilemanager, listeners, "activated", activeIndex, accountData.profiles[activeIndex].title, success, user) end,
+
+		---@param index integer
+		---@param title string
+		---@param user boolean
+		created = function(index, title, user) callListeners(profilemanager, listeners, "created", index, title, user) end,
+
+		---@param success boolean
+		---@param user boolean
+		---@param index any
+		---@param title? string
+		renamed = function(success, user, index, title) callListeners(profilemanager, listeners, "renamed", success, index, title, user) end,
+
+		---@param success boolean
+		---@param user boolean
+		---@param index any
+		---@param title? string
+		deleted = function(success, user, index, title) callListeners(profilemanager, listeners, "deleted", success, index, title, user) end,
+
+		---@param success boolean
+		---@param user boolean
+		---@param index any
+		---@param title? string
+		reset = function(success, user, index, title) callListeners(profilemanager, listeners, "reset", success, index, title, user) end,
+
+		---@param event string Custom event tag
+		---@param ... any
+		_ = function(event, ...) callListeners(profilemanager, listeners, event, ...) end
+	}
+
+	--Hook a handler function as a listener for a custom widget event
+	profilemanager.setListener = {
+		---@param listener ProfilemanagerEventHandler_loaded Handler function to set
+		---@param callIndex? integer Set when to call **listener** in the execution order | ***Default:*** *placed at the end of the current list*
+		loaded = function(listener, callIndex) addListener(listeners, "loaded", listener, callIndex) end,
+
+		---@param listener ProfilemanagerEventHandler_activated Handler function to set
+		---@param callIndex? integer Set when to call **listener** in the execution order | ***Default:*** *placed at the end of the current list*
+		activated = function(listener, callIndex) addListener(listeners, "activated", listener, callIndex) end,
+
+		---@param listener ProfilemanagerEventHandler_created Handler function to set
+		---@param callIndex? integer Set when to call **listener** in the execution order | ***Default:*** *placed at the end of the current list*
+		created = function(listener, callIndex) addListener(listeners, "created", listener, callIndex) end,
+
+		---@param listener ProfilemanagerEventHandler_renamed Handler function to set
+		---@param callIndex? integer Set when to call **listener** in the execution order | ***Default:*** *placed at the end of the current list*
+		renamed = function(listener, callIndex) addListener(listeners, "created", listener, callIndex) end,
+
+		---@param listener ProfilemanagerEventHandler_deleted Handler function to set
+		---@param callIndex? integer Set when to call **listener** in the execution order | ***Default:*** *placed at the end of the current list*
+		deleted = function(listener, callIndex) addListener(listeners, "deleted", listener, callIndex) end,
+
+		---@param listener ProfilemanagerEventHandler_reset Handler function to set
+		---@param callIndex? integer Set when to call **listener** in the execution order | ***Default:*** *placed at the end of the current list*
+		reset = function(listener, callIndex) addListener(listeners, "reset", listener, callIndex) end,
+
+		---@param event string Custom event tag
+		---@param listener ProfilemanagerEventHandler_any Handler function to set
+		---@param callIndex? integer Set when to call **listener** in the execution order | ***Default:*** *placed at the end of the current list*
+		_ = function(event, listener, callIndex) addListener(listeners, event, listener, callIndex) end
+	}
+
+	--| Utilities
+
+	---Set the active profile
+	---@param index? integer ***Default:*** `activeIndex` or `1`
+	local function setActiveProfile(index)
+		index = Clamp(type(index) == "number" and type(accountData.profiles[index]) == "table" and math.floor(index) or activeIndex, 1, #accountData.profiles)
+
+		activeIndex = index
+		profilemanager.data = accountData.profiles[index].data
+
+		--Update selected profile in the character-specific data
+		characterData.activeProfile = index
+	end
+
+	---Activate the specified settings profile
+	---***
+	---@param index? integer Index of the profile to set as the currently active settings profile | ***Default:*** *currently active profile index* or `1`
+	---@param user? boolean If true, mark the call as being the result of a user interaction | ***Default:*** `false`
+	---@param silent? boolean If false, invoke an "applied" event and call registered listeners | ***Default:*** `false`
+	---***
+	---@return integer? index The index of the active profile | ***Default:*** `nil`
+	function profilemanager.activate(index, user, silent)
+		if type(index) ~= "number" then
+			--Call listeners
+			if not silent then profilemanager.invoke.activated(false, user == true) end
+
+			return nil
+		end
+
+		setActiveProfile(index)
+
+		--Call listeners
+		if not silent then profilemanager.invoke.activated(true, user == true) end
+
+		return activeIndex
+	end
+
+	---Find a profile by its display title and return its index
+	---***
+	---@param title string Name of the profile to find
+	---@param skipFirst? boolean Set to `true` to find duplicate `title` | ***Default:*** `false`
+	---@return integer? index
+	function profilemanager.findIndex(title, skipFirst)
+		for i = 1, #accountData.profiles do if accountData.profiles[i].title == title then if skipFirst then skipFirst = false else return i end end end
+	end
+
+	---Find an unused profile name to be able to use it as an identifying display title
+	---***
+	---@param name? string ***Default:*** "Profile"
+	---@param number? integer ***Default:*** 2
+	---@param stopAtFirst? boolean ***Default:*** `true`
+	---@return string title
+	local function checkName(name, number, stopAtFirst)
+		name = name or wt.strings.profiles.select.profile
+		local title = name .. (number and (" " .. number) or "")
+
+		--Find an unused name for the new profile
+		if profilemanager.findIndex(title, stopAtFirst) then
+			number = (number and number or 2)
+			title = name .. " " .. number
+
+			while profilemanager.findIndex(title) do
+				number = number + 1
+				title = name .. " " .. number
+			end
+		end
+
+		return title
+	end
+
+	---Create a new settings profile
+	---***
+	---@param name? string Name tag to use when setting the display title of the new profile | ***Default:*** `duplicate` and **accountData.profiles[duplicate].title** or "Profile"
+	---@param number? integer Starting value for the incremented number appended to `name` if it's used | ***Default:*** 2
+	---@param duplicate? integer Index of the profile to create the new profile as a duplicate of instead of using default data values
+	---@param apply? boolean Whether to immediately set the new profile as the active profile or not | ***Default:*** `true`
+	---@param index? integer Place the new profile under this specified index in **accountData.profile** instead of the end of the list | ***Range:*** (1, #**accountData.profiles** + 1)
+	---@param user? boolean If true, mark the call as being the result of a user interaction | ***Default:*** `false`
+	---@param silent? boolean If false, invoke an "created" event and call registered listeners | ***Default:*** `false`
+	function profilemanager.create(name, number, duplicate, index, apply, user, silent)
+		index = Clamp(type(index) == "number" and math.floor(index) or #accountData.profiles + 1, 1, #accountData.profiles + 1)
+		local d = type(accountData.profiles[duplicate]) == "table" and accountData.profiles[duplicate] or nil
+
+		--Create profile data
+		table.insert(accountData.profiles, index, {
+			title = checkName(d and d.title or name, number),
+			data = us.Clone(d and d.data or defaultData)
+		})
+
+		--Call listeners
+		if not silent then profilemanager.invoke.created(index, accountData.profiles[index].title, user == true) end
+
+		--Activate the new profile
+		if apply ~= false then profilemanager.activate(index, user, silent) end
+	end
+
+	---Rename the specified profile
+	---@param index? integer Index of the profile to rename | ***Default:*** *currently active profile index*
+	---@param name? string The new title of the profile to set | ***Default:*** "Profile"
+	---@param number? integer Starting value for the incremented number appended to `name` if it's used | ***Default:*** 2
+	---@param user? boolean If true, mark the call as being the result of a user interaction | ***Default:*** `false`
+	---@param silent? boolean If false, invoke an "renamed" event and call registered listeners | ***Default:*** `false`
+	---***
+	---@return boolean # True on success, false if the operation failed
+	function profilemanager.rename(index, name, number, user, silent)
+		if index and not accountData.profiles[index] then
+			--Call listeners
+			if not silent then profilemanager.invoke.renamed(false, user == true, index) end
+
+			return false
+		end
+
+		index = index or activeIndex
+		local title = checkName(name, number)
+
+		accountData.profiles[index].title = title
+
+		--Call listeners
+		if not silent then profilemanager.invoke.renamed(true, user == true, index, title) end
+
+		return true
+	end
+
+	---Delete the specified profile
+	---***
+	---@param index? integer Index of the profile to delete | ***Default:*** *currently active profile index*
+	---@param unsafe? boolean If false, show a popup confirmation before attempting to delete the specified profile | ***Default:*** `false`
+	---@param user? boolean If true, mark the call as being the result of a user interaction | ***Default:*** `false`
+	---@param silent? boolean If false, invoke an "deleted" event and call registered listeners | ***Default:*** `false`
+	---***
+	---@return boolean # True on success, false if the operation failed
+	function profilemanager.delete(index, unsafe, user, silent)
+		if index and not accountData.profiles[index] then
+			--Call listeners
+			if not silent then profilemanager.invoke.deleted(false, user == true, index) end
+
+			return false
+		end
+
+		index = index or activeIndex
+		local title = accountData.profiles[index].title
+
+		local delete = function()
+			--Delete profile data
+			table.remove(accountData.profiles, index)
+
+			--Call listeners
+			if not silent then profilemanager.invoke.deleted(true, user == true, index, title) end
+
+			--Activate the replacement profile
+			if activeIndex == index then profilemanager.activate(index, user, silent) end
+		end
+
+		if unsafe then delete() else StaticPopup_Show(wt.UpdatePopupDialog(deleteProfilePopup, {
+			text = wt.strings.profiles.delete.warning:gsub("#PROFILE", cr(accountData.profiles[index].title, NORMAL_FONT_COLOR)):gsub("#ADDON", category),
+			onAccept = delete,
+		})) end
+
+		return true
+	end
+
+	---Reset the specified profile data to default values
+	---***
+	---@param index? integer Index of the profile to restore to defaults | ***Default:*** *currently active profile index*
+	---@param unsafe? boolean If false, show a popup confirmation before attempting to reset the specified profile | ***Default:*** `false`
+	---@param user? boolean If true, mark the call as being the result of a user interaction | ***Default:*** `false`
+	---@param silent? boolean If false, invoke an "reset" event and call registered listeners | ***Default:*** `false`
+	---***
+	---@return boolean # True on success, false if the operation failed
+	function profilemanager.reset(index, unsafe, user, silent)
+		if index and not accountData.profiles[index] then
+			--Call listeners
+			if not silent then profilemanager.invoke.reset(false, user == true, index) end
+
+			return false
+		end
+
+		index = index or activeIndex
+
+		local function reset()
+			--Update the profile in storage (without breaking table references)
+			us.CopyValues(accountData.profiles[index].data, defaultData)
+
+			--Call listeners
+			if not silent then profilemanager.invoke.reset(true, user == true, index, accountData.profiles[index].title) end
+		end
+
+		if unsafe then reset() else StaticPopup_Show(wt.UpdatePopupDialog(resetProfilePopup, {
+			text = wt.strings.profiles.reset.warning:gsub("#PROFILE", cr(accountData.profiles[index].title, NORMAL_FONT_COLOR)):gsub("#ADDON", category),
+			onAccept = reset,
+		}))end
+
+		return true
+	end
+
+	---Check & fix a profile data table based on the specified sample profile
+	---***
+	---@param profileData table Profile data table to check
+	---@param compareWith? table  Profile data table to sample | ***Default:*** `defaultData`
+	---***
+	---@return table profileData Reference to `profileData` (it was already updated during the operation, no need for setting it again)
+	function profilemanager.validate(profileData, compareWith)
+		if type(profileData) ~= "table" then return profileData end
+
+		compareWith = type(compareWith) == "table" and compareWith or defaultData
+
+		us.Prune(profileData, valueChecker)
+		us.Fill(profileData, compareWith)
+		us.Filter(profileData, compareWith, recoveryMap, onRecovery)
+
+		return profileData
+	end
+
+	---Clean up a profile list table
+	---@param list profile[]
+	local function validateProfiles(list)
+		local index = 1
+
+		--Check profile list
+		for key, value in us.SortedPairs(list) do
+			if key == index and type(value) == "table" then
+				--Check profile data
+				if type(list[index].data) == "table" then profilemanager.validate(list[index].data) else list[index].data = us.Clone(defaultData) end
+			else
+				--Remove invalid entry
+				list[key] = nil
+			end
+
+			index = index + 1
+		end
+
+		--Fill with default profile
+		if not list[1] then list[1] = { title = wt.strings.profiles.select.main, data = us.Clone(defaultData) } end
+
+		--Check profile names
+		for i = 1, #list do list[i].title = checkName(list[i].title, nil, false) end
+	end
+
+	---Load profiles data
+	---***
+	---@param p? profileStorage Table holding the list of profiles to store | ***Default:*** *validate* **accountData** *(if the data is missing or invalid, set up a default profile)*
+	---@param activeProfile? integer Index of the active profile to set | ***Default:*** *currently active profile index*
+	---@param user? boolean If true, mark the call as being the result of a user interaction | ***Default:*** `false`
+	---@param silent? boolean If false, invoke an "loaded" event and call registered listeners | ***Default:*** `false`
+	function profilemanager.load(p, activeProfile, user, silent)
+
+		--| Profile list
+
+		if type(p) == "table" then
+			p.profiles = type(p.profiles) == "table" and p.profiles or {}
+
+			validateProfiles(p.profiles)
+
+			--Update the profile list in storage (without breaking table references)
+			for i = 1, #p.profiles do
+				accountData.profiles[i].title = p.profiles[i].title
+				us.CopyValues(accountData.profiles[i].data, p.profiles[i].data)
+			end
+		else
+			accountData.profiles = type(accountData.profiles) == "table" and accountData.profiles or {}
+
+			validateProfiles(accountData.profiles)
+		end
+
+		--| Activate profile
+
+		setActiveProfile(activeProfile or activeIndex)
+
+		--| Recover misplaced data
+
+		local recovered = {}
+
+		--Remove & save misplaced possibly valuable data
+		for key, value in pairs(accountData) do if key ~= "profiles" then
+			recovered[key] = value
+			accountData[key] = nil
+		end end
+
+		if next(recovered) then
+			--Pack recovered data into the active profile data table (to be removed later if found irrelevant or invalid during validation)
+			us.Pull(profilemanager.data, recovered)
+
+			--Validate active profile data
+			profilemanager.validate(profilemanager.data)
+		end
+
+		ds.Log("Recovered misplaced data:" .. us.TableToString(recovered), "Profilemanager (" .. category .. ") loadProfiles")
+
+		--| Call listeners
+
+		if not silent then
+			user = user == true
+
+			profilemanager.invoke.loaded(user)
+			profilemanager.invoke.activated(true, user)
+		end
+	end
+
+	--[ Initialization ]
+
+	--Register event handlers
+	if type(t.listeners) == "table" then for k, v in pairs(t.listeners) do if type(v) == "table" then for i = 1, #v do
+		if k == "_" then profilemanager.setListener._(v[i].event, v[i].handler, v[i].callIndex) else profilemanager.setListener[k](v[i].handler, v[i].callIndex) end
+	end end end end
+
+	--Load starting data
+	profilemanager.load(nil, nil, false, true)
+
+	return profilemanager
+end
+
+--| GUI
+
+---Create and set up a new settings page with profile data handling and advanced backup management options
+---***
+---@param addon string The name of the addon's folder (the addon namespace, not its displayed title)
+---@param accountData profileStorage|table Reference to the account-bound SavedVariables addon database where profile data is to be stored<ul><li>***Note:*** A subtable will be created under the key `profiles` if it doesn't already exist, any other keys will be removed (any possible old data will be recovered and incorporated into the active profile data).</li></ul>
+---@param characterData characterProfileData|table Reference to the character-specific SavedVariablesPerCharacter addon database where selected profiles are to be specified<ul><li>***Note:*** An integer value will be created under the key `activeProfile` if it doesn't already exist in this table.</li></ul>
+---@param defaultData table A static table containing all default settings values to be cloned when creating a new profile or resetting one
+---@param settingsData backupboxSettingsData|table Reference to the SavedVariables or SavedVariablesPerCharacter table where settings specifications are to be stored and loaded from<ul><li>***Note:*** A boolean value will be created under the key `compactBackup` if it didn't already exist in this table.</li></ul>
+---@param t? profilesPageCreationData Optional parameters
+---@param profilemanager? profilemanager Reference to an already existing profile data manager to mutate into a profile management settings page instead of creating a new base widget
+---***
+---@return profilemanager|profilesPage? profilesPage Table containing references to the settings page, settings widgets grouped in subtables and utility functions by category | ***Default:*** nil
+function wt.CreateProfilesPage(addon, accountData, characterData, defaultData, settingsData, t, profilemanager)
+	profilemanager = wt.IsWidget(profilemanager) == "Profilemanager" and profilemanager or wt.CreateProfilemanager(accountData, characterData, defaultData, t)
+
+	if not profilemanager or type(addon) ~= "string" or not C_AddOns.IsAddOnLoaded(addon) or type(settingsData) ~= "table" then return profilemanager end
+
+	t = type(t) == "table" and t or {}
+
+	---@class profilesPage : profilemanager
+	---@field widgets? table Collection of profiles settings widgets
+	---@field backup? table Collection of backup settings widgets
+	---@field backupAll? table Collection of all profiles backup settings widgets
+	local profiles = profilemanager
+
+	--[ Getters & Setters ]
+
+	---Returns all object types of this mutated widget
+	---***
+	---@return "Profilemanager"
+	---@return "ProfilesPage"
+	---<p></p>
+	function profiles.getType() return "Profilemanager", "ProfilesPage" end
+
+	---Checks and returns if the a type of this mutated widget matches the string provided
+	---@param type string|AnyTypeName
+	---@return boolean
+	---<p></p>
+	function profiles.isType(type) return type == "Profilemanager" or type == "ProfilesPage" end
+
+	--[ Properties ]
+
+	local addonTitle = C_AddOns.GetAddOnMetadata(addon, "Title")
+	local onDefault = type(t.onDefault) == "function" and t.onDefault or nil
+
+	--[ Settings Page ]
+
+	profiles.settings = wt.CreateSettingsPage(addon, {
+		register = t.register,
+		name = t.name or "DataManagement",
+		title = t.title or wt.strings.dataManagement.title,
+		description = t.description or wt.strings.dataManagement.description:gsub("#ADDON", addonTitle),
+		dataManagement = {
+			category = addon,
+			keys = { "Backup" },
+		},
+		onSave = t.onSave,
+		onLoad = t.onLoad,
+		onCancel = t.onCancel,
+		onDefault = onDefault and function(user, category)
+			if not category then profiles.reset() end
+			onDefault(user, category)
+		end or function(_, category) if not category then profiles.reset() end end,
+		arrangement = {},
+		initialize = function(canvas, _, _, category, keys) if not WidgetToolsDB.lite or t.lite == false then
+
+			--[ Profiles ]
+
+			profiles.widgets = {}
+
+			local profilesPanel = wt.CreatePanel({
+				parent = canvas,
+				name = "Profiles",
+				title = wt.strings.profiles.title,
+				description = wt.strings.profiles.description:gsub("#ADDON", addonTitle),
+				arrange = {},
+				arrangement = {},
+				initialize = function(panel)
+
+					--[ Frame Setup ]
+
+					profiles.widgets.activate = wt.CreateDropdownRadiogroup({
+						parent = panel,
+						title = wt.strings.profiles.select.label,
+						tooltip = { lines = { { text = wt.strings.profiles.select.tooltip, }, } },
+						arrange = {},
+						width = 180,
+						items = accountData.profiles,
+						value = characterData.activeProfile,
+						listeners = { selected = { { handler = function(_, index, user) profiles.activate(index, user) end, }, }, },
+					})
+
+					profiles.widgets.create = wt.CreateButton({
+						parent = panel,
+						name = "New",
+						title = wt.strings.profiles.new.label,
+						tooltip = { lines = { { text = wt.strings.profiles.new.tooltip, }, } },
+						position = {
+							anchor = "TOPRIGHT",
+							offset = { x = -312, y = -21 }
+						},
+						size = { w = 112, h = 26 },
+						action = function() profiles.create(nil, #accountData.profiles + 1, nil, nil, nil, true) end,
+					})
+
+					profiles.widgets.duplicate = wt.CreateButton({
+						parent = panel,
+						name = "Duplicate",
+						title = wt.strings.profiles.duplicate.label,
+						tooltip = { lines = { { text = wt.strings.profiles.duplicate.tooltip, }, } },
+						position = {
+							anchor = "TOPRIGHT",
+							offset = { x = -192, y = -21 }
+						},
+						size = { w = 112, h = 26 },
+						action = function() profiles.create(nil, nil, characterData.activeProfile, nil, nil, true) end,
+					})
+
+					profiles.widgets.rename = wt.CreateButton({
+						parent = panel,
+						name = "Rename",
+						title = wt.strings.profiles.rename.label,
+						tooltip = { lines = { { text = wt.strings.profiles.rename.tooltip, }, } },
+						position = {
+							anchor = "TOPRIGHT",
+							offset = { x = -92, y = -21 }
+						},
+						size = { w = 92, h = 26 },
+						action = function()
+							local title = accountData.profiles[characterData.activeProfile].title
+
+							wt.CreatePopupInputBox({
+								title = wt.strings.profiles.rename.description:gsub("#PROFILE", crc(title, "FFFFFFFF")),
+								position = {
+									anchor = "TOPRIGHT",
+									offset = { x = -92, y = -21 },
+									relativeTo = panel,
+								},
+								text = title,
+								accept = function(text) profiles.rename(nil, text, nil, true) end,
+							})
+						end,
+					})
+
+					profiles.widgets.delete = wt.CreateButton({
+						parent = panel,
+						name = "Delete",
+						title = DELETE,
+						tooltip = { lines = { { text = wt.strings.profiles.delete.tooltip, }, } },
+						position = {
+							anchor = "TOPRIGHT",
+							offset = { x = -12, y = -21 }
+						},
+						size = { w = 72, h = 26 },
+						action = function() profiles.delete(nil, nil, true) end,
+						dependencies = { { frame = profiles.widgets.activate, evaluate = function() return #accountData.profiles > 1 end }, }
+					})
+
+					--[ Events ]
+
+					--| UX
+
+					--Update the activation widget UI based on profile data changes
+					profiles.setListener.activated(function(_, index) profiles.widgets.activate.setSelected(index, false, true) end)
+					profiles.setListener.created(function() profiles.widgets.activate.updateItems(accountData.profiles) end)
+					profiles.setListener.renamed(function() profiles.widgets.activate.updateItems(accountData.profiles) end)
+					profiles.setListener.deleted(function() profiles.widgets.activate.updateItems(accountData.profiles) end)
+					profiles.setListener.reset(function() profiles.widgets.activate.updateItems(accountData.profiles) end)
+					profiles.setListener.loaded(function() profiles.widgets.activate.updateItems(accountData.profiles) end)
+				end,
+			})
+
+			--[ Backup ]
+
+			profiles.backup = {}
+			profiles.backupAll = {}
+
+			wt.CreatePanel({
+				parent = canvas,
+				name = keys[1],
+				title = wt.strings.backup.title,
+				description = wt.strings.backup.description:gsub("#ADDON", addonTitle),
+				arrange = {},
+				size = { h = canvas:GetHeight() - profilesPanel:GetHeight() - 118 },
+				arrangement = { resize = false, },
+				initialize = function(panel)
+
+					--[ Utilities ]
+
+					--Update the backup box and load the current profile data of the selected scope to the backup string, formatted based on the compact setting
+					function profiles.backup.refresh()
+						profiles.backup.box.setText(us.TableToString(profiles.data, settingsData.compactBackup))
+
+						--Set focus after text change to set the scroll to the top and refresh the position character counter
+						profiles.backup.box.scrollframe.EditBox:SetFocus()
+						profiles.backup.box.scrollframe.EditBox:ClearFocus()
+					end
+
+					--Update the backup box and load all addon profile data of the selected scope to the backup string, formatted based on the compact setting
+					function profiles.backupAll.refresh()
+						profiles.backupAll.box.setText(us.TableToString({
+							activeProfile = characterData.activeProfile,
+							profiles = accountData.profiles
+						}, settingsData.compactBackup))
+
+						--Set focus after text change to set the scroll to the top and refresh the position character counter
+						profiles.backupAll.box.scrollframe.EditBox:SetFocus()
+						profiles.backupAll.box.scrollframe.EditBox:ClearFocus()
+					end
+
+					--[ Active Profile ]
+
+					profiles.backup.box = wt.CreateMultilineEditbox({
+						parent = panel,
+						name = "ImportExport",
+						title = wt.strings.backup.box.label,
+						tooltip = { lines = {
+							{ text = wt.strings.backup.box.tooltip[1], },
+							{ text = "\n" .. wt.strings.backup.box.tooltip[2], },
+							{ text = "\n" .. wt.strings.backup.box.tooltip[3], },
+							{ text = wt.strings.backup.box.tooltip[4], color = { r = 0.89, g = 0.65, b = 0.40 }, },
+							{ text = "\n" .. wt.strings.backup.box.tooltip[5], color = { r = 0.92, g = 0.34, b = 0.23 }, },
+						}, },
+						arrange = {},
+						size = { w = panel:GetWidth() - 24, h = panel:GetHeight() - 60 },
+						font = { normal = "GameFontWhiteSmall", },
+						scrollSpeed = 0.2,
+						scrollToTop = false,
+						unfocusOnEnter = false,
+						dataManagement = {
+							category = category,
+							key = keys[1],
+						},
+						listeners = { loaded = { { handler = profiles.backup.refresh, }, }, },
+						showDefault = false,
+					})
+
+					profiles.backup.compact = wt.CreateCheckbox({
+						parent = panel,
+						name = "Compact",
+						title = wt.strings.backup.compact.label,
+						tooltip = { lines = { { text = wt.strings.backup.compact.tooltip, }, } },
+						arrange = {},
+						getData = function() return settingsData.compactBackup end,
+						saveData = function(state) settingsData.compactBackup = state end,
+						dataManagement = {
+							category = addon,
+							key = keys[1],
+							onChange = { RefreshBackupBox = profiles.backup.refresh },
+						},
+						listeners = { loaded = { { handler = function() profiles.backupAll.compact.button:SetChecked(settingsData.compactBackup) end, }, }, },
+						events = { OnClick = function(_, state) profiles.backupAll.compact.button:SetChecked(state) end },
+						showDefault = false,
+						utilityMenu = false,
+					})
+
+					local importPopup = wt.RegisterPopupDialog(addon .. "_IMPORT", {
+						text = wt.strings.backup.warning,
+						accept = wt.strings.backup.import,
+						onAccept = function()
+							local success, load = pcall(loadstring("return " .. wt.Clear(profiles.backup.box.getText())))
+							success = success and type(load) == "table"
+
+							if success then
+								profiles.validate(load, profiles.data)
+								us.CopyValues(profiles.data, load)
+							end
+
+							t.onImport(success, load)
+						end,
+					})
+
+					profiles.backup.load = wt.CreateButton({
+						parent = panel,
+						name = "Load",
+						title = wt.strings.backup.load.label,
+						tooltip = { lines = {
+							{ text = wt.strings.backup.load.tooltip, },
+							{ text = "\n" .. wt.strings.backup.box.tooltip[5], color = { r = 0.92, g = 0.34, b = 0.23 }, },
+						} },
+						position = {
+							anchor = "TOPRIGHT",
+							relativeTo = profiles.backup.box.frame,
+							relativePoint = "BOTTOMRIGHT",
+							offset = { y = -8 }
+						},
+						size = { h = 26 },
+						action = function() StaticPopup_Show(importPopup) end,
+					})
+
+					profiles.backup.reset = wt.CreateButton({
+						parent = panel,
+						name = "Reset",
+						title = RESET,
+						tooltip = { lines = { { text = wt.strings.backup.reset.tooltip, }, } },
+						position = {
+							anchor = "RIGHT",
+							relativeTo = profiles.backup.load.widget,
+							relativePoint = "LEFT",
+							offset = { x = -8, }
+						},
+						size = { h = 26 },
+						action = profiles.backup.refresh,
+					})
+
+					--[ All Profiles ]
+
+					local allProfilesBackupFrame = wt.CreatePanel({
+						parent = canvas,
+						name = addon .. "AllProfilesBackup",
+						append = false,
+						title = wt.strings.backup.allProfiles.label,
+						position = { anchor = "BOTTOMRIGHT", offset = { x = 12, y = 1 }, },
+						keepInBounds = true,
+						size = { w = 678, h = 609 },
+						frameStrata = "DIALOG",
+						keepOnTop = true,
+						background = { color = { a = 0.9 }, },
+						arrangement = {
+							margins = { l = 16, r = 16, t = 42, b = 16 },
+							resize = false,
+						},
+						initialize = function(windowPanel)
+							profiles.backupAll.box = wt.CreateMultilineEditbox({
+								parent = windowPanel,
+								name = "ImportExportAllProfiles",
+								title = wt.strings.backup.allProfiles.label,
+								label = false,
+								tooltip = { lines = {
+									{ text = wt.strings.backup.allProfiles.tooltipLine, },
+									{ text = "\n" .. wt.strings.backup.box.tooltip[2], },
+									{ text = "\n" .. wt.strings.backup.box.tooltip[3], },
+									{ text = wt.strings.backup.box.tooltip[4], color = { r = 0.89, g = 0.65, b = 0.40 }, },
+									{ text = "\n" .. wt.strings.backup.box.tooltip[5], color = { r = 0.92, g = 0.34, b = 0.23 }, },
+								}, },
+								arrange = {},
+								size = { w = windowPanel:GetWidth() - 32, h = windowPanel:GetHeight() - 92 },
+								font = { normal = "GameFontWhiteSmall", },
+								scrollSpeed = 0.2,
+								scrollToTop = false,
+								unfocusOnEnter = false,
+								dataManagement = {
+									category = category,
+									key = keys[1],
+								},
+								listeners = { loaded = { { handler = profiles.backupAll.refresh, }, }, },
+								showDefault = false,
+							})
+
+							profiles.backupAll.compact = wt.CreateCheckbox({
+								parent = windowPanel,
+								name = "Compact",
+								title = wt.strings.backup.compact.label,
+								tooltip = { lines = { { text = wt.strings.backup.compact.tooltip, }, } },
+								arrange = {},
+								events = { OnClick = function()
+									profiles.backup.compact.toggleState(true)
+									profiles.backupAll.refresh()
+								end },
+								showDefault = false,
+								utilityMenu = false,
+							})
+
+							wt.CreateButton({
+								parent = windowPanel,
+								name = "CloseButton",
+								title = CLOSE,
+								position = {
+									anchor = "TOPRIGHT",
+									offset = { x = -12, y = -12 },
+								},
+								size = { w = 96, },
+								action = function() windowPanel:Hide() end,
+							})
+
+							_G[windowPanel:GetName() .. "Title"]:SetPoint("TOPLEFT", 18, -18)
+
+							windowPanel:EnableMouse(true)
+							windowPanel:Hide()
+						end,
+					})
+
+					wt.CreateButton({
+						parent = panel,
+						name = "AllProfilesButton",
+						title = wt.strings.backup.allProfiles.open.label,
+						tooltip = { lines = { { text = wt.strings.backup.allProfiles.open.tooltip, }, } },
+						position = {
+							anchor = "TOPRIGHT",
+							relativeTo = profiles.backup.box.frame,
+							relativePoint = "TOPRIGHT",
+							offset = { x = -1, y = 2 }
+						},
+						size = { w = 100, h = 17 },
+						frameLevel = profiles.backup.box.frame:GetFrameLevel() + 1, --Make sure it's on top to be clickable
+						font = {
+							normal = "GameFontNormalSmall",
+							highlight = "GameFontHighlightSmall",
+						},
+						action = function()
+							allProfilesBackupFrame:Show()
+
+							profiles.backupAll.compact.setState(settingsData.compactBackup, nil, true)
+
+							profiles.backupAll.refresh()
+						end,
+					})
+
+					local allProfilesImportPopup = wt.RegisterPopupDialog(addon .. "_IMPORT_ALL", {
+						text = wt.strings.backup.warning,
+						accept = wt.strings.backup.import,
+						onAccept = function()
+							local success, data = pcall(loadstring("return " .. wt.Clear(profiles.backupAll.box.getText())))
+							data = type(data) == "table" and data or {}
+
+							if success then profiles.load(data.profiles, data.activeProfile, true) end
+
+							t.onImportAllProfiles(success and type(data) == "table", data)
+						end,
+					})
+
+					profiles.backupAll.load = wt.CreateButton({
+						parent = allProfilesBackupFrame,
+						name = "Load",
+						title = wt.strings.backup.load.label,
+						tooltip = { lines = {
+							{ text = wt.strings.backup.load.tooltip, },
+							{ text = "\n" .. wt.strings.backup.box.tooltip[5], color = { r = 0.92, g = 0.34, b = 0.23 }, },
+						} },
+						position = {
+							anchor = "TOPRIGHT",
+							relativeTo = profiles.backupAll.box.frame,
+							relativePoint = "BOTTOMRIGHT",
+							offset = { y = -8 }
+						},
+						size = { h = 26 },
+						action = function() StaticPopup_Show(allProfilesImportPopup) end,
+					})
+
+					profiles.backupAll.reset = wt.CreateButton({
+						parent = allProfilesBackupFrame,
+						name = "Reset",
+						title = RESET,
+						tooltip = { lines = { { text = wt.strings.backup.reset.tooltip, }, } },
+						position = {
+							anchor = "RIGHT",
+							relativeTo = profiles.backupAll.load.widget,
+							relativePoint = "LEFT",
+							offset = { x = -8, }
+						},
+						size = { h = 26 },
+						action = profiles.backupAll.refresh,
+					})
+				end,
+			})
+		end end,
+	})
+
+	return profiles
+end
+
+--[ Addon Manager ]
+
+--| GUI --TODO create utility logical core, add addon-wide preset management capability
 
 ---Create and set up a new settings page with about into for an addon
 ---***
 ---@param addon string The name of the addon's folder (the addon namespace, not its displayed title)
----@param t? aboutPageCreationData Parameters are to be provided in this table
+---@param t? aboutPageCreationData Optional parameters
 ---***
----@return settingsPage? aboutPage Table containing references to the canvas [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame), category page and utility functions | ***Default:*** nil
+---@return settingsPage|nil aboutPage Table containing references to the canvas [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame), category page and utility functions | ***Default:*** nil
 function wt.CreateAboutPage(addon, t)
-	if type(addon) ~= "string" or not C_AddOns.IsAddOnLoaded(addon) then return end
+	if type(addon) ~= "string" or not C_AddOns.IsAddOnLoaded(addon) then return nil end
 
 	t = type(t) == "table" and t or {}
 	local data = {
@@ -7305,718 +8453,23 @@ function wt.CreateAboutPage(addon, t)
 	} or nil)
 end
 
----Create and set up a new settings page with profiles handling and advanced backup management options
----***
----@param addon string The name of the addon's folder (the addon namespace, not its displayed title)
----@param t dataManagementPageCreationData Parameters are to be provided in this table
----***
----@return dataManagementPage? profilesPage Table containing references to the settings page, settings widgets grouped in subtables and utility functions by category | ***Default:*** nil
----@return boolean? firstLoad True, if **t.accountData.profiles** did not exist yet | ***Default:*** nil
----@return boolean? newCharacter True, if **t.characterData.activeProfile** did not exist yet | ***Default:*** nil
-function wt.CreateDataManagementPage(addon, t)
-	t = type(t) == "table" and t or {}
-
-	if type(addon) ~= "string" or not C_AddOns.IsAddOnLoaded(addon) or not t.accountData or not t.characterData or not t.settingsData or not t.defaultsTable then return end
-
-	local firstLoad = not t.accountData.profiles
-	local newCharacter = not t.characterData.activeProfile
-	local addonTitle = C_AddOns.GetAddOnMetadata(addon, "Title")
-
-	---@class dataManagementPage
-	---@field profiles? table Collection of profiles settings widgets
-	---@field backup? table Collection of backup settings widgets
-	---@field backupAllProfiles? table Collection of all profiles backup settings widgets
-	---@field refreshBackupBox? function
-	---@field refreshAllProfilesBackupBox? function
-	local dataManagement = {}
-
-	--[ Getters & Setters ]
-
-	---Returns the type of this object
-	---***
-	---@return "DataManagementPage" string
-	---<p></p>
-	function dataManagement.getType() return "DataManagementPage" end
-
-	---Checks and returns if the type of this object is equal to the string provided
-	---@param type string|AnyTypeName
-	---@return boolean
-	---<p></p>
-	function dataManagement.isType(type) return type == "DataManagementPage" end
-
-	--[ Settings Page ]
-
-	dataManagement.page = wt.CreateSettingsPage(addon, {
-		register = t.register,
-		name = t.name or "DataManagement",
-		title = t.title or wt.strings.dataManagement.title,
-		description = t.description or wt.strings.dataManagement.description:gsub("#ADDON", addonTitle),
-		dataManagement = {
-			category = addon,
-			keys = { "Backup" },
-		},
-		onSave = t.onSave,
-		onLoad = t.onLoad,
-		onCancel = t.onCancel,
-		onDefault = t.onDefault,
-		arrangement = {},
-		initialize = function(canvas, _, _, category, keys)
-
-			--[ Profile Management ]
-
-			--Profile delete confirmation
-			local deleteProfilePopup = wt.RegisterPopupDialog(addon, "DELETE_PROFILE", { accept = DELETE, })
-
-			--Profile reset confirmation
-			local resetProfilePopup = wt.RegisterPopupDialog(addon, "RESET_PROFILE")
-
-			--| Utilities
-
-			---Find a profile by its display title and return its index
-			---***
-			---@param title string
-			---@param first? boolean ***Default:*** `true`
-			---@return integer|nil
-			local function findProfile(title, first)
-				for i = 1, #t.accountData.profiles do if t.accountData.profiles[i].title == title then if first ~= false then return i else first = false end end end
-			end
-
-			---Find an unused profile name to be able to use it as an identifying display title
-			---***
-			---@param name? string Name tag to use as a base | ***Default:*** "Profile"
-			---@param number? integer Starting value for the incremented number appended to **name** if it's used | ***Default:*** **name** *is unused* and *no number* or 2
-			---@param first? boolean Stop checking for duplicate names at the first result | ***Default:*** `true`
-			---@return string title
-			local function checkName(name, number, first)
-				name = name or wt.strings.profiles.select.profile
-				local title = name .. (number and (" " .. number) or "")
-
-				--Find an unused name for the new profile
-				if findProfile(title, first) then
-					number = (number and number or 2)
-					title = name .. " " .. number
-
-					while findProfile(title) do
-						number = number + 1
-						title = name .. " " .. number
-					end
-				end
-
-				return title
-			end
-
-			---Check & fix a profile data table based on the specified sample profile
-			---***
-			---@param profileData table Profile data table to check
-			---@param compareWith? table  Profile data table to sample | ***Default:*** **t.defaultsTable**
-			local function checkData(profileData, compareWith)
-				compareWith = compareWith or t.defaultsTable
-
-				us.Prune(profileData, t.valueChecker)
-				us.Fill(profileData, compareWith)
-				us.Filter(profileData, compareWith, t.recoveryMap, t.onRecovery)
-			end
-
-			---Clean up a profile list table
-			---***
-			---@param list profile[] Reference to the profile list table
-			local function validateProfiles(list)
-				local i = 1
-
-				--Check profile list
-				for key, value in us.SortedPairs(list) do
-					if key == i and type(value) == "table" then
-						--Check profile data
-						if type(list[i].data) == "table" then checkData(list[i].data) else list[i].data = us.Clone(t.defaultsTable) end
-					else
-						--Remove invalid entry
-						list[key] = nil
-					end
-
-					i = i + 1
-				end
-
-				--Fill with default profile
-				if not list[1] then list[1] = { title = wt.strings.profiles.select.main, data = us.Clone(t.defaultsTable) } end
-
-				--Check profile names
-				for i = 1, #list do list[i].title = checkName(list[i].title, nil, false) end
-			end
-
-			---Activate the specified profile
-			---@param index integer
-			---@return number|nil
-			local function activateProfile(index)
-				if type(index) ~= "number" then return end
-
-				index = Clamp(index, 1, #t.accountData.profiles)
-				t.characterData.activeProfile = index
-
-				--Call listener
-				if type(t.onProfileActivated) == "function" then t.onProfileActivated(t.accountData.profiles[index].title, index) end
-
-				return t.characterData.activeProfile
-			end
-
-			---Activate the specified settings profile
-			---***
-			---@param index integer Index of the profile to set as the currently active settings profile
-			---@return boolean # True on success, false if the operation failed
-			function dataManagement.activateProfile(index)
-				if dataManagement.profiles then dataManagement.profiles.apply.setSelected(index) elseif not activateProfile(index) then return false end
-				return true
-			end
-
-			---Create a new settings profile
-			---***
-			---@param name? string Name tag to use when setting the display title of the new profile | ***Default:*** **duplicate** and **t.accountData.profiles[duplicate].title** or "Profile"
-			---@param number? integer Starting value for the incremented number appended to **name** if it's used | ***Default:*** **duplicate** == nil and **name** *is unused* and *no number* or 2
-			---@param duplicate? integer Index of the profile to create the new profile as a duplicate of instead of using default data values
-			---@param apply? boolean Whether to immediately set the new profile as the active profile or not | ***Default:*** `true`
-			---@param index? integer Place the new profile under this specified index in **t.accountData.profile** instead of the end of the list | ***Range:*** (1, #**t.accountData.profiles** + 1)
-			function dataManagement.newProfile(name, number, duplicate, index, apply)
-				duplicate = t.accountData.profiles[duplicate] and duplicate or nil
-				index = Clamp(index or #t.accountData.profiles + 1, 1, #t.accountData.profiles + 1)
-
-				--Create profile data
-				table.insert(t.accountData.profiles, index, {
-					title = checkName(duplicate and t.accountData.profiles[duplicate].title or name, number),
-					data = us.Clone(duplicate and t.accountData.profiles[duplicate] or t.defaultsTable)
-				})
-
-				--Update dropdown items
-				if dataManagement.profiles then dataManagement.profiles.apply.updateItems(t.accountData.profiles) end
-
-				--Call listener
-				if type(t.onProfileCreated) == "function" then t.onProfileCreated(t.accountData.profiles[index].title, index) end
-
-				--Activate the new profile
-				if apply ~= false then dataManagement.activateProfile(index) end
-			end
-
-			---Delete the specified profile
-			---***
-			---@param index? integer Index of the profile to delete the data and dropdown item of | ***Default:*** **t.characterData.activeProfile**
-			---@param unsafe? boolean If false, show a popup confirmation before attempting to delete the specified profile | ***Default:*** `false`
-			---@return boolean # True on success, false if the operation failed
-			function dataManagement.deleteProfile(index, unsafe)
-				if index and not t.accountData.profiles[index] then return false end
-
-				index = index or t.characterData.activeProfile
-				local title = t.accountData.profiles[index].title
-
-				local delete = function()
-					--Delete profile data
-					table.remove(t.accountData.profiles, index)
-
-					--Update dropdown items
-					if dataManagement.profiles then dataManagement.profiles.apply.updateItems(t.accountData.profiles) end
-
-					--Call listener
-					if type(t.onProfileDeleted) == "function" then t.onProfileDeleted(title, index) end
-
-					--Activate the replacement profile
-					if t.characterData.activeProfile == index then activateProfile(index) end
-				end
-
-				if unsafe then delete() else StaticPopup_Show(wt.UpdatePopupDialog(deleteProfilePopup, {
-					text = wt.strings.profiles.delete.warning:gsub("#PROFILE", cr(t.accountData.profiles[index].title, NORMAL_FONT_COLOR)):gsub("#ADDON", addonTitle),
-					onAccept = delete,
-				})) end
-
-				return true
-			end
-
-			---Reset the specified profile data to default values
-			---***
-			---@param index? integer Index of the profile to restore to defaults | ***Default:*** **t.characterData.activeProfile**
-			---@param unsafe? boolean If false, show a popup confirmation before attempting to reset the specified profile | ***Default:*** `false`
-			---@return boolean # True on success, false if the operation failed
-			function dataManagement.resetProfile(index, unsafe)
-				if index and not t.accountData.profiles[index] then return false end
-
-				index = index or t.characterData.activeProfile
-
-				local function reset()
-					if index and not t.accountData.profiles[index] then return end
-
-					index = index or t.characterData.activeProfile
-
-					--Update the profile in storage (without breaking table references)
-					us.CopyValues(t.accountData.profiles[index].data, t.defaultsTable)
-
-					--Call listener
-					if type(t.onProfileReset) == "function" then t.onProfileReset(t.accountData.profiles[index].title, index) end
-				end
-
-				if unsafe then reset() else StaticPopup_Show(wt.UpdatePopupDialog(resetProfilePopup, {
-					text = wt.strings.profiles.reset.warning:gsub("#PROFILE", cr(t.accountData.profiles[index].title, NORMAL_FONT_COLOR)):gsub("#ADDON", addonTitle),
-					onAccept = reset,
-				}))end
-
-				return true
-			end
-
-			---Load profiles data
-			---***
-			---@param p? profileStorage Table holding the list of profiles to store | ***Default:*** *validate* **t.accountData** *(if the data is missing or invalid, set up a default profile)*
-			---@param activeProfile? integer Index of the active profile to set | ***Default:*** **t.characterData.activeProfile** *clamped to fit* #**p.profiles** or 1
-			local function loadProfiles(p, activeProfile)
-
-				--| Profile list
-
-				if type(p) == "table" then
-					p.profiles = type(p.profiles) == "table" and p.profiles or {}
-
-					validateProfiles(p.profiles)
-
-					--Update the profile list in storage (without breaking table references)
-					for i = 1, #p.profiles do
-						t.accountData.profiles[i].title = p.profiles[i].title
-						us.CopyValues(t.accountData.profiles[i].data, p.profiles[i].data)
-					end
-				else
-					t.accountData.profiles = type(t.accountData.profiles) == "table" and t.accountData.profiles or {}
-
-					validateProfiles(t.accountData.profiles)
-				end
-
-				--| Activate profile
-
-				t.characterData.activeProfile = Clamp(t.accountData.profiles[activeProfile] and activeProfile or t.characterData.activeProfile or 1, 1, #t.accountData.profiles)
-
-				--| Recover misplaced data
-
-				local recovered = {}
-
-				--Remove & save misplaced possibly valuable data
-				for key, value in pairs(t.accountData) do if key ~= "profiles" then
-					recovered[key] = value
-					t.accountData[key] = nil
-				end end
-
-				if next(recovered) then
-					--Pack recovered data into the active profile data table (to be removed later if found irrelevant or invalid during validation)
-					us.Pull(t.accountData.profiles[t.characterData.activeProfile].data, recovered)
-
-					--Validate active profile data
-					checkData(t.accountData.profiles[t.characterData.activeProfile].data)
-				end
-
-				--| Call listener
-
-				if type(t.onProfilesLoaded) == "function" then t.onProfilesLoaded() end
-			end
-
-			--| Initialization
-
-			loadProfiles()
-
-			--[ GUI Widgets ]
-
-			if not WidgetToolsDB.lite or t.lite == false then
-
-				--[ Profiles ]
-
-				dataManagement.profiles = {}
-
-				dataManagement.profiles.frame = wt.CreatePanel({
-					parent = canvas,
-					name = "Profiles",
-					title = wt.strings.profiles.title,
-					description = wt.strings.profiles.description:gsub("#ADDON", addonTitle),
-					arrange = {},
-					arrangement = {},
-					initialize = function(panel)
-						dataManagement.profiles.apply = wt.CreateDropdownRadiogroup({
-							parent = panel,
-							title = wt.strings.profiles.select.label,
-							tooltip = { lines = { { text = wt.strings.profiles.select.tooltip, }, } },
-							arrange = {},
-							width = 180,
-							items = t.accountData.profiles,
-							selected = t.characterData.activeProfile,
-							listeners = { selected = { { handler = function(_, index) activateProfile(index) end, }, }, },
-						})
-
-						dataManagement.profiles.new = wt.CreateButton({
-							parent = panel,
-							name = "New",
-							title = wt.strings.profiles.new.label,
-							tooltip = { lines = { { text = wt.strings.profiles.new.tooltip, }, } },
-							position = {
-								anchor = "TOPRIGHT",
-								offset = { x = -312, y = -21 }
-							},
-							size = { w = 112, h = 26 },
-							action = function() dataManagement.newProfile(nil, #t.accountData.profiles + 1) end,
-						})
-
-						dataManagement.profiles.duplicate = wt.CreateButton({
-							parent = panel,
-							name = "Duplicate",
-							title = wt.strings.profiles.duplicate.label,
-							tooltip = { lines = { { text = wt.strings.profiles.duplicate.tooltip, }, } },
-							position = {
-								anchor = "TOPRIGHT",
-								offset = { x = -192, y = -21 }
-							},
-							size = { w = 112, h = 26 },
-							action = function() dataManagement.newProfile(nil, nil, t.characterData.activeProfile) end,
-						})
-
-						dataManagement.profiles.rename = wt.CreateButton({
-							parent = panel,
-							name = "Rename",
-							title = wt.strings.profiles.rename.label,
-							tooltip = { lines = { { text = wt.strings.profiles.rename.tooltip, }, } },
-							position = {
-								anchor = "TOPRIGHT",
-								offset = { x = -92, y = -21 }
-							},
-							size = { w = 92, h = 26 },
-							action = function() wt.CreatePopupInputBox({
-								title = wt.strings.profiles.rename.description:gsub(
-									"#PROFILE", crc(t.accountData.profiles[t.characterData.activeProfile].title, "FFFFFFFF")
-								),
-								position = {
-									anchor = "TOPRIGHT",
-									offset = { x = -92, y = -21 },
-									relativeTo = panel,
-								},
-								text = t.accountData.profiles[t.characterData.activeProfile].title,
-								accept = function(text)
-									t.accountData.profiles[t.characterData.activeProfile].title = text
-
-									--Update dropdown items
-									dataManagement.profiles.apply.updateItems(t.accountData.profiles)
-								end,
-							}) end,
-						})
-
-						dataManagement.profiles.delete = wt.CreateButton({
-							parent = panel,
-							name = "Delete",
-							title = DELETE,
-							tooltip = { lines = { { text = wt.strings.profiles.delete.tooltip, }, } },
-							position = {
-								anchor = "TOPRIGHT",
-								offset = { x = -12, y = -21 }
-							},
-							size = { w = 72, h = 26 },
-							action = function() dataManagement.deleteProfile() end,
-							dependencies = { { frame = dataManagement.profiles.apply, evaluate = function() return #t.accountData.profiles > 1 end }, }
-						})
-					end,
-				})
-
-				--[ Backup ]
-
-				dataManagement.backup = {}
-				dataManagement.backupAllProfiles = {}
-
-				dataManagement.backup.frame = wt.CreatePanel({
-					parent = canvas,
-					name = keys[1],
-					title = wt.strings.backup.title,
-					description = wt.strings.backup.description:gsub("#ADDON", addonTitle),
-					arrange = {},
-					size = { h = canvas:GetHeight() - dataManagement.profiles.frame:GetHeight() - 118 },
-					arrangement = { resize = false, },
-					initialize = function(panel)
-
-						--[ Utilities ]
-
-						--Update the backup box and load the current profile data of the selected scope to the backup string, formatted based on the compact setting
-						function dataManagement.refreshBackupBox()
-							dataManagement.backup.box.setText(us.TableToString(t.accountData.profiles[t.characterData.activeProfile].data, t.settingsData.compactBackup))
-
-							--Set focus after text change to set the scroll to the top and refresh the position character counter
-							dataManagement.backup.box.scrollFrame.EditBox:SetFocus()
-							dataManagement.backup.box.scrollFrame.EditBox:ClearFocus()
-						end
-
-						--Update the backup box and load all addon profile data of the selected scope to the backup string, formatted based on the compact setting
-						function dataManagement.refreshAllProfilesBackupBox()
-							dataManagement.backupAllProfiles.box.setText(us.TableToString({
-								activeProfile = t.characterData.activeProfile,
-								profiles = t.accountData.profiles
-							}, t.settingsData.compactBackup))
-
-							--Set focus after text change to set the scroll to the top and refresh the position character counter
-							dataManagement.backupAllProfiles.box.scrollFrame.EditBox:SetFocus()
-							dataManagement.backupAllProfiles.box.scrollFrame.EditBox:ClearFocus()
-						end
-
-						--[ Active Profile ]
-
-						dataManagement.backup.box = wt.CreateMultilineEditbox({
-							parent = panel,
-							name = "ImportExport",
-							title = wt.strings.backup.box.label,
-							tooltip = { lines = {
-								{ text = wt.strings.backup.box.tooltip[1], },
-								{ text = "\n" .. wt.strings.backup.box.tooltip[2], },
-								{ text = "\n" .. wt.strings.backup.box.tooltip[3], },
-								{ text = wt.strings.backup.box.tooltip[4], color = { r = 0.89, g = 0.65, b = 0.40 }, },
-								{ text = "\n" .. wt.strings.backup.box.tooltip[5], color = { r = 0.92, g = 0.34, b = 0.23 }, },
-							}, },
-							arrange = {},
-							size = { w = panel:GetWidth() - 24, h = panel:GetHeight() - 60 },
-							font = { normal = "GameFontWhiteSmall", },
-							scrollSpeed = 0.2,
-							scrollToTop = false,
-							unfocusOnEnter = false,
-							dataManagement = {
-								category = category,
-								key = keys[1],
-							},
-							listeners = { loaded = { { handler = dataManagement.refreshBackupBox, }, }, },
-							showDefault = false,
-						})
-
-						dataManagement.backup.compact = wt.CreateCheckbox({
-							parent = panel,
-							name = "Compact",
-							title = wt.strings.backup.compact.label,
-							tooltip = { lines = { { text = wt.strings.backup.compact.tooltip, }, } },
-							arrange = {},
-							getData = function() return t.settingsData.compactBackup end,
-							saveData = function(state) t.settingsData.compactBackup = state end,
-							dataManagement = {
-								category = addon,
-								key = keys[1],
-								onChange = { RefreshBackupBox = dataManagement.refreshBackupBox },
-							},
-							listeners = { loaded = { { handler = function() dataManagement.backupAllProfiles.compact.button:SetChecked(t.settingsData.compactBackup) end, }, }, },
-							events = { OnClick = function(_, state) dataManagement.backupAllProfiles.compact.button:SetChecked(state) end },
-							showDefault = false,
-							utilityMenu = false,
-						})
-
-						local importPopup = wt.RegisterPopupDialog(addon, "IMPORT", {
-							text = wt.strings.backup.warning,
-							accept = wt.strings.backup.import,
-							onAccept = function()
-								local success, load = pcall(loadstring("return " .. wt.Clear(dataManagement.backup.box.getText())))
-								success = success and type(load) == "table"
-
-								if success then
-									checkData(load, t.accountData.profiles[t.characterData.activeProfile].data)
-									us.CopyValues(t.accountData.profiles[t.characterData.activeProfile].data, load)
-								end
-
-								t.onImport(success, load)
-							end,
-						})
-
-						dataManagement.backup.load = wt.CreateButton({
-							parent = panel,
-							name = "Load",
-							title = wt.strings.backup.load.label,
-							tooltip = { lines = {
-								{ text = wt.strings.backup.load.tooltip, },
-								{ text = "\n" .. wt.strings.backup.box.tooltip[5], color = { r = 0.92, g = 0.34, b = 0.23 }, },
-							} },
-							position = {
-								anchor = "TOPRIGHT",
-								relativeTo = dataManagement.backup.box.frame,
-								relativePoint = "BOTTOMRIGHT",
-								offset = { y = -8 }
-							},
-							size = { h = 26 },
-							action = function() StaticPopup_Show(importPopup) end,
-						})
-
-						dataManagement.backup.reset = wt.CreateButton({
-							parent = panel,
-							name = "Reset",
-							title = RESET,
-							tooltip = { lines = { { text = wt.strings.backup.reset.tooltip, }, } },
-							position = {
-								anchor = "RIGHT",
-								relativeTo = dataManagement.backup.load.widget,
-								relativePoint = "LEFT",
-								offset = { x = -8, }
-							},
-							size = { h = 26 },
-							action = dataManagement.refreshBackupBox,
-						})
-
-						--[ All Profiles ]
-
-						local allProfilesBackupFrame = wt.CreatePanel({
-							parent = canvas,
-							name = addon .. "AllProfilesBackup",
-							append = false,
-							title = wt.strings.backup.allProfiles.label,
-							position = { anchor = "BOTTOMRIGHT", offset = { x = 12, y = 1 }, },
-							keepInBounds = true,
-							size = { w = 678, h = 609 },
-							frameStrata = "DIALOG",
-							keepOnTop = true,
-							background = { color = { a = 0.9 }, },
-							arrangement = {
-								margins = { l = 16, r = 16, t = 42, b = 16 },
-								resize = false,
-							},
-							initialize = function(windowPanel)
-								dataManagement.backupAllProfiles.box = wt.CreateMultilineEditbox({
-									parent = windowPanel,
-									name = "ImportExportAllProfiles",
-									title = wt.strings.backup.allProfiles.label,
-									label = false,
-									tooltip = { lines = {
-										{ text = wt.strings.backup.allProfiles.tooltipLine, },
-										{ text = "\n" .. wt.strings.backup.box.tooltip[2], },
-										{ text = "\n" .. wt.strings.backup.box.tooltip[3], },
-										{ text = wt.strings.backup.box.tooltip[4], color = { r = 0.89, g = 0.65, b = 0.40 }, },
-										{ text = "\n" .. wt.strings.backup.box.tooltip[5], color = { r = 0.92, g = 0.34, b = 0.23 }, },
-									}, },
-									arrange = {},
-									size = { w = windowPanel:GetWidth() - 32, h = windowPanel:GetHeight() - 92 },
-									font = { normal = "GameFontWhiteSmall", },
-									scrollSpeed = 0.2,
-									scrollToTop = false,
-									unfocusOnEnter = false,
-									dataManagement = {
-										category = category,
-										key = keys[1],
-									},
-									listeners = { loaded = { { handler = dataManagement.refreshAllProfilesBackupBox, }, }, },
-									showDefault = false,
-								})
-
-								dataManagement.backupAllProfiles.compact = wt.CreateCheckbox({
-									parent = windowPanel,
-									name = "Compact",
-									title = wt.strings.backup.compact.label,
-									tooltip = { lines = { { text = wt.strings.backup.compact.tooltip, }, } },
-									arrange = {},
-									events = { OnClick = function()
-										dataManagement.backup.compact.toggleState(true)
-										dataManagement.refreshAllProfilesBackupBox()
-									end },
-									showDefault = false,
-									utilityMenu = false,
-								})
-
-								wt.CreateButton({
-									parent = windowPanel,
-									name = "CloseButton",
-									title = CLOSE,
-									position = {
-										anchor = "TOPRIGHT",
-										offset = { x = -12, y = -12 },
-									},
-									size = { w = 96, },
-									action = function() windowPanel:Hide() end,
-								})
-
-								_G[windowPanel:GetName() .. "Title"]:SetPoint("TOPLEFT", 18, -18)
-
-								windowPanel:EnableMouse(true)
-								windowPanel:Hide()
-							end,
-						})
-
-						wt.CreateButton({
-							parent = panel,
-							name = "AllProfilesButton",
-							title = wt.strings.backup.allProfiles.open.label,
-							tooltip = { lines = { { text = wt.strings.backup.allProfiles.open.tooltip, }, } },
-							position = {
-								anchor = "TOPRIGHT",
-								relativeTo = dataManagement.backup.box.frame,
-								relativePoint = "TOPRIGHT",
-								offset = { x = -1, y = 2 }
-							},
-							size = { w = 100, h = 17 },
-							frameLevel = dataManagement.backup.box.frame:GetFrameLevel() + 1, --Make sure it's on top to be clickable
-							font = {
-								normal = "GameFontNormalSmall",
-								highlight = "GameFontHighlightSmall",
-							},
-							action = function()
-								allProfilesBackupFrame:Show()
-
-								dataManagement.backupAllProfiles.compact.setState(t.settingsData.compactBackup, nil, true)
-
-								dataManagement.refreshAllProfilesBackupBox()
-							end,
-						})
-
-						local allProfilesImportPopup = wt.RegisterPopupDialog(addon, "IMPORT_ALL", {
-							text = wt.strings.backup.warning,
-							accept = wt.strings.backup.import,
-							onAccept = function()
-								local success, data = pcall(loadstring("return " .. wt.Clear(dataManagement.backupAllProfiles.box.getText())))
-								data = type(data) == "table" and data or {}
-
-								if success then loadProfiles(data.profiles, data.activeProfile) end
-
-								--Set dropdown items 
-								dataManagement.profiles.apply.updateItems(t.accountData.profiles)
-
-								t.onImportAllProfiles(success and type(data) == "table", data)
-							end,
-						})
-
-						dataManagement.backupAllProfiles.load = wt.CreateButton({
-							parent = allProfilesBackupFrame,
-							name = "Load",
-							title = wt.strings.backup.load.label,
-							tooltip = { lines = {
-								{ text = wt.strings.backup.load.tooltip, },
-								{ text = "\n" .. wt.strings.backup.box.tooltip[5], color = { r = 0.92, g = 0.34, b = 0.23 }, },
-							} },
-							position = {
-								anchor = "TOPRIGHT",
-								relativeTo = dataManagement.backupAllProfiles.box.frame,
-								relativePoint = "BOTTOMRIGHT",
-								offset = { y = -8 }
-							},
-							size = { h = 26 },
-							action = function() StaticPopup_Show(allProfilesImportPopup) end,
-						})
-
-						dataManagement.backupAllProfiles.reset = wt.CreateButton({
-							parent = allProfilesBackupFrame,
-							name = "Reset",
-							title = RESET,
-							tooltip = { lines = { { text = wt.strings.backup.reset.tooltip, }, } },
-							position = {
-								anchor = "RIGHT",
-								relativeTo = dataManagement.backupAllProfiles.load.widget,
-								relativePoint = "LEFT",
-								offset = { x = -8, }
-							},
-							size = { h = 26 },
-							action = dataManagement.refreshAllProfilesBackupBox,
-						})
-					end,
-				})
-			end
-		end,
-	})
-
-	return dataManagement, firstLoad, newCharacter
-end
-
---[ Settings Widget Panels ]
-
---| Position
+--[ Position Manager ]
 
 local positioningVisualAids = {}
+
+--| GUI --TODO separate logical core
 
 ---Create and set up position management for a specified frame within a panel frame
 ---***
 ---@param addon string The name of the addon's folder (the addon namespace, not its displayed title)
 ---@param frame AnyFrameObject Reference to the frame to create the settings for
----@param t positionManagementCreationData Parameters are to be provided in this table
+---@param getData fun(): table: positionPresetData Return a reference to the table within a SavedVariables(PerCharacter) addon database where data is committed to
+---@param defaultData positionPresetData Reference to the table containing the default values<ul><li>***Note:*** The defaults table should contain values under matching keys to the values within *t.getData()*.</li></ul>
+---@param settingsData positionOptionsSettingsData|table Reference to the SavedVariables or SavedVariablesPerCharacter table where settings specifications are to be stored and loaded from<ul><li>***Note:*** A boolean value will be created under the key **keepInPlace** if it didn't already exist in this table.</li></ul>
+---@param t positionManagementCreationData Optional parameters
 ---***
 ---@return positionPanel? table Components of the settings panel wrapped in a table | ***Default:*** nil
-function wt.CreatePositionOptions(addon, frame, t)
+function wt.CreatePositionOptions(addon, frame, getData, defaultData, settingsData, t)
 	if not addon or not C_AddOns.IsAddOnLoaded(addon) or not us.IsFrame(frame) or type(t) ~= "table" then return end
 
 	if type(t.name) ~= "string" then t.name = frame:GetName() end
@@ -8122,7 +8575,7 @@ function wt.CreatePositionOptions(addon, frame, t)
 		--[ Toggle ]
 
 		if not WidgetToolsDB.lite then
-			t.canvas:HookScript("OnShow", function() positioningVisualAids.show(frame, t.getData().position) end)
+			t.canvas:HookScript("OnShow", function() positioningVisualAids.show(frame, getData().position) end)
 			t.canvas:HookScript("OnHide", function() positioningVisualAids.frame:Hide() end)
 		end
 
@@ -8170,7 +8623,7 @@ function wt.CreatePositionOptions(addon, frame, t)
 						wt.SetPosition(frame, panel.presets[i].data.position, true)
 
 						--Update the storage
-						us.CopyValues(t.getData().position, wt.PackPosition(frame:GetPoint()))
+						us.CopyValues(getData().position, wt.PackPosition(frame:GetPoint()))
 
 						--Update the settings widgets
 						panel.widgets.position.anchor.loadData(false)
@@ -8183,7 +8636,7 @@ function wt.CreatePositionOptions(addon, frame, t)
 					--Keep in bounds
 					if panel.presets[i].data.keepInBounds ~= nil then
 						frame:SetClampedToScreen(panel.presets[i].data.keepInBounds) --Update the frame
-						t.getData().keepInBounds = panel.presets[i].data.keepInBounds --Update the storage
+						getData().keepInBounds = panel.presets[i].data.keepInBounds --Update the storage
 						if panel.widgets.position.keepInBounds then panel.widgets.position.keepInBounds.loadData(false) end --Update the settings widget
 					end
 
@@ -8192,27 +8645,27 @@ function wt.CreatePositionOptions(addon, frame, t)
 						--Frame strata
 						if panel.presets[i].data.layer.strata then
 							frame:SetFrameStrata(panel.presets[i].data.layer.strata) --Update the frame
-							t.getData().layer.strata = panel.presets[i].data.layer.strata --Update the storage
+							getData().layer.strata = panel.presets[i].data.layer.strata --Update the storage
 							if panel.widgets.layer.strata then panel.widgets.layer.strata.loadData(false) end --Update the settings widget
 						end
 
 						--Keep on top
 						if panel.presets[i].data.layer.keepOnTop ~= nil then
 							frame:SetToplevel(panel.presets[i].data.layer.keepOnTop) --Update the frame
-							t.getData().layer.keepOnTop = panel.presets[i].data.layer.keepOnTop --Update the storage
+							getData().layer.keepOnTop = panel.presets[i].data.layer.keepOnTop --Update the storage
 							if panel.widgets.layer.keepOnTop then panel.widgets.layer.keepOnTop.loadData(false) end --Update the settings widget
 						end
 
 						--Frame level
 						if panel.presets[i].data.layer.level then
 							frame:SetFrameLevel(panel.presets[i].data.layer.level) --Update the frame
-							t.getData().layer.level = panel.presets[i].data.layer.level --Update the storage
+							getData().layer.level = panel.presets[i].data.layer.level --Update the storage
 							if panel.widgets.layer.level then panel.widgets.layer.level.loadData(false) end --Update the settings widget
 						end
 					end
 
 					--Update the positioning visual aids
-					if WidgetToolsDB.positioningAids then positioningVisualAids.update(frame, t.getData().position) end
+					if WidgetToolsDB.positioningAids then positioningVisualAids.update(frame, getData().position) end
 
 					--Call the specified handler
 					if t.presets.onPreset then t.presets.onPreset(i) end
@@ -8303,7 +8756,7 @@ function wt.CreatePositionOptions(addon, frame, t)
 
 					--| Options Widgets
 
-					local savePopup = wt.RegisterPopupDialog(addon, "SAVE_PRESET", {
+					local savePopup = wt.RegisterPopupDialog(addon .. "_SAVE_PRESET", {
 						text = wt.strings.presets.save.warning:gsub("#CUSTOM", cr(panel.presets[t.presets.custom.index].title, NORMAL_FONT_COLOR)),
 						accept = wt.strings.override,
 						onAccept = panel.saveCustomPreset,
@@ -8322,7 +8775,7 @@ function wt.CreatePositionOptions(addon, frame, t)
 						dependencies = t.dependencies
 					})
 
-					local resetPopup = wt.RegisterPopupDialog(addon, "RESET_PRESET_" .. panelFrame:GetName(), {
+					local resetPopup = wt.RegisterPopupDialog(addon .. "_RESET_PRESET_" .. panelFrame:GetName(), {
 						text = wt.strings.presets.reset.warning:gsub("#CUSTOM", cr(panel.presets[t.presets.custom.index].title, NORMAL_FONT_COLOR)),
 						accept = wt.strings.override,
 						onAccept = panel.resetCustomPreset,
@@ -8354,16 +8807,16 @@ function wt.CreatePositionOptions(addon, frame, t)
 				arrange = {},
 				width = 140,
 				dependencies = t.dependencies,
-				getData = function() return t.getData().position.relativePoint end,
-				saveData = function(value) t.getData().position.relativePoint = value end,
-				default = t.defaultsTable.position.relativePoint,
+				getData = function() return getData().position.relativePoint end,
+				saveData = function(value) getData().position.relativePoint = value end,
+				default = defaultData.position.relativePoint,
 				dataManagement = {
 					category = t.dataManagement.category,
 					key = t.dataManagement.key,
 					onChange = {
 						CustomPositionChangeHandler = function() if type(t.onChangePosition) == "function" then t.onChangePosition() end end,
-						UpdateFramePosition = function() wt.SetPosition(frame, t.getData().position, true) end,
-						UpdatePositioningVisualAids = function() if WidgetToolsDB.positioningAids then positioningVisualAids.update(frame, t.getData().position) end end,
+						UpdateFramePosition = function() wt.SetPosition(frame, getData().position, true) end,
+						UpdatePositioningVisualAids = function() if WidgetToolsDB.positioningAids then positioningVisualAids.update(frame, getData().position) end end,
 					},
 				},
 			})
@@ -8376,17 +8829,17 @@ function wt.CreatePositionOptions(addon, frame, t)
 				arrange = { wrap = false, },
 				width = 140,
 				dependencies = t.dependencies,
-				getData = function() return t.getData().position.anchor end,
-				saveData = function(value) t.getData().position.anchor = value end,
-				default = t.defaultsTable.position.anchor,
+				getData = function() return getData().position.anchor end,
+				saveData = function(value) getData().position.anchor = value end,
+				default = defaultData.position.anchor,
 				dataManagement = {
 					category = t.dataManagement.category,
 					key = t.dataManagement.key,
 					index = 1,
 					onChange = {
 						"CustomPositionChangeHandler",
-						UpdateFrameOffsetsAndPosition = function() if not t.settingsData.keepInPlace then wt.SetPosition(frame, t.getData().position, true) else
-							local x, y = wt.SetAnchor(frame, t.getData().position.anchor)
+						UpdateFrameOffsetsAndPosition = function() if not settingsData.keepInPlace then wt.SetPosition(frame, getData().position, true) else
+							local x, y = wt.SetAnchor(frame, getData().position.anchor)
 
 							--Update offsets
 							panel.widgets.position.offset.x.setData(x, false)
@@ -8404,8 +8857,8 @@ function wt.CreatePositionOptions(addon, frame, t)
 				tooltip = { lines = { { text = wt.strings.position.keepInPlace.tooltip:gsub("#FRAME", t.name), }, } },
 				arrange = { wrap = false, },
 				dependencies = t.dependencies,
-				getData = function() return t.settingsData.keepInPlace end,
-				saveData = function(state) t.settingsData.keepInPlace = state end,
+				getData = function() return settingsData.keepInPlace end,
+				saveData = function(state) settingsData.keepInPlace = state end,
 				default = true,
 				showDefault = false,
 				utilityMenu = false,
@@ -8428,9 +8881,9 @@ function wt.CreatePositionOptions(addon, frame, t)
 				altStep = 25,
 				hardStep = false,
 				dependencies = t.dependencies,
-				getData = function() return t.getData().position.offset.x end,
-				saveData = function(value) t.getData().position.offset.x = value end,
-				default = t.defaultsTable.position.offset.x,
+				getData = function() return getData().position.offset.x end,
+				saveData = function(value) getData().position.offset.x = value end,
+				default = defaultData.position.offset.x,
 				dataManagement = {
 					category = t.dataManagement.category,
 					key = t.dataManagement.key,
@@ -8455,9 +8908,9 @@ function wt.CreatePositionOptions(addon, frame, t)
 				altStep = 25,
 				hardStep = false,
 				dependencies = t.dependencies,
-				getData = function() return t.getData().position.offset.y end,
-				saveData = function(value) t.getData().position.offset.y = value end,
-				default = t.defaultsTable.position.offset.y,
+				getData = function() return getData().position.offset.y end,
+				saveData = function(value) getData().position.offset.y = value end,
+				default = defaultData.position.offset.y,
 				dataManagement = {
 					category = t.dataManagement.category,
 					key = t.dataManagement.key,
@@ -8469,34 +8922,34 @@ function wt.CreatePositionOptions(addon, frame, t)
 				},
 			})
 
-			if t.getData().keepInBounds ~= nil then panel.widgets.position.keepInBounds = wt.CreateCheckbox({
+			if getData().keepInBounds ~= nil then panel.widgets.position.keepInBounds = wt.CreateCheckbox({
 				parent = panelFrame,
 				name = "KeepInBounds",
 				title = wt.strings.position.keepInBounds.label,
 				tooltip = { lines = { { text = wt.strings.position.keepInBounds.tooltip:gsub("#FRAME", t.name), }, } },
 				arrange = { wrap = false, },
 				dependencies = t.dependencies,
-				getData = function() return t.getData().keepInBounds end,
-				saveData = function(state) t.getData().keepInBounds = state end,
-				default = t.defaultsTable.keepInBounds,
+				getData = function() return getData().keepInBounds end,
+				saveData = function(state) getData().keepInBounds = state end,
+				default = defaultData.keepInBounds,
 				dataManagement = {
 					category = t.dataManagement.category,
 					key = t.dataManagement.key,
 					onChange = {
 						CustomKeepInBoundsChangeHandler = function() if type(t.onChangeKeepInBounds) == "function" then t.onChangeKeepInBounds() end end,
-						UpdateScreenClamp = function() frame:SetClampedToScreen(t.getData().keepInBounds) end,
+						UpdateScreenClamp = function() frame:SetClampedToScreen(getData().keepInBounds) end,
 					},
 				},
 			}) end
 
 			--[ Screen Layer ]
 
-			if t.getData().layer and next(t.getData().layer) then
+			if getData().layer and next(getData().layer) then
 				panel.widgets.layer = {}
 
 				--| Options widgets
 
-				if t.getData().layer.strata then panel.widgets.layer.strata = wt.CreateSpecialRadiogroup("strata", {
+				if getData().layer.strata then panel.widgets.layer.strata = wt.CreateSpecialRadiogroup("strata", {
 					parent = panelFrame,
 					name = "FrameStrata",
 					title = wt.strings.layer.strata.label,
@@ -8504,40 +8957,40 @@ function wt.CreatePositionOptions(addon, frame, t)
 					arrange = {},
 					width = 140,
 					dependencies = t.dependencies,
-					getData = function() return t.getData().layer.strata end,
-					saveData = function(value) t.getData().layer.strata = value end,
-					default = t.defaultsTable.layer.strata,
+					getData = function() return getData().layer.strata end,
+					saveData = function(value) getData().layer.strata = value end,
+					default = defaultData.layer.strata,
 					dataManagement = {
 						category = t.dataManagement.category,
 						key = t.dataManagement.key,
 						onChange = {
 							CustomStrataChangeHandler = function() if type(t.onChangeStrata) == "function" then t.onChangeStrata() end end,
-							UpdateFrameStrata = function() frame:SetFrameStrata(t.getData().layer.strata) end,
+							UpdateFrameStrata = function() frame:SetFrameStrata(getData().layer.strata) end,
 						},
 					},
 				}) end
 
-				if t.getData().layer.keepOnTop ~= nil then panel.widgets.layer.keepOnTop = wt.CreateCheckbox({
+				if getData().layer.keepOnTop ~= nil then panel.widgets.layer.keepOnTop = wt.CreateCheckbox({
 					parent = panelFrame,
 					name = "KeepOnTop",
 					title = wt.strings.layer.keepOnTop.label,
 					tooltip = { lines = { { text = wt.strings.layer.keepOnTop.tooltip:gsub("#FRAME", t.name), }, } },
 					arrange = { wrap = false, },
 					dependencies = t.dependencies,
-					getData = function() return t.getData().layer.keepOnTop end,
-					saveData = function(state) t.getData().layer.keepOnTop = state end,
-					default = t.defaultsTable.layer.keepOnTop,
+					getData = function() return getData().layer.keepOnTop end,
+					saveData = function(state) getData().layer.keepOnTop = state end,
+					default = defaultData.layer.keepOnTop,
 					dataManagement = {
 						category = t.dataManagement.category,
 						key = t.dataManagement.key,
 						onChange = {
 							CustomKeepOnTopChangeHandler = function() if type(t.onChangeKeepOnTop) == "function" then t.onChangeKeepOnTop() end end,
-							UpdateTopLevel = function() frame:SetToplevel(t.getData().layer.keepOnTop) end,
+							UpdateTopLevel = function() frame:SetToplevel(getData().layer.keepOnTop) end,
 						},
 					},
 				}) end
 
-				if t.getData().layer.level then panel.widgets.layer.level = wt.CreateSlider({
+				if getData().layer.level then panel.widgets.layer.level = wt.CreateSlider({
 					parent = panelFrame,
 					name = "FrameLevel",
 					title = wt.strings.layer.level.label,
@@ -8548,15 +9001,15 @@ function wt.CreatePositionOptions(addon, frame, t)
 					step = 1,
 					altStep = 100,
 					dependencies = t.dependencies,
-					getData = function() return t.getData().layer.level end,
-					saveData = function(value) t.getData().layer.level = value end,
-					default = t.defaultsTable.layer.level,
+					getData = function() return getData().layer.level end,
+					saveData = function(value) getData().layer.level = value end,
+					default = defaultData.layer.level,
 					dataManagement = {
 						category = t.dataManagement.category,
 						key = t.dataManagement.key,
 						onChange = {
 							CustomLevelChangeHandler = function() if type(t.onChangeLevel) == "function" then t.onChangeLevel() end end,
-							UpdateFrameLevel = function() frame:SetFrameLevel(t.getData().layer.level) end,
+							UpdateFrameLevel = function() frame:SetFrameLevel(getData().layer.level) end,
 						},
 					},
 				}) end
@@ -8577,7 +9030,7 @@ function wt.CreatePositionOptions(addon, frame, t)
 				onMove = t.setMovable.events.onMove,
 				onStop = function()
 					--Update the storage
-					us.CopyValues(t.getData().position, wt.PackPosition(frame:GetPoint()))
+					us.CopyValues(getData().position, wt.PackPosition(frame:GetPoint()))
 
 					--Update the settings widgets
 					panel.widgets.position.anchor.loadData(false)
@@ -8587,14 +9040,14 @@ function wt.CreatePositionOptions(addon, frame, t)
 					panel.widgets.position.offset.y.loadData(false)
 
 					--Update the positioning visual aids
-					if WidgetToolsDB.positioningAids then positioningVisualAids.update(frame, t.getData().position) end
+					if WidgetToolsDB.positioningAids then positioningVisualAids.update(frame, getData().position) end
 
 					--Call the specified handler
 					if t.setMovable.events.onStop then t.setMovable.events.onStop() end
 				end,
 				onCancel = function()
 					--Reset the position
-					wt.SetPosition(frame, t.getData().position, true)
+					wt.SetPosition(frame, getData().position, true)
 
 					--Call the specified handler
 					if t.setMovable.events.onCancel then t.setMovable.events.onCancel() end
@@ -8606,18 +9059,22 @@ function wt.CreatePositionOptions(addon, frame, t)
 	return panel
 end
 
---| Text font
+--[ Font Manager ]
 
 local fonts, fontItems
+
+--| GUI --TODO separate logical core
 
 ---Create and set up font management for a specified text object ([FontString](https://warcraft.wiki.gg/wiki/UIOBJECT_FontString)) including access to a font family selector dropdown to pick a custom font from the Widget Tools fonts list
 ---***
 ---@param addon string The name of the addon's folder (the addon namespace, not its displayed title)
 ---@param textline FontString Reference to the text object to create font options for
----@param t fontManagementCreationData Parameters are to be provided in this table
+---@param getData fun(): table: fontOptionsData Return a reference to the table within a SavedVariables(PerCharacter) addon database where data is committed to
+---@param defaultData fontOptionsData Reference to the table containing the default values
+---@param t fontManagementCreationData Optional parameters
 ---***
 ---@return fontPanel? table References to the new [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame), an array of its child [CheckButton](https://warcraft.wiki.gg/wiki/UIOBJECT_CheckButton) widget items, a toggle [Button](https://warcraft.wiki.gg/wiki/UIOBJECT_Button), utility functions and more wrapped in a table | ***Default:*** nil
-function wt.CreateFontOptions(addon, textline, t)
+function wt.CreateFontOptions(addon, textline, getData, defaultData, t)
 	if not addon or not C_AddOns.IsAddOnLoaded(addon) or type(textline) ~= "table" or type(textline.GetFont) ~= "function" or type(t) ~= "table" then return end
 
 	if type(t.name) ~= "string" then t.name = textline:GetName() end
@@ -8717,15 +9174,15 @@ function wt.CreateFontOptions(addon, textline, t)
 				arrange = {},
 				items = fontItems,
 				dependencies = t.dependencies,
-				getData = function() return us.FindIndex(fonts, t.getData().path) end,
-				saveData = function(value) t.getData().path = fonts[value].path end,
-				default = us.FindIndex(fonts, t.defaultsTable.path),
+				getData = function() return us.FindIndex(fonts, getData().path) end,
+				saveData = function(value) getData().path = fonts[value].path end,
+				default = us.FindIndex(fonts, defaultData.path),
 				dataManagement = {
 					category = t.dataManagement.category,
 					key = t.dataManagement.key,
 					onChange = {
 						CustomFontChangeHandler = function() if type(t.onChangeFont) == "function" then t.onChangeFont() end end,
-						UpdateTextFont = function() textline:SetFont(t.getData().path, t.getData().size, "OUTLINE") end,
+						UpdateTextFont = function() textline:SetFont(getData().path, getData().size, "OUTLINE") end,
 						UpdateFontDropdownText = not WidgetToolsDB.lite and function()
 							--Update the font of the dropdown toggle button label
 							local _, size, flags = panel.widgets.path.toggle.label:GetFont()
@@ -8758,7 +9215,6 @@ function wt.CreateFontOptions(addon, textline, t)
 
 			--| Size
 
-			-- panel.widgets.size = wt.CreateClassicSlider({
 			panel.widgets.size = wt.CreateSlider({
 				parent = panelFrame,
 				name = "Size",
@@ -8770,9 +9226,9 @@ function wt.CreateFontOptions(addon, textline, t)
 				step = 1,
 				altStep = 3,
 				dependencies = t.dependencies,
-				getData = function() return t.getData().size end,
-				saveData = function(value) t.getData().size = value end,
-				default = t.defaultsTable.size,
+				getData = function() return getData().size end,
+				saveData = function(value) getData().size = value end,
+				default = defaultData.size,
 				dataManagement = {
 					category = t.dataManagement.category,
 					key = t.dataManagement.key,
@@ -8797,15 +9253,15 @@ function wt.CreateFontOptions(addon, textline, t)
 				arrange = { wrap = false, },
 				width = 140,
 				dependencies = t.dependencies,
-				getData = function() return t.getData().alignment end,
-				saveData = function(value) t.getData().alignment = value end,
-				default = t.defaultsTable.alignment,
+				getData = function() return getData().alignment end,
+				saveData = function(value) getData().alignment = value end,
+				default = defaultData.alignment,
 				dataManagement = {
 					category = t.dataManagement.category,
 					key = t.dataManagement.key,
 					onChange = {
 						CustomAlignmentChangeHandler = function() if type(t.onChangeAlignment) == "function" then t.onChangeAlignment() end end,
-						UpdateTextAlignment = function() textline:SetJustifyH(t.getData().alignment) end,
+						UpdateTextAlignment = function() textline:SetJustifyH(getData().alignment) end,
 					},
 				},
 			})
@@ -8821,7 +9277,7 @@ function wt.CreateFontOptions(addon, textline, t)
 			---@type (colormanager|colorpicker)[]
 			panel.widgets.colors = {}
 
-			for key in pairs(t.getData().colors) do
+			for key in pairs(getData().colors) do
 				if type(t.colors[key]) ~= "table" then t.colors[key] = {} end
 
 				local name = t.colors[key].name == "string" and t.colors[key].name or (key:sub(1,1):upper() .. key:sub(2))
@@ -8834,15 +9290,15 @@ function wt.CreateFontOptions(addon, textline, t)
 					tooltip = { lines = { { text = wt.strings.font.color.tooltip:gsub("#COLOR_TYPE", name), }, } },
 					arrange = { wrap = wrapper == nil and not next(panel.widgets.colors) or key == wrapper , index = index },
 					dependencies = t.dependencies,
-					getData = function() return t.getData().colors[key] end,
-					saveData = function(value) t.getData().colors[key] = value end,
-					default = t.defaultsTable.colors[key],
+					getData = function() return getData().colors[key] end,
+					saveData = function(value) getData().colors[key] = value end,
+					default = defaultData.colors[key],
 					dataManagement = {
 						category = t.dataManagement.category,
 						key = t.dataManagement.key,
 						onChange = {
 							CustomColorChangeHandler = function() if type(t.onChangeColor) == "function" then t.onChangeColor(key) end end,
-							UpdateTextColor = function() textline:SetTextColor(wt.UnpackColor(t.getData().colors[key])) end,
+							UpdateTextColor = function() textline:SetTextColor(wt.UnpackColor(getData().colors[key])) end,
 						},
 					},
 				})

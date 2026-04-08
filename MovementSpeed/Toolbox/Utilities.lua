@@ -43,7 +43,7 @@ end
 
 --| Verification
 
---ADD position data verification utilities
+--ADD position data type verification utilities
 
 --| Conversion
 
@@ -118,7 +118,7 @@ function wt.IsColor(t)
 		ds.Log("Invalid blue color value: " .. tostring(t.b))
 
 		return false
-	elseif (type(t.a) ~= "number" and t.a ~= nil) or t.a < 0 or t.a > 1 then
+	elseif t.a ~= nil and (type(t.a) ~= "number" or t.a < 0 or t.a > 1) then
 		ds.Log("Invalid alpha color value: " .. tostring(t.a))
 
 		return false
@@ -168,7 +168,7 @@ end
 ---@return number r Red | ***Range:*** (0, 1) | ***Default:*** 1
 ---@return number g Green | ***Range:*** (0, 1) | ***Default:*** 1
 ---@return number b Blue | ***Range:*** (0, 1) | ***Default:*** 1
----@return number|nil a Opacity | ***Range:*** (0, 1) | ***Default:*** 1
+---@return number? a Opacity | ***Range:*** (0, 1)
 function wt.UnpackColor(color, alpha)
 	if type(color) ~= "table" then return 1, 1, 1, 1 end
 
@@ -211,7 +211,7 @@ end
 ---@return number r Red | ***Range:*** (0, 1) | ***Default:*** 1
 ---@return number g Green  | ***Range:*** (0, 1) | ***Default:*** 1
 ---@return number b Blue | ***Range:*** (0, 1) | ***Default:*** 1
----@return number|nil a Alpha | ***Range:*** (0, 1)
+---@return number? a Alpha | ***Range:*** (0, 1)
 function wt.HexToColor(hex)
 	if type(hex) ~= "string" then return 1, 1, 1 else hex = hex:gsub("#", "") end
 
@@ -1104,9 +1104,9 @@ end
 ---***
 ---@param frame AnyFrameObject Owner frame the tooltip data to be updated for<ul><li>***Note:*** If no entry has been registered for **owner** in the tooltip data registry via ***WidgetToolbox*.AddTooltip(...)** yet, no data will be changed.</li></ul>
 ---@param t? tooltipUpdateData|tooltipData The parameters to update the tooltip with are to be provided in this table | ***Default:*** *(fill values from the data in the registry or use default values for required values missing from the registry)*
----@param linesUpdate? boolean|nil If true, replace the full set of lines in the registry with **t.lines**, or if explicitly false, append the lines to the current list of lines, or if nil or something else, adjust the values of existing lines at matching indexes instead without adding or removing lines | ***Default:*** nil
+---@param linesUpdate boolean|nil If true, replace the full set of lines in the registry with **t.lines**, or if explicitly false, append the lines to the current list of lines, or if nil or something else, adjust the values of existing lines at matching indexes instead without adding or removing lines | ***Default:*** `nil`
 ---***
----@return tooltipData|nil # Reference to the tooltip data table registered for **owner** to display the tooltip info by | ***Default:*** nil
+---@return tooltipData|nil # Reference to the tooltip data table registered for **owner** to display the tooltip info by | ***Default:*** `nil`
 function wt.UpdateTooltipData(frame, t, linesUpdate)
 	if not us.IsFrame(frame) then return nil end
 
@@ -1183,16 +1183,17 @@ end
 
 --[[ POPUP MANAGEMENT ]]
 
----Create a popup dialog with an accept function and cancel button
+---Register the data for a Blizzard popup dialog for use
 ---***
----@param addon? string The name of the addon's folder (the addon namespace, not its displayed title) | ***Default:*** "WidgetTools" *(register as global)*
----@param key? string Unique string appended to **addon** to be used as the identifier key in the global **StaticPopupDialogs** table | ***Default:*** "DIALOG"<ul><li>***Note:*** Dialog data registered under existing keys will be overwritten.</li><li>***Note:*** Space characters will be replaced with "_".</li></ul>
----@param t? popupDialogData Parameters are to be provided in this table
+---@param key? string Unique string to be used as the identifier key in the global `StaticPopupDialogs` table | ***Default:*** *table id of `t` or a random ID string*<ul><li>***Note:*** the default value will be appended to `key` even if its set and a valid string if that key already exist in the global `StaticPopupDialogs` table.
+---@param t? popupDialogData Optional parameters
 ---***
----@return string key The unique identifier key created for this popup in the global **StaticPopupDialogs** table used as the parameter when calling [StaticPopup_Show()](https://warcraft.wiki.gg/wiki/API_StaticPopup_Show) or [StaticPopup_Hide()](https://warcraft.wiki.gg/wiki/API_StaticPopup_Hide)
-function wt.RegisterPopupDialog(addon, key, t)
+---@return string key The unique identifier key the popup data was created under in the global `StaticPopupDialogs` table used as the parameter when calling [StaticPopup_Show()](https://warcraft.wiki.gg/wiki/API_StaticPopup_Show) or [StaticPopup_Hide()](https://warcraft.wiki.gg/wiki/API_StaticPopup_Hide)
+function wt.RegisterPopupDialog(key, t)
+	key = type(key) == "string" and key:len() > 0 and key:upper() or nil
 	t = type(t) == "table" and t or {}
-	key = (type(addon) == "string" and addon or "WidgetTools"):upper() .. "_" .. (type(key) == "string" and key:gsub("%s+", "_"):upper() or "DIALOG")
+
+	if not key or StaticPopupDialogs[key] then key = tostring(t):sub(8):upper() end
 
 	StaticPopupDialogs[key] = {
 		text = t.text or "",
@@ -1213,10 +1214,10 @@ end
 
 ---Update already existing popup dialog data
 ---***
----@param key string The unique identifier key representing the defaults warning popup dialog in the global **StaticPopupDialogs** table, and used as the parameter when calling [StaticPopup_Show()](https://warcraft.wiki.gg/wiki/API_StaticPopup_Show) or [StaticPopup_Hide()](https://warcraft.wiki.gg/wiki/API_StaticPopup_Hide)
----@param t? popupDialogData Parameters are to be provided in this table
+---@param key string The unique identifier key representing the defaults warning popup dialog in the global `StaticPopupDialogs` table, and used as the parameter when calling [StaticPopup_Show()](https://warcraft.wiki.gg/wiki/API_StaticPopup_Show) or [StaticPopup_Hide()](https://warcraft.wiki.gg/wiki/API_StaticPopup_Hide)
+---@param t? popupDialogData Optional parameters
 ---***
----@return string? key The unique identifier key created for this popup in the global **StaticPopupDialogs** table used as the parameter when calling [StaticPopup_Show()](https://warcraft.wiki.gg/wiki/API_StaticPopup_Show) or [StaticPopup_Hide()](https://warcraft.wiki.gg/wiki/API_StaticPopup_Hide) | ***Default:*** nil
+---@return string? key The unique identifier key created for this popup in the global `StaticPopupDialogs` table used as the parameter when calling [StaticPopup_Show()](https://warcraft.wiki.gg/wiki/API_StaticPopup_Show) or [StaticPopup_Hide()](https://warcraft.wiki.gg/wiki/API_StaticPopup_Hide) | ***Default:*** nil
 function wt.UpdatePopupDialog(key, t)
 	if not StaticPopupDialogs[key] then return end
 
@@ -1289,7 +1290,7 @@ end
 ---***
 ---@param addon string The name of the addon's folder (the addon namespace not the display title)
 ---@param keywords string[] List of addon-specific keywords to register to listen to when typed as slash commands<ul><li>***Note:*** A slash character (`/`) will appended before each keyword specified here during registration, it doesn't need to be included.</li></ul>
----@param t chatCommandManagerCreationData Parameters are to be provided in this table
+---@param t chatCommandManagerCreationData Optional parameters
 ---***
 ---@return chatCommandManager? manager Table containing command handler functions | ***Default:*** nil
 function wt.RegisterChatCommands(addon, keywords, t)
@@ -1301,6 +1302,16 @@ function wt.RegisterChatCommands(addon, keywords, t)
 	logo = logo and (wt.Texture(logo, 11, 11) .. " ") or ""
 	local addonTitle = wt.Clear(select(2, C_AddOns.GetAddOnInfo(addon))):gsub("^%s*(.-)%s*$", "%1")
 	local branding = logo .. addonTitle .. ": "
+	local commands = type(t.commands) == "table" and t.commands or {}
+	t.colors = t.colors or {}
+	local colors = {
+		title = wt.IsColor(t.colors.title) or YELLOW_FONT_COLOR,
+		content = wt.IsColor(t.colors.content) or WHITE_FONT_COLOR,
+		command = wt.IsColor(t.colors.command) or LIGHTBLUE_FONT_COLOR,
+		description = wt.IsColor(t.colors.description) or LIGHTGRAY_FONT_COLOR,
+	}
+	local onWelcome = type(t.onWelcome) == "function" and t.onWelcome or nil
+	local defaultHandler = type(t.defaultHandler) == "function" and t.defaultHandler or nil
 
 	---@class chatCommandManager
 	local manager = {}
@@ -1322,40 +1333,40 @@ function wt.RegisterChatCommands(addon, keywords, t)
 	---@param titleColor? chatCommandColorNames|colorData|colorRGBA ***Default:*** "title"
 	function manager.print(message, title, titleColor, contentColor)
 		title = type(title) == "string" and title or branding
-		titleColor = type(titleColor) == "table" and titleColor or t.colors[type(titleColor) == "string" and titleColor or "title"]
-		contentColor = type(contentColor) == "table" and contentColor or t.colors[type(contentColor) == "string" and contentColor or "content"]
+		titleColor = wt.IsColor(titleColor) or colors[type(titleColor) == "string" and titleColor or "title"]
+		contentColor = wt.IsColor(contentColor) or colors[type(contentColor) == "string" and contentColor or "content"]
 
 		if type(message) == "string" then print(cr(title, titleColor) .. cr(message, contentColor)) end
 	end
 
 	--Print a welcome message with a hint about chat keywords
 	function manager.welcome()
-		local keyword = cr(keywords[1], t.colors.command)
+		local keyword = cr(keywords[1], colors.command)
 		if #keywords > 1 then
-			if #keywords > 2 then for i = 2, #keywords - 1 do keyword = " " .. keyword .. "," .. cr(keywords[i], t.colors.command) end end
-			keyword = wt.strings.chat.welcome.keywords:gsub("#KEYWORD_ALTERNATE", cr(keywords[#keywords], t.colors.command)):gsub("#KEYWORD", keyword)
+			if #keywords > 2 then for i = 2, #keywords - 1 do keyword = " " .. keyword .. "," .. cr(keywords[i], colors.command) end end
+			keyword = wt.strings.chat.welcome.keywords:gsub("#KEYWORD_ALTERNATE", cr(keywords[#keywords], colors.command)):gsub("#KEYWORD", keyword)
 		end
 
-		print(cr(logo .. wt.strings.chat.welcome.thanks:gsub("#ADDON", cr(addonTitle, t.colors.title)), t.colors.content))
-		print(cr(wt.strings.chat.welcome.hint:gsub("#KEYWORD", keyword), t.colors.description))
+		print(cr(logo .. wt.strings.chat.welcome.thanks:gsub("#ADDON", cr(addonTitle, colors.title)), colors.content))
+		print(cr(wt.strings.chat.welcome.hint:gsub("#KEYWORD", keyword), colors.description))
 
-		if type(t.onWelcome) == "function" then t.onWelcome() end
+		if onWelcome then onWelcome() end
 	end
 
 	--Trigger a help command, listing all registered chat commands with their specified descriptions, calling their onHelp handlers
 	function manager.help()
-		print(cr(wt.strings.chat.help.list:gsub("#ADDON", cr(logo .. addonTitle, t.colors.title)), t.colors.content))
+		print(cr(wt.strings.chat.help.list:gsub("#ADDON", cr(logo .. addonTitle, colors.title)), colors.content))
 
-		for i = 1, #t.commands do
-			if not t.commands[i].hidden then
-				local description = type(t.commands[i].description) == "function" and t.commands[i].description() or t.commands[i].description
+		for i = 1, #commands do
+			if not commands[i].hidden then
+				local description = type(commands[i].description) == "function" and commands[i].description() or commands[i].description
 
-				print(cr("    " .. keywords[1] .. " ".. t.commands[i].command, t.colors.command) .. (
-					type(description) == "string" and cr(" • " .. description, t.colors.description) or ""
+				print(cr("    " .. keywords[1] .. " ".. commands[i].command, colors.command) .. (
+					type(description) == "string" and cr(" • " .. description, colors.description) or ""
 				))
 			end
 
-			if type(t.commands[i].onHelp) == "function" then t.commands[i].onHelp() end
+			if type(commands[i].onHelp) == "function" then commands[i].onHelp() end
 		end
 	end
 
@@ -1366,33 +1377,31 @@ function wt.RegisterChatCommands(addon, keywords, t)
 	---***
 	---@return boolean # Whether the command was found and the handler called successfully
 	function manager.handleCommand(command, ...)
-		--Find the command
-		for i = 1, #t.commands do if command == t.commands[i].command then
-			--Call command handler
-			if t.commands[i].handler then
-				local results = { t.commands[i].handler(manager, ...) }
+		for i = 1, #commands do if command == commands[i].command then
+			if commands[i].handler then
+				local results = { commands[i].handler(manager, ...) }
 
 				--Response
 				if results[1] == true then
-					local message = type(t.commands[i].success) == "function" and t.commands[i].success(unpack(results, 2)) or t.commands[i].success
+					local message = type(commands[i].success) == "function" and commands[i].success(unpack(results, 2)) or commands[i].success
 
 					--Print response message
 					if type(message) == "string" then manager.print(message) end
 
 					--Call handler
-					if type(t.commands[i].onSuccess) == "function" then t.commands[i].onSuccess(manager, unpack(results, 2)) end
+					if type(commands[i].onSuccess) == "function" then commands[i].onSuccess(manager, unpack(results, 2)) end
 				elseif results[1] == false then
-					local message = type(t.commands[i].error) == "function" and t.commands[i].error(unpack(results, 2)) or t.commands[i].error
+					local message = type(commands[i].error) == "function" and commands[i].error(unpack(results, 2)) or commands[i].error
 
 					--Print response message
 					if type(message) == "string" then manager.print(message) end
 
 					--Call handler
-					if type(t.commands[i].onError) == "function" then t.commands[i].onError(manager, unpack(results, 2)) end
+					if type(commands[i].onError) == "function" then commands[i].onError(manager, unpack(results, 2)) end
 				end
 			end
 
-			if t.commands[i].help then manager.help() end
+			if commands[i].help then manager.help() end
 
 			return true
 		end end
@@ -1408,7 +1417,7 @@ function wt.RegisterChatCommands(addon, keywords, t)
 
 		--Find and handle the specific command or call the default handler script
 		if not manager.handleCommand(command, unpack(payload, 2)) then
-			if type(t.defaultHandler) == "function" then t.defaultHandler(manager, command, unpack(payload, 2)) end
+			if defaultHandler then defaultHandler(manager, command, unpack(payload, 2)) end
 
 			--List (non-hidden) commands
 			manager.help()
@@ -1456,7 +1465,7 @@ local settingsData = { rules = {}, changeHandlers = {} }
 ---Register a settings data management entry for a settings widget to the settings data management registry for batched data handling
 ---***
 ---@param widget AnyWidgetType|AnyGUIWidgetType Reference to the widget to be saved & loaded data to/from with defined **widget.loadData()** & **widget.saveData()** functions
----@param t settingsData Parameters are to be provided in this table
+---@param t settingsData Optional parameters
 ---***
 ---@return integer|nil index The index for the new entry for **widget** where it ended up in the settings data management registry | ***Default:*** nil
 function wt.AddSettingsDataManagementEntry(widget, t)

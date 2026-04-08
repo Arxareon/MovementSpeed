@@ -17,7 +17,7 @@
 
 ---@class MovementSpeedDBC : characterProfileData
 
----@class MovementSpeedCS : dataManagementSettingsData
+---@class MovementSpeedCS : backupboxSettingsData
 ---@field playerSpeed positionOptionsSettingsData
 ---@field travelSpeed positionOptionsSettingsData
 ---@field mainDisplay displayType

@@ -14,7 +14,7 @@ local ns = select(2, ...)
 
 ---Global read-only Widget Tools table
 ---@class widgetTools
-widgetTools = {
+WidgetTools = {
 
 
 	--[[ RESOURCES ]]
@@ -90,7 +90,7 @@ widgetTools = {
 
 
 ---@class widgetToolsResources
-widgetTools.utilities = {}
+WidgetTools.utilities = {}
 
 
 --[[ FUNCTIONS ]]
@@ -241,6 +241,7 @@ function Protect(t) end
 ---***
 ---@param array FindIndex_param1 Array to search
 ---@param value FindIndex_param2 The value to find
+---***
 ---@return integer|nil index ***Default:*** `nil`
 function FindIndex(array, value) end
 
@@ -259,7 +260,7 @@ function FindIndex(array, value) end
 ---@param t FindKey_param1 Reference to the table to find a value at a certain key in
 ---@param value FindKey_param2 Value to look for in `t` (including all subtables, recursively)
 ---***
----@return any|nil match The first match of the key `value` was found paired to | ***Default:*** `nil`
+---@return any match The first match of the key `value` was found paired to | ***Default:*** `nil`
 function FindKey(t, value) end
 
 --| FindValue
@@ -277,7 +278,7 @@ function FindKey(t, value) end
 ---@param t FindValue_param1 Reference to the table to find a value at a certain key in
 ---@param key FindValue_param2 Key to look for in `t` (including all subtables, recursively)
 ---***
----@return any|nil match The first match of the value found at `key` | ***Default:*** `nil`
+---@return any match The first match of the value found at `key` | ***Default:*** `nil`
 function FindValue(t, key) end
 
 --| Reorder
@@ -591,3 +592,19 @@ function Dump(object, name, blockrule, depth, digTables, digFrames, linesPerMess
 ---***
 ---@return widgetToolbox|table? toolbox Read-only reference to the registered toolbox table | ***Default:*** *nil*
 function Register(addon, version, callback, toolbox) end
+
+--[ Blizzard ]
+
+---Create a colored string via escape sequences
+---***
+---@param value string|number Value to add coloring to
+---@param color colorData|colorRGBA Table containing the color values
+---@return string
+function WrapTextInColor(value, color) return value end
+
+---Clamp a number between two limits
+---@param value number
+---@param min number
+---@param max number
+---@return number
+function Clamp(value, min, max) return value end

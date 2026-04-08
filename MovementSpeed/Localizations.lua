@@ -198,6 +198,9 @@ ns.localizations.enUS = {
 			response = "The active #PROFILE settings profile has been reset to default.",
 			responseCategory = "Settings of the #CATEGORY category in the active #PROFILE settings profile have been reset to default.",
 		},
+		delete = {
+			response = "The #PROFILE settings profile was deleted.",
+		},
 	},
 	targetSpeed = "Speed: #SPEED",
 	speedTooltip = {
@@ -420,6 +423,9 @@ ns.localizations.ptBR = {
 			description = "restaurar o perfil de configurações #PROFILE ativo para o padrão",
 			response = "O perfil de configurações #PROFILE ativo foi restaurado para o padrão.",
 			responseCategory = "As configurações da categoria #CATEGORY no perfil de configurações #PROFILE ativo foram restauradas para o padrão.",
+		},
+		delete = {
+			response = "O perfil de configurações #PROFILE foi excluído.",
 		},
 	},
 	targetSpeed = "Velocidade: #SPEED",
@@ -644,6 +650,9 @@ ns.localizations.deDE = {
 			response = "Das aktive #PROFILE Einstellungsprofil wurde auf Standard zurückgesetzt.",
 			responseCategory = "Die Einstellungen der Kategorie #CATEGORY im aktiven #PROFILE Einstellungsprofil wurden auf Standard zurückgesetzt.",
 		},
+		delete = {
+			response = "Das Einstellungsprofil #PROFILE wurde gelöscht.",
+		},
 	},
 	targetSpeed = "Geschwindigkeit: #SPEED",
 	speedTooltip = {
@@ -866,6 +875,9 @@ ns.localizations.frFR = {
 			description = "réinitialiser le profil de paramètres #PROFILE actif par défaut",
 			response = "Le profil de paramètres #PROFILE actif a été réinitialisé par défaut.",
 			responseCategory = "Les paramètres de la catégorie #CATEGORY dans le profil de paramètres #PROFILE actif ont été réinitialisés par défaut.",
+		},
+		delete = {
+			response = "Le profil de paramètres #PROFILE a été supprimé.",
 		},
 	},
 	targetSpeed = "Vitesse : #SPEED",
@@ -1090,6 +1102,9 @@ ns.localizations.esES = {
 			response = "El perfil de configuración #PROFILE activo ha sido restablecido a los valores predeterminados.",
 			responseCategory = "Los ajustes de la categoría #CATEGORY en el perfil de configuración #PROFILE activo han sido restablecidos a los valores predeterminados.",
 		},
+		delete = {
+			response = "El perfil de configuración #PROFILE fue eliminado.",
+		},
 	},
 	targetSpeed = "Velocidad: #SPEED",
 	speedTooltip = {
@@ -1312,6 +1327,9 @@ ns.localizations.esMX = {
 			description = "restablecer el perfil de configuración #PROFILE activo a los valores predeterminados",
 			response = "El perfil de configuración #PROFILE activo ha sido restablecido a los valores predeterminados.",
 			responseCategory = "Los ajustes de la categoría #CATEGORY en el perfil de configuración #PROFILE activo han sido restablecidos a los valores predeterminados.",
+		},
+		delete = {
+			response = "El perfil de configuración #PROFILE fue eliminado.",
 		},
 	},
 	targetSpeed = "Velocidad: #SPEED",
@@ -1536,6 +1554,9 @@ ns.localizations.itIT = {
 			response = "Il profilo di impostazioni #PROFILE attivo è stato reimpostato ai valori predefiniti.",
 			responseCategory = "Le impostazioni della categoria #CATEGORY nel profilo di impostazioni #PROFILE attivo sono state reimpostate ai valori predefiniti.",
 		},
+		delete = {
+			response = "Il profilo di impostazioni #PROFILE è stato eliminato.",
+		},
 	},
 	targetSpeed = "Velocità: #SPEED",
 	speedTooltip = {
@@ -1758,6 +1779,9 @@ ns.localizations.koKR = {
 			description = "활성 #PROFILE 설정 프로필을 기본값으로 초기화",
 			response = "활성 #PROFILE 설정 프로필이 기본값으로 초기화되었습니다.",
 			responseCategory = "활성 #PROFILE 설정 프로필의 #CATEGORY 카테고리 설정이 기본값으로 초기화되었습니다.",
+		},
+		delete = {
+			response = "#PROFILE 설정 프로필이 삭제되었습니다.",
 		},
 	},
 	targetSpeed = "속도: #SPEED",
@@ -1982,6 +2006,9 @@ ns.localizations.zhTW = {
 			response = "目前#PROFILE設定檔已重設為預設值。",
 			responseCategory = "目前#PROFILE設定檔的#CATEGORY分類設定已重設為預設值。",
 		},
+		delete = {
+			response = "#PROFILE 設定檔已被刪除。",
+		},
 	},
 	targetSpeed = "速度：#SPEED",
 	speedTooltip = {
@@ -2205,6 +2232,9 @@ ns.localizations.zhCN = {
 			response = "当前#PROFILE设置档已重置为默认。",
 			responseCategory = "当前#PROFILE设置档的#CATEGORY类别设置已重置为默认。",
 		},
+		delete = {
+			response = "已删除 #PROFILE 设置配置文件。",
+		},
 	},
 	targetSpeed = "速度：#SPEED",
 	speedTooltip = {
@@ -2427,6 +2457,9 @@ ns.localizations.ruRU = {
 			description = "сбросить активный профиль настроек #PROFILE к стандартным значениям",
 			response = "Активный профиль настроек #PROFILE сброшен к стандартным значениям.",
 			responseCategory = "Настройки категории #CATEGORY в активном профиле #PROFILE сброшены к стандартным значениям.",
+		},
+		delete = {
+			response = "Профиль настроек #PROFILE был удалён.",
 		},
 	},
 	targetSpeed = "Скорость: #SPEED",
