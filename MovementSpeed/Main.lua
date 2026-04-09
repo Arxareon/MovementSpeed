@@ -952,7 +952,7 @@ main.frame = wt.CreateFrame({
 										data = {
 											position = {
 												anchor = "TOP",
-												relativeTo = display[displays[3 - type]].display,
+												relativeTo = speedDisplay[displays[3 - type]].frame,
 												relativePoint = "BOTTOM",
 												offset = { y = -2 }
 											},
@@ -968,7 +968,7 @@ main.frame = wt.CreateFrame({
 										data = {
 											position = {
 												anchor = "BOTTOM",
-												relativeTo = display[displays[3 - type]].display,
+												relativeTo = speedDisplay[displays[3 - type]].frame,
 												relativePoint = "TOP",
 												offset = { y = 2 }
 											},
@@ -984,7 +984,7 @@ main.frame = wt.CreateFrame({
 										data = {
 											position = {
 												anchor = "LEFT",
-												relativeTo = display[displays[3 - type]].display,
+												relativeTo = speedDisplay[displays[3 - type]].frame,
 												relativePoint = "RIGHT",
 												offset = { x = 2, }
 											},
@@ -1000,7 +1000,7 @@ main.frame = wt.CreateFrame({
 										data = {
 											position = {
 												anchor = "RIGHT",
-												relativeTo = display[displays[3 - type]].display,
+												relativeTo = speedDisplay[displays[3 - type]].frame,
 												relativePoint = "LEFT",
 												offset = { x = -2, }
 											},
