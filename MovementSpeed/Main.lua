@@ -694,7 +694,6 @@ main.frame = wt.CreateFrame({
 				} end,
 				listeners = {
 					activated = { { handler = function(_, _, title, success, user) if success and user then
-						--Update the interface options
 						playerSpeed.settings.load(true)
 						travelSpeed.settings.load(true)
 						targetSpeed.settings.load(true)
@@ -706,7 +705,7 @@ main.frame = wt.CreateFrame({
 						chatCommands.print(ns.strings.chat.delete.response:gsub("#PROFILE", cr(title, ns.colors.yellow[2])))
 					end end, }, },
 					reset = { { handler = function (_, success, _, title) if success then
-						chatCommands.print(ns.strings.chat.default.response:gsub("#PROFILE", cr(title, ns.colors.yellow[2])))
+						chatCommands.print(ns.strings.chat.reset.response:gsub("#PROFILE", cr(title, ns.colors.yellow[2])))
 					end end, }, },
 				},
 			})
@@ -1779,7 +1778,6 @@ main.frame = wt.CreateFrame({
 		end
 	},
 	initialize = function(frame, _, _, name)
-		--Custom Tooltip
 		local tooltip = wt.CreateGameTooltip(ns.name)
 
 		--| Speed Displays

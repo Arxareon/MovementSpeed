@@ -416,6 +416,38 @@ end
 
 --[[ FRAME MANAGEMENT ]]
 
+--[ Events ]
+
+---Frame event handler registry
+local eventHandlers = {}
+
+---Call an event handler registered for a frame
+---@param frame AnyFrameObject Reference to the frame
+---@param event WowEvent|string Global Blizzard or custom event tag to call the handler for
+---@param ... any Additional payload to pass to the handler<ul><li>***Note:*** A self reference to `frame` is always passed as the first parameter.</li></ul>
+---@return any ... Handler return values
+function wt.CallListener(frame, event, ...)
+	local f = eventHandlers[frame]
+
+	if not f then return end
+
+	local h = f[event]
+
+	return h and h(frame, ...)
+end
+
+---Set, unset or replace an event handler for a frame
+---@param frame AnyFrameObject Reference to the frame
+---@param event WowEvent|string Global Blizzard or custom event tag to modify the handler for
+---@param handler function|nil Reference to the function to set as the handler for `event`, or `nil` to unset it
+function wt.SetListener(frame, event, handler)
+	if handler ~= nil and type(handler) ~= "function" then return end
+
+	if not eventHandlers[frame] then eventHandlers[frame] = {} end
+
+	eventHandlers[frame][event] = handler
+end
+
 --[ Position ]
 
 --Used for a transitional step to avoid anchor family connections during safe frame positioning

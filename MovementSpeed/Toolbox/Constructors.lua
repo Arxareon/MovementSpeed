@@ -605,14 +605,20 @@ local function setUpFrame(frame, t)
 		else frame:HookScript(key, value) end
 	end end
 
-	--Pass global events to handlers
-	frame:SetScript("OnEvent", function(self, event, ...) return self[event] and self[event](self, ...) end)
+	--| Global events
 
-	--Register global event handlers
-	if t.onEvent then for key, value in pairs(t.onEvent) do
-		frame:RegisterEvent(key)
-		frame[key] = function(...) value(...) end
-	end end
+	if type(t.onEvent) == "table" then
+		local dispatch = wt.CallListener
+
+		--Pass global events to handlers
+		frame:SetScript("OnEvent", dispatch)
+
+		--Register global event handlers
+		for event, handler in pairs(t.onEvent) do if type(handler) == "function" then
+			wt.SetListener(frame, event, handler)
+			frame:RegisterEvent(event)
+		end end
+	end
 
 	--[ Initialization ]
 
@@ -1486,10 +1492,11 @@ wt.clipboard = {}
 ---@param listener function
 ---@param callIndex integer
 local function addListener(listeners, event, listener, callIndex)
-	listeners[event] = type(listeners[event]) == "table" and listeners[event] or {}
+	if not listeners[event] then listeners[event] = {} end
 
-	if type(callIndex) ~= "number" then table.insert(listeners[event], listener)
-	else table.insert(listeners[event], Clamp(us.Round(callIndex), 1, #listeners[event] + 1), listener) end
+	local l = listeners[event]
+
+	if type(callIndex) ~= "number" then table.insert(l, listener) else table.insert(l, Clamp(math.floor(callIndex), 1, #l + 1), listener) end
 end
 
 ---Call registered listeners for **event**
@@ -1498,9 +1505,11 @@ end
 ---@param event string
 ---@param ... any
 local function callListeners(widget, listeners, event, ...)
-	if type(listeners[event]) ~= "table" then return end
+	local l = listeners[event]
 
-	for i = 1, #listeners[event] do listeners[event][i](widget, ...) end
+	if not l then return end
+
+	for i = 1, #l do l[i](widget, ...) end
 end
 
 --[ Button ]
