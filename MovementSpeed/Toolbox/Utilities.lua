@@ -103,7 +103,7 @@ end
 ---@return boolean|colorData
 function wt.IsColor(t)
 	if type(t) ~= "table" then
-		ds.Log("Invalid color table: " ..  us.TableToString(t))
+		ds.Log("Not a color: " ..  us.TableToString(t), "IsColor")
 
 		return false
 	elseif type(t.r) ~= "number" or t.r < 0 or t.r > 1 then
@@ -415,38 +415,6 @@ end
 
 
 --[[ FRAME MANAGEMENT ]]
-
---[ Events ]
-
----Frame event handler registry
-local eventHandlers = {}
-
----Call an event handler registered for a frame
----@param frame AnyFrameObject Reference to the frame
----@param event WowEvent|string Global Blizzard or custom event tag to call the handler for
----@param ... any Additional payload to pass to the handler<ul><li>***Note:*** A self reference to `frame` is always passed as the first parameter.</li></ul>
----@return any ... Handler return values
-function wt.CallListener(frame, event, ...)
-	local f = eventHandlers[frame]
-
-	if not f then return end
-
-	local h = f[event]
-
-	return h and h(frame, ...)
-end
-
----Set, unset or replace an event handler for a frame
----@param frame AnyFrameObject Reference to the frame
----@param event WowEvent|string Global Blizzard or custom event tag to modify the handler for
----@param handler function|nil Reference to the function to set as the handler for `event`, or `nil` to unset it
-function wt.SetListener(frame, event, handler)
-	if handler ~= nil and type(handler) ~= "function" then return end
-
-	if not eventHandlers[frame] then eventHandlers[frame] = {} end
-
-	eventHandlers[frame][event] = handler
-end
 
 --[ Position ]
 
@@ -1512,6 +1480,7 @@ function wt.AddSettingsDataManagementEntry(widget, t)
 	if type(t.onChange) == "table" then
 		local newKeys = {}
 
+		--Store functions and set caller keys
 		for k, v in pairs(t.onChange) do if type(k) == "string" and type(v) == "function" then
 			--Store the function
 			settingsData.changeHandlers[t.category .. k] = v
@@ -1525,7 +1494,7 @@ function wt.AddSettingsDataManagementEntry(widget, t)
 		for i = 1, #newKeys do table.insert(t.onChange, newKeys[i]) end
 	end
 
-	t.index = type(t.index) == "number" and Clamp(us.Round(t.index), 1, #settingsData.rules[key] + 1) or #settingsData.rules[key] + 1
+	t.index = type(t.index) == "number" and Clamp(math.floor(t.index), 1, #settingsData.rules[key] + 1) or #settingsData.rules[key] + 1
 
 	--Add to the registry
 	table.insert(settingsData.rules[key], t.index, { widget = widget, onChange = t.onChange })
@@ -1664,5 +1633,10 @@ function wt.HandleWidgetChanges(index, category, key)
 	if type(settingsData.rules[key]) ~= "table" or type(settingsData.rules[key][index]) ~= "table" or type(settingsData.rules[key][index].onChange) ~= "table" then return end
 
 	--Call registered onChange handlers
-	for i = 1, #settingsData.rules[key][index].onChange do settingsData.changeHandlers[category .. settingsData.rules[key][index].onChange[i]]() end
+	for i = 1, #settingsData.rules[key][index].onChange do
+		local handler = settingsData.changeHandlers[category .. settingsData.rules[key][index].onChange[i]]
+
+		if type(handler) == "function" then handler()
+		else ds.Log("Cannot call invalid or unset " .. key .. " handler of " .. us.ToString(settingsData.rules[key][index].onChange[i]), "HandleWidgetChanges") end
+	end
 end

@@ -5,9 +5,6 @@
 ---@class addonNamespace
 local ns = select(2, ...)
 
-
---[[ REFERENCES ]]
-
 --[ Shortcuts ]
 
 ---@type widgetToolbox
@@ -534,8 +531,6 @@ end
 
 
 --[[ INITIALIZATION ]]
-
-local firstLoad, newCharacter
 
 ---Set up the speed display context menu
 ---@param display displayType

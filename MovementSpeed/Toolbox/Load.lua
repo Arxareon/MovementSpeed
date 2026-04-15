@@ -27,7 +27,7 @@ local function AddToNamespace(toolbox)
 	---@type widgetToolbox
 	namespace[key] = toolbox
 
-	WidgetTools.debugging.Log("Widget Toolbox has been added to the " .. addon .. " namespace under the " .. key .. " key.", "Toolbox loaded")
+	WidgetTools.debugging.Log("Toolbox version " .. WidgetTools.utilities.ToString(version) .. " has been added to the " .. WrapTextInColor(addon, LIGHTBLUE_FONT_COLOR) .. " namespace table under the " .. WidgetTools.utilities.ToString(key) .. " key.", "Widget Toolbox loaded")
 end
 
 ---@type widgetToolbox

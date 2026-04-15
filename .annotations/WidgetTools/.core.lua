@@ -10,90 +10,27 @@
 local ns = select(2, ...)
 
 
---[[ CLASSES ]]
+--[[ DATA ]]
 
----Global read-only Widget Tools table
----@class widgetTools
-WidgetTools = {
-
-
-	--[[ RESOURCES ]]
-
-	---Shared resources
-	---@class widgetToolsResources
-	---@field addon string Addon namespace name: `"WidgetTools"`
-	---@field title string Addon display title: `"Widget Tools"`
-	---@field root string Addon root folder path
-	---@field chat table List of chat keywords and commands
-	---@field changelog table
-	---@field strings WidgetToolsStrings Localized strings
-	---@field colors table
-	---@field textures table
-	---@field fonts table
-	resources = {},
+---WidgetTools main database table
+---@class widgetToolsData
+---@field lite boolean
+---@field debugging boolean
+---@field positioningAids boolean
+---@field frameAttributes { enabled: boolean, width: number }
+---@field customFonts string[]
 
 
-	--[[ UTILITIES ]]
-
-	---Core utility collection
-	---@class widgetToolsUtilities
-	utilities = {
-		SortedPairs = SortedPairs,
-		Round = Round,
-		IsFrame = IsFrame,
-		ToFrame = ToFrame,
-		Thousands = Thousands,
-		ToString = ToString,
-		TableToString = TableToString,
-		Protect = Protect,
-		FindIndex = FindIndex,
-		FindKey = FindKey,
-		FindValue = FindValue,
-		Reorder = Reorder,
-		Clone = Clone,
-		Merge = Merge,
-		CopyValues = CopyValues,
-		Fill = Fill,
-		Pull = Pull,
-		VerifyData = VerifyData,
-		Prune = Prune,
-		Filter = Filter,
-
-		---Access a Blizzard modifier key down checking function via a modifier key string
-		---@type table<ModifierKey|any, fun(): down: boolean>
-		isKeyDown = {},
-	},
-
-	---Debugging tools
-	---@class widgetToolsDebugging
-	debugging = {
-		Log = Log,
-		Dump = Dump,
-	},
-
-	---Toolbox registration
-	---@class widgetToolsToolboxes
-	toolboxes = {
-		Register = Register,
-
-		---@type table<string, widgetToolbox|table> List of temporary toolbox initialization tables under version keys where a toolbox can assembled to be registered once the addon requesting it finishes loading
-		initialization = {},
-	},
-}
-
-
---[[ TYPES ]]
+--[[ TOOLBOX REGISTRY ]]
 
 ---@class widgetToolboxEntry
 ---@field toolbox widgetToolbox|table Read-only proxy reference to the registered toolbox table
 ---@field addons string[] List of addons registered for using this toolbox (represented by their namespace names)
 
 
----@class widgetToolsResources
-WidgetTools.utilities = {}
+--[[ GLOBAL TOOLS ]]
 
-
---[[ FUNCTIONS ]]
+--[ Function Types ]
 
 --| SortedPairs
 
@@ -106,7 +43,7 @@ WidgetTools.utilities = {}
 ---@param t SortedPairs_param Table to be sorted (in an ascending order and/or alphabetically, based on the `<` operator)
 ---***
 ---@return function iterator Function returning the key, value pairs of the table in order
-function SortedPairs(t) return function() end end
+local function SortedPairs(t) return function() end end
 
 --| Round
 
@@ -123,7 +60,7 @@ function SortedPairs(t) return function() end end
 ---@param number? Round_param1 A fractional number value to round | ***Default:*** `0`
 ---@param decimals? Round_param2 Specify the number of decimal places to round the number to | ***Default:*** `0`
 ---@return number
-function Round(number, decimals) return 0 end
+local function Round(number, decimals) return 0 end
 
 --| IsFrame
 
@@ -131,7 +68,7 @@ function Round(number, decimals) return 0 end
 ---@param t Frame|any
 ---***
 ---@return boolean|string # If `t` is recognized as a [`FrameScriptObject`](https://warcraft.wiki.gg/wiki/UIOBJECT_FrameScriptObject), return `true`, or, return the frame name if named or the debug name if unnamed but recognized as a UI [Object](https://warcraft.wiki.gg/wiki/UIOBJECT_Object) with a parent, otherwise, return false
-function IsFrame(t) return false end
+local function IsFrame(t) return false end
 
 --| ToFrame
 
@@ -144,7 +81,7 @@ function IsFrame(t) return false end
 ---@param s ToFrame_param Name of the frame to find (and the key of its child region appended to it after a period character)
 ---***
 ---@return AnyFrameObject|nil frame Reference to the object | ***Default:*** `nil`
-function ToFrame(s) end
+local function ToFrame(s) end
 
 --| Thousands
 
@@ -172,7 +109,7 @@ function ToFrame(s) end
 ---@param trim? Thousands_param4 Trim trailing zeros in decimal places | ***Default:*** `true`
 ---***
 ---@return string # ***Default:*** `""`
-function Thousands(value, decimals, round, trim) return "" end
+local function Thousands(value, decimals, round, trim) return "" end
 
 --| ToString
 
@@ -186,8 +123,9 @@ function Thousands(value, decimals, round, trim) return "" end
 ---***
 ---@return string s Formatted output string
 ---@return "Frame"|"FrameScriptObject"|"table"|"boolean"|"number"|"string"|"any" t Recognized object type
+---***
 ---<p></p>
-function ToString(object) return "", "any" end
+local function ToString(object) return "", "any" end
 
 --| TableToString
 
@@ -209,7 +147,7 @@ function ToString(object) return "", "any" end
 ---@param compact? TableToString_param2 Whether spaces and indentations should be trimmed or not | ***Default:*** `false`
 ---***
 ---@return string # ***Default:*** `(WidgetTools.utilities.ToString(table))`
-function TableToString(table, compact) return "" end
+local function TableToString(table, compact) return "" end
 
 --| Protect
 
@@ -225,7 +163,7 @@ function TableToString(table, compact) return "" end
 ---@param t Protect_param Reference to the table to create the proxy for
 ---***
 ---@return any # Reference to the new proxy table or `t` itself
-function Protect(t) end
+local function Protect(t) end
 
 --| FindIndex
 
@@ -243,7 +181,7 @@ function Protect(t) end
 ---@param value FindIndex_param2 The value to find
 ---***
 ---@return integer|nil index ***Default:*** `nil`
-function FindIndex(array, value) end
+local function FindIndex(array, value) end
 
 --| FindKey
 
@@ -261,7 +199,7 @@ function FindIndex(array, value) end
 ---@param value FindKey_param2 Value to look for in `t` (including all subtables, recursively)
 ---***
 ---@return any match The first match of the key `value` was found paired to | ***Default:*** `nil`
-function FindKey(t, value) end
+local function FindKey(t, value) end
 
 --| FindValue
 
@@ -279,7 +217,7 @@ function FindKey(t, value) end
 ---@param key FindValue_param2 Key to look for in `t` (including all subtables, recursively)
 ---***
 ---@return any match The first match of the value found at `key` | ***Default:*** `nil`
-function FindValue(t, key) end
+local function FindValue(t, key) end
 
 --| Reorder
 
@@ -297,7 +235,7 @@ function FindValue(t, key) end
 ---@param directives Reorder_param2 List of directives: value, index pairs to reorder select elements by (placing matching values at the specified new index)
 ---***
 ---@return any t Reference to `t` (it was already overwritten during the operation, no need for setting it again)
-function Reorder(t, directives) end
+local function Reorder(t, directives) end
 
 --| Clone
 
@@ -310,7 +248,7 @@ function Reorder(t, directives) end
 ---@param object Clone_param Reference to the object to create a copy of
 ---***
 ---@return any copy Returns `object` itself if it's a frame or not a table
-function Clone(object) end
+local function Clone(object) end
 
 --| Merge
 
@@ -328,7 +266,7 @@ function Clone(object) end
 ---@param source Merge_param2 Table to copy all values from
 ---***
 ---@return any target Reference to `target` (it was already overwritten during the operation, no need for setting it again)
-function Merge(target, source) end
+local function Merge(target, source) end
 
 --| CopyValues
 
@@ -346,7 +284,7 @@ function Merge(target, source) end
 ---@param source CopyValues_param2 Reference to the table to copy the values from
 ---***
 ---@return any target Reference to `target` (the values were already overwritten during the operation, no need to set it again)
-function CopyValues(target, source) end
+local function CopyValues(target, source) end
 
 --| Fill
 
@@ -364,7 +302,7 @@ function CopyValues(target, source) end
 ---@param source Fill_param2 Reference to the table to sample data from
 ---***
 ---@return any target Reference to `target` (it was already updated during the operation, no need for setting it again)
-function Fill(target, source) end
+local function Fill(target, source) end
 
 --| Pull
 
@@ -382,23 +320,7 @@ function Fill(target, source) end
 ---@param source Pull_param2 Reference to the table to sample data from
 ---***
 ---@return any target Reference to `target` (it was already overwritten during the operation, no need for setting it again)
-function Pull(target, source) end
-
---| VerifyData
-
----Reference to the table to verify
----@alias VerifyData_param1 # target
----| table
-
----Reference to the table to sample
----@alias VerifyData_param2 # source
----| table
-
----Verify data in a table and harmonize it with a sample table, removing invalid data & filling defaults
----@param target VerifyData_param1 Reference to the table to verify
----@param source VerifyData_param2 Reference to the table to sample
----@return any target Reference to `target` (it was already mutated during the operation)
-function VerifyData(target, source) end
+local function Pull(target, source) end
 
 --| Prune
 
@@ -416,7 +338,7 @@ function VerifyData(target, source) end
 ---@param validate? Prune_param2 Helper function for validating values, returning true if the value is to be accepted as valid
 ---***
 ---@return any target Reference to `target` (it was already overwritten during the operation, no need for setting it again)
-function Prune(target, validate) end
+local function Prune(target, validate) end
 
 --| Filter
 
@@ -446,7 +368,77 @@ function Prune(target, validate) end
 ---@param onRecovery? Filter_param4 Function called after the data has been has been recovered via the `recoveryMap`
 ---***
 ---@return any target Reference to `target` (it was already overwritten during the operation, no need for setting it again)
-function Filter(target, sample, recoveryMap, onRecovery) end
+local function Filter(target, sample, recoveryMap, onRecovery) end
+
+--| VerifyData
+
+---Reference to the table to verify
+---@alias VerifyData_param1 # target
+---| table
+
+---Reference to the table to sample
+---@alias VerifyData_param2 # source
+---| table
+
+---Verify data in a table and harmonize it with a sample table, removing invalid data & filling defaults
+---@param target VerifyData_param1 Reference to the table to verify
+---@param source VerifyData_param2 Reference to the table to sample
+---@return any target Reference to `target` (it was already mutated during the operation)
+local function VerifyData(target, source) end
+
+--| SetListener
+
+---Reference to the event frame or event handler collection key to assign the handler to
+---@alias SetListener_param1 # parent
+---| AnyFrameObject
+---| any
+
+---Global Blizzard or custom event tag to modify the handler for
+---@alias SetListener_param2 # event
+---| WowEvent
+---| string
+
+---Reference to the function to set as the handler for `event`, or `nil` to unset it
+---@alias SetListener_param3 # handler
+---| fun(parent: AnyFrameObject|any, ...: any): ...:any
+---| nil
+
+---If true and `parent` is a Frame and `event` is a valid Blizzard event tag, also call [`parent:RegisterEvent(...)`](https://warcraft.wiki.gg/wiki/API_Frame_RegisterEvent) or [`parent:UnregisterEvent(...)`](https://warcraft.wiki.gg/wiki/API_Frame_UnregisterEvent) and [`parent:SetScript("OnEvent", WidgetTools.utilities.CallListener)`](https://warcraft.wiki.gg/wiki/UIOBJECT_ScriptObject) of it was not already set set to `WidgetTools.utilities.CallListener` (replacing all currently set and hooked scripts for the [OnEvent](https://warcraft.wiki.gg/wiki/UIHANDLER_OnEvent) trigger) | ***Default:*** `true`
+---@alias SetListener_param4 # registration
+---| boolean
+
+---Set, unset or replace a event handler
+---***
+---@param parent SetListener_param1 Reference to the event frame or event handler collection key to assign the handler to
+---@param event SetListener_param2 Global Blizzard or custom event tag to modify the handler for
+---@param handler SetListener_param3 Reference to the function to set as the handler for `event`, or `nil` to unset it
+---@param registration? SetListener_param4 If true and `parent` is a Frame and `event` is a valid Blizzard event tag, also call [`parent:RegisterEvent(...)`](https://warcraft.wiki.gg/wiki/API_Frame_RegisterEvent) or [`parent:UnregisterEvent(...)`](https://warcraft.wiki.gg/wiki/API_Frame_UnregisterEvent) and [`parent:SetScript("OnEvent", WidgetTools.utilities.CallListener)`](https://warcraft.wiki.gg/wiki/UIOBJECT_ScriptObject) of it was not already set set to `WidgetTools.utilities.CallListener` (replacing all currently set and hooked scripts for the [OnEvent](https://warcraft.wiki.gg/wiki/UIHANDLER_OnEvent) trigger) | ***Default:*** `true`
+---***
+---<p></p>
+local function SetListener(parent, event, handler, registration) return end
+
+--| CallListener
+
+---Reference to the event frame or event handler collection key the handler has been assigned to
+---@alias CallListener_param1 # parent
+---| AnyFrameObject
+---| any
+
+---Global Blizzard or custom event tag to call the handler for
+---@alias CallListener_param2 # event
+---| WowEvent
+---| string
+
+---Call a registered event handler
+---***
+---@param parent CallListener_param1 Reference to the event frame or event handler collection key the handler has been assigned to
+---@param event CallListener_param2 Global Blizzard or custom event tag to call the handler for
+---@param ... any Additional payload to pass to the handler
+---***
+---@return any ... Handler return values
+---***
+---<p></p>
+local function CallListener(parent, event, ...) return end
 
 --| Log
 
@@ -459,9 +451,10 @@ function Filter(target, sample, recoveryMap, onRecovery) end
 ---| any
 
 ---Save a tab-separated debug log entry to the log history and print out a formatted chat message
----@param message Log_param1 Included in the log entry as a string
+---***
+---@param message? Log_param1 Included in the log entry as a string
 ---@param trace? Log_param2 Custom log trace to help identify the exact log source included in the entry as a string | ***Default:*** `"(source not traced)"`
-function Log(message, trace) end
+local function Log(message, trace) end
 
 --| Dump
 
@@ -560,7 +553,7 @@ function Log(message, trace) end
 ---@param digFrames? Dump_param6 If `true`, explore and dump the insides of objects recognized as frames | ***Default:*** `false`
 ---@param linesPerMessage? Dump_param7 Print the specified number of output lines in a single chat message to be able to display more message history and allow faster scrolling | ***Default:*** `2`
 --- - ***Note:*** Set to `0` to print all lines in a single message.
-function Dump(object, name, blockrule, depth, digTables, digFrames, linesPerMessage) end
+local function Dump(object, name, blockrule, depth, digTables, digFrames, linesPerMessage) end
 
 --| Register
 
@@ -591,9 +584,73 @@ function Dump(object, name, blockrule, depth, digTables, digFrames, linesPerMess
 ---@param toolbox? Register_param4 Reference to an existing toolbox table to register
 ---***
 ---@return widgetToolbox|table? toolbox Read-only reference to the registered toolbox table | ***Default:*** *nil*
-function Register(addon, version, callback, toolbox) end
+local function Register(addon, version, callback, toolbox) end
 
---[ Blizzard ]
+--[ Classes ]
+
+---Global read-only Widget Tools table
+---@class widgetTools
+WidgetTools = {
+
+	---Shared resources
+	---@class widgetToolsResources
+	---@field addon string Addon namespace name: `"WidgetTools"`
+	---@field title string Addon display title: `"Widget Tools"`
+	---@field root string Addon root folder path
+	---@field chat table List of chat keywords and commands
+	---@field changelog table
+	---@field strings WidgetToolsStrings Localized strings
+	---@field colors table
+	---@field textures table
+	---@field fonts table
+	resources = {},
+
+	---Core utility collection
+	---@class widgetToolsUtilities
+	---@field isKeyDown table<ModifierKey|any, fun(): down: boolean> Access a Blizzard modifier key down checking function via a modifier key string
+	utilities = {
+		SortedPairs = SortedPairs,
+		Round = Round,
+		IsFrame = IsFrame,
+		ToFrame = ToFrame,
+		Thousands = Thousands,
+		ToString = ToString,
+		TableToString = TableToString,
+		Protect = Protect,
+		FindIndex = FindIndex,
+		FindKey = FindKey,
+		FindValue = FindValue,
+		Reorder = Reorder,
+		Clone = Clone,
+		Merge = Merge,
+		CopyValues = CopyValues,
+		Fill = Fill,
+		Pull = Pull,
+		Prune = Prune,
+		Filter = Filter,
+		VerifyData = VerifyData,
+		SetListener = SetListener,
+		CallListener = CallListener,
+	},
+
+	---Debugging tools
+	---@class widgetToolsDebugging
+	---@field history table Log history for the current session
+	debugging = {
+		Log = Log,
+		Dump = Dump,
+	},
+
+	---Toolbox registration
+	---@class widgetToolsToolboxes
+	---@field initialization table<string, widgetToolbox|table> List of temporary toolbox initialization tables under version keys where a toolbox can assembled to be registered once the addon requesting it finishes loading
+	toolboxes = {
+		Register = Register,
+	},
+}
+
+
+--[[ BLIZZARD TOOLS ]]
 
 ---Create a colored string via escape sequences
 ---***
