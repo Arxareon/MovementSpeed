@@ -1,19 +1,19 @@
 ## Interface: 120001, 50503, 20505, 11508
 ## Title: Movement Speed
 ## Version: 3.3
-## X-Day: 14
+## X-Day: 17
 ## X-Month: 4
 ## X-Year: 2026
 ## Category: HUDs
 ## Notes: View your movement speed in customizable displays and of other characters in mouseover tooltips with fast updates.
 ## Author: Barnabas Nagy (Arxareon)
+## IconTexture: Interface/AddOns/MovementSpeed/Textures/Logo.tga
 ## X-Sponsors: Celierra
 ## X-License: All Rights Reserved
 ## X-CurseForge: curseforge.com/wow/addons/movement-speed
 ## X-Wago: addons.wago.io/addons/movement-speed
 ## X-Repository: github.com/Arxareon/MovementSpeed
 ## X-Issues: github.com/Arxareon/MovementSpeed/issues
-## IconTexture: Interface/AddOns/MovementSpeed/Textures/Logo.tga
 ## SavedVariables: MovementSpeedDB, MovementSpeedCS
 ## SavedVariablesPerCharacter: MovementSpeedDBC
 ## LoadSavedVariablesFirst: 1
@@ -23,10 +23,7 @@
 
 Localizations.lua
 Resources.lua
-Toolbox\Load.lua
-Toolbox\Resources.lua
-Toolbox\Utilities.lua
-Toolbox\Constructors.lua
+Toolbox.lua
 Main.lua [AllowLoadGameType mainline]
 Main_Classic.lua [AllowLoadGameType Wrath, Cata, Mists]
 Main_Vanilla.lua [AllowLoadGameType Vanilla, TBC]

@@ -71,6 +71,9 @@
 			"BASE_MOVEMENT_SPEED",
 			"MinimapBackdrop"
 		],
+		"Lua.workspace.ignoreDir": [
+			"WidgetToolbox_*"
+		],
 		"Lua.diagnostics.disable": [
 			"assign-type-mismatch"
 		],

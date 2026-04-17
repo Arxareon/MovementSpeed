@@ -1,11 +1,6 @@
 --NOTE: Annotations are for development purposes only, providing documentation for use with LUA Language Server. This file does not need to be loaded by the game client.
 
 
----Read-only reference to the Widget Toolbox table
----@class widgetToolbox
-local toolbox
-
-
 --[[ MISC ]]
 
 ---@alias ModifierKey
@@ -948,154 +943,13 @@ local toolbox
 
 --[[ WIDGETS ]]
 
+--[ Events ]
+
 ---@class eventTag
 ---@field event string Custom event tag
 
 ---@class eventHandlerIndex
 ---@field callIndex? integer Set when to call **handler** in the execution order | ***Default:*** *placed at the end of the current list*
-
---[ Button ]
-
----@alias ButtonType
----| action
----| actionButton
----| customButton
-
----@alias ButtonEventTag
----| "enabled"
----| "trigger"
----| string
-
---| Event handlers
-
----@alias ButtonEventHandler_enabled
----| fun(self: ButtonType, state: boolean) Called when an "enabled" event is invoked after **button.setEnabled(...)** was called<hr><p>@*param* `self` ButtonType ― Reference to the widget table</p><p>@*param* `state` boolean ― True if the widget is enabled</p>
-
----@alias ButtonEventHandler_trigger
----| fun(self: ButtonType) Called when a "trigger" event is invoked after **button.trigger(...)** was called<hr><p>@*param* `self` ButtonType ― Reference to the widget table</p><p>@*param* `user` boolean ― True if the event was flagged as invoked by an action taken by the user</p>
-
----@alias ButtonEventHandler_any
----| fun(self: ButtonType, ...: any) Called when a custom event is invoked<hr><p>@*param* `self` ButtonType ― Reference to the widget table</p><p>@*param* `...` any — Any leftover arguments</p>
-
---| Parameters
-
----@class buttonEventListener_enabled : eventHandlerIndex
----@field handler ButtonEventHandler_enabled Handler function to register for call
-
----@class buttonEventListener_trigger : eventHandlerIndex
----@field handler ButtonEventHandler_trigger Handler function to register for call
-
----@class buttonEventListener_any : eventTag, eventHandlerIndex
----@field handler ButtonEventHandler_any Handler function to register for call
-
----@class buttonEventListeners
----@field enabled? buttonEventListener_enabled[] List of functions to call in order when an "enabled" event is invoked after **button.setEnabled(...)** was called
----@field trigger? buttonEventListener_trigger[] List of functions to call in order when a "trigger" event is invoked after **button.trigger(...)** was called
----@field _? buttonEventListener_any[] List of functions to call in order when a custom event is invoked
-
----@class sizeData_button
----@field w? number Width | ***Default:*** 80
----@field h? number Height | ***Default:*** 22
-
----@class buttonScriptEvents
----@field events? table<ScriptButton, fun(...: any)|attributeEventData> Table of key, value pairs of the names of script event handlers to be set for the button and the functions to assign as event handlers called when they trigger<ul><li>***Example:*** "[OnClick](https://warcraft.wiki.gg/wiki/UIHANDLER_OnClick)" when the button is clicked.</li><li>***Note:*** **t.action** will automatically be called when an "[OnClick](https://warcraft.wiki.gg/wiki/UIHANDLER_OnClick)" event triggers, there is no need to register it here as well.</li></ul>
-
---| Constructors
-
----@class actionCreationData : togglableObject
----@field action? fun(self: action, user?: boolean) Function to call when the button is triggered (clicked by the user or triggered programmatically)<ul><li>***Note:*** This function will be called when an "[OnClick](https://warcraft.wiki.gg/wiki/UIHANDLER_OnClick)" script event happens, there's no need to register it again under **t.events.OnClick**.</li></ul><hr><p>@*param* `self` action — Reference to the widget table</p><p>@*param* `user`? boolean — Marking whether the call is due to a user interaction or not | ***Default:*** `false`</p>
----@field listeners? buttonEventListeners Table of key, value pairs of custom widget event tags and functions to assign as event handlers to call on trigger
-
----@class actionButtonCreationData : actionCreationData, labeledChildObject, tooltipDescribableWidget, arrangeableObject, positionableObject, visibleObject_base, buttonScriptEvents, liteObject
----@field name? string Unique string used to set the frame name | ***Default:*** "Button"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
----@field titleOffset? offsetData Offset the position of the label of the button
----@field size? sizeData_button|sizeData
----@field font? labelFontOptions_highlight List of the [FontObject](https://warcraft.wiki.gg/wiki/UIOBJECT_Font#List_of_Font_Objects) object names to be used for the label | ***Default:*** *normal sized default Blizzard UI fonts*<ul><li>***Note:*** A new font object (or a modified copy of an existing one) can be created via ***WidgetToolbox*.CreateFont(...)** (even within this table definition).</li></ul>
-
----@class customButtonCreationData : actionButtonCreationData, customizableObject
----@field font? labelFontOptions_small_highlight Table of the [FontObject](https://warcraft.wiki.gg/wiki/UIOBJECT_Font#List_of_Font_Objects) object names to be used for the label | ***Default:*** *small default Blizzard UI fonts*<ul><li>***Note:*** A new font object (or a modified copy of an existing one) can be created via ***WidgetToolbox*.CreateFont(...)** (even within this table definition).</li></ul>
-
---[ Toggle ]
-
----@alias ToggleType
----| toggle
----| checkbox
----| radiobutton
-
----@alias ToggleEventTag
----| "enabled"
----| "loaded"
----| "toggled"
----| string
-
---| Event handlers
-
----@alias ToggleEventHandler_enabled
----| fun(self: ToggleType, state: boolean) Called when an "enabled" event is invoked after **toggle.setEnabled(...)** was called<hr><p>@*param* `self` ToggleType ― Reference to the widget table</p><p>@*param* `state` boolean ― True if the widget is enabled</p>
-
----@alias ToggleEventHandler_loaded
----| fun(self: ToggleType, success: boolean) Called when an "loaded" event is invoked after the data of this widget has been loaded from storage<hr><p>@*param* `self` ToggleType ― Reference to the widget table</p><p>@*param* `success` boolean ― True if data was returned by **t.getData()** and it was loaded to the widget</p>
-
----@alias ToggleEventHandler_saved
----| fun(self: ToggleType, success: boolean) Called when an "saved" event is invoked after the data of this widget has been saved to storage<hr><p>@*param* `self` ToggleType ― Reference to the widget table</p><p>@*param* `success` boolean ― True if data was committed successfully via **t.saveData(...)**</p>
-
----@alias ToggleEventHandler_toggled
----| fun(self: ToggleType, state: boolean, user: boolean) Called when an "toggled" event is invoked after **toggle.setState(...)** was called<hr><p>@*param* `self` ToggleType ― Reference to the toggle widget</p><p>@*param* `state` boolean ― True if the widget is enabled</p><p>@*param* `user` boolean ― True if the event was flagged as invoked by an action taken by the user</p>
-
----@alias ToggleEventHandler_any
----| fun(self: ToggleType, ...: any) Called when a custom event is invoked<hr><p>@*param* `self` ToggleType ― Reference to the widget table</p><p>@*param* `...` any — Any leftover arguments</p>
-
---| Parameters
-
----@class toggleEventListener_enabled : eventHandlerIndex
----@field handler ToggleEventHandler_enabled Handler function to register for call
-
----@class toggleEventListener_loaded : eventHandlerIndex
----@field handler ToggleEventHandler_loaded Handler function to register for call
-
----@class toggleEventListener_saved : eventHandlerIndex
----@field handler ToggleEventHandler_saved Handler function to register for call
-
----@class toggleEventListener_toggled : eventHandlerIndex
----@field handler ToggleEventHandler_toggled Handler function to register for call
-
----@class toggleEventListener_any : eventTag, eventHandlerIndex
----@field handler ToggleEventHandler_any Handler function to register for call
-
----@class toggleEventListeners
----@field enabled? toggleEventListener_enabled[] List of functions to call in order when an "enabled" event is invoked after **toggle.setEnabled(...)** was called
----@field loaded? toggleEventListener_loaded[] List of functions to call in order when an "loaded" event is invoked after the data of this widget has been loaded from storage
----@field saved? toggleEventListener_saved[] List of functions to call in order when an "saved" event is invoked after the data of this widget has been saved to storage
----@field toggled? toggleEventListener_toggled[] List of functions to call in order when an "toggled" event is invoked after **toggle.setState(...)** was called
----@field [string]? toggleEventListener_any[] List of functions to call in order when a custom event is invoked
-
----@class sizeData_checkbox
----@field w? number Width | ***Default:*** **t.label** and 180 or **t.size.h**
----@field h? number Height | ***Default:*** 26
-
----@class sizeData_radiobutton
----@field w? number Width | ***Default:***  **t.label** and 180 or **t.size.h**
----@field h? number Height | ***Default:*** 18
-
---| Constructors
-
----@class toggleCreationData : togglableObject, settingsWidget
----@field listeners? toggleEventListeners Table of key, value pairs of custom widget event tags and functions to assign as event handlers to call on trigger
----@field getData? fun(): state: boolean|nil Called to (if needed, modify and) load the widget data from storage<hr><p>@*return* `state` boolean|nil | ***Default:*** `false`</p>
----@field saveData? fun(state: boolean) Called to (if needed, modify and) save the widget data to storage<hr><p>@*param* `state` boolean</p>
----@field value? boolean The starting state of the widget to set during initialization | ***Default:*** **t.getData()** or **t.default** if invalid
----@field default? boolean Default value of the widget | ***Default:*** `false`
-
----@class checkboxCreationData : toggleCreationData, labeledChildObject, tooltipDescribableWidget, arrangeableObject, positionableObject, visibleObject_base, liteObject, tooltipDescribableSettingsWidget
----@field name? string Unique string used to set the frame name | ***Default:*** "Toggle"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
----@field size? sizeData_checkbox|sizeData
----@field font? labelFontOptions List of the [FontObject](https://warcraft.wiki.gg/wiki/UIOBJECT_Font#List_of_Font_Objects) object names to be used for the label | ***Default:*** *normal sized default Blizzard UI fonts*<ul><li>***Note:*** A new font object (or a modified copy of an existing one) can be created via ***WidgetToolbox*.CreateFont(...)** (even within this table definition).</li></ul>
----@field events? table<ScriptButton, fun(self: checkbox, state: boolean, button?: string, down?: boolean)|fun(...: any)|attributeEventData> Table of key, value pairs of the names of script event handlers to be set for the checkbox and the functions to assign as event handlers called when they trigger<ul><li>***Note:*** "[OnClick](https://warcraft.wiki.gg/wiki/UIHANDLER_OnClick)" will be called with custom parameters:<hr><p>@*param* `self` AnyFrameObject ― Reference to the toggle frame</p><p>@*param* `state` boolean ― The checked state of the toggle frame</p><p>@*param* `button`? string — Which button caused the click | ***Default:*** "LeftButton"</p><p>@*param* `down`? boolean — Whether the event happened on button press (down) or release (up) | ***Default:*** `false`</p></li></ul>
-
----@class radiobuttonCreationData : checkboxCreationData
----@field size? sizeData_radiobutton|sizeData
----@field clearable? boolean Whether this radio button should be clearable by right clicking on it or not | ***Default:*** `false`<ul><li>***Note:*** The radio button will be registered for "RightButtonUp" triggers to call "[OnClick](https://warcraft.wiki.gg/wiki/UIHANDLER_OnClick)" events with **button** = "RightButton".</li></ul>
----@field events? table<ScriptButton, fun(self: radiobutton, state: boolean, button?: string, down?: boolean)|fun(...: any)|attributeEventData> Table of key, value pairs of the names of script event handlers to be set for the radio button and the functions to assign as event handlers called when they trigger<ul><li>***Note:*** "[OnClick](https://warcraft.wiki.gg/wiki/UIHANDLER_OnClick)" will be called with custom parameters:<hr><p>@*param* `self` AnyFrameObject ― Reference to the toggle frame</p><p>@*param* `state` boolean ― The checked state of the toggle frame</p><p>@*param* `button`? string — Which button caused the click | ***Default:*** "LeftButton"</p><p>@*param* `down`? boolean — Whether the event happened on button press (down) or release (up) | ***Default:*** `false`</p></li></ul>
 
 --[ Selector ]
 
@@ -1108,27 +962,9 @@ local toolbox
 ---| selector
 ---| specialSelector
 
----@alias SpecialSelectorEventTag
----| "enabled"
----| "loaded"
----| "selected"
----| string
-
----@alias SelectorEventTag
----| SpecialSelectorEventTag
----| "updated"
-
 ---@alias MultiselectorType
 ---| multiselector
 ---| checkgroup
-
----@alias MultiselectorEventTag
----| SelectorEventTag
----| "limited"
-
----@alias DropdownEventTag
----| SelectorEventTag
----| "open"
 
 ---@alias SpecialSelectorItemset
 ---| "anchor" Using the set of [AnchorPoint](https://warcraft.wiki.gg/wiki/Anchors) items
@@ -1380,12 +1216,6 @@ local toolbox
 ---| customEditbox
 ---| multilineEditbox
 
----@alias TextboxEventTag
----| "enabled"
----| "loaded"
----| "changed"
----| string
-
 --| Event handlers
 
 ---@alias TextboxEventHandler_enabled
@@ -1485,14 +1315,6 @@ local toolbox
 ---| numeric
 ---| customSlider
 
----@alias NumericEventTag
----| "enabled"
----| "loaded"
----| "changed"
----| "min"
----| "max"
----| string
-
 --| Event handlers
 
 ---@alias NumericEventHandler_enabled
@@ -1577,13 +1399,6 @@ local toolbox
 ---| colormanager
 ---| colorpicker
 
----@alias ColorpickerEventTag
----| "enabled"
----| "loaded"
----| "saved"
----| "colored"
----| string
-
 --| Event handlers
 
 ---@alias ColorpickerEventHandler_enabled
@@ -1645,15 +1460,6 @@ local toolbox
 ---@alias ProfilemanagerType
 ---| profilemanager
 ---| profilesPage
-
----@alias ProfilemanagerEventTag
----| "loaded"
----| "activated"
----| "created"
----| "renamed"
----| "deleted"
----| "reset"
----| string
 
 --| Event handlers
 
@@ -1828,3 +1634,1429 @@ local toolbox
 ---@field onChangeSize? function Function to call after the value of **panel.widgets.position.keepInBounds** was changed by the user or via settings data management before the base onChange handlers are called built-in to the functionality of the settings panel template updating **text**
 ---@field onChangeAlignment? function Function to call after the value of **panel.widgets.layer.strata** was changed by the user or via settings data management before the base onChange handlers are called built-in to the functionality of the settings panel template updating **text**
 ---@field onChangeColor? fun(color: string) Function to call after the value of **panel.widgets.layer.level** was changed by the user or via settings data management before the base onChange handlers are called built-in to the functionality of the settings panel template updating **text**
+
+
+
+--||| UTILITIES ||||
+
+
+--[[ TABLE MANAGEMENT ]]
+
+---Align all keys in a table to a reference table, filling missing values and removing mismatched or invalid pairs
+---***
+---@param targetTable table Reference to the table to get into alignment with the sample
+---@param tableToSample table Reference to the table to sample keys & data from
+---***
+---@return table|any targetTable Reference to **targetTable** (it was already overwritten during the operation, no need for setting it again)
+local function HarmonizeData(targetTable, tableToSample) end
+
+
+--[[ DATA MANAGEMENT ]]
+
+--| Conversion
+
+---Return a position table used by WidgetTools assembled from the provided values which are returned by [Region:GetPoint(...)](https://warcraft.wiki.gg/wiki/API_Region_GetPoint)
+---***
+---@param anchor? FramePoint Base anchor point | ***Default:*** "TOPLEFT"
+---@param relativeTo? Frame Relative to this Frame or Region
+---@param relativePoint? FramePoint Relative anchor point
+---@param offsetX? number | ***Default:*** 0
+---@param offsetY? number | ***Default:*** 0
+---***
+---@return positionData # Table containing the position values as used by WidgetTools
+---<p></p>
+local function PackPosition(anchor, relativeTo, relativePoint, offsetX, offsetY) return {} end
+
+---Extract, verify and return the position values used by [Region:SetPoint(...)](https://warcraft.wiki.gg/wiki/API_ScriptRegionResizing_SetPoint) from a position table used by WidgetTools
+---***
+---@param t? positionData Table containing parameters to call [Region:SetPoint(...)](https://warcraft.wiki.gg/wiki/API_ScriptRegionResizing_SetPoint) with
+---***
+---@return FramePoint anchor ***Default:*** "TOPLEFT"
+---@return AnyFrameObject|nil relativeTo ***Default:*** "nil" *(anchor relative to screen dimensions)*<ul><li>***Note:*** When omitting the value by providing nil, instead of the string "nil", anchoring will use the parent region (if possible, otherwise the default behavior of anchoring relative to the screen dimensions will be used).</li></ul>
+---@return FramePoint? relativePoint
+---@return number|nil offsetX ***Default:*** 0
+---@return number|nil offsetY ***Default:*** 0
+---<hr><p></p>
+local function UnpackPosition(t) return "TOPLEFT" end
+
+--[ Color ]
+
+--| Verification
+
+---Check if a variable is a valid color table
+---@param t any
+---@return boolean|colorData
+local function IsColor(t) return true end
+
+---Check & silently repair a color data table
+---@param color any
+---@return boolean|colorData
+local function VerifyColor(color) return true end
+
+--| Conversion
+
+---Return a table constructed from color values
+---***
+---@param red? number Red | ***Range:*** (0, 1) | ***Default:*** 1
+---@param green? number Green | ***Range:*** (0, 1) | ***Default:*** 1
+---@param blue? number Blue | ***Range:*** (0, 1) | ***Default:*** 1
+---@param alpha? number Opacity | ***Range:*** (0, 1) | ***Default:*** 1
+---***
+---@return colorData # Table containing the color values
+local function PackColor(red, green, blue, alpha) return {} end
+
+---Extract, verify and return the color values found in a table
+---***
+---@param color? colorData|colorRGBA Table containing the color values | ***Default:*** *opaque white:* `{ r = 1, g = 1, b = 1, a = 1 }`
+---@param alpha? boolean Specify whether to return the full RGBA set or just the RGB values | ***Default:*** true
+---***
+---@return number r Red | ***Range:*** (0, 1) | ***Default:*** 1
+---@return number g Green | ***Range:*** (0, 1) | ***Default:*** 1
+---@return number b Blue | ***Range:*** (0, 1) | ***Default:*** 1
+---@return number? a Opacity | ***Range:*** (0, 1)
+local function UnpackColor(color, alpha) return 1, 1, 1 end
+
+---Convert RGB(A) color values in Range: (0, 1) to HEX color code
+---***
+---@param color? colorData|colorRGBA The RGB(A) color data with all channels in Range: (0, 1) | ***Default:*** *opaque white:* `{ r = 1, g = 1, b = 1, a = 1 }`
+---@param alphaFirst? boolean Put the alpha value first: ARGB output instead of RGBA | ***Default:*** false
+---@param hashtag? boolean Whether to add a "#" to the beginning of the color description | ***Default:*** true
+---***
+---@return string hex Color code in HEX format<ul><li>***Examples:***<ul><li>**RGB:** "#2266BB"</li><li>**RGBA:** "#2266BBAA"</li></ul></li></ul>
+local function ColorToHex(color, alphaFirst, hashtag) return "" end
+
+---Convert a HEX color code into RGB or RGBA in Range: (0, 1)
+---***
+---@param hex string String in HEX color code format<ul><li>***Examples:***<ul><li>**RGB:** "#2266BB" (where the "#" is optional)</li><li>**RGBA:** "#2266BBAA" (where the "#" is optional)</li></ul></li></ul>
+---***
+---@return number r Red | ***Range:*** (0, 1) | ***Default:*** 1
+---@return number g Green  | ***Range:*** (0, 1) | ***Default:*** 1
+---@return number b Blue | ***Range:*** (0, 1) | ***Default:*** 1
+---@return number? a Alpha | ***Range:*** (0, 1)
+local function HexToColor(hex) return 1, 1, 1 end
+
+---Brighten or darken the RGB values of a color by an exponent
+---***
+---@param color colorData|colorRGBA|any Table containing the color values
+---@param exponent? number ***Default:*** 0.55<ul><li>***Note:*** Values greater than 1 darken, smaller than 1 brighten the color.</li></ul>
+---***
+---@return colorData|colorRGBA|any color Reference to **color** (it was already updated during the operation, no need for setting it again)
+local function AdjustGamma(color, exponent) end
+
+
+--[[ FORMATTING ]]
+
+--[ Escape Sequences ]
+
+---Create a markup texture string snippet via escape sequences based on the specified values
+---***
+---@param path string Path to the specific texture file relative to the root directory of the specific WoW client<ul><li>***Note:*** The use of `/` as separator is recommended (Example: Interface/AddOns/AddonNameKey/Textures/TextureImage.tga), otherwise use `\\`.</li><li>***Note:*** **File format:** Texture files must be in JPEG (no transparency, not recommended), PNG, TGA or BLP format.</li><li>***Note:*** **Size:** Texture files must have powers of 2 dimensions to be handled by the WoW client.</li></ul>
+---@param width? number ***Default:*** *width of the texture file*
+---@param height? number ***Default:*** **width**
+---@param offsetX? number | ***Default:*** 0
+---@param offsetY? number | ***Default:*** 0
+---@param t? table Additional parameters are to be provided in this table
+---***
+---@return string # ***Default:*** ""
+local function Texture(path, width, height, offsetX, offsetY, t) return "" end
+
+---Remove most visual formatting (like coloring) & other (like hyperlink) [escape sequences](https://warcraft.wiki.gg/wiki/UI_escape_sequences) from a string
+--- - ***Note:*** *Grammar* escape sequences are not yet supported, and will not be removed.
+---@param s string
+---@return string s
+local function Clear(s) return "" end
+
+---Get an assembled & fully formatted string of a specifically assembled changelog table
+---***
+---@param changelog { [table[]] : string[] } String arrays nested in subtables representing a version containing the raw changelog data, lines of text with formatting directives included<ul><li>***Note:*** The first line in version tables is expected to be the title containing the version number and/or the date of release.</li><li>***Note:*** Version tables are expected to be listed in descending order by date of release (latest release first).</li><li>***Examples:***<ul><li>**Title formatting - version title:** `#V_`*Title text*`_#` (*it will appear as:* • Title text)</li><li>**Color formatting - highlighted text:** `#H_`*text to be colored*`_#` (*it will be colored white*)</li><li>**Color formatting - new updates:** `#N_`*text to be colored*`_#` (*it will be colored with:* #FF66EE66)</li><li>**Color formatting - fixes:** `#F_`*text to be colored*`_#` (*it will be colored with:* #FFEE4444)</li><li>**Color formatting - changes:** `#C_`*text to be colored*`_#` (*it will be colored with:* #FF8888EE)</li><li>**Color formatting - note:** `#O_`*text to be colored*`_#` (*it will be colored with:* #FFEEEE66)</li></ul></li></ul>
+---@param latest? boolean Whether to get the update notes of the latest version or the entire changelog | ***Default:*** false<ul><li>***Note:*** If true, the first line (expected to be the title containing the version number and/or release date) of the of the last version table will be omitted from the final formatted text returned, only including the update notes themselves.</li></ul>
+---***
+---@return string c # ***Default:*** ""
+local function FormatChangelog(changelog, latest) return "" end
+
+--[ Hyperlinks ]
+
+---Format a clickable hyperlink text via escape sequences
+---***
+---@param linkType ExtendedHyperlinkType [Type of the hyperlink](https://warcraft.wiki.gg/wiki/Hyperlinks#Types) determining how it's being handled and what payload it carries
+---@param content? string A colon-separated chain of parameters determined by **type** (Example: "content1:content2:content3") | ***Default:*** ""
+---@param text string Clickable text to be displayed as the hyperlink
+---***
+---@return string # ***Default:*** ""
+---<p></p>
+local function Hyperlink(linkType, content, text) return "" end
+
+---Format a custom clickable addon hyperlink text via escape sequences
+---***
+---@param addon string The name of the addon's folder (the addon namespace, not its displayed title)
+---@param type? string A unique key signifying the type of the hyperlink specific to the addon (if the addon handles multiple different custom types of hyperlinks) in order to be able to set unique hyperlink click handlers via ***WidgetToolbox*.SetHyperlinkHandler(...)** | ***Default:*** "-"
+---@param content? string A colon-separated chain of data strings carried by the hyperlink to be provided to the handler function (Example: "content1:content2:content3") | ***Default:*** ""
+---@param text string Clickable text to be displayed as the hyperlink
+local function CustomHyperlink(addon, type, content, text) end
+
+---Register a function to handle custom hyperlink clicks
+---***
+---@param addon string The name of the addon's folder (the addon namespace, not its displayed title)<ul><li>***Note:*** Duplicate addon key that already had rules registered under will be overwritten.</li></ul>
+---@param linkType? string Unique custom hyperlink type key used to identify the specific handler function | ***Default:*** "-"
+---@param handler fun(...) Function to be called with the list of content data strings carried by the hyperlink returned one by one when clicking on a hyperlink text created via ***WidgetToolbox*.CustomHyperlink(...)**
+local function SetHyperlinkHandler(addon, linkType, handler) end
+
+
+--[[ WIDGET MANAGEMENT ]]
+
+---Check if a variable is a recognizable WidgetTools custom table
+---@param t any
+---***
+---@return boolean|AnyTypeName # Return the type name of the object if recognized, false if not
+---<p></p>
+local function IsWidget(t) return true end
+
+
+--[[ FRAME MANAGEMENT ]]
+
+--[ Position ]
+
+---Set the position and anchoring of a frame when it is unknown which parameters will be nil
+---***
+---@param frame AnyFrameObject Reference to the frame to be moved
+---@param position? positionData Table of parameters to call **frame**:[SetPoint(...)](https://warcraft.wiki.gg/wiki/API_ScriptRegionResizing_SetPoint) with | ***Default:*** "TOPLEFT"
+---@param unlink? boolean If true, unlink the position of **frame** from **position.relativeTo** (preventing anchor family connections) by moving a positioning aid frame to **position** first, convert its position to absolute, breaking relative links (making it relative to screen points instead), then move **frame** to the position of the aid | ***Default:*** false
+---@param userPlaced? boolean Remember the position if **frame**:[IsMovable()](https://warcraft.wiki.gg/wiki/API_Frame_IsMovable) | ***Default:*** true
+local function SetPosition(frame, position, unlink, userPlaced) end
+
+---Set the anchor of a frame while keeping its positioning by updating its relative offsets
+---***
+---@param frame AnyFrameObject Reference to the frame to be update
+---@param anchor FramePoint New anchor point to set
+---***
+---@return number? offsetX The new horizontal offset value | ***Default:*** nil
+---@return number? offsetY The new vertical offset value | ***Default:*** nil
+---<p></p>
+local function SetAnchor(frame, anchor) end
+
+---Convert the position of a frame positioned relative to another to absolute position (making it relative to screen points, the UIParent instead)
+---***
+---@param frame AnyFrameObject Reference to the frame the position of which to be converted to absolute position
+---@param keepAnchor? boolean If true, restore the original anchor of **frame** (as its closest anchor to the nearest screen point will be chosen after conversion) | ***Default:*** true
+local function ConvertToAbsolutePosition(frame, keepAnchor) end
+
+--| Arrangement
+
+---Set the arrangement ordering description of a child frame by which to automatically position it in a columns within rows arrangement in its parent container via ***WidgetToolbox*.ArrangeContent(...)**
+---@param frame AnyFrameObject Reference to the child frame to set the arrangement ordering description for
+---@param index integer|nil If set, use this ordering index for **frame** by which to schedule placing it during arrangement (instead of relying on its child index), or if nil, delete the ordering directive set for **frame**
+---@param wrap boolean|nil If true, place **frame** into a new row within its container instead of adding it to the current row being filled, or if nil, delete the wrapping directive set for **frame**<ul><li>***Note:*** If the item would not fit in the row with other items in there, it will automatically be placed in a new row.</li></ul>
+---@param skip boolean|nil If true, ignore all other directives and don't include **frame** in the arrangement when positioning the children of the parent frame, or if nil, delete the skipping directive set for **frame**
+local function SetArrangementDirective(frame, index, wrap, skip) end
+
+---Arrange the child frames of a container frame into stacked rows based on the parameters provided
+--- - ***Note:*** The frames will be arranged into columns based on the the number of child frames assigned to a given row, anchored to "TOPLEFT", "TOP" and "TOPRIGHT" in order (by default) up to 3 frames. Columns in rows with more frames will be attempted to be spaced out evenly between the frames placed at the main 3 anchors.
+---***
+---@param container Frame Reference to the parent container frame the child frames of which are to be arranged based on their arrangement descriptions
+---@param t? arrangementRules Arrange the child frames of **container** based on the specifications provided in this table
+local function ArrangeContent(container, t) end
+
+--| Movability
+
+---Set the movability of a frame based in the specified values
+---***
+---@param frame AnyFrameObject Reference to the frame to make movable/unmovable
+---@param movable? boolean Whether to make the frame movable or unmovable | ***Default:*** false
+---@param t? movabilityData When specified, set **frame** as movable, dynamically updating the position settings widgets when it's moved by the user
+local function SetMovability(frame, movable, t) end
+
+--[ Visibility ]
+
+---Set the visibility of a frame based on the value provided
+---***
+---@param frame AnyFrameObject Reference to the frame to hide or show
+---@param visible? boolean If false, hide the frame, show it if true | ***Default:*** false
+local function SetVisibility(frame, visible) end
+
+--[ Backdrop ]
+
+---Set the backdrop of a frame with BackdropTemplate with the specified parameters
+---***
+---@param frame backdropFrame|AnyFrameObject Reference to the frame to set the backdrop of<ul><li>***Note:*** The template of **frame** must have been set as: `BackdropTemplateMixin and "BackdropTemplate"`.</li></ul>
+---@param backdrop? backdropData Parameters to set the custom backdrop with | ***Default:*** nil *(remove the backdrop)*
+---@param updates? backdropUpdateRule[] Table of backdrop update rules, modifying the specified parameters on trigger<ul><li>***Note:*** All update rules are additive, calling ***WidgetToolbox*.SetBackdrop(...)** multiple times with **updates** specified *will not* override previously set update rules. The base **backdrop** values used for these old rules *will not* change by setting a new backdrop via ***WidgetToolbox*.SetBackdrop(...)** either!</li></ul>
+local function SetBackdrop(frame, backdrop, updates) end
+
+--[ Dependencies ]
+
+---Assign dependency rule listeners from a defined a ruleset
+---***
+---@param rules dependencyRule[] Indexed table containing the dependency rules to add
+---@param setState fun(state: boolean) Function to call to set the state of the frame, enabling it on a true, or disabling it on a false input
+local function AddDependencies(rules, setState) end
+
+---Check and evaluate all dependencies in a ruleset
+---***
+---@param rules dependencyRule[] Indexed table containing the dependency rules to check
+---@return boolean? state
+local function CheckDependencies(rules) end
+
+
+--[[ TOOLTIP MANAGEMENT ]]
+
+---Register tooltip data and set up a GameTooltip for a frame to be toggled on hover
+---***
+---@param frame AnyFrameObject Owner frame the tooltip to be registered for<ul><li>***Note:*** If tooltip data for **owner** has already been added to the registry, it will be fully overwritten with **t**.</li><ul><li>***Note:*** Duplicate triggers may still be added if **duplicate** is set to true.</li></ul></li></ul>
+---@param t? tooltipData The tooltip parameters are to be provided in this table
+---@param toggle? tooltipToggleData Additional toggle rule parameters are to be provided in this table
+---@param duplicate? boolean If true, execute even if tooltip data has already been registered for **owner**, potentially adding duplicate toggle triggers, or, automatically call ***WidgetToolbox*.UpdateTooltipData(...)** instead to avoid this | ***Default:*** false
+---***
+---@return tooltipData|nil # Reference to the tooltip data table registered for **owner** to display the tooltip info by | ***Default:*** nil
+local function AddTooltip(frame, t, toggle, duplicate) end
+
+---Update and show a GameTooltip already set up to be toggled for a frame
+---***
+---@param frame AnyFrameObject Owner frame the tooltip to be updated for<ul><li>***Note:*** If no entry has been registered for **owner** in the tooltip data registry via ***WidgetToolbox*.AddTooltip(...)** yet, no tooltip will be shown.</li></ul>
+---@param t? tooltipUpdateData|tooltipData Use this set of parameters to update the tooltip for **owner** with | ***Default:*** *(fill values from the data in the registry)*
+local function UpdateTooltip(frame, t) end
+
+---Verify and update the tooltip data values stored in the registry for a frame
+---***
+---@param frame AnyFrameObject Owner frame the tooltip data to be updated for<ul><li>***Note:*** If no entry has been registered for **owner** in the tooltip data registry via ***WidgetToolbox*.AddTooltip(...)** yet, no data will be changed.</li></ul>
+---@param t? tooltipUpdateData|tooltipData The parameters to update the tooltip with are to be provided in this table | ***Default:*** *(fill values from the data in the registry or use default values for required values missing from the registry)*
+---@param linesUpdate boolean|nil If true, replace the full set of lines in the registry with **t.lines**, or if explicitly false, append the lines to the current list of lines, or if nil or something else, adjust the values of existing lines at matching indexes instead without adding or removing lines | ***Default:*** `nil`
+---***
+---@return tooltipData|nil # Reference to the tooltip data table registered for **owner** to display the tooltip info by | ***Default:*** `nil`
+local function UpdateTooltipData(frame, t, linesUpdate) end
+
+---Add default value and utility menu hint tooltip lines to widget tooltip tables
+---***
+---@param frames AnyFrameObject[] List of reference to the frames to add the tooltip lines to<ul><li>***Note:*** If no entry has been registered for a frame in the list in the tooltip data registry via ***WidgetToolbox*.AddTooltip(...)** yet, no changes will be made for that frame.</li></ul>
+---@param default? string Default value, formatted | ***Default:*** *(don't show default value)*
+---@param utilityNote? boolean Is true, add a note for the utility context menu | ***Default:*** true
+local function AddWidgetTooltipLines(frames, default, utilityNote) end
+
+
+--[[ POPUP MANAGEMENT ]]
+
+---Register the data for a Blizzard popup dialog for use
+---***
+---@param key? string Unique string to be used as the identifier key in the global `StaticPopupDialogs` table | ***Default:*** *table id of `t` or a random ID string*<ul><li>***Note:*** the default value will be appended to `key` even if its set and a valid string if that key already exist in the global `StaticPopupDialogs` table.
+---@param t? popupDialogData Optional parameters
+---***
+---@return string key The unique identifier key the popup data was created under in the global `StaticPopupDialogs` table used as the parameter when calling [StaticPopup_Show()](https://warcraft.wiki.gg/wiki/API_StaticPopup_Show) or [StaticPopup_Hide()](https://warcraft.wiki.gg/wiki/API_StaticPopup_Hide)
+local function RegisterPopupDialog(key, t) return "" end
+
+---Update already existing popup dialog data
+---***
+---@param key string The unique identifier key representing the defaults warning popup dialog in the global `StaticPopupDialogs` table, and used as the parameter when calling [StaticPopup_Show()](https://warcraft.wiki.gg/wiki/API_StaticPopup_Show) or [StaticPopup_Hide()](https://warcraft.wiki.gg/wiki/API_StaticPopup_Hide)
+---@param t? popupDialogData Optional parameters
+---***
+---@return string? key The unique identifier key created for this popup in the global `StaticPopupDialogs` table used as the parameter when calling [StaticPopup_Show()](https://warcraft.wiki.gg/wiki/API_StaticPopup_Show) or [StaticPopup_Hide()](https://warcraft.wiki.gg/wiki/API_StaticPopup_Hide) | ***Default:*** nil
+local function UpdatePopupDialog(key, t) end
+
+
+--[[ ADDON COMPARTMENT ]]
+
+---Set up the [Addon Compartment](https://warcraft.wiki.gg/wiki/Addon_compartment#Automatic_registration) functionality by registering global functions for call
+---***
+---@param addon string The name of the addon's folder (the addon namespace, not its displayed title)
+---@param calls? addonCompartmentFunctions Functions to call wrapped in a table<ul><li>***Note:*** `AddonCompartmentFunc`, `AddonCompartmentFuncOnEnter` and/or `AddonCompartmentFuncOnLeave` must be set in the specified **addon**'s TOC file to enable this functionality, defining the names of the global functions to be set for call.</li></ul>
+---@param tooltip? addonCompartmentTooltipData|tooltipData List of text lines to be added to the tooltip of the addon compartment button displayed when mousing over it<ul><li>***Note:*** Both `AddonCompartmentFuncOnEnter` and `AddonCompartmentFuncOnLeave` must be set in the specified **addon**'s TOC file to enable this functionality, defining the names of the global functions to be overloaded.</li></ul>
+local function SetUpAddonCompartment(addon, calls, tooltip) end
+
+
+--[[ CHAT CONTROL ]]
+
+---Register a list of chat keywords and related commands for use
+---***
+---@param addon string The name of the addon's folder (the addon namespace not the display title)
+---@param keywords string[] List of addon-specific keywords to register to listen to when typed as slash commands<ul><li>***Note:*** A slash character (`/`) will appended before each keyword specified here during registration, it doesn't need to be included.</li></ul>
+---@param t chatCommandManagerCreationData Optional parameters
+---***
+---@return chatCommandManager? manager Table containing command handler functions | ***Default:*** nil
+local function RegisterChatCommands(addon, keywords, t) end
+
+
+--[[ SETTINGS MANAGEMENT ]]
+
+---Settings data management rule registry
+---@class settingsRegistry
+---@field rules table<string, settingsRule[]> Collection of rules describing where to save/load settings data to/from, and what change handlers to call in the process linked to each specific settings category under an addon
+---@field changeHandlers table<string, function> List of pairs of addon-specific unique keys and change handler scripts
+
+---Register the settings page to the Settings window if it wasn't already
+--- - ***Note:*** No settings page will be registered if **WidgetToolsDB.lite** is true.
+---@param page settingsPage Reference to the settings page to register to Settings
+---@param parent? settingsPage Reference to the parent settings page to set **page** as a child category page of | ***Default:*** *set as a parent category page*
+---@param icon? boolean If true, append the icon set for the settings page to its button title in the AddOns list of the Settings window as well | ***Default:*** true if **parent** == nil
+local function RegisterSettingsPage(page, parent, icon) end
+
+--| Settings data
+
+---Register a settings data management entry for a settings widget to the settings data management registry for batched data handling
+---***
+---@param widget AnyWidgetType|AnyGUIWidgetType Reference to the widget to be saved & loaded data to/from with defined **widget.loadData()** & **widget.saveData()** functions
+---@param t settingsData Optional parameters
+---***
+---@return integer|nil index The index for the new entry for **widget** where it ended up in the settings data management registry | ***Default:*** nil
+local function AddSettingsDataManagementEntry(widget, t) end
+
+---Load all data from storage to the widgets specified in the settings data management registry in the specified **category** under the specified **key** by calling **[*widget*].loadData(...)** for each
+---***
+---@param category? string A unique string used for categorizing settings data management rules & change handler scripts | ***Default:*** "WidgetTools" *(global rule)*
+---@param key? string A unique string appended to **category** linking a subset of settings data rules to be handled together | ***Default:*** "" *(category-wide rule)*
+---@param handleChanges? boolean If true, also call all registered change handlers | ***Default:*** false
+local function LoadSettingsData(category, key, handleChanges) end
+
+---Save all data from the widgets to storage specified in the settings data management registry in the specified **category** under the specified **key** by calling **[*widget*].saveData(...)** for each
+---***
+---@param category? string A unique string used for categorizing settings data management rules & change handler scripts | ***Default:*** "WidgetTools" *(global rule)*
+---@param key? string A unique string appended to **category** linking a subset of settings data rules to be handled together | ***Default:*** "" *(category-wide rule)*
+local function SaveSettingsData(category, key) end
+
+---Call all **onChange** handlers registered in the settings data management registry in the specified **category** under the specified **key**
+---@param category? string A unique string used for categorizing settings data management rules & change handler scripts | ***Default:*** "WidgetTools" *(global rule)*
+---@param key? string A unique string appended to **category** linking a subset of settings data rules to be handled together | ***Default:*** "" *(category-wide rule)*
+local function ApplySettingsData(category, key) end
+
+---Set a data snapshot for each widget specified in the settings data management registry in the specified **category** under the specified **key** calling **[*widget*].revertData()** for each
+---***
+---@param category? string A unique string used for categorizing settings data management rules & change handler scripts | ***Default:*** "WidgetTools" *(global rule)*
+---@param key? string A unique string appended to **category** linking a subset of settings data rules to be handled together | ***Default:*** "" *(category-wide rule)*
+local function SnapshotSettingsData(category, key) end
+
+---Set & load the stored data managed by each widget specified in the settings data management registry in the specified **category** under the specified **key** by calling **[*widget*].revertData()** for each
+---***
+---@param category? string A unique string used for categorizing settings data management rules & change handler scripts | ***Default:*** "WidgetTools" *(global rule)*
+---@param key? string A unique string appended to **category** linking a subset of settings data rules to be handled together | ***Default:*** "" *(category-wide rule)*
+local function RevertSettingsData(category, key) end
+
+---Set & load the default data managed by each widget specified in the settings data management registry in the specified **category** under the specified **key** by calling **[*widget*].resetData()** for each
+---***
+---@param category? string A unique string used for categorizing settings data management rules & change handler scripts | ***Default:*** "WidgetTools" *(global rule)*
+---@param key? string A unique string appended to **category** linking a subset of settings data rules to be handled together | ***Default:*** "" *(category-wide rule)*
+local function ResetSettingsData(category, key) end
+
+---Handle changes for widgets in the settings data management registry in the specified **category** under the specified **key** by calling **[*widget*].onChange()** for each
+---@param index integer Filter the call of change handlers to only include the list under the specified index not each list in the specified **category** under the specified **key**
+---@param category? string A unique string used for categorizing settings data management rules & change handler scripts | ***Default:*** "WidgetTools" *(global rule)*
+---@param key? string A unique string appended to **category** linking a subset of settings data rules to be handled together | ***Default:*** "" *(category-wide rule)*
+local function HandleWidgetChanges(index, category, key) end
+
+
+
+--||| WIDGETS |||
+
+
+--Widget data clipboard
+---@class clipboard
+---@field toggle boolean|nil Toggle value
+---@field selection wrappedInteger|nil Selector index
+---@field selections wrappedBooleanArray|nil Multiselector data
+---@field anchor wrappedAnchor|nil Frame Anchor Point
+---@field justifyH wrappedJustifyH|nil Horizontal text alignment value
+---@field justifyV wrappedJustifyV|nil Vertical text alignment value
+---@field strata wrappedStrata|nil Frame Strata value
+---@field text string|nil Text value
+---@field numeric number|nil Number value
+---@field color colorData|nil RGB(A) color value
+
+
+--[[ ACTION ]]
+
+---@alias ActionType
+---| action
+---| actionButton
+---| customButton
+
+--[ Getters & Setters ]
+
+---Returns the type of this object
+---***
+---@return "Action"
+---<p></p>
+local function action_getType() return "Action" end
+
+---Checks and returns if the type of this object is equal to the string provided
+---@param type string|AnyTypeName
+---@return boolean
+---<p></p>
+local function action_isType(type) return true end
+
+--| Events
+
+local function action_invoke_enabled() end
+
+---@param user boolean
+local function action_invoke_trigger(user) end
+
+---@param event string Custom event tag
+---@param ... any
+local function action_invoke_(event, ...) end
+
+---@param listener ActionEventHandler_enabled Handler function to set
+---@param callIndex? integer Set when to call **listener** in the execution order | ***Default:*** *placed at the end of the current list*
+local function action_setListener_enabled(listener, callIndex) end
+
+---@param listener ActionEventHandler_trigger Handler function to set
+---@param callIndex? integer Set when to call **listener** in the execution order | ***Default:*** *placed at the end of the current list*
+local function action_setListener_trigger(listener, callIndex) end
+
+---@param event string Custom event tag
+---@param listener ActionEventHandler_any Handler function to set
+---@param callIndex? integer Set when to call **listener** in the execution order | ***Default:*** *placed at the end of the current list*
+local function action_setListener_(event, listener, callIndex) end
+
+--| State
+
+---Return the current enabled state of the widget
+---@return boolean enabled True, if the widget is enabled
+local function action_isEnabled() return true end
+
+---Enable or disable the widget based on the specified value
+---***
+---@param state? boolean Enable the input if true, disable if not | ***Default:*** `true`
+---@param silent? boolean If false, invoke an "enabled" event and call registered listeners | ***Default:*** `false`
+local function action_setEnabled(state, silent) end
+
+--| Action
+
+---Trigger the action registered for the button (if it is enabled)
+---@param user? boolean If true, mark the call as being the result of a user interaction | ***Default:*** `false`
+---@param silent? boolean If false, invoke a "trigger" event and call registered listeners | ***Default:*** `false`
+local function action_trigger(user, silent) end
+
+--[ Constructor ]
+
+---Create a non-GUI action widget
+---***
+---@param t? actionCreationData Optional parameters
+---***
+---@return action action Reference to the new action widget, utility functions and more wrapped in a table
+local function CreateAction(t)
+
+	--[ Parameters ]
+
+	---@alias ActionEventHandler_enabled
+	---| fun(self: ActionType, state: boolean) Called when an "enabled" event is invoked after **action.setEnabled(...)** was called<hr><p>@*param* `self` ActionType ― Reference to the widget table</p><p>@*param* `state` boolean ― True if the widget is enabled</p>
+
+	---@alias ActionEventHandler_trigger
+	---| fun(self: ActionType) Called when a "trigger" event is invoked after **action.trigger(...)** was called<hr><p>@*param* `self` ActionType ― Reference to the widget table</p><p>@*param* `user` boolean ― True if the event was flagged as invoked by an action taken by the user</p>
+
+	---@alias ActionEventHandler_any
+	---| fun(self: ActionType, ...: any) Called when a custom event is invoked<hr><p>@*param* `self` ActionType ― Reference to the widget table</p><p>@*param* `...` any — Any leftover arguments</p>
+
+	---@class actionEventListener_enabled : eventHandlerIndex
+	---@field handler ActionEventHandler_enabled Handler function to register for call
+
+	---@class actionEventListener_trigger : eventHandlerIndex
+	---@field handler ActionEventHandler_trigger Handler function to register for call
+
+	---@class actionEventListener_any : eventTag, eventHandlerIndex
+	---@field handler ActionEventHandler_any Handler function to register for call
+
+	---@class actionEventListeners
+	---@field enabled? actionEventListener_enabled[] List of functions to call in order when an "enabled" event is invoked after **action.setEnabled(...)** was called
+	---@field trigger? actionEventListener_trigger[] List of functions to call in order when a "trigger" event is invoked after **action.trigger(...)** was called
+	---@field _? actionEventListener_any[] List of functions to call in order when a custom event is invoked
+
+	---Optional parameters
+	---@class actionCreationData : togglableObject # t
+	---@field action? fun(self: action, user?: boolean) Function to call when the button is triggered (clicked by the user or triggered programmatically)<ul><li>***Note:*** This function will be called when an "[OnClick](https://warcraft.wiki.gg/wiki/UIHANDLER_OnClick)" script event happens, there's no need to register it again under **t.events.OnClick**.</li></ul><hr><p>@*param* `self` action — Reference to the widget table</p><p>@*param* `user`? boolean — Marking whether the call is due to a user interaction or not | ***Default:*** `false`</p>
+	---@field listeners? actionEventListeners Table of key, value pairs of custom widget event tags and functions to assign as event handlers to call on trigger
+
+	--[ Events ]
+
+	---Get a trigger function to call all registered listeners for the specified custom widget event with
+	---@class action_invoke
+	local invoke = {
+		enabled = action_invoke_enabled,
+		trigger = action_invoke_trigger,
+		_ = action_invoke_,
+	}
+
+	---Hook a handler function as a listener for a custom widget event
+	---@class action_setListener
+	local setListener = {
+		enabled = action_setListener_enabled,
+		trigger = action_setListener_trigger,
+		_ = action_setListener_,
+	}
+
+	--[ Widget ]
+
+	---@class action
+	---@field invoke action_invoke
+	---@field setListener action_setListener
+	local action = {
+		getType = action_getType,
+		isType = action_isType,
+		isEnabled = action_isEnabled,
+		setEnabled = action_setEnabled,
+		trigger = action_trigger,
+	}
+
+	return action
+end
+
+
+--|| BUTTON
+
+--[ Getters & Setters ]
+
+---Returns all object types of this mutated widget
+---***
+---@return "Action"
+---@return "Button"
+---<p></p>
+local function button_getType() return "Action", "Button" end
+
+---Checks and returns if the a type of this mutated widget matches the string provided
+---@param type string|AnyTypeName
+---@return boolean
+---<p></p>
+local function button_isType(type) return true end
+
+--[ Constructor ]
+
+---Create a Blizzard button GUI frame with enhanced widget functionality
+---***
+---@param t? actionButtonCreationData Optional parameters
+---@param action? action Reference to an already existing action manager to mutate into a button instead of creating a new base widget
+---***
+---@return actionButton|action # References to the new [Button](https://warcraft.wiki.gg/wiki/UIOBJECT_Button), utility functions and more wrapped in a table
+local function CreateButton(t, action)
+
+	--[ Parameters ]
+
+	---@class sizeData_button
+	---@field w? number Width | ***Default:*** 80
+	---@field h? number Height | ***Default:*** 22
+
+	---@class buttonScriptEvents
+	---@field events? table<ScriptButton, fun(...: any)|attributeEventData> Table of key, value pairs of the names of script event handlers to be set for the button and the functions to assign as event handlers called when they trigger<ul><li>***Example:*** "[OnClick](https://warcraft.wiki.gg/wiki/UIHANDLER_OnClick)" when the button is clicked.</li><li>***Note:*** **t.action** will automatically be called when an "[OnClick](https://warcraft.wiki.gg/wiki/UIHANDLER_OnClick)" event triggers, there is no need to register it here as well.</li></ul>
+
+	--Optional parameters
+	---@class actionButtonCreationData : actionCreationData, labeledChildObject, tooltipDescribableWidget, arrangeableObject, positionableObject, visibleObject_base, buttonScriptEvents, liteObject
+	---@field name? string Unique string used to set the frame name | ***Default:*** "Button"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
+	---@field titleOffset? offsetData Offset the position of the label of the button
+	---@field size? sizeData_button|sizeData
+	---@field font? labelFontOptions_highlight List of the [FontObject](https://warcraft.wiki.gg/wiki/UIOBJECT_Font#List_of_Font_Objects) object names to be used for the label | ***Default:*** *normal sized default Blizzard UI fonts*<ul><li>***Note:*** A new font object (or a modified copy of an existing one) can be created via ***WidgetToolbox*.CreateFont(...)** (even within this table definition).</li></ul>
+
+	--[ Widget ]
+
+	---@class actionButton : action
+	---@field frame Frame Frame to catch mouse interactions and serve as a hover trigger to be able to show the tooltip or when the button is disabled
+	local button = {
+		getType = button_getType,
+		isType = button_isType,
+	}
+
+	return button
+end
+
+
+--|| CUSTOM BUTTON
+
+--[ Getters & Setters ]
+
+---Returns all object types of this mutated widget
+---***
+---@return "Action"
+---@return "CustomButton"
+---<p></p>
+local function customButton_getType() return "Action", "CustomButton" end
+
+---Checks and returns if the a type of this mutated widget matches the string provided
+---@param type string|AnyTypeName
+---@return boolean
+---<p></p>
+local function customButton_isType(type) return true end
+
+---Create a Blizzard button GUI frame with customizable backdrop and enhanced widget functionality
+---***
+---@param t? customButtonCreationData Optional parameters
+---@param action? action Reference to an already existing action button to mutate into a custom button instead of creating a new base widget
+---***
+---@return customButton|action # References to the new [Button](https://warcraft.wiki.gg/wiki/UIOBJECT_Button) (inheriting [BackdropTemplate](https://warcraft.wiki.gg/wiki/BackdropTemplate)), utility functions and more wrapped in a table
+local function CreateCustomButton(t, action)
+	--Optional parameters
+	---@class customButtonCreationData : actionButtonCreationData, customizableObject
+	---@field font? labelFontOptions_small_highlight Table of the [FontObject](https://warcraft.wiki.gg/wiki/UIOBJECT_Font#List_of_Font_Objects) object names to be used for the label | ***Default:*** *small default Blizzard UI fonts*<ul><li>***Note:*** A new font object (or a modified copy of an existing one) can be created via ***WidgetToolbox*.CreateFont(...)** (even within this table definition).</li></ul>
+
+	---@class customButton : action
+	---@field frame Frame Frame to catch mouse interactions and serve as a hover trigger to be able to show the tooltip or when the button is disabled
+	local button = {
+		getType = customButton_getType,
+		isType = customButton_isType,
+	}
+
+	return button
+end
+
+
+--[[ TOGGLE ]]
+
+---@alias ToggleType
+---| toggle
+---| checkbox
+---| radiobutton
+
+--[ Getters & Setters ]
+
+---Returns the type of this object
+---***
+---@return "Toggle"
+---<p></p>
+local function toggle_getType() return "Toggle" end
+
+---Checks and returns if the type of this object is equal to the string provided
+---@param type string|AnyTypeName
+---@return boolean
+---<p></p>
+local function toggle_isType(type) return true end
+
+--| Events
+
+local function toggle_invoke_enabled() end
+
+---@param success boolean
+local function toggle_invoke_loaded(success) end
+
+---@param success boolean
+local function toggle_invoke_saved(success) end
+
+---@param user boolean
+local function toggle_invoke_toggled(user) end
+
+---@param event string Custom event tag
+---@param ... any
+local function toggle_invoke_(event, ...) end
+
+---@param listener ToggleEventHandler_enabled Handler function to set
+---@param callIndex? integer Set when to call **listener** in the execution order | ***Default:*** *placed at the end of the current list*
+local function toggle_setListener_enabled(listener, callIndex) end
+
+---@param listener ToggleEventHandler_loaded Handler function to set
+---@param callIndex? integer Set when to call **listener** in the execution order | ***Default:*** *placed at the end of the current list*
+local function toggle_setListener_loaded(listener, callIndex) end
+
+---@param listener ToggleEventHandler_saved Handler function to set
+---@param callIndex? integer Set when to call **listener** in the execution order | ***Default:*** *placed at the end of the current list*
+local function toggle_setListener_saved(listener, callIndex) end
+
+---@param listener ToggleEventHandler_toggled Handler function to set
+---@param callIndex? integer Set when to call **listener** in the execution order | ***Default:*** *placed at the end of the current list*
+local function toggle_setListener_toggled(listener, callIndex) end
+
+---@param event string Custom event tag
+---@param listener ToggleEventHandler_any Handler function to set
+---@param callIndex? integer Set when to call **listener** in the execution order | ***Default:*** *placed at the end of the current list*
+local function toggle_setListener_(event, listener, callIndex) end
+
+--| Options data management
+
+---Read the data from storage then verify and load it to the widget
+---***
+---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** `true`
+---@param silent? boolean If false, invoke a "loaded" event and call registered listeners | ***Default:*** `false`
+local function toggle_loadData(handleChanges, silent) end
+
+---Verify and save the provided data or the current value of the widget to storage via **t.saveData(...)**
+---***
+---@param state? boolean Data to be saved | ***Default:*** *the currently set value of the widget*
+---@param silent? boolean If false, invoke a "saved" event and call registered listeners | ***Default:*** `false`
+local function toggle_saveData(state, silent) end
+
+---Get the currently stored data via **t.getData()**
+---@return boolean|nil
+local function toggle_getData() end
+
+---Verify and save the provided data to storage via **t.saveData(...)** then load it to the widget via **t.loadData()**
+---***
+---@param state? boolean Data to be saved | ***Default:*** *the currently set value of the widget*
+---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** `true`
+---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** `false`
+local function toggle_setData(state, handleChanges, silent) end
+
+---Get the currently set default value
+---@return boolean default
+local function toggle_getDefault() return true end
+
+---Set the default value
+---@param state? boolean ***Default:*** `false`
+local function toggle_setDefault(state) end
+
+---Set and load the stored data managed by the widget to the default value specified via **t.default** at construction
+---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** `true`
+---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** `false`
+local function toggle_resetData(handleChanges, silent) end
+
+---Set a data snapshot so any changes made to the widget and/or the stored data can be reverted to this value via **toggle.revertData()**
+---@param stored? boolean If true, use the data from storage to create the snapshot instead of using the current widget value | ***Default:*** `false`
+local function toggle_snapshotData(stored) end
+
+---Set and load the stored data managed by the widget to the last saved data snapshot set via **toggle.snapshotData()**
+---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** `true`
+---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** `false`
+local function toggle_revertData(handleChanges, silent) end
+
+---Returns the current toggle state of the widget
+---@return boolean
+local function toggle_getState() return true end
+
+---Verify and set the toggle value of the widget to the provided state
+---***
+---@param state? boolean ***Default:*** `false`
+---@param user? boolean If true, mark the call as being the result of a user interaction | ***Default:*** `false`
+---@param silent? boolean If false, invoke a "toggled" event and call registered listeners | ***Default:*** `false`
+local function toggle_setState(state, user, silent) end
+
+---Flip the current toggle state of the widget
+---***
+---@param user? boolean If true, mark the call as being the result of a user interaction | ***Default:*** `false`
+---@param silent? boolean If false, invoke a "toggled" event and call registered listeners | ***Default:*** `false`
+local function toggle_toggleState(user, silent) end
+
+---Utility turn a toggle state value into formatted string
+---***
+---@param state? boolean ***Default:*** *(current value)*
+---@return string
+local function toggle_formatValue(state) return "" end
+
+--| State
+
+---Return the current enabled state of the widget
+---@return boolean enabled True, if the widget is enabled
+local function toggle_isEnabled() return true end
+
+---Enable or disable the widget based on the specified value
+---***
+---@param state? boolean Enable the input if true, disable if not | ***Default:*** `true`
+---@param silent? boolean If false, invoke an "enabled" event and call registered listeners | ***Default:*** `false`
+local function toggle_setEnabled(state, silent) end
+
+--[ Constructor ]
+
+---Create a non-GUI toggle widget with boolean data management logic
+---***
+---@param t? toggleCreationData Optional parameters
+---***
+---@return toggle toggle Reference to the new toggle widget, utility functions and more wrapped in a table
+local function CreateToggle(t)
+	---@alias ToggleEventHandler_enabled
+	---| fun(self: ToggleType, state: boolean) Called when an "enabled" event is invoked after **toggle.setEnabled(...)** was called<hr><p>@*param* `self` ToggleType ― Reference to the widget table</p><p>@*param* `state` boolean ― True if the widget is enabled</p>
+
+	---@alias ToggleEventHandler_loaded
+	---| fun(self: ToggleType, success: boolean) Called when an "loaded" event is invoked after the data of this widget has been loaded from storage<hr><p>@*param* `self` ToggleType ― Reference to the widget table</p><p>@*param* `success` boolean ― True if data was returned by **t.getData()** and it was loaded to the widget</p>
+
+	---@alias ToggleEventHandler_saved
+	---| fun(self: ToggleType, success: boolean) Called when an "saved" event is invoked after the data of this widget has been saved to storage<hr><p>@*param* `self` ToggleType ― Reference to the widget table</p><p>@*param* `success` boolean ― True if data was committed successfully via **t.saveData(...)**</p>
+
+	---@alias ToggleEventHandler_toggled
+	---| fun(self: ToggleType, state: boolean, user: boolean) Called when an "toggled" event is invoked after **toggle.setState(...)** was called<hr><p>@*param* `self` ToggleType ― Reference to the toggle widget</p><p>@*param* `state` boolean ― True if the widget is enabled</p><p>@*param* `user` boolean ― True if the event was flagged as invoked by an action taken by the user</p>
+
+	---@alias ToggleEventHandler_any
+	---| fun(self: ToggleType, ...: any) Called when a custom event is invoked<hr><p>@*param* `self` ToggleType ― Reference to the widget table</p><p>@*param* `...` any — Any leftover arguments</p>
+
+	---@class toggleEventListener_enabled : eventHandlerIndex
+	---@field handler ToggleEventHandler_enabled Handler function to register for call
+
+	---@class toggleEventListener_loaded : eventHandlerIndex
+	---@field handler ToggleEventHandler_loaded Handler function to register for call
+
+	---@class toggleEventListener_saved : eventHandlerIndex
+	---@field handler ToggleEventHandler_saved Handler function to register for call
+
+	---@class toggleEventListener_toggled : eventHandlerIndex
+	---@field handler ToggleEventHandler_toggled Handler function to register for call
+
+	---@class toggleEventListener_any : eventTag, eventHandlerIndex
+	---@field handler ToggleEventHandler_any Handler function to register for call
+
+	---@class toggleEventListeners
+	---@field enabled? toggleEventListener_enabled[] List of functions to call in order when an "enabled" event is invoked after **toggle.setEnabled(...)** was called
+	---@field loaded? toggleEventListener_loaded[] List of functions to call in order when an "loaded" event is invoked after the data of this widget has been loaded from storage
+	---@field saved? toggleEventListener_saved[] List of functions to call in order when an "saved" event is invoked after the data of this widget has been saved to storage
+	---@field toggled? toggleEventListener_toggled[] List of functions to call in order when an "toggled" event is invoked after **toggle.setState(...)** was called
+	---@field [string]? toggleEventListener_any[] List of functions to call in order when a custom event is invoked
+
+	---@class sizeData_checkbox
+	---@field w? number Width | ***Default:*** **t.label** and 180 or **t.size.h**
+	---@field h? number Height | ***Default:*** 26
+
+	---@class sizeData_radiobutton
+	---@field w? number Width | ***Default:***  **t.label** and 180 or **t.size.h**
+	---@field h? number Height | ***Default:*** 18
+
+	--Optional parameters
+	---@class toggleCreationData : togglableObject, settingsWidget # t
+	---@field listeners? toggleEventListeners Table of key, value pairs of custom widget event tags and functions to assign as event handlers to call on trigger
+	---@field getData? fun(): state: boolean|nil Called to (if needed, modify and) load the widget data from storage<hr><p>@*return* `state` boolean|nil | ***Default:*** `false`</p>
+	---@field saveData? fun(state: boolean) Called to (if needed, modify and) save the widget data to storage<hr><p>@*param* `state` boolean</p>
+	---@field value? boolean The starting state of the widget to set during initialization | ***Default:*** **t.getData()** or **t.default** if invalid
+	---@field default? boolean Default value of the widget | ***Default:*** `false`
+
+	--Optional parameters
+	---@class checkboxCreationData : toggleCreationData, labeledChildObject, tooltipDescribableWidget, arrangeableObject, positionableObject, visibleObject_base, liteObject, tooltipDescribableSettingsWidget # t
+	---@field name? string Unique string used to set the frame name | ***Default:*** "Toggle"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
+	---@field size? sizeData_checkbox|sizeData
+	---@field font? labelFontOptions List of the [FontObject](https://warcraft.wiki.gg/wiki/UIOBJECT_Font#List_of_Font_Objects) object names to be used for the label | ***Default:*** *normal sized default Blizzard UI fonts*<ul><li>***Note:*** A new font object (or a modified copy of an existing one) can be created via ***WidgetToolbox*.CreateFont(...)** (even within this table definition).</li></ul>
+	---@field events? table<ScriptButton, fun(self: checkbox, state: boolean, button?: string, down?: boolean)|fun(...: any)|attributeEventData> Table of key, value pairs of the names of script event handlers to be set for the checkbox and the functions to assign as event handlers called when they trigger<ul><li>***Note:*** "[OnClick](https://warcraft.wiki.gg/wiki/UIHANDLER_OnClick)" will be called with custom parameters:<hr><p>@*param* `self` AnyFrameObject ― Reference to the toggle frame</p><p>@*param* `state` boolean ― The checked state of the toggle frame</p><p>@*param* `button`? string — Which button caused the click | ***Default:*** "LeftButton"</p><p>@*param* `down`? boolean — Whether the event happened on button press (down) or release (up) | ***Default:*** `false`</p></li></ul>
+
+	--Optional parameters
+	---@class radiobuttonCreationData : checkboxCreationData # t
+	---@field size? sizeData_radiobutton|sizeData
+	---@field clearable? boolean Whether this radio button should be clearable by right clicking on it or not | ***Default:*** `false`<ul><li>***Note:*** The radio button will be registered for "RightButtonUp" triggers to call "[OnClick](https://warcraft.wiki.gg/wiki/UIHANDLER_OnClick)" events with **button** = "RightButton".</li></ul>
+	---@field events? table<ScriptButton, fun(self: radiobutton, state: boolean, button?: string, down?: boolean)|fun(...: any)|attributeEventData> Table of key, value pairs of the names of script event handlers to be set for the radio button and the functions to assign as event handlers called when they trigger<ul><li>***Note:*** "[OnClick](https://warcraft.wiki.gg/wiki/UIHANDLER_OnClick)" will be called with custom parameters:<hr><p>@*param* `self` AnyFrameObject ― Reference to the toggle frame</p><p>@*param* `state` boolean ― The checked state of the toggle frame</p><p>@*param* `button`? string — Which button caused the click | ***Default:*** "LeftButton"</p><p>@*param* `down`? boolean — Whether the event happened on button press (down) or release (up) | ***Default:*** `false`</p></li></ul>
+
+	--[ Events ]
+
+	---Get a trigger function to call all registered listeners for the specified custom widget event with
+	---@class toggle_invoke
+	local invoke = {
+		enabled = toggle_invoke_enabled,
+		loaded = toggle_invoke_loaded,
+		saved = toggle_invoke_saved,
+		toggled = toggle_invoke_toggled,
+		_ = toggle_invoke_,
+	}
+
+	---Hook a handler function as a listener for a custom widget event
+	---@class toggle_setListener
+	local setListener = {
+		enabled = toggle_setListener_enabled,
+		loaded = toggle_setListener_loaded,
+		saved = toggle_setListener_saved,
+		toggled = toggle_setListener_toggled,
+		_ = toggle_setListener_,
+	}
+
+	--[ Widget ]
+
+	---@class toggle
+	---@field invoke toggle_invoke
+	---@field setListener toggle_setListener
+	local toggle = {
+		getType = toggle_getType,
+		isType = toggle_isType,
+		loadData = toggle_loadData,
+		saveData = toggle_saveData,
+		getData = toggle_getData,
+		setData = toggle_setData,
+		getDefault = toggle_getDefault,
+		setDefault = toggle_setDefault,
+		resetData = toggle_resetData,
+		snapshotData = toggle_snapshotData,
+		revertData = toggle_revertData,
+		getState = toggle_getState,
+		setState = toggle_setState,
+		toggleState = toggle_toggleState,
+		formatValue = toggle_formatValue,
+		isEnabled = toggle_isEnabled,
+		setEnabled = toggle_setEnabled,
+	}
+
+	return toggle
+end
+
+
+--|| CHECKBOX
+
+--[ Getters & Setters ]
+
+---Returns all object types of this mutated widget
+---***
+---@return "Toggle"
+---@return "Checkbox"
+---<p></p>
+function checkbox.getType() return "Toggle", "Checkbox" end
+
+---Checks and returns if the a type of this mutated widget matches the string provided
+---@param type string|AnyTypeName
+---@return boolean
+---<p></p>
+function checkbox.isType(type) return true end
+
+--[ Constructor ]
+
+---Create a Blizzard checkbox GUI frame with enhanced widget functionality
+---***
+---@param t? checkboxCreationData Optional parameters
+---@param toggle? toggle Reference to an already existing toggle to mutate into a checkbox instead of creating a new base widget
+---***
+---@return checkbox|toggle # References to the new [CheckButton](https://warcraft.wiki.gg/wiki/UIOBJECT_CheckButton), its holder [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame), utility functions and more wrapped in a table
+local function CreateCheckbox(t, toggle)
+
+	--[ Parameters ]
+
+
+
+	--[ Widget ]
+
+	---@class checkbox: toggle
+	---@field label FontString|nil
+	local checkbox = {}
+
+	return checkbox
+end
+
+
+--|| CLASSIC CHECKBOX
+
+
+
+
+--|| RADIO BUTTON
+
+
+
+
+
+--[[ SELECTOR ]]
+
+--[ Constructor ]
+
+---Create a non-GUI selector widget (managing a collection of toggle widgets) with integer (selection index) data management logic
+---***
+---@param t? selectorCreationData Optional parameters
+---***
+---@return selector selector Reference to the new selector widget, utility functions and more wrapped in a table
+local function CreateSelector(t)
+
+	--[ Parameters ]
+
+
+
+	--[ Events ]
+
+	---Get a trigger function to call all registered listeners for the specified custom widget event with
+	---@class _invoke
+	local invoke = {
+		enabled = _invoke_enabled,
+		_ = _invoke_,
+	}
+
+	---Hook a handler function as a listener for a custom widget event
+	---@class _setListener
+	local setListener = {
+		enabled = _setListener_enabled,
+		_ = _setListener_,
+	}
+
+	--[ Widget ]
+
+	---@class selector
+	local selector = {
+		getType = getType,
+		isType = isType,
+		loadData = loadData,
+		saveData = saveData,
+		getData = getData,
+		setData = setData,
+		getDefault = getDefault,
+		setDefault = setDefault,
+		resetData = resetData,
+		snapshotData = snapshotData,
+		revertData = revertData,
+		--  = ,
+		isEnabled = isEnabled,
+		setEnabled = setEnabled,
+	}
+
+	return selector
+end
+
+---Create a non-GUI special selector widget (managing a collection of toggle widgets) with data management logic specific to the specified **itemset**
+---***
+---@param itemset SpecialSelectorItemset Specify what type of selector should be created
+---@param t? specialSelectorCreationData Optional parameters
+---***
+---@return specialSelector selector Reference to the new selector widget, utility functions and more wrapped in a table
+local function CreateSpecialSelector(itemset, t)
+
+	--[ Parameters ]
+
+
+
+	--[ Events ]
+
+	---Get a trigger function to call all registered listeners for the specified custom widget event with
+	---@class _invoke
+	local invoke = {
+		enabled = _invoke_enabled,
+		_ = _invoke_,
+	}
+
+	---Hook a handler function as a listener for a custom widget event
+	---@class _setListener
+	local setListener = {
+		enabled = _setListener_enabled,
+		_ = _setListener_,
+	}
+
+	--[ Widget ]
+
+	---@class selector
+	local selector = {
+		getType = getType,
+		isType = isType,
+		loadData = loadData,
+		saveData = saveData,
+		getData = getData,
+		setData = setData,
+		getDefault = getDefault,
+		setDefault = setDefault,
+		resetData = resetData,
+		snapshotData = snapshotData,
+		revertData = revertData,
+		--  = ,
+		isEnabled = isEnabled,
+		setEnabled = setEnabled,
+	}
+
+	return selector
+end
+
+---Create a non-GUI multiselector widget (managing a collection of toggle widgets) with boolean mask data management logic
+---***
+---@param t? multiselectorCreationData Optional parameters
+---***
+---@return multiselector selector Reference to the new multiselector widget, utility functions and more wrapped in a table
+local function CreateMultiselector(t)
+
+	--[ Parameters ]
+
+
+
+	--[ Events ]
+
+	---Get a trigger function to call all registered listeners for the specified custom widget event with
+	---@class _invoke
+	local invoke = {
+		enabled = _invoke_enabled,
+		_ = _invoke_,
+	}
+
+	---Hook a handler function as a listener for a custom widget event
+	---@class _setListener
+	local setListener = {
+		enabled = _setListener_enabled,
+		_ = _setListener_,
+	}
+
+	--[ Widget ]
+
+	---@class multiselector
+	local multiselector = {
+		getType = getType,
+		isType = isType,
+		loadData = loadData,
+		saveData = saveData,
+		getData = getData,
+		setData = setData,
+		getDefault = getDefault,
+		setDefault = setDefault,
+		resetData = resetData,
+		snapshotData = snapshotData,
+		revertData = revertData,
+		--  = ,
+		isEnabled = isEnabled,
+		setEnabled = setEnabled,
+	}
+
+	return multiselector
+end
+
+
+--[[ TEXTBOX ]]
+
+--[ Constructor ]
+
+---Create a non-GUI textbox widget with string data management logic
+---***
+---@param t? textboxCreationData Optional parameters
+---***
+---@return textbox textbox Reference to the new textbox widget, utility functions and more wrapped in a table
+local function CreateTextbox(t)
+
+	--[ Parameters ]
+
+
+
+	--[ Events ]
+
+	---Get a trigger function to call all registered listeners for the specified custom widget event with
+	---@class _invoke
+	local invoke = {
+		enabled = _invoke_enabled,
+		_ = _invoke_,
+	}
+
+	---Hook a handler function as a listener for a custom widget event
+	---@class _setListener
+	local setListener = {
+		enabled = _setListener_enabled,
+		_ = _setListener_,
+	}
+
+	--[ Widget ]
+
+	---@class textbox
+	local textbox = {
+		getType = getType,
+		isType = isType,
+		loadData = loadData,
+		saveData = saveData,
+		getData = getData,
+		setData = setData,
+		getDefault = getDefault,
+		setDefault = setDefault,
+		resetData = resetData,
+		snapshotData = snapshotData,
+		revertData = revertData,
+		--  = ,
+		isEnabled = isEnabled,
+		setEnabled = setEnabled,
+	}
+
+	return textbox
+end
+
+
+--[[ NUMERIC ]]
+
+--[ Constructor ]
+
+---Create a non-GUI numeric widget with number data management logic
+---***
+---@param t? numericCreationData Optional parameters
+---***
+---@return numeric numeric Reference to the new numeric widget, utility functions and more wrapped in a table
+local function CreateNumeric(t)
+
+	--[ Parameters ]
+
+
+
+	--[ Events ]
+
+	---Get a trigger function to call all registered listeners for the specified custom widget event with
+	---@class _invoke
+	local invoke = {
+		enabled = _invoke_enabled,
+		_ = _invoke_,
+	}
+
+	---Hook a handler function as a listener for a custom widget event
+	---@class _setListener
+	local setListener = {
+		enabled = _setListener_enabled,
+		_ = _setListener_,
+	}
+
+	--[ Widget ]
+
+	---@class numeric
+	local numeric = {
+		getType = getType,
+		isType = isType,
+		loadData = loadData,
+		saveData = saveData,
+		getData = getData,
+		setData = setData,
+		getDefault = getDefault,
+		setDefault = setDefault,
+		resetData = resetData,
+		snapshotData = snapshotData,
+		revertData = revertData,
+		--  = ,
+		isEnabled = isEnabled,
+		setEnabled = setEnabled,
+	}
+
+	return numeric
+end
+
+
+--[[ COLOR DATA ]]
+
+--[ Constructor ]
+
+---Create a non-GUI color pick manager widget with color data management logic
+---***
+---@param t? colormanagerCreationData Optional parameters
+---***
+---@return colormanager colorer Reference to the new color pick manager widget, utility functions and more wrapped in a table
+local function CreateColormanager(t)
+
+	--[ Parameters ]
+
+
+
+	--[ Events ]
+
+	---Get a trigger function to call all registered listeners for the specified custom widget event with
+	---@class _invoke
+	local invoke = {
+		enabled = _invoke_enabled,
+		_ = _invoke_,
+	}
+
+	---Hook a handler function as a listener for a custom widget event
+	---@class _setListener
+	local setListener = {
+		enabled = _setListener_enabled,
+		_ = _setListener_,
+	}
+
+	--[ Widget ]
+
+	---@class colormanager
+	local colormanager = {
+		getType = getType,
+		isType = isType,
+		loadData = loadData,
+		saveData = saveData,
+		getData = getData,
+		setData = setData,
+		getDefault = getDefault,
+		setDefault = setDefault,
+		resetData = resetData,
+		snapshotData = snapshotData,
+		revertData = revertData,
+		--  = ,
+		isEnabled = isEnabled,
+		setEnabled = setEnabled,
+	}
+
+	return colormanager
+end
+
+
+--[[ PROFILE DATA ]]
+
+--[ Constructor ]
+
+---Create a non-GUI profile data manager widget with live database management and profile selection logic
+---***
+---@param accountData profileStorage|table Reference to the account-bound SavedVariables addon database where profile data is to be stored<ul><li>***Note:*** A subtable will be created under the key `profiles` if it doesn't already exist, any other keys will be removed (any possible old data will be recovered and incorporated into the active profile data).</li></ul>
+---@param characterData characterProfileData|table Reference to the character-specific SavedVariablesPerCharacter addon database where selected profiles are to be specified<ul><li>***Note:*** An integer value will be created under the key `activeProfile` if it doesn't already exist in this table.</li></ul>
+---@param defaultData table A static table containing all default settings values to be cloned when creating a new profile or resetting one
+---@param t? profilemanagerCreationData Optional parameters
+---***
+---@return profilemanager? profilemanager Reference to the new profile data manager widget, utility functions and more wrapped in a table | ***Default:*** nil
+local function CreateProfilemanager(accountData, characterData, defaultData, t)
+
+	--[ Parameters ]
+
+
+
+	--[ Events ]
+
+	---Get a trigger function to call all registered listeners for the specified custom widget event with
+	---@class _invoke
+	local invoke = {
+		enabled = _invoke_enabled,
+		_ = _invoke_,
+	}
+
+	---Hook a handler function as a listener for a custom widget event
+	---@class _setListener
+	local setListener = {
+		enabled = _setListener_enabled,
+		_ = _setListener_,
+	}
+
+	--[ Widget ]
+
+	---@class profilemanager
+	local profilemanager = {
+		getType = profilemanager_getType,
+		isType = profilemanager_isType,
+		loadData = profilemanager_loadData,
+		saveData = profilemanager_saveData,
+		getData = profilemanager_getData,
+		setData = profilemanager_setData,
+		getDefault = profilemanager_getDefault,
+		setDefault = profilemanager_setDefault,
+		resetData = profilemanager_resetData,
+		snapshotData = profilemanager_snapshotData,
+		revertData = profilemanager_revertData,
+		--  = ,
+		isEnabled = profilemanager_isEnabled,
+		setEnabled = profilemanager_setEnabled,
+	}
+
+	return profilemanager
+end
+
+
+--||| TOOLBOX |||
+
+
+---Read-only reference to the Widget Toolbox table
+---@class widgetToolbox
+local toolbox = {
+
+	--[ Utilities ]
+
+	HarmonizeData = HarmonizeData,
+	PackPosition = PackPosition,
+	UnpackPosition = UnpackPosition,
+	IsColor = IsColor,
+	VerifyColor = VerifyColor,
+	PackColor = PackColor,
+	UnpackColor = UnpackColor,
+	ColorToHex = ColorToHex,
+	HexToColor = HexToColor,
+	AdjustGamma = AdjustGamma,
+	Texture = Texture,
+	Clear = Clear,
+	FormatChangelog = FormatChangelog,
+	Hyperlink = Hyperlink,
+	CustomHyperlink = CustomHyperlink,
+	SetHyperlinkHandler = SetHyperlinkHandler,
+	IsWidget = IsWidget,
+	SetPosition = SetPosition,
+	SetAnchor = SetAnchor,
+	ConvertToAbsolutePosition = ConvertToAbsolutePosition,
+	SetArrangementDirective = SetArrangementDirective,
+	ArrangeContent = ArrangeContent,
+	SetMovability = SetMovability,
+	SetVisibility = SetVisibility,
+	SetBackdrop = SetBackdrop,
+	AddDependencies = AddDependencies,
+	CheckDependencies = CheckDependencies,
+	AddTooltip = AddTooltip,
+	UpdateTooltip = UpdateTooltip,
+	UpdateTooltipData = UpdateTooltipData,
+	AddWidgetTooltipLines = AddWidgetTooltipLines,
+	RegisterPopupDialog = RegisterPopupDialog,
+	UpdatePopupDialog = UpdatePopupDialog,
+	SetUpAddonCompartment = SetUpAddonCompartment,
+	RegisterChatCommands = RegisterChatCommands,
+	RegisterSettingsPage = RegisterSettingsPage,
+	AddSettingsDataManagementEntry = AddSettingsDataManagementEntry,
+	LoadSettingsData = LoadSettingsData,
+	SaveSettingsData = SaveSettingsData,
+	ApplySettingsData = ApplySettingsData,
+	SnapshotSettingsData = SnapshotSettingsData,
+	RevertSettingsData = RevertSettingsData,
+	ResetSettingsData = ResetSettingsData,
+	HandleWidgetChanges = HandleWidgetChanges,
+
+	--[ Widgets ]
+
+	CreateAction = CreateAction,
+	CreateToggle = CreateToggle,
+	CreateSelector = CreateSelector,
+	CreateSpecialSelector = CreateSpecialSelector,
+	CreateMultiselector = CreateMultiselector,
+	CreateTextbox = CreateTextbox,
+	CreateNumeric = CreateNumeric,
+	CreateColormanager = CreateColormanager,
+	CreateProfilemanager = CreateProfilemanager,
+
+	--[ Frames ]
+
+	CreateButton = CreateButton,
+	CreateCustomButton = CreateCustomButton,
+	CreateCheckbox = CreateCheckbox,
+}

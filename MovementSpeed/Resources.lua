@@ -16,27 +16,9 @@ ns.root = "Interface/AddOns/" .. ns.name .. "/"
 
 --[[ STRINGS ]]
 
---Chat commands
-ns.chat = {
-	keywords = { "ms", "movespeed", },
-	commands = {
-		options = "options",
-		preset = "preset",
-		save = "save",
-		reset = "reset",
-		toggle = "toggle",
-		auto = "auto",
-		size = "size",
-		swap = "swap",
-		profile = "profile",
-		default = "default",
-	}
-}
-
---Changelog
 ns.changelog = {
 	{
-		"#V_Version 3.3_# #H_(14/4/2026)_#",
+		"#V_Version 3.3_# #H_(17/4/2026)_#",
 		"#N_New:_#",
 		"Added new speed display text coloring options (now also available for the Target Speed feature), now the speed value type coloring can be fully customized (more Font customization options are coming in future updates).",
 		"The previously added right-click menus for settings have been further enhanced with copy & paste functionality to be able to easily move values across similar types of settings.",
@@ -313,9 +295,24 @@ ns.changelog = {
 	},
 }
 
+ns.chat = {
+	keywords = { "ms", "movespeed", },
+	commands = {
+		options = "options",
+		preset = "preset",
+		save = "save",
+		reset = "reset",
+		toggle = "toggle",
+		auto = "auto",
+		size = "size",
+		swap = "swap",
+		profile = "profile",
+		default = "default",
+	}
+}
+
 --[ Localization ]
 
----Localized strings
 ---@class strings
 ns.strings = ns.localizations[GetLocale()]
 
@@ -340,7 +337,6 @@ ns.localizations = nil
 
 --[[ ASSETS ]]
 
---Colors
 ns.colors = {
 	grey = {
 		{ r = 0.54, g = 0.54, b = 0.54 },
@@ -360,7 +356,6 @@ ns.colors = {
 	},
 }
 
---Textures
 ns.textures = {
 	logo = ns.root .. "Textures/Logo.tga",
 }
@@ -368,7 +363,6 @@ ns.textures = {
 
 --[[ DATA ]]
 
----Defaults
 ---@type MovementSpeedProfileData
 ns.profileDefault = {
 	customPreset = {

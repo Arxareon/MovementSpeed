@@ -13,14 +13,13 @@ $destination = Join-Path (Get-Content "$PSScriptRoot\.config\WoWDirectory.txt") 
 <# INSTALLATION #>
 
 foreach ($addon in $addons) {
+	$addon = Get-ChildItem -Directory -Filter $addon | Select-Object -First 1
+
+	if (-not $addon) { continue }
+
 	foreach ($client in $clients) {
-		$destinationPath = Join-Path ($destination -replace "#CLIENT", $client) $addon
-
-		# Verify & clear the addon folder
-		if (!(Test-Path -Path $destinationPath)) { New-Item $destinationPath -Type Directory }
-		Remove-Item $destinationPath -Recurse -Force
-
-		# Install the addon
-		Copy-Item (Join-Path (Get-Location) $addon) -Destination $destinationPath -Recurse -Force
+		$destinationPath = Join-Path ($destination -replace "#CLIENT", $client) $addon.Name
+		Remove-Item $destinationPath -Recurse -Force -ErrorAction SilentlyContinue
+		Copy-Item $addon.FullName -Destination $destinationPath -Recurse -Force
 	}
 }
