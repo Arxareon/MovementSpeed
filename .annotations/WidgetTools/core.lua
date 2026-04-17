@@ -20,6 +20,9 @@ local ns = select(2, ...)
 ---***
 ---@return function iterator Function returning the key, value pairs of the table in order
 local function SortedPairs(t)
+
+	--| Parameters
+
 	---Table to be sorted (in an ascending order and/or alphabetically, based on the `<` operator)
 	---@alias SortedPairs_param # t
 	---| table 
@@ -35,6 +38,9 @@ end
 ---@param decimals? Round_param2 Specify the number of decimal places to round the number to | ***Default:*** `0`
 ---@return number
 local function Round(number, decimals)
+
+	--| Parameters
+
 	---A fractional number value to round | ***Default:*** `0`
 	---@alias Round_param1 # number
 	---| number
@@ -52,7 +58,7 @@ end
 ---@param t Frame|any
 ---***
 ---@return boolean|string # If `t` is recognized as a [`FrameScriptObject`](https://warcraft.wiki.gg/wiki/UIOBJECT_FrameScriptObject), return `true`, or, return the frame name if named or the debug name if unnamed but recognized as a UI [Object](https://warcraft.wiki.gg/wiki/UIOBJECT_Object) with a parent, otherwise, return false
-local function IsFrame(t) return true end
+local function IsFrame(t) return false end
 
 ---Find a frame or region by its name (or a subregion if a key is included in the input string) and get a reference to it if it exists
 ---***
@@ -60,6 +66,9 @@ local function IsFrame(t) return true end
 ---***
 ---@return AnyFrameObject|nil frame Reference to the object | ***Default:*** `nil`
 local function ToFrame(s)
+
+	--| Parameters
+
 	---Name of the frame to find (and the key of its child region appended to it after a period character)
 	---@alias ToFrame_param # s
 	---| string
@@ -76,6 +85,9 @@ end
 ---***
 ---@return string # ***Default:*** `""`
 local function Thousands(value, decimals, round, trim)
+
+	--| Parameters
+
 	---Number value to turn into a string with thousand separation
 	---@alias Thousands_param1 # value
 	---| number
@@ -104,6 +116,9 @@ end
 ---***
 ---<p></p>
 local function ToString(object)
+
+	--| Parameters
+
 	---Object to convert to a formatted text
 	---@alias ToString_param # object
 	---| any
@@ -122,6 +137,9 @@ end
 ---***
 ---@return string # ***Default:*** `(WidgetTools.utilities.ToString(table))`
 local function TableToString(table, compact)
+
+	--| Parameters
+
 	---Reference to the table to convert
 	---@alias TableToString_param1 # table
 	---| table
@@ -144,6 +162,9 @@ end
 ---***
 ---@return any # Reference to the new proxy table or `t` itself
 local function Protect(t)
+
+	--| Parameters
+
 	---Reference to the table to create the proxy for
 	---@alias Protect_param # t
 	---| any
@@ -158,6 +179,9 @@ end
 ---***
 ---@return integer|nil index ***Default:*** `nil`
 local function FindIndex(array, value)
+
+	--| Parameters
+
 	---Array to search
 	---@alias FindIndex_param1 # array
 	---| any[]
@@ -174,6 +198,9 @@ end
 ---***
 ---@return any match The first match of the key `value` was found paired to | ***Default:*** `nil`
 local function FindKey(t, value)
+
+	--| Parameters
+
 	---Reference to the table to find a value at a certain key in
 	---@alias FindKey_param1 # t
 	---| table
@@ -190,6 +217,9 @@ end
 ---***
 ---@return any match The first match of the value found at `key` | ***Default:*** `nil`
 local function FindValue(t, key)
+
+	--| Parameters
+
 	---Reference to the table to find a value at a certain key in
 	---@alias FindValue_param1 # t
 	---| table
@@ -208,6 +238,9 @@ end
 ---***
 ---@return any t Reference to `t` (it was already overwritten during the operation, no need for setting it again)
 local function Reorder(t, directives)
+
+	--| Parameters
+
 	---Reference to the array to reorder the elements of
 	---@alias Reorder_param1 # t
 	---| table
@@ -225,6 +258,9 @@ end
 ---***
 ---@return any copy Returns `object` itself if it's a frame or not a table
 local function Clone(object)
+
+	--| Parameters
+
 	---Reference to the object to create a copy of
 	---@alias Clone_param # object
 	---| any
@@ -237,6 +273,9 @@ end
 ---***
 ---@return any target Reference to `target` (it was already overwritten during the operation, no need for setting it again)
 local function Merge(target, source)
+
+	--| Parameters
+
 	---Reference to table to add the values to
 	---@alias Merge_param1 # target
 	---| table
@@ -253,6 +292,9 @@ end
 ---***
 ---@return any target Reference to `target` (the values were already overwritten during the operation, no need to set it again)
 local function CopyValues(target, source)
+
+	--| Parameters
+
 	---Reference to the table to copy the values to
 	---@alias CopyValues_param1 # target
 	---| table
@@ -269,6 +311,9 @@ end
 ---***
 ---@return any target Reference to `target` (it was already updated during the operation, no need for setting it again)
 local function Fill(target, source)
+
+	--| Parameters
+
 	---Reference to the table to fill in missing data to (it will be turned into an empty table first if its type is not already `"table"`)
 	---@alias Fill_param1 # target
 	---| table
@@ -285,6 +330,9 @@ end
 ---***
 ---@return any target Reference to `target` (it was already overwritten during the operation, no need for setting it again)
 local function Pull(target, source)
+
+	--| Parameters
+
 	---Reference to the table to copy the values to
 	---@alias Pull_param1 # target
 	---| table
@@ -301,6 +349,9 @@ end
 ---***
 ---@return any target Reference to `target` (it was already overwritten during the operation, no need for setting it again)
 local function Prune(target, validate)
+
+	--| Parameters
+
 	---Reference to the table to prune
 	---@alias Prune_param1 # target
 	---| table
@@ -319,6 +370,9 @@ end
 ---***
 ---@return any target Reference to `target` (it was already overwritten during the operation, no need for setting it again)
 local function Filter(target, sample, recoveryMap, onRecovery)
+
+	--| Parameters
+
 	---Reference to the table to remove unused key, value pairs from
 	---@alias Filter_param1 # target
 	---| table
@@ -343,6 +397,9 @@ end
 ---@param source VerifyData_param2 Reference to the table to sample
 ---@return any target Reference to `target` (it was already mutated during the operation)
 local function VerifyData(target, source)
+
+	--| Parameters
+
 	---Reference to the table to verify
 	---@alias VerifyData_param1 # target
 	---| table
@@ -363,6 +420,9 @@ end
 ---***
 ---<p></p>
 local function SetListener(parent, event, handler, registration)
+
+	--| Parameters
+
 	---Reference to the event frame or event handler collection key to assign the handler to
 	---@alias SetListener_param1 # parent
 	---| AnyFrameObject
@@ -393,6 +453,9 @@ end
 ---***
 ---<p></p>
 local function CallListener(parent, event, ...)
+
+	--| Parameters
+
 	---Reference to the event frame or event handler collection key the handler has been assigned to
 	---@alias CallListener_param1 # parent
 	---| AnyFrameObject
@@ -423,6 +486,9 @@ end
 ---@param message? Log_param1 Included in the log entry as a string
 ---@param trace? Log_param2 Custom log trace to help identify the exact log source included in the entry as a string | ***Default:*** `"(source not traced)"`
 local function Log(message, trace)
+
+	--| Parameters
+
 	---Included in the log entry as a string
 	---@alias Log_param1 # message
 	---| any
@@ -471,6 +537,9 @@ end
 ---@param linesPerMessage? Dump_param7 Print the specified number of output lines in a single chat message to be able to display more message history and allow faster scrolling | ***Default:*** `2`
 --- - ***Note:*** Set to `0` to print all lines in a single message.
 local function Dump(object, name, blockrule, depth, digTables, digFrames, linesPerMessage)
+
+	--| Parameters
+
 	---Object to dump out
 	---@alias Dump_param1 # object
 	---| any
@@ -549,6 +618,9 @@ end
 ---***
 ---@return widgetToolbox|table|boolean? toolbox Read-only reference to the registered toolbox table, or `false` if the toolbox construction addon named `"WidgetToolbox_" .. version` could not be loaded while attempting the initialization of a new toolbox | ***Default:*** *nil*
 local function Register(addon, version, callback, toolbox)
+
+	--| Parameters
+
 	---Addon namespace (the name of the addon's folder, not its display title) to register for WidgetTools usage
 	---@alias Register_param1 # addon
 	---| string
