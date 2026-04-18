@@ -483,19 +483,14 @@ end
 
 ---Save a tab-separated debug log entry to the log history and print out a formatted chat message
 ---***
----@param message? Log_param1 Included in the log entry as a string
----@param trace? Log_param2 Custom log trace to help identify the exact log source included in the entry as a string | ***Default:*** `"(source not traced)"`
-local function Log(message, trace)
+---@param passer? Log_param1 Included in the log entry as a string
+local function Log(passer)
 
 	--| Parameters
 
-	---Included in the log entry as a string
-	---@alias Log_param1 # message
-	---| any
-
-	---Custom log trace to help identify the exact log source included in the entry as a string | ***Default:*** `"(source not traced)"`
-	---@alias Log_param2 # trace
-	---| any
+	---Passer function returning the logged message and a custom log trace to help identify the exact log source included in the entry as a string | ***Default:*** `"nil", "(source not traced)"`
+	---@alias Log_param1 # passer
+	---| fun(): message: any, trace: any
 end
 
 ---Dump an object and its contents to the in-game chat
@@ -689,6 +684,8 @@ local debugging = {
 	Log = Log,
 	Dump = Dump,
 }
+local p
+debugging.Log = nil
 
 ---Toolbox registration
 ---@class widgetToolsToolboxes

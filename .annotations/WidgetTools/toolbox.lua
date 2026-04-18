@@ -715,16 +715,6 @@
 ---@field utilityMenu? boolean If true, assign a context menu to the settings widget frame to allow for quickly resetting changes or the default value | ***Default:*** `true`
 
 
---[[ Profiles ]]
-
----@class profile
----@field title string Display name of the profile
----@field data table Custom profile data
-
----@class profileStorage
----@field profiles profile[] List of profiles
-
-
 --[[ ADDON COMPARTMENT ]]
 
 ---@class addonCompartmentFunctions
@@ -956,154 +946,6 @@
 
 ---@class eventHandlerIndex
 ---@field callIndex? integer Set when to call **handler** in the execution order | ***Default:*** *placed at the end of the current list*
-
---[ Color Picker ]
-
----@alias ColorpickerType
----| colormanager
----| colorpicker
-
---| Events
-
----@alias ColorpickerEventHandler_enabled
----| fun(self: ColorpickerType, state: boolean) Called when an "enabled" event is invoked after **colorpicker.setEnabled(...)** was called<hr><p>@*param* `self` ColorPickerType ― Reference to the widget table</p><p>@*param* `state` boolean ― True if the widget is enabled</p>
-
----@alias ColorpickerEventHandler_loaded
----| fun(self: ColorpickerType, success: boolean) Called when an "loaded" event is invoked after the data of this widget has been loaded from storage<hr><p>@*param* `self` ColorPickerType ― Reference to the widget table</p><p>@*param* `success` boolean ― True if data was returned by **t.getData()** and it was loaded to the widget</p>
-
----@alias ColorpickerEventHandler_saved
----| fun(self: ColorpickerType, success: boolean) Called when an "saved" event is invoked after the data of this widget has been saved to storage<hr><p>@*param* `self` ColorPickerType ― Reference to the widget table</p><p>@*param* `success` boolean ― True if data was committed successfully via **t.saveData(...)**</p>
-
----@alias ColorpickerEventHandler_colored
----| fun(self: ColorpickerType, color: colorData, user: boolean) Called when an "colored" event is invoked after **colorpicker.setColor(...)** was called<hr><p>@*param* `self` ColorPickerType ― Reference to the toggle widget</p><p>@*param* `number` number ― The current value of the widget</p><p>@*param* `user` boolean ― True if the event was flagged as invoked by an action taken by the user</p>
-
----@alias ColorpickerEventHandler_any
----| fun(self: ColorpickerType, ...: any) Called when a custom event is invoked<hr><p>@*param* `self` ColorPickerType ― Reference to the widget table</p><p>@*param* `...` any — Any leftover arguments</p>
-
---| Parameters
-
----@class colorpickerEventListener_enabled : eventHandlerIndex
----@field handler ColorpickerEventHandler_enabled Handler function to register for call
-
----@class colorpickerEventListener_loaded : eventHandlerIndex
----@field handler ColorpickerEventHandler_loaded Handler function to register for call
-
----@class colorpickerEventListener_saved : eventHandlerIndex
----@field handler ColorpickerEventHandler_saved Handler function to register for call
-
----@class colorpickerEventListener_colored : eventHandlerIndex
----@field handler ColorpickerEventHandler_colored Handler function to register for call
-
----@class colorpickerEventListener_any : eventTag, eventHandlerIndex
----@field handler ColorpickerEventHandler_any Handler function to register for call
-
----@class colorpickerEventListeners
----@field enabled? colorpickerEventListener_enabled[] Ordered list of functions to call when an "enabled" event is invoked after **colorpicker.setEnabled(...)** was called
----@field loaded? colorpickerEventListener_loaded[] Ordered list of functions to call when an "loaded" event is invoked after the data of this widget has been loaded from storage
----@field saved? colorpickerEventListener_saved[] Ordered list of functions to call when an "saved" event is invoked after the data of this widget has been saved to storage
----@field colored? colorpickerEventListener_colored[] Ordered list of functions to call when a "colored" event is invoked after **colorpicker.setColor(...)** was called
----@field [string]? colorpickerEventListener_any[] Ordered list of functions to call when a custom event is invoked
-
---| Constructors
-
----@class colormanagerCreationData : togglableObject, settingsWidget
----@field listeners? colorpickerEventListeners Table of key, value pairs of custom widget event tags and functions to assign as event handlers to call on trigger
----@field onCancel? function The function to be called when the color change is cancelled (after calling **t.onColorUpdate**)
----@field getData? fun(): color: colorData|nil Called to (if needed, modify and) load the widget data from storage<hr><p>@*return* `color` colorData|nil | ***Default:*** *opaque white:* `{ r = 1, g = 1, b = 1, a = 1 }`</p>
----@field saveData? fun(color: colorData) Called to (if needed, modify and) save the widget data to storage<hr><p>@*param* `color` colorData</p>
----@field value? colorData_whiteDefault Values to use as the starting color set during initialization | ***Default:*** **t.getData()** or **t.default** if invalid<ul><li>***Note:*** If the alpha start value was not set, configure the color picker to handle RBG values exclusively instead of the full RGBA.</li></ul>
----@field default? colorData Default value of the widget | ***Default:*** *opaque white:* `{ r = 1, g = 1, b = 1, a = 1 }`
-
----@class colorpickerCreationData : colormanagerCreationData, labeledChildObject, tooltipDescribableWidget, arrangeableObject, positionableObject, visibleObject_base, liteObject, tooltipDescribableSettingsWidget
----@field name? string Unique string used to set the frame name | ***Default:*** "Colorpicker"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
----@field width? number The height is defaulted to 36, the width may be specified | ***Default:*** 120
----@field events? table<ScriptFrame, fun(...: any)|attributeEventData> Table of key, value pairs of the names of script event handlers to be set for the color picker frame and the functions to assign as event handlers called when they trigger
-
---[ Data Profile Manager ]
-
----@alias ProfilemanagerType
----| profilemanager
----| profilesPage
-
---| Events
-
----@alias ProfilemanagerEventHandler_loaded
----| fun(self: ProfilemanagerType, user: boolean) Called when an "loaded" event is invoked after the data profile list has been loaded and verified<hr><p>@*param* `self` ProfilemanagerType ― Reference to the widget table</p><p>@*param* `user` boolean ― True if the event was flagged as invoked by an action taken by the user</p>
-
----@alias ProfilemanagerEventHandler_activated
----| fun(self: ProfilemanagerType, index: integer, title: string, success: boolean, user: boolean) Called when an "activated" event is invoked after a profile has been activated<hr><p>@*param* `self` ProfilemanagerType ― Reference to the widget table</p><p>@*param* `index` integer — The index of the active profile</p><p>@*param* `title` string — The title of the active profile</p><p>@*param* `success` boolean ― True if the active profile was changed successfully</p><p>@*param* `user` boolean ― True if the event was flagged as invoked by an action taken by the user</p>
-
----@alias ProfilemanagerEventHandler_created
----| fun(self: ProfilemanagerType, index: integer, title: string, user: boolean) Called when an "created" event is invoked after a new data profile has been initialized<hr><p>@*param* `self` ProfilemanagerType ― Reference to the widget table</p><p>@*param* `index` integer — The index of the new profile</p><p>@*param* `title` string — The title of the new profile</p><p>@*param* `user` boolean ― True if the event was flagged as invoked by an action taken by the user</p>
-
----@alias ProfilemanagerEventHandler_renamed
----| fun(self: ProfilemanagerType, success: boolean, index: any, title?: string, user: boolean) Called when an "renamed" event is invoked after a data profile has been renamed<hr><p>@*param* `self` ProfilemanagerType ― Reference to the widget table</p><p>@*param* `success` boolean ― True if the profile was renamed successfully</p><p>@*param* `index` any — The index of the profile attempted to be renamed</p><p>@*param* `title`? string — The new title of the profile attempted to be renamed</p><p>@*param* `user` boolean ― True if the event was flagged as invoked by an action taken by the user</p>
-
----@alias ProfilemanagerEventHandler_deleted
----| fun(self: ProfilemanagerType, success: boolean, index: any, title?: string, user: boolean) Called when an "deleted" event is invoked after a data profile has been removed from the database<hr><p>@*param* `self` ProfilemanagerType ― Reference to the widget table</p><p>@*param* `success` boolean ― True if the profile was deleted successfully</p><p>@*param* `index` any — The original index of the profile attempted to be deleted</p><p>@*param* `title`? string — The title of the  profile attempted to be deleted</p><p>@*param* `user` boolean ― True if the event was flagged as invoked by an action taken by the user</p>
-
----@alias ProfilemanagerEventHandler_reset
----| fun(self: ProfilemanagerType, success: boolean, index: any, title?: string, user: boolean) Called when an "reset" event is invoked after a data profile has been reset to defaults<hr><p>@*param* `self` ProfilemanagerType ― Reference to the widget table</p><p>@*param* `success` boolean ― True if the profile data was reset successfully</p><p>@*param* `index` any — The index of the profile attempted to be reset</p><p>@*param* `title`? string — The title of the profile attempted to be reset</p><p>@*param* `user` boolean ― True if the event was flagged as invoked by an action taken by the user</p>
-
----@alias ProfilemanagerEventHandler_any
----| fun(self: ProfilemanagerType, ...: any) Called when a custom event is invoked<hr><p>@*param* `self` ProfilemanagerType ― Reference to the widget table</p><p>@*param* `...` any — Any leftover arguments</p>
-
---| Parameters
-
----@class profilemanagerEventListener_loaded : eventHandlerIndex
----@field handler ProfilemanagerEventHandler_loaded Handler function to register for call
-
----@class profilemanagerEventListener_activated : eventHandlerIndex
----@field handler ProfilemanagerEventHandler_activated Handler function to register for call
-
----@class profilemanagerEventListener_created : eventHandlerIndex
----@field handler ProfilemanagerEventHandler_created Handler function to register for call
-
----@class profilemanagerEventListener_renamed : eventHandlerIndex
----@field handler ProfilemanagerEventHandler_renamed Handler function to register for call
-
----@class profilemanagerEventListener_deleted : eventHandlerIndex
----@field handler ProfilemanagerEventHandler_deleted Handler function to register for call
-
----@class profilemanagerEventListener_reset : eventHandlerIndex
----@field handler ProfilemanagerEventHandler_reset Handler function to register for call
-
----@class profilemanagerEventListener_any : eventTag, eventHandlerIndex
----@field handler ProfilemanagerEventHandler_any Handler function to register for call
-
----@class profilemanagerEventListeners
----@field loaded? profilemanagerEventListener_loaded[] Ordered list of functions to call when an "loaded" event is invoked after the data profile list has been loaded and verified
----@field activated? profilemanagerEventListener_activated[] Ordered list of functions to call when an "activated" event is invoked after a profile has been activated
----@field created? profilemanagerEventListener_created[] Ordered list of functions to call when a "created" event is invoked after a new data profile has been initialized
----@field renamed? profilemanagerEventListener_renamed[] Ordered list of functions to call when a "renamed" event is invoked after a data profile has been renamed
----@field deleted? profilemanagerEventListener_deleted[] Ordered list of functions to call when a "deleted" event is invoked after a data profile has been removed from the database
----@field reset? profilemanagerEventListener_reset[] Ordered list of functions to call when a "reset" event is invoked after a data profile has been reset to defaults
----@field [string]? profilemanagerEventListener_any[] Ordered list of functions to call when a custom event is invoked
-
-
---| Parameters
-
----@class characterProfileData
----@field activeProfile integer The index of the currently active profile | ***Default:*** 1
-
----@class backupboxSettingsData
----@field compactBackup boolean Whether to skip including additional white spaces to the backup string for more readability
-
---| Constructors
-
----@class profilemanagerCreationData
----@field category? string Category name to be used for identifying this group of profile data when modified in popups and chat messages | ***Default:*** `"Addon"`
----@field valueChecker? fun(key: number|string, value: any): boolean Helper function for validating values when checking profile data, returning true if the value is to be accepted as valid
----@field recoveryMap? table<string, recoveryData>|fun(tableToCheck: table, recoveredData: recoveredData): recoveryMap: table<string, recoveryData>|nil Static map or function returning a dynamically creatable map for removed but recoverable data
----@field onRecovery? fun(tableToCheck: table) Function called after the data has been has been recovered via the **recoveryMap**
----@field listeners? profilemanagerEventListeners Table of key, value pairs of custom widget event tags and functions to assign as event handlers to call on trigger
-
----@class profilesPageCreationData : profilemanagerCreationData, settingsPageCreationData_base, settingsPageEvents, liteObject
----@field name? string Unique string used to set the name of the canvas frame | ***Default:*** "Profiles"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
----@field title? string Text to be shown as the title of the settings page | ***Default:*** "Data Management"
----@field description? string Text to be shown as the description below the title of the settings page | ***Default:*** *describing profiles & backup*
----@field onImport? fun(success: boolean, data: table) Called after a settings backup string import has been performed by the user loading data for the currently active profile<hr><p>@*param* `success` boolean — Whether the imported string was successfully processed</p><p>@*param* `data` table — The table containing the imported backup data</p>
----@field onImportAllProfiles? fun(success: boolean, data: table) Called after a settings backup string import has been performed by the user loading data for all profiles<p>@*param* `success` boolean — Whether the imported string was successfully processed</p><p>@*param* `data` table — The table containing the imported backup data</p>
 
 --[ About Page ]
 
@@ -3089,8 +2931,6 @@ end
 
 --[[ NUMERIC ]]
 
---[ Constructor ]
-
 ---Create a non-GUI numeric widget with number data management logic
 ---***
 ---@param t? numericCreationData Optional parameters
@@ -3172,8 +3012,8 @@ local function CreateNumeric(t)
 	--| Returns
 
 	---@class numeric
-	---@field invoke textbox_invoke Get a trigger function to call all registered listeners for the specified custom widget event with
-	---@field setListener textbox_setListener Hook a handler function as a listener for a custom widget event
+	---@field invoke numeric_invoke Get a trigger function to call all registered listeners for the specified custom widget event with
+	---@field setListener numeric_setListener Hook a handler function as a listener for a custom widget event
 	local _ = {}
 
 		---Returns the type of this object
@@ -3188,7 +3028,7 @@ local function CreateNumeric(t)
 		---<p></p>
 		function _.isType(type) return false end
 
-		---@class textbox_invoke
+		---@class numeric_invoke
 		local invoke = {}
 
 			function invoke.enabled()  end
@@ -3210,7 +3050,7 @@ local function CreateNumeric(t)
 			---@param ... any
 			function invoke._(event, ...) end
 
-		---@class textbox_setListener
+		---@class numeric_setListener
 		local setListener = {}
 
 			---@param listener NumericEventHandler_enabled Handler function to set
@@ -3363,8 +3203,6 @@ end
 
 --[[ COLOR DATA ]]
 
---[ Constructor ]
-
 ---Create a non-GUI color pick manager widget with color data management logic
 ---***
 ---@param t? colormanagerCreationData Optional parameters
@@ -3374,12 +3212,58 @@ local function CreateColormanager(t)
 
 	--| Parameters
 
+	---@class colormanagerCreationData : togglableObject, settingsWidget
+	---@field listeners? colormanagerEventListeners Table of key, value pairs of custom widget event tags and functions to assign as event handlers to call on trigger
+	---@field onCancel? function The function to be called when the color change is cancelled (after calling **t.onColorUpdate**)
+	---@field getData? fun(): color: colorData|nil Called to (if needed, modify and) load the widget data from storage<hr><p>@*return* `color` colorData|nil | ***Default:*** *opaque white:* `{ r = 1, g = 1, b = 1, a = 1 }`</p>
+	---@field saveData? fun(color: colorData) Called to (if needed, modify and) save the widget data to storage<hr><p>@*param* `color` colorData</p>
+	---@field value? colorData_whiteDefault Values to use as the starting color set during initialization | ***Default:*** **t.getData()** or **t.default** if invalid<ul><li>***Note:*** If the alpha start value was not set, configure the color picker to handle RBG values exclusively instead of the full RGBA.</li></ul>
+	---@field default? colorData Default value of the widget | ***Default:*** *opaque white:* `{ r = 1, g = 1, b = 1, a = 1 }`
 
+		---@class colormanagerEventListeners
+		---@field enabled? colormanagerEventListener_enabled[] Ordered list of functions to call when an "enabled" event is invoked after **colormanager.setEnabled(...)** was called
+		---@field loaded? colormanagerEventListener_loaded[] Ordered list of functions to call when an "loaded" event is invoked after the data of this widget has been loaded from storage
+		---@field saved? colormanagerEventListener_saved[] Ordered list of functions to call when an "saved" event is invoked after the data of this widget has been saved to storage
+		---@field colored? colormanagerEventListener_colored[] Ordered list of functions to call when a "colored" event is invoked after **colormanager.setColor(...)** was called
+		---@field [string]? colormanagerEventListener_any[] Ordered list of functions to call when a custom event is invoked
+
+			---@class colormanagerEventListener_enabled : eventHandlerIndex
+			---@field handler ColormanagerEventHandler_enabled Handler function to register for call
+
+			---@class colormanagerEventListener_loaded : eventHandlerIndex
+			---@field handler ColormanagerEventHandler_loaded Handler function to register for call
+
+			---@class colormanagerEventListener_saved : eventHandlerIndex
+			---@field handler ColormanagerEventHandler_saved Handler function to register for call
+
+			---@class colormanagerEventListener_colored : eventHandlerIndex
+			---@field handler ColormanagerEventHandler_colored Handler function to register for call
+
+			---@class colormanagerEventListener_any : eventTag, eventHandlerIndex
+			---@field handler ColormanagerEventHandler_any Handler function to register for call
+
+				---@alias ColormanagerEventHandler_enabled
+				---| fun(self: ColormanagerType, state: boolean) Called when an "enabled" event is invoked after **colormanager.setEnabled(...)** was called<hr><p>@*param* `self` ColorPickerType ― Reference to the widget table</p><p>@*param* `state` boolean ― True if the widget is enabled</p>
+
+				---@alias ColormanagerEventHandler_loaded
+				---| fun(self: ColormanagerType, success: boolean) Called when an "loaded" event is invoked after the data of this widget has been loaded from storage<hr><p>@*param* `self` ColorPickerType ― Reference to the widget table</p><p>@*param* `success` boolean ― True if data was returned by **t.getData()** and it was loaded to the widget</p>
+
+				---@alias ColormanagerEventHandler_saved
+				---| fun(self: ColormanagerType, success: boolean) Called when an "saved" event is invoked after the data of this widget has been saved to storage<hr><p>@*param* `self` ColorPickerType ― Reference to the widget table</p><p>@*param* `success` boolean ― True if data was committed successfully via **t.saveData(...)**</p>
+
+				---@alias ColormanagerEventHandler_colored
+				---| fun(self: ColormanagerType, color: colorData, user: boolean) Called when an "colored" event is invoked after **colormanager.setColor(...)** was called<hr><p>@*param* `self` ColorPickerType ― Reference to the toggle widget</p><p>@*param* `number` number ― The current value of the widget</p><p>@*param* `user` boolean ― True if the event was flagged as invoked by an action taken by the user</p>
+
+				---@alias ColormanagerEventHandler_any
+				---| fun(self: ColormanagerType, ...: any) Called when a custom event is invoked<hr><p>@*param* `self` ColorPickerType ― Reference to the widget table</p><p>@*param* `...` any — Any leftover arguments</p>
+
+					---@alias ColormanagerType
+					---| colormanager
+					---| colorpicker
 
 	--| Returns
 
 	---@class colormanager
-	---@field button action Trigger to open the default Blizzard Color Picker wheel ([ColorPickerFrame](https://warcraft.wiki.gg/wiki/Using_the_ColorPickerFrame)) with
 	---@field invoke colormanager_invoke Get a trigger function to call all registered listeners for the specified custom widget event with
 	---@field setListener colormanager_setListener Hook a handler function as a listener for a custom widget event
 	local _ = {}
@@ -3417,24 +3301,24 @@ local function CreateColormanager(t)
 		---@class colormanager_setListener
 		local setListener = {}
 
-			---@param listener ColorpickerEventHandler_enabled Handler function to set
+			---@param listener ColormanagerEventHandler_enabled Handler function to set
 			---@param callIndex? integer Set when to call **listener** in the execution order | ***Default:*** *placed at the end of the current list*
 			function setListener.enabled(listener, callIndex) end
 
-			---@param listener ColorpickerEventHandler_loaded Handler function to set
+			---@param listener ColormanagerEventHandler_loaded Handler function to set
 			---@param callIndex? integer Set when to call **listener** in the execution order | ***Default:*** *placed at the end of the current list*
 			function setListener.loaded(listener, callIndex) end
 
-			---@param listener ColorpickerEventHandler_saved Handler function to set
+			---@param listener ColormanagerEventHandler_saved Handler function to set
 			---@param callIndex? integer Set when to call **listener** in the execution order | ***Default:*** *placed at the end of the current list*
 			function setListener.saved(listener, callIndex) end
 
-			---@param listener ColorpickerEventHandler_colored Handler function to set
+			---@param listener ColormanagerEventHandler_colored Handler function to set
 			---@param callIndex? integer Set when to call **listener** in the execution order | ***Default:*** *placed at the end of the current list*
 			function setListener.colored(listener, callIndex) end
 
 			---@param event string Custom event tag
-			---@param listener ColorpickerEventHandler_any Handler function to set
+			---@param listener ColormanagerEventHandler_any Handler function to set
 			---@param callIndex? integer Set when to call **listener** in the execution order | ***Default:*** *placed at the end of the current list*
 			function setListener._(event, listener, callIndex) end
 
@@ -3494,11 +3378,11 @@ local function CreateColormanager(t)
 		---@param silent? boolean If false, invoke a "colored" event and call registered listeners | ***Default:*** `false`
 		function _.setColor(color, user, silent) end
 
-		---Open the the default Blizzard Color Picker wheel ([ColorPickerFrame](https://warcraft.wiki.gg/wiki/Using_the_ColorPickerFrame)) for this color picker
+		---Open the the default Blizzard Color Picker wheel ([ColorPickerFrame](https://warcraft.wiki.gg/wiki/Using_the_ColorPickerFrame)) for this color manager
 		function _.openColorPicker() end
 
-		---Return the active status of this color picker, whether the main color wheel window was opened for and is currently updating the color of this widget
-		---@return boolean active True, if the color wheel has been opened for this color picker widget
+		---Return the active status of this color manager, whether the main color wheel window was opened for and is currently updating the color of this widget
+		---@return boolean active True, if the color wheel has been opened for this color manager widget
 		function _.isActive() return false end
 
 		--| State
@@ -3517,9 +3401,14 @@ local function CreateColormanager(t)
 end
 
 
---[[ PROFILE DATA ]]
+	---@class colorpickerCreationData : colormanagerCreationData, labeledChildObject, tooltipDescribableWidget, arrangeableObject, positionableObject, visibleObject_base, liteObject, tooltipDescribableSettingsWidget
+	---@field name? string Unique string used to set the frame name | ***Default:*** "Colorpicker"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
+	---@field width? number The height is defaulted to 36, the width may be specified | ***Default:*** 120
+	---@field events? table<ScriptFrame, fun(...: any)|attributeEventData> Table of key, value pairs of the names of script event handlers to be set for the color picker frame and the functions to assign as event handlers called when they trigger
 
---[ Constructor ]
+
+
+--[[ PROFILE DATA ]]
 
 ---Create a non-GUI profile data manager widget with live database management and profile selection logic
 ---***
@@ -3533,7 +3422,77 @@ local function CreateProfilemanager(accountData, characterData, defaultData, t)
 
 	--| Parameters
 
+	---@class profileStorage # accountData
+	---@field profiles profile[] List of profiles
 
+		---@class profile
+		---@field title string Display name of the profile
+		---@field data table Custom profile data
+
+	---@class characterProfileData # characterData
+	---@field activeProfile integer The index of the currently active profile | ***Default:*** 1
+
+	---@class profilemanagerCreationData # t
+	---@field category? string Category name to be used for identifying this group of profile data when modified in popups and chat messages | ***Default:*** `"Addon"`
+	---@field valueChecker? fun(key: number|string, value: any): boolean Helper function for validating values when checking profile data, returning true if the value is to be accepted as valid
+	---@field recoveryMap? table<string, recoveryData>|fun(tableToCheck: table, recoveredData: recoveredData): recoveryMap: table<string, recoveryData>|nil Static map or function returning a dynamically creatable map for removed but recoverable data
+	---@field onRecovery? fun(tableToCheck: table) Function called after the data has been has been recovered via the **recoveryMap**
+	---@field listeners? profilemanagerEventListeners Table of key, value pairs of custom widget event tags and functions to assign as event handlers to call on trigger
+
+		---@class profilemanagerEventListeners
+		---@field loaded? profilemanagerEventListener_loaded[] Ordered list of functions to call when an "loaded" event is invoked after the data profile list has been loaded and verified
+		---@field activated? profilemanagerEventListener_activated[] Ordered list of functions to call when an "activated" event is invoked after a profile has been activated
+		---@field created? profilemanagerEventListener_created[] Ordered list of functions to call when a "created" event is invoked after a new data profile has been initialized
+		---@field renamed? profilemanagerEventListener_renamed[] Ordered list of functions to call when a "renamed" event is invoked after a data profile has been renamed
+		---@field deleted? profilemanagerEventListener_deleted[] Ordered list of functions to call when a "deleted" event is invoked after a data profile has been removed from the database
+		---@field reset? profilemanagerEventListener_reset[] Ordered list of functions to call when a "reset" event is invoked after a data profile has been reset to defaults
+		---@field [string]? profilemanagerEventListener_any[] Ordered list of functions to call when a custom event is invoked
+
+			---@class profilemanagerEventListener_loaded : eventHandlerIndex
+			---@field handler ProfilemanagerEventHandler_loaded Handler function to register for call
+
+			---@class profilemanagerEventListener_activated : eventHandlerIndex
+			---@field handler ProfilemanagerEventHandler_activated Handler function to register for call
+
+			---@class profilemanagerEventListener_created : eventHandlerIndex
+			---@field handler ProfilemanagerEventHandler_created Handler function to register for call
+
+			---@class profilemanagerEventListener_renamed : eventHandlerIndex
+			---@field handler ProfilemanagerEventHandler_renamed Handler function to register for call
+
+			---@class profilemanagerEventListener_deleted : eventHandlerIndex
+			---@field handler ProfilemanagerEventHandler_deleted Handler function to register for call
+
+			---@class profilemanagerEventListener_reset : eventHandlerIndex
+			---@field handler ProfilemanagerEventHandler_reset Handler function to register for call
+
+			---@class profilemanagerEventListener_any : eventTag, eventHandlerIndex
+			---@field handler ProfilemanagerEventHandler_any Handler function to register for call
+
+				---@alias ProfilemanagerEventHandler_loaded
+				---| fun(self: ProfilemanagerType, user: boolean) Called when an "loaded" event is invoked after the data profile list has been loaded and verified<hr><p>@*param* `self` ProfilemanagerType ― Reference to the widget table</p><p>@*param* `user` boolean ― True if the event was flagged as invoked by an action taken by the user</p>
+
+				---@alias ProfilemanagerEventHandler_activated
+				---| fun(self: ProfilemanagerType, index: integer, title: string, success: boolean, user: boolean) Called when an "activated" event is invoked after a profile has been activated<hr><p>@*param* `self` ProfilemanagerType ― Reference to the widget table</p><p>@*param* `index` integer — The index of the active profile</p><p>@*param* `title` string — The title of the active profile</p><p>@*param* `success` boolean ― True if the active profile was changed successfully</p><p>@*param* `user` boolean ― True if the event was flagged as invoked by an action taken by the user</p>
+
+				---@alias ProfilemanagerEventHandler_created
+				---| fun(self: ProfilemanagerType, index: integer, title: string, user: boolean) Called when an "created" event is invoked after a new data profile has been initialized<hr><p>@*param* `self` ProfilemanagerType ― Reference to the widget table</p><p>@*param* `index` integer — The index of the new profile</p><p>@*param* `title` string — The title of the new profile</p><p>@*param* `user` boolean ― True if the event was flagged as invoked by an action taken by the user</p>
+
+				---@alias ProfilemanagerEventHandler_renamed
+				---| fun(self: ProfilemanagerType, success: boolean, index: any, title?: string, user: boolean) Called when an "renamed" event is invoked after a data profile has been renamed<hr><p>@*param* `self` ProfilemanagerType ― Reference to the widget table</p><p>@*param* `success` boolean ― True if the profile was renamed successfully</p><p>@*param* `index` any — The index of the profile attempted to be renamed</p><p>@*param* `title`? string — The new title of the profile attempted to be renamed</p><p>@*param* `user` boolean ― True if the event was flagged as invoked by an action taken by the user</p>
+
+				---@alias ProfilemanagerEventHandler_deleted
+				---| fun(self: ProfilemanagerType, success: boolean, index: any, title?: string, user: boolean) Called when an "deleted" event is invoked after a data profile has been removed from the database<hr><p>@*param* `self` ProfilemanagerType ― Reference to the widget table</p><p>@*param* `success` boolean ― True if the profile was deleted successfully</p><p>@*param* `index` any — The original index of the profile attempted to be deleted</p><p>@*param* `title`? string — The title of the  profile attempted to be deleted</p><p>@*param* `user` boolean ― True if the event was flagged as invoked by an action taken by the user</p>
+
+				---@alias ProfilemanagerEventHandler_reset
+				---| fun(self: ProfilemanagerType, success: boolean, index: any, title?: string, user: boolean) Called when an "reset" event is invoked after a data profile has been reset to defaults<hr><p>@*param* `self` ProfilemanagerType ― Reference to the widget table</p><p>@*param* `success` boolean ― True if the profile data was reset successfully</p><p>@*param* `index` any — The index of the profile attempted to be reset</p><p>@*param* `title`? string — The title of the profile attempted to be reset</p><p>@*param* `user` boolean ― True if the event was flagged as invoked by an action taken by the user</p>
+
+				---@alias ProfilemanagerEventHandler_any
+				---| fun(self: ProfilemanagerType, ...: any) Called when a custom event is invoked<hr><p>@*param* `self` ProfilemanagerType ― Reference to the widget table</p><p>@*param* `...` any — Any leftover arguments</p>
+
+					---@alias ProfilemanagerType
+					---| profilemanager
+					---| profilesPage
 
 	--| Returns
 
@@ -3703,11 +3662,27 @@ local function CreateProfilemanager(accountData, characterData, defaultData, t)
 end
 
 
+
+	---@class backupboxSettingsData
+	---@field compactBackup boolean Whether to skip including additional white spaces to the backup string for more readability
+
+	---@class profilesPageCreationData : profilemanagerCreationData, settingsPageCreationData_base, settingsPageEvents, liteObject
+	---@field name? string Unique string used to set the name of the canvas frame | ***Default:*** "Profiles"<ul><li>***Note:*** Space characters will be removed when used for setting the frame name.</li></ul>
+	---@field title? string Text to be shown as the title of the settings page | ***Default:*** "Data Management"
+	---@field description? string Text to be shown as the description below the title of the settings page | ***Default:*** *describing profiles & backup*
+	---@field onImport? fun(success: boolean, data: table) Called after a settings backup string import has been performed by the user loading data for the currently active profile<hr><p>@*param* `success` boolean — Whether the imported string was successfully processed</p><p>@*param* `data` table — The table containing the imported backup data</p>
+	---@field onImportAllProfiles? fun(success: boolean, data: table) Called after a settings backup string import has been performed by the user loading data for all profiles<p>@*param* `success` boolean — Whether the imported string was successfully processed</p><p>@*param* `data` table — The table containing the imported backup data</p>
+
+
+
+
 --||| TOOLBOX |||
 
 
 ---Read-only reference to the Widget Toolbox table
 ---@class widgetToolbox
+---@field strings toolboxStrings Localized strings
+---@field classic number Classic vs modern UI code separation
 ---@field clipboard clipboard Value clipboard
 local toolbox = {
 

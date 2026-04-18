@@ -8,6 +8,7 @@
 ---Addon namespace table
 ---@class addonNamespace
 ---@field name string Addon namespace name
+---@field strings strings
 
 
 --[[ SAVED VARIABLES ]]

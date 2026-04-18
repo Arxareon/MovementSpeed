@@ -1,7 +1,7 @@
 ## Interface: 120001, 50503, 20505, 11508
 ## Title: Movement Speed
 ## Version: 3.3
-## X-Day: 17
+## X-Day: 19
 ## X-Month: 4
 ## X-Year: 2026
 ## Category: HUDs
@@ -21,7 +21,6 @@
 ## X-WidgetTools-ToolboxVersion: 3.0
 ## X-WidgetTools-AddToNamespace: wt
 
-Localizations.lua
 Resources.lua
 Toolbox.lua
 Main.lua [AllowLoadGameType mainline]

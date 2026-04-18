@@ -1,36 +1,33 @@
---[[ REFERENCES ]]
+--| Metadata
 
---[ Namespace ]
-
---| Hook into the local addon namespace
-
----@class addonNamespace
-local namespace = select(2, ...)
-
---Addon namespace name
+--Local addon namespace name
 local addon = ...
 
-
---[[ TOOLBOX REGISTRATION ]]
-
---Widget Toolbox version number
 local version = C_AddOns.GetAddOnMetadata(addon, "X-WidgetTools-ToolboxVersion")
+local namespaceKey = C_AddOns.GetAddOnMetadata(addon, "X-WidgetTools-AddToNamespace")
 
 if not version then return end
 
---Add the toolbox reference to local addon namespace
-local function AddToNamespace(toolbox)
-	local key = C_AddOns.GetAddOnMetadata(addon, "X-WidgetTools-AddToNamespace")
+--| Registration
 
-	if not key then return end
+local addToNamespace = nil
 
-	---@type widgetToolbox
-	namespace[key] = toolbox
+if namespaceKey then
+	--Local addon namespace table
+	local ns = select(2, ...)
 
-	WidgetTools.debugging.Log("Toolbox version " .. WidgetTools.utilities.ToString(version) .. " has been added to the " .. WrapTextInColor(addon, LIGHTBLUE_FONT_COLOR) .. " namespace table under the " .. WidgetTools.utilities.ToString(key) .. " key.", "Widget Toolbox loaded")
+	--Add the toolbox reference to local addon namespace table
+	addToNamespace = function(toolbox)
+		ns[namespaceKey] = toolbox
+
+		WidgetTools.debugging.Log(function()
+			local ts = WidgetTools.utilities.ToString
+
+			return "Toolbox version " .. ts(version) .. " has been added to the " .. WrapTextInColor(addon, LIGHTBLUE_FONT_COLOR) .. " namespace table under the " .. ts(namespaceKey) .. " key.", "Widget Toolbox loaded"
+		end)
+	end
 end
 
----@type widgetToolbox
-local toolbox = WidgetTools.toolboxes.Register(addon, version, AddToNamespace)
+local toolbox = WidgetTools.toolboxes.Register(addon, version, addToNamespace)
 
-if toolbox then AddToNamespace(toolbox) end
+if toolbox and addToNamespace then addToNamespace(toolbox) end
