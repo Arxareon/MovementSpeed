@@ -74,9 +74,6 @@
 		"Lua.workspace.ignoreDir": [
 			"WidgetToolbox_*"
 		],
-		"Lua.diagnostics.disable": [
-			"assign-type-mismatch"
-		],
 		"Lua.type.weakUnionCheck": true,
 		"todo-tree.tree.scanMode": "current file"
 	}
