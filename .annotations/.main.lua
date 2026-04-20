@@ -2533,9 +2533,9 @@ local ruRU = {
 ---@field zeros boolean Show trailing zeros
 
 ---@class speedColorList : textColorData_base
----@field yards colorData
----@field percent colorData
----@field coords colorData
+---@field yards color
+---@field percent color
+---@field coords color
 
 ---@class displayFontData : fontOptionsData
 ---@field colors speedColorList
@@ -2559,8 +2559,8 @@ local ruRU = {
 ---@field statusNotice boolean Print a visibility notice in chat on load
 
 ---@class displayBackgroundColorData
----@field bg colorData Background texture color
----@field border colorData Border texture color
+---@field bg color Background texture color
+---@field border color Border texture color
 
 ---@class displayBackgroundData
 ---@field visible boolean The background is shown

@@ -5,6 +5,8 @@ local ns = select(2, ...)
 
 --| References
 
+local cr = WrapTextInColor
+
 ---@type toolbox
 local wt = ns[C_AddOns.GetAddOnMetadata(ns.name, "X-WidgetTools-AddToNamespace")]
 
@@ -13,8 +15,6 @@ local rs = WidgetTools.resources
 
 ---@type widgetToolsUtilities
 local us = WidgetTools.utilities
-
-local cr = WrapTextInColor
 
 --| Locals
 
@@ -1511,10 +1511,10 @@ main.frame = wt.CreateFrame({
 							print(cr(ns.strings.chat.preset.list, ns.colors.yellow[1]))
 
 							for i = 1, #options[MovementSpeedCS.mainDisplay].position.presets, 2 do
-								local list = "    " .. cr(i, ns.colors.green[2]) .. cr(" • " .. options[MovementSpeedCS.mainDisplay].position.presets[i].title, ns.colors.yellow[2])
+								local list = "    " .. cr(tostring(i), ns.colors.green[2]) .. cr(" • " .. options[MovementSpeedCS.mainDisplay].position.presets[i].title, ns.colors.yellow[2])
 
 								if i + 1 <= #options[MovementSpeedCS.mainDisplay].position.presets then
-									list = list .. "    " .. cr(i + 1, ns.colors.green[2]) .. cr(" • " .. options[MovementSpeedCS.mainDisplay].position.presets[i + 1].title, ns.colors.yellow[2])
+									list = list .. "    " .. cr(tostring(i + 1), ns.colors.green[2]) .. cr(" • " .. options[MovementSpeedCS.mainDisplay].position.presets[i + 1].title, ns.colors.yellow[2])
 								end
 
 								print(list)
@@ -1628,10 +1628,10 @@ main.frame = wt.CreateFrame({
 						onError = function()
 							print(cr(ns.strings.chat.profile.list, ns.colors.yellow[1]))
 							for i = 1, #MovementSpeedDB.profiles, 4 do
-								local list = "    " .. cr(i, ns.colors.green[2]) .. cr(" • " .. MovementSpeedDB.profiles[i].title, ns.colors.yellow[2])
+								local list = "    " .. cr(tostring(i), ns.colors.green[2]) .. cr(" • " .. MovementSpeedDB.profiles[i].title, ns.colors.yellow[2])
 
 								for j = i + 1, min(i + 3, #MovementSpeedDB.profiles) do
-									list = list .. "    " .. cr(j, ns.colors.green[2]) .. cr(" • " .. MovementSpeedDB.profiles[j].title, ns.colors.yellow[2])
+									list = list .. "    " .. cr(tostring(j), ns.colors.green[2]) .. cr(" • " .. MovementSpeedDB.profiles[j].title, ns.colors.yellow[2])
 								end
 
 								print(list)

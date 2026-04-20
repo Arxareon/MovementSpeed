@@ -1612,13 +1612,6 @@ end
 
 --[[ BLIZZARD TOOLS ]]
 
----Create a colored string via escape sequences
----***
----@param value string|number Value to add coloring to
----@param color colorData|colorRGBA Table containing the color values
----@return string
-function WrapTextInColor(value, color) return "" end
-
 ---Clamp a number between two limits
 ---@param value number
 ---@param min number

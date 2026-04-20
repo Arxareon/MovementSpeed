@@ -3602,7 +3602,7 @@ local wt = {}
 	---@field strata wrappedStrata|nil Frame Strata value
 	---@field text string|nil Text value
 	---@field numeric number|nil Number value
-	---@field color colorData|nil RGB(A) color value
+	---@field color color|nil RGB(A) color value
 
 
 --[[ TABLE MANAGEMENT ]]
@@ -3650,26 +3650,31 @@ function wt.UnpackPosition(t) return "TOPLEFT" end
 
 ---Check if a variable is a valid color table
 ---@param t any
----@return boolean|colorData
+---@return boolean|color
 function wt.IsColor(t)
 	return false
 
 	--| Returns
 
-	---@class colorData : rgbData_base, alpha_opaqueDefault
+	---@alias color
+	---| colorData
+	---| colorRGBA
+	---| colorRGB
 
-		---@class rgbData_base
-		---@field r number Red | ***Range:*** (0, 1)
-		---@field g number Green | ***Range:*** (0, 1)
-		---@field b number Blue | ***Range:*** (0, 1)
+		---@class colorData : rgbData_base, alpha_opaqueDefault
 
-		---@class alpha_opaqueDefault
+			---@class rgbData_base
+			---@field r number Red | ***Range:*** (0, 1)
+			---@field g number Green | ***Range:*** (0, 1)
+			---@field b number Blue | ***Range:*** (0, 1)
+
+			---@class alpha_opaqueDefault
 		---@field a? number Opacity | ***Range:*** (0, 1) | ***Default:*** 1
 end
 
 ---Check & silently repair a color data table
 ---@param color any
----@return boolean|colorData
+---@return boolean|color
 function wt.VerifyColor(color)
 
 	---@class rgbData_optional
@@ -3689,12 +3694,12 @@ end
 ---@param blue? number Blue | ***Range:*** (0, 1) | ***Default:*** 1
 ---@param alpha? number Opacity | ***Range:*** (0, 1) | ***Default:*** 1
 ---***
----@return colorData # Table containing the color values
+---@return color # Table containing the color values
 function wt.PackColor(red, green, blue, alpha) return {} end
 
 ---Extract, verify and return the color values found in a table
 ---***
----@param color? colorData|colorRGBA Table containing the color values | ***Default:*** *opaque white:* `{ r = 1, g = 1, b = 1, a = 1 }`
+---@param color? color Table containing the color values | ***Default:*** *opaque white:* `{ r = 1, g = 1, b = 1, a = 1 }`
 ---@param alpha? boolean Specify whether to return the full RGBA set or just the RGB values | ***Default:*** true
 ---***
 ---@return number r Red | ***Range:*** (0, 1) | ***Default:*** 1
@@ -3705,7 +3710,7 @@ function wt.UnpackColor(color, alpha) return 1, 1, 1 end
 
 ---Convert RGB(A) color values in Range: (0, 1) to HEX color code
 ---***
----@param color? colorData|colorRGBA The RGB(A) color data with all channels in Range: (0, 1) | ***Default:*** *opaque white:* `{ r = 1, g = 1, b = 1, a = 1 }`
+---@param color? color The RGB(A) color data with all channels in Range: (0, 1) | ***Default:*** *opaque white:* `{ r = 1, g = 1, b = 1, a = 1 }`
 ---@param alphaFirst? boolean Put the alpha value first: ARGB output instead of RGBA | ***Default:*** false
 ---@param hashtag? boolean Whether to add a "#" to the beginning of the color description | ***Default:*** true
 ---***
@@ -3724,10 +3729,10 @@ function wt.HexToColor(hex) return 1, 1, 1 end
 
 ---Brighten or darken the RGB values of a color by an exponent
 ---***
----@param color colorData|colorRGBA|any Table containing the color values
+---@param color color Table containing the color values
 ---@param exponent? number ***Default:*** 0.55<ul><li>***Note:*** Values greater than 1 darken, smaller than 1 brighten the color.</li></ul>
 ---***
----@return colorData|colorRGBA|any color Reference to **color** (it was already updated during the operation, no need for setting it again)
+---@return any color Reference to **color** (it was already updated during the operation, no need for setting it again)
 function wt.AdjustGamma(color, exponent) end
 
 
@@ -3943,11 +3948,11 @@ function wt.SetBackdrop(frame, backdrop, updates)
 
 		---@class backdropBackgroundData
 		---@field texture? backdropBackgroundTextureData Parameters used for setting the background texture
-		---@field color? colorData Apply the specified color to the background texture
+		---@field color? color Apply the specified color to the background texture
 
 		---@class backdropBorderData
 		---@field texture? backdropBorderTextureData Parameters used for setting the border texture
-		---@field color? colorData Apply the specified color to the border texture
+		---@field color? color Apply the specified color to the border texture
 
 	---@class backdropUpdateRule # updates
 	---@field triggers? AnyFrameObject[] References to the frames to add the listener script to | ***Default:*** { **frame** }
@@ -4036,7 +4041,7 @@ function wt.SetBackdrop(frame, backdrop, updates)
 
 			---@class backdropUpdateBackgroundData
 			---@field texture? backdropBackgroundTextureData Parameters used for setting the background texture | ***Default:*** **backdrop.background.texture** if **fill** == true *(if it's false, keep the currently set values of **frame**.[backdropInfo](https://warcraft.wiki.gg/wiki/BackdropTemplate#Table_structure))*
-			---@field color? colorData Apply the specified color to the background texture | ***Default:*** **backdrop.background.color** if **fill** == true *(if it's false, keep the currently set values of **frame**:[GetBackdropColor()](https://warcraft.wiki.gg/wiki/BackdropTemplate#Methods))*
+			---@field color? color Apply the specified color to the background texture | ***Default:*** **backdrop.background.color** if **fill** == true *(if it's false, keep the currently set values of **frame**:[GetBackdropColor()](https://warcraft.wiki.gg/wiki/BackdropTemplate#Methods))*
 
 				---@class backdropBackgroundTextureData : pathData_ChatFrameDefault
 				---@field size number Size of a single background tile square
@@ -4051,7 +4056,7 @@ function wt.SetBackdrop(frame, backdrop, updates)
 
 			---@class backdropUpdateBorderData
 			---@field texture? backdropBorderTextureData Parameters used for setting the border texture | ***Default:*** **backdrop.border.texture** if **fill** == true *(if it's false, keep the currently set values of **frame**.[backdropInfo](https://warcraft.wiki.gg/wiki/BackdropTemplate#Table_structure))*
-			---@field color? colorData Apply the specified color to the border texture | ***Default:*** **backdrop.border.color** if **fill** == true *(if it's false, keep the currently set values of **frame**:[GetBackdropBorderColor()](https://warcraft.wiki.gg/wiki/BackdropTemplate#Methods))*
+			---@field color? color Apply the specified color to the border texture | ***Default:*** **backdrop.border.color** if **fill** == true *(if it's false, keep the currently set values of **frame**:[GetBackdropBorderColor()](https://warcraft.wiki.gg/wiki/BackdropTemplate#Methods))*
 
 				---@class backdropBorderTextureData
 				---@field path? string Path to the specific texture file relative to the root directory of the specific WoW client | ***Default:*** "Interface/Tooltips/UI-Tooltip-Border"<ul><li>***Note:*** The use of `/` as separator is recommended (Example: Interface/AddOns/AddonNameKey/Textures/TextureImage.tga), otherwise use `\\`.</li><li>***Note:*** **File format:** Texture files must be in JPEG (no transparency, not recommended), PNG, TGA or BLP format.</li><li>***Note:*** **Size:** Texture files must have powers of 2 dimensions to be handled by the WoW client.</li></ul>
@@ -4240,10 +4245,10 @@ function wt.RegisterChatCommands(addon, keywords, t)
 		---@field onHelp? function Function to call after a specified help command has been triggered or an invalid command is typed with the specified keywords
 
 		---@class chatCommandColors
-		---@field title? colorData Color for the addon title used for branding chat messages | ***Default:*** `YELLOW_FONT_COLOR`
-		---@field content? colorData Color for chat message contents appended after the title (used for success & error responses) | ***Default:*** `WHITE_FONT_COLOR`
-		---@field command? colorData Used to color the registered chat commands when they are being listed | ***Default:*** `LIGHTBLUE_FONT_COLOR`
-		---@field description? colorData Used to color the description of registered chat commands when they are being listed | ***Default:*** `LIGHTGRAY_FONT_COLOR`
+		---@field title? color Color for the addon title used for branding chat messages | ***Default:*** `YELLOW_FONT_COLOR`
+		---@field content? color Color for chat message contents appended after the title (used for success & error responses) | ***Default:*** `WHITE_FONT_COLOR`
+		---@field command? color Used to color the registered chat commands when they are being listed | ***Default:*** `LIGHTBLUE_FONT_COLOR`
+		---@field description? color Used to color the description of registered chat commands when they are being listed | ***Default:*** `LIGHTGRAY_FONT_COLOR`
 
 	--| Returns
 
@@ -4253,8 +4258,8 @@ function wt.RegisterChatCommands(addon, keywords, t)
 		---Print out a formatted chat message
 		---@param message string Message content
 		---@param title? string Title to start the message with | ***Default:*** *(**addon** title)*<ul><li>***Note:*** If "IconTexture" is specified in the TOC file of **addon**, a logo will also be included at the start of the message.</li></ul>
-		---@param contentColor? chatCommandColorNames|colorData|colorRGBA ***Default:*** "content"
-		---@param titleColor? chatCommandColorNames|colorData|colorRGBA ***Default:*** "title"
+		---@param contentColor? chatCommandColorNames|color ***Default:*** "content"
+		---@param titleColor? chatCommandColorNames|color ***Default:*** "title"
 		function _.print(message, title, titleColor, contentColor) end
 
 			---@alias chatCommandColorNames
@@ -4453,9 +4458,9 @@ function wt.CreateFont(name, t)
 	---@class fontCreationData
 	---@field template? FontObject An existing [FontObject](https://warcraft.wiki.gg/wiki/UIOBJECT_Font#List_of_Font_Objects) to copy as a baseline
 	---@field font? fontData Table containing font properties used for [FontInstance:SetFont(...)](https://warcraft.wiki.gg/wiki/API_FontInstance_SetFont) (overriding **t.template**)
-	---@field color? colorData_whiteDefault|colorData Apply the specified color to the font (overriding **t.template**)
+	---@field color? colorData_whiteDefault|color Apply the specified color to the font (overriding **t.template**)
 	---@field spacing? number Set the character spacing of the text using this font (overriding **t.template**)
-	---@field shadow? { offset: offsetData, color: colorData_blackDefault|colorData } Set a text shadow with the following parameters (overriding **t.template**)
+	---@field shadow? { offset: offsetData, color: colorData_blackDefault|color } Set a text shadow with the following parameters (overriding **t.template**)
 	---@field justify? justifyData_centered Set the justification of the text using font (overriding **t.template**)
 	---@field wrap? boolean Whether or not to allow the text lines using this font to wrap (overriding **t.template**)
 
@@ -4498,7 +4503,7 @@ function wt.CreateText(t)
 	---@field layer? DrawLayer
 	---@field text? string Text to be shown
 	---@field font? string Name of the [FontObject](https://warcraft.wiki.gg/wiki/UIOBJECT_Font#List_of_Font_Objects) object to be used | ***Default:*** "GameFontNormal"<ul><li>***Note:*** A new font object (or a modified copy of an existing one) can be created via ***WidgetToolbox*.CreateFont(...)** (even within this table definition).</li></ul>
-	---@field color? colorData|colorRGBA Apply the specified color to the text (overriding **t.font**)
+	---@field color? color Apply the specified color to the text (overriding **t.font**)
 	---@field justify? justifyData Set the justification of the text (overriding **t.font**)
 	---@field wrap? boolean Whether or not to allow the text lines to wrap (overriding **t.font**) | ***Default:*** `true`
 
@@ -4525,7 +4530,7 @@ function wt.CreateTitle(frame, t)
 	---@field width? number ***Default:*** *width of the text*
 	---@field text? string Text to be shown as the main title of the frame
 	---@field font? string Name of the [FontObject](https://warcraft.wiki.gg/wiki/UIOBJECT_Font#List_of_Font_Objects) object to be used for the [FontString](https://warcraft.wiki.gg/wiki/UIOBJECT_FontString) | ***Default:*** "GameFontHighlight"
-	---@field color? colorData Apply the specified color to the title (overriding **t.font**)
+	---@field color? color Apply the specified color to the title (overriding **t.font**)
 	---@field justify? JustifyHorizontal Set the horizontal text alignment (overriding **t.font**) | ***Default:*** "LEFT"
 end
 
@@ -4546,7 +4551,7 @@ function wt.CreateDescription(title, t)
 	---@field spacer? number Space to leave between **t.title** & the separator and the separator & the description | ***Default:*** 5
 	---@field text? string Text to be shown as the description of the frame
 	---@field font? string Name of the [FontObject](https://warcraft.wiki.gg/wiki/UIOBJECT_Font#List_of_Font_Objects) object to be used for the [FontString](https://warcraft.wiki.gg/wiki/UIOBJECT_FontString) | ***Default:*** "GameFontHighlightSmall2"
-	---@field color? descriptionColorData|colorData Apply the specified color to the description (overriding **t.font**)
+	---@field color? descriptionColorData|color Apply the specified color to the description (overriding **t.font**)
 	---@field justify? JustifyHorizontal Set the horizontal text alignment (overriding **t.font**) | ***Default:*** "LEFT"
 
 		---@class descriptionColorData
@@ -4580,7 +4585,7 @@ function wt.CreateTexture(frame, t, updates)
 	---@field wrap? wrapData Set the warp mode for each axis
 	---@field filterMode? FilterMode | ***Default:*** "LINEAR"
 	---@field flip? axisData Mirror the texture on the horizontal and/or vertical axis
-	---@field color? colorData Apply the specified color to the texture
+	---@field color? color Apply the specified color to the texture
 	---@field edges? edgeCoordinates Edge coordinate offsets
 	---@field vertices? vertexCoordinates Vertex coordinate offsets<ul><li>***Note:*** Setting texture coordinate offsets is exclusive between edges and vertices. If set, **t.edges** will be used first ignoring **t.vertices**.</li></ul>
 	---@field events? table<ScriptType, fun(...: any)|attributeEventData> Table of key, value pairs of the names of script event handlers to be set for the texture object and the functions to assign as event handlers called when they trigger
@@ -4650,7 +4655,7 @@ function wt.CreateTexture(frame, t, updates)
 		---@field wrap? wrapData Set the warp mode for each axis | ***Default:*** **t.wrap**
 		---@field filterMode? FilterMode | ***Default:*** **t.filterMode**
 		---@field flip? axisData Mirror the texture on the horizontal and/or vertical axis | ***Default:*** **t.flip**
-		---@field color? colorData Apply the specified color to the texture | ***Default:*** **t.color**
+		---@field color? color Apply the specified color to the texture | ***Default:*** **t.color**
 		---@field edges? edgeCoordinates Edge coordinate offsets ***Default:*** **t.edges**
 		---@field vertices? vertexCoordinates Vertex coordinate offsets ***Default:*** **t.vertices**<ul><li>***Note:*** Setting texture coordinate offsets is exclusive between edges and vertices. If set, **t.edges** will be used first ignoring **t.vertices**.</li></ul>
 end
@@ -4672,7 +4677,7 @@ function wt.CreateLine(frame, t)
 	---@field thickness? number ***Default:*** 4
 	---@field layer? DrawLayer 
 	---@field level? integer Sublevel to set within the draw layer specified with **t.layer** | ***Range:*** (-8, 7)
-	---@field color? colorData Apply the specified color to the line
+	---@field color? color Apply the specified color to the line
 
 		---@class pointData
 		---@field relativeTo AnyFrameObject
@@ -6774,7 +6779,7 @@ function wt.CreateTextbox(t)
 
 	--Optional parameters
 	---@class textboxCreationData : togglableObject, settingsWidget # t
-	---@field color? colorData Apply the specified color to all text in the editbox (overriding all font objects set in **t.font**)
+	---@field color? color Apply the specified color to all text in the editbox (overriding all font objects set in **t.font**)
 	---@field listeners? textboxEventListeners Table of key, value pairs of custom widget event tags and functions to assign as event handlers to call on trigger
 	---@field getData? fun(): text: string|nil Called to (if needed, modify and) load the widget data from storage<hr><p>@*return* `text` string|nil | ***Default:*** "" *(empty string)*</p>
 	---@field saveData? fun(text: string) Called to (if needed, modify and) save the widget data to storage<hr><p>@*param* `text` string</p>
@@ -7129,10 +7134,10 @@ function wt.CreateCopybox(t)
 	---@field size? sizeData_editbox|sizeData
 	---@field layer? DrawLayer
 	---@field font? string Name of the [FontObject](https://warcraft.wiki.gg/wiki/UIOBJECT_Font#List_of_Font_Objects) object to be used for the [FontString](https://warcraft.wiki.gg/wiki/UIOBJECT_FontString) | ***Default:*** "GameFontNormalSmall"<ul><li>***Note:*** A new font object (or a modified copy of an existing one) can be created via ***WidgetToolbox*.CreateFont(...)** (even within this table definition).</li></ul>
-	---@field color? colorData Apply the specified color to the text (overriding **t.font**)
+	---@field color? color Apply the specified color to the text (overriding **t.font**)
 	---@field justify? JustifyHorizontal Set the horizontal text alignment of the label (overriding **t.font**) | ***Default:*** "LEFT"
 	---@field flipOnMouse? boolean Hide/Reveal the editbox on mouseover instead of after a click | ***Default:*** `false`
-	---@field colorOnMouse? colorData If set, change the color of the text on mouseover to the specified color (if **t.flipOnMouse** is false) | ***Default:*** *no color change*
+	---@field colorOnMouse? color If set, change the color of the text on mouseover to the specified color (if **t.flipOnMouse** is false) | ***Default:*** *no color change*
 	---@field value? string The copyable text to be shown | ***Default:*** `""`
 
 	--| Returns
@@ -7528,10 +7533,10 @@ function wt.CreateColormanager(t)
 	---@class colormanagerCreationData : togglableObject, settingsWidget # t
 	---@field listeners? colormanagerEventListeners Table of key, value pairs of custom widget event tags and functions to assign as event handlers to call on trigger
 	---@field onCancel? function The function to be called when the color change is cancelled (after calling **t.onColorUpdate**)
-	---@field getData? fun(): color: colorData|nil Called to (if needed, modify and) load the widget data from storage<hr><p>@*return* `color` colorData|nil | ***Default:*** *opaque white:* `{ r = 1, g = 1, b = 1, a = 1 }`</p>
-	---@field saveData? fun(color: colorData) Called to (if needed, modify and) save the widget data to storage<hr><p>@*param* `color` colorData</p>
+	---@field getData? fun(): color: color|nil Called to (if needed, modify and) load the widget data from storage<hr><p>@*return* `color` colorData|nil | ***Default:*** *opaque white:* `{ r = 1, g = 1, b = 1, a = 1 }`</p>
+	---@field saveData? fun(color: color) Called to (if needed, modify and) save the widget data to storage<hr><p>@*param* `color` colorData</p>
 	---@field value? colorData_whiteDefault Values to use as the starting color set during initialization | ***Default:*** **t.getData()** or **t.default** if invalid<ul><li>***Note:*** If the alpha start value was not set, configure the color picker to handle RBG values exclusively instead of the full RGBA.</li></ul>
-	---@field default? colorData Default value of the widget | ***Default:*** *opaque white:* `{ r = 1, g = 1, b = 1, a = 1 }`
+	---@field default? color Default value of the widget | ***Default:*** *opaque white:* `{ r = 1, g = 1, b = 1, a = 1 }`
 
 		---@class colormanagerEventListeners
 		---@field enabled? colormanagerEventListener_enabled[] Ordered list of functions to call when an "enabled" event is invoked after **colormanager.setEnabled(...)** was called
@@ -7566,7 +7571,7 @@ function wt.CreateColormanager(t)
 			---@field handler ColormanagerEventHandler_colored Handler function to register for call
 
 				---@alias ColormanagerEventHandler_colored
-				---| fun(self: ColormanagerType, color: colorData, user: boolean) Called when an "colored" event is invoked after **colormanager.setColor(...)** was called<hr><p>@*param* `self` ColorPickerType ― Reference to the toggle widget</p><p>@*param* `number` number ― The current value of the widget</p><p>@*param* `user` boolean ― True if the event was flagged as invoked by an action taken by the user</p>
+				---| fun(self: ColormanagerType, color: color, user: boolean) Called when an "colored" event is invoked after **colormanager.setColor(...)** was called<hr><p>@*param* `self` ColorPickerType ― Reference to the toggle widget</p><p>@*param* `number` number ― The current value of the widget</p><p>@*param* `user` boolean ― True if the event was flagged as invoked by an action taken by the user</p>
 
 			---@class colormanagerEventListener_any : eventTag, eventHandlerIndex
 			---@field handler ColormanagerEventHandler_any Handler function to register for call
@@ -7653,27 +7658,27 @@ function wt.CreateColormanager(t)
 
 		---Verify and save the provided data or the current value of the widget to storage via **t.saveData(...)**
 		---***
-		---@param color? colorData|colorRGBA Data to be saved | ***Default:*** *the currently set value of the widget*
+		---@param color? color Data to be saved | ***Default:*** *the currently set value of the widget*
 		---@param silent? boolean If false, invoke a "saved" event and call registered listeners | ***Default:*** `false`
 		function _.saveData(color, silent) end
 
 		---Get the currently stored data via **t.getData()**
-		---@return colorData|nil
+		---@return color|nil
 		function _.getData() end
 
 		---Verify and save the provided data to storage via **t.saveData(...)** then load it to the widget via **t.loadData()**
 		---***
-		---@param color? colorData|colorRGBA Data to be saved | ***Default:*** *the currently set value of the widget*
+		---@param color? color Data to be saved | ***Default:*** *the currently set value of the widget*
 		---@param handleChanges? boolean If true, call the specified **t.onChange** handlers | ***Default:*** `true`
 		---@param silent? boolean If false, invoke "loaded" and "saved" events and call registered listeners | ***Default:*** `false`
 		function _.setData(color, handleChanges, silent) end
 
 		---Get the currently set default value
-		---@return colorData default
+		---@return color default
 		function _.getDefault() return {} end
 
 		---Set the default value
-		---@param color? colorData | ***Default:*** *opaque white:* `{ r = 1, g = 1, b = 1, a = 1 }`
+		---@param color? color | ***Default:*** *opaque white:* `{ r = 1, g = 1, b = 1, a = 1 }`
 		function _.setDefault(color) end
 
 		---Set and load the stored data managed by the widget to the last saved data snapshot set via **colormanager.snapshotData()**
@@ -7691,12 +7696,12 @@ function wt.CreateColormanager(t)
 		function _.resetData(handleChanges, silent) end
 
 		---Returns the currently set channel values wrapped in a color table
-		---@return colorData
+		---@return color
 		function _.getColor() return {} end
 
 		---Set the managed color values
 		---***
-		---@param color? colorData|colorRGBA ***Default:*** { r = 1, g = 1, b = 1, a = 1 } *opaque white:* `{ r = 1, g = 1, b = 1, a = 1 }`
+		---@param color? color ***Default:*** { r = 1, g = 1, b = 1, a = 1 } *opaque white:* `{ r = 1, g = 1, b = 1, a = 1 }`
 		---@param user? boolean If true, mark the call as being the result of a user interaction | ***Default:*** `false`
 		---@param silent? boolean If false, invoke a "colored" event and call registered listeners | ***Default:*** `false`
 		function _.setColor(color, user, silent) end
@@ -7900,10 +7905,10 @@ function wt.CreateFontOptions(addon, textline, getData, defaultData, t)
 	---@field path string Path to the font file relative to the WoW client directory<ul><li>***Note:*** The use of `/` as separator is recommended (Example: Interface/AddOns/AddonNameKey/Fonts/Font.ttf), otherwise use `\\`.</li><li>***Note:*** **File format:** Font files must be in TTF or OTF format.</li></ul>
 	---@field size number Font size
 	---@field alignment JustifyHorizontal Horizontal text alignment
-	---@field colors table<string, colorData>|textColorData_base List of named coloring options
+	---@field colors table<string, color>|textColorData_base List of named coloring options
 
 		---@class textColorData_base
-		---@field base colorData
+		---@field base color
 
 	---@class fontManagementCreationData : settingsWidgetPanel_text # t
 	---@field colors? table<string, textColorInfo> If set, use this list of specifications to set the order and displayed name of the colors | ***Default:*** *unspecified order; data management key in Title case*

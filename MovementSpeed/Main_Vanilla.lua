@@ -5,6 +5,8 @@ local ns = select(2, ...)
 
 --| References
 
+local cr = WrapTextInColor
+
 ---@type toolbox
 local wt = ns[C_AddOns.GetAddOnMetadata(ns.name, "X-WidgetTools-AddToNamespace")]
 
@@ -13,8 +15,6 @@ local rs = WidgetTools.resources
 
 ---@type widgetToolsUtilities
 local us = WidgetTools.utilities
-
-local cr = WrapTextInColor
 
 --| Locals
 
