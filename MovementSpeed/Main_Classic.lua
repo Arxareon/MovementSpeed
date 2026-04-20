@@ -5,7 +5,7 @@ local ns = select(2, ...)
 
 --| References
 
----@type widgetToolbox
+---@type toolbox
 local wt = ns[C_AddOns.GetAddOnMetadata(ns.name, "X-WidgetTools-AddToNamespace")]
 
 ---@type widgetToolsResources
@@ -352,43 +352,6 @@ end
 
 --[[ INITIALIZATION ]]
 
----Set up the speed display context menu
----@param display displayType
-local function CreateContextMenu(display) wt.CreateContextMenu({
-	triggers = { { frame = speedDisplay[display].frame, }, },
-	initialize = function(menu)
-		wt.CreateMenuTextline(menu, { text = ns.title, })
-		wt.CreateSubmenu(menu, { title = ns.strings.misc.options, initialize = function(optionsMenu)
-			wt.CreateMenuButton(optionsMenu, {
-				title = wt.strings.about.title,
-				tooltip = { lines = { { text = ns.strings.options.main.description:gsub("#ADDON", ns.title), }, } },
-				action = main.settings.open,
-			})
-			wt.CreateMenuButton(optionsMenu, {
-				title = ns.strings.options.speedDisplay.title:gsub("#TYPE", ns.strings.options.playerSpeed.title),
-				tooltip = { lines = { { text = ns.strings.options.playerSpeed.description, }, } },
-				action = playerSpeed.settings.open,
-			})
-			wt.CreateMenuButton(optionsMenu, {
-				title = ns.strings.options.targetSpeed.title,
-				tooltip = { lines = { { text = ns.strings.options.targetSpeed.description:gsub("#ADDON", ns.title), }, } },
-				action = targetSpeed.settings.open,
-			})
-			wt.CreateMenuButton(optionsMenu, {
-				title = wt.strings.dataManagement.title,
-				tooltip = { lines = { { text = wt.strings.dataManagement.description:gsub("#ADDON", ns.title), }, } },
-				action = profiles.settings.open,
-			})
-		end })
-		wt.CreateSubmenu(menu, { title = wt.strings.presets.apply.label, initialize = function(presetsMenu)
-			for i = 1, #options[display].position.presets do wt.CreateMenuButton(presetsMenu, {
-				title = options[display].position.presets[i].title,
-				action = function() options[display].position.applyPreset(i) end,
-			}) end
-		end })
-	end
-}) end
-
 --Create main addon frame & displays
 main.frame = wt.CreateFrame({
 	name = ns.name,
@@ -540,7 +503,6 @@ main.frame = wt.CreateFrame({
 			end
 
 			for type = 1, #displays do
-				---@type "playerSpeed"
 				local displayType = displays[type]
 				local displayName = ns.strings.options[displayType].title:gsub("%s+", "")
 
@@ -1373,14 +1335,49 @@ main.frame = wt.CreateFrame({
 			if profiles.firstLoad then chatCommands.welcome() end
 
 
-			--[[ SPEED DISPLAYS ]]
+			--[[ SPEED DISPLAY SETUP ]]
 
-			--| Player Speed
+			for type = 1, #displays do
+				local displayType = displays[type]
 
-			CreateContextMenu("playerSpeed")
-			wt.SetPosition(playerSpeed.frame, us.Fill({ relativePoint = profiles.data.playerSpeed.position.anchor, }, profiles.data.playerSpeed.position))
-			wt.ConvertToAbsolutePosition(playerSpeed.frame)
-			SetDisplayValues(playerSpeed, profiles.data.playerSpeed)
+				wt.SetPosition(speedDisplay[displayType].frame, us.Fill({ relativePoint = profiles.data[displayType].position.anchor, }, profiles.data[displayType].position))
+				wt.ConvertToAbsolutePosition(speedDisplay[displayType].frame)
+				SetDisplayValues(speedDisplay[displayType], profiles.data[displayType])
+				wt.CreateContextMenu({
+					triggers = { { frame = speedDisplay[displayType].frame, }, },
+					initialize = function(menu)
+						wt.CreateMenuTextline(menu, { text = ns.title, })
+						wt.CreateSubmenu(menu, { title = ns.strings.misc.options, initialize = function(optionsMenu)
+							wt.CreateMenuButton(optionsMenu, {
+								title = wt.strings.about.title,
+								tooltip = { lines = { { text = ns.strings.options.main.description:gsub("#ADDON", ns.title), }, } },
+								action = main.settings.open,
+							})
+							wt.CreateMenuButton(optionsMenu, {
+								title = ns.strings.options.speedDisplay.title:gsub("#TYPE", ns.strings.options.playerSpeed.title),
+								tooltip = { lines = { { text = ns.strings.options.playerSpeed.description, }, } },
+								action = playerSpeed.settings.open,
+							})
+							wt.CreateMenuButton(optionsMenu, {
+								title = ns.strings.options.targetSpeed.title,
+								tooltip = { lines = { { text = ns.strings.options.targetSpeed.description:gsub("#ADDON", ns.title), }, } },
+								action = targetSpeed.settings.open,
+							})
+							wt.CreateMenuButton(optionsMenu, {
+								title = wt.strings.dataManagement.title,
+								tooltip = { lines = { { text = wt.strings.dataManagement.description:gsub("#ADDON", ns.title), }, } },
+								action = profiles.settings.open,
+							})
+						end })
+						wt.CreateSubmenu(menu, { title = wt.strings.presets.apply.label, initialize = function(presetsMenu)
+							for i = 1, #options[displayType].position.presets do wt.CreateMenuButton(presetsMenu, {
+								title = options[displayType].position.presets[i].title,
+								action = function() options[displayType].position.applyPreset(i) end,
+							}) end
+						end })
+					end
+				})
+			end
 		end,
 		PLAYER_ENTERING_WORLD = function(self)
 			self:UnregisterEvent("PLAYER_ENTERING_WORLD")
@@ -1420,7 +1417,6 @@ main.frame = wt.CreateFrame({
 		--| Speed Displays
 
 		for type = 1, #displays do
-			---@type "playerSpeed"
 			local displayType = displays[type]
 			local displayTypeName = (displayType:sub(1, 1):upper() .. displayType:sub(2))
 
