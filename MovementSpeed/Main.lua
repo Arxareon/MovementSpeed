@@ -723,7 +723,7 @@ main.frame = wt.CreateFrame({
 				valueTypes[i].tooltip = { lines = { { text = ns.strings.options.speedValue.units.list[i].tooltip, }, } }
 			end
 
-			for type = 1, 2 do
+			for type = 1, #displays do
 				---@type "playerSpeed"|"travelSpeed"
 				local displayType = displays[type]
 				local displayName = ns.strings.options[displayType].title:gsub("%s+", "")
@@ -1004,12 +1004,12 @@ main.frame = wt.CreateFrame({
 										},
 									},
 								},
-								onPreset = function(i)
+								onPreset = function(preset)
 									--Make sure the speed display is visible
 									options[displayType].visibility.hidden.setData(false)
 
 									chatCommands.print(ns.strings.chat.preset.response:gsub(
-										"#PRESET", cr(options[displayType].position.presets[i].title, ns.colors.yellow[2])
+										"#PRESET", cr(preset.title, ns.colors.yellow[2])
 									):gsub("#TYPE", ns.strings.options[displayType].title))
 								end,
 								custom = {
@@ -1775,7 +1775,7 @@ main.frame = wt.CreateFrame({
 
 		--| Speed Displays
 
-		for type = 1, 2 do
+		for type = 1, #displays do
 			---@type "playerSpeed"|"travelSpeed"
 			local displayType = displays[type]
 			local displayTypeName = (displayType:sub(1, 1):upper() .. displayType:sub(2))
