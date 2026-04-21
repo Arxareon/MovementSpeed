@@ -557,7 +557,7 @@ main.frame = wt.CreateFrame({
 				mainDisplay = "playerSpeed",
 			})
 
-			---@type profilemanager|profilesPage
+			---@type profilemanager|profilesPage|{ data: profileData }
 			profiles = wt.CreateProfilemanager(MovementSpeedDB, MovementSpeedDBC, ns.profileDefault, {
 				valueChecker = function(key, value)
 					if type(value) == "number" then
@@ -1450,7 +1450,7 @@ main.frame = wt.CreateFrame({
 
 			--[ Profiles ]
 
-			---@type profilemanager|profilesPage
+			---@type profilemanager|profilesPage|{ data: profileData }
 			profiles = wt.CreateProfilesPage(ns.name, MovementSpeedDB, MovementSpeedDBC, ns.profileDefault, MovementSpeedCS, {
 				register = main.settings,
 				onImport = function(success) if success then
