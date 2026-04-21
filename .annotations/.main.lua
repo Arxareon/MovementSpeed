@@ -42,6 +42,7 @@ local enUS = {
 				label = "Show trailing zeros",
 				tooltip = "Always show the specified number of decimal digits, don't trim trailing zeros.",
 			},
+			base = "Base",
 		},
 		speedDisplay = {
 			title = "#TYPE Display",
@@ -267,6 +268,7 @@ local ptBR = {
 				label = "Mostrar zeros finais",
 				tooltip = "Sempre mostrar o número especificado de casas decimais, não remova zeros finais.",
 			},
+			base = "Base",
 		},
 		speedDisplay = {
 			title = "Exibição #TYPE",
@@ -492,6 +494,7 @@ local deDE = {
 				label = "Nachfolgende Nullen anzeigen",
 				tooltip = "Zeige immer die angegebene Anzahl an Dezimalstellen, entferne keine nachfolgenden Nullen.",
 			},
+			base = "Basis",
 		},
 		speedDisplay = {
 			title = "#TYPE Anzeige",
@@ -717,6 +720,7 @@ local frFR = {
 				label = "Afficher les zéros finaux",
 				tooltip = "Toujours afficher le nombre de décimales spécifié, ne pas supprimer les zéros finaux.",
 			},
+			base = "Base",
 		},
 		speedDisplay = {
 			title = "Affichage #TYPE",
@@ -942,6 +946,7 @@ local esES = {
 				label = "Mostrar ceros finales",
 				tooltip = "Muestra siempre el número especificado de decimales, no elimines los ceros finales.",
 			},
+			base = "Base",
 		},
 		speedDisplay = {
 			title = "Visualización #TYPE",
@@ -1167,6 +1172,7 @@ local esMX = {
 				label = "Mostrar ceros finales",
 				tooltip = "Muestra siempre el número especificado de decimales, no elimines los ceros finales.",
 			},
+			base = "Base",
 		},
 		speedDisplay = {
 			title = "Visualización #TYPE",
@@ -1392,6 +1398,7 @@ local itIT = {
 				label = "Mostra zeri finali",
 				tooltip = "Mostra sempre il numero specificato di cifre decimali, non rimuovere gli zeri finali.",
 			},
+			base = "Base",
 		},
 		speedDisplay = {
 			title = "Visualizzazione #TYPE",
@@ -1617,6 +1624,7 @@ local koKR = {
 				label = "0 표시",
 				tooltip = "지정한 소수점 자리수를 항상 표시하며, 끝의 0을 생략하지 않습니다.",
 			},
+			base = "기본",
 		},
 		speedDisplay = {
 			title = "#TYPE 표시",
@@ -1842,6 +1850,7 @@ local zhTW = {
 				label = "顯示尾端零",
 				tooltip = "永遠顯示指定的小數位數，不移除尾端零。",
 			},
+			base = "基礎",
 		},
 		speedDisplay = {
 			title = "#TYPE顯示",
@@ -2067,6 +2076,7 @@ local zhCN = {
 				label = "显示末尾零",
 				tooltip = "始终显示指定的小数位数，不去除末尾零。",
 			},
+			base = "基础",
 		},
 		speedDisplay = {
 			title = "#TYPE显示",
@@ -2292,6 +2302,7 @@ local ruRU = {
 				label = "Показывать нули в конце",
 				tooltip = "Всегда показывать указанное количество знаков после запятой, не удалять нули в конце.",
 			},
+			base = "Базовый",
 		},
 		speedDisplay = {
 			title = "Отображение #TYPE",

@@ -694,7 +694,7 @@ main.frame = wt.CreateFrame({
 					name = ns.strings.options.speedValue.units.list[3].label,
 					index = 3,
 				},
-				base = { name = "Base", } --ADD localizations
+				base = { name = ns.strings.options.speedValue.base, }
 			}
 
 			for type = 1, #displays do
