@@ -7912,13 +7912,13 @@ function wt.CreateFontOptions(addon, textline, getData, defaultData, t)
 	---@field path string Path to the font file relative to the WoW client directory<ul><li>***Note:*** The use of `/` as separator is recommended (Example: Interface/AddOns/AddonNameKey/Fonts/Font.ttf), otherwise use `\\`.</li><li>***Note:*** **File format:** Font files must be in TTF or OTF format.</li></ul>
 	---@field size number Font size
 	---@field alignment JustifyHorizontal Horizontal text alignment
-	---@field colors table<string, color>|textColorData_base List of named coloring options
+	---@field colors table<string, color>|textColorData_base List of named coloring options<ul><li>***Note:*** The default color of key "base" will be added if it's missing.</ul></li>
 
 		---@class textColorData_base
 		---@field base color
 
 	---@class fontManagementCreationData : settingsWidgetPanel_text # t
-	---@field colors? table<string, textColorInfo> Use this list of specifications to dictate what colors appear and how: their order and displayed name | ***Default:*** *none*
+	---@field colors? table<string, textColorInfo> Use this list of specifications to dictate what colors appear and how: their order and displayed name | ***Default:*** *none*<ul><li>***Note:*** If set, the default color of key "base" will be added if it's missing.</ul></li>
 	---@field dataManagement? settingsData_font Register the widgets to settings data management to be linked with the specified key under the specified category
 	---@field onChangeFont? function Function to call after the value of **panel.widgets.path** or **panel.widgets.size** was changed by the user or via settings data management before the base onChange handler is called built-in to the functionality of the settings panel template updating the position of **text**
 	---@field onChangeSize? function Function to call after the value of **panel.widgets.position.keepInBounds** was changed by the user or via settings data management before the base onChange handlers are called built-in to the functionality of the settings panel template updating **text**
