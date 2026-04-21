@@ -3,9 +3,9 @@
 ---@class addonNamespace
 local ns = select(2, ...)
 
---| References
+--| Shortcuts
 
-local cr = WrapTextInColor
+local cr = C_ColorUtil.WrapTextInColor
 
 ---@type toolbox
 local wt = ns[C_AddOns.GetAddOnMetadata(ns.name, "X-WidgetTools-AddToNamespace")]
@@ -365,13 +365,13 @@ main.frame = wt.CreateFrame({
 
 			--[[ DATA ]]
 
-			---@type MovementSpeedDB
+			---@type database_warband
 			MovementSpeedDB = MovementSpeedDB or {}
 
-			---@type MovementSpeedDBC
+			---@type database_character
 			MovementSpeedDBC = MovementSpeedDBC or {}
 
-			---@type MovementSpeedCS
+			---@type variables_warband
 			MovementSpeedCS = us.Fill(MovementSpeedCS or {}, {
 				compactBackup = true,
 				playerSpeed = { keepInPlace = true, },
@@ -496,11 +496,23 @@ main.frame = wt.CreateFrame({
 
 			local valueTypes = {}
 
-			for i = 1, #ns.strings.options.speedValue.units.list do
+			for i = 1, #ns.strings.options.speedValue.units.list - 1 do
 				valueTypes[i] = {}
 				valueTypes[i].title = ns.strings.options.speedValue.units.list[i].label
 				valueTypes[i].tooltip = { lines = { { text = ns.strings.options.speedValue.units.list[i].tooltip, }, } }
 			end
+
+			local fontColors = {
+				percent = {
+					name = ns.strings.options.speedValue.units.list[1].label,
+					index = 1,
+				},
+				yards = {
+					name = ns.strings.options.speedValue.units.list[2].label,
+					index = 2,
+				},
+				base = { name = "Base", } --ADD localizations
+			}
 
 			for type = 1, #displays do
 				local displayType = displays[type]
@@ -631,73 +643,9 @@ main.frame = wt.CreateFrame({
 										data = {
 											position = {
 												anchor = "TOP",
-												relativeTo = MinimapBackdrop,
+												relativeTo = Minimap,
 												relativePoint = "BOTTOM",
-												offset = { y = -2 }
-											},
-											keepInBounds = true,
-											layer = {
-												strata = "MEDIUM",
-												keepOnTop = false,
-											},
-										},
-									},
-									{
-										title = ns.strings.presets[2]:gsub("#TYPE", ns.strings.options[displays[3 - type]].title), --Under the other display
-										data = {
-											position = {
-												anchor = "TOP",
-												relativeTo = speedDisplay[displays[3 - type]].frame,
-												relativePoint = "BOTTOM",
-												offset = { y = -2 }
-											},
-											keepInBounds = true,
-											layer = {
-												strata = "MEDIUM",
-												keepOnTop = false,
-											},
-										},
-									},
-									{
-										title = ns.strings.presets[3]:gsub("#TYPE", ns.strings.options[displays[3 - type]].title), --Above the other display
-										data = {
-											position = {
-												anchor = "BOTTOM",
-												relativeTo = speedDisplay[displays[3 - type]].frame,
-												relativePoint = "TOP",
-												offset = { y = 2 }
-											},
-											keepInBounds = true,
-											layer = {
-												strata = "MEDIUM",
-												keepOnTop = false,
-											},
-										},
-									},
-									{
-										title = ns.strings.presets[4]:gsub("#TYPE", ns.strings.options[displays[3 - type]].title), --Right of the other display
-										data = {
-											position = {
-												anchor = "LEFT",
-												relativeTo = speedDisplay[displays[3 - type]].frame,
-												relativePoint = "RIGHT",
-												offset = { x = 2, }
-											},
-											keepInBounds = true,
-											layer = {
-												strata = "MEDIUM",
-												keepOnTop = false,
-											},
-										},
-									},
-									{
-										title = ns.strings.presets[5]:gsub("#TYPE", ns.strings.options[displays[3 - type]].title), --Left of the other display
-										data = {
-											position = {
-												anchor = "RIGHT",
-												relativeTo = speedDisplay[displays[3 - type]].frame,
-												relativePoint = "LEFT",
-												offset = { x = -2, }
+												offset = { y = -14 }
 											},
 											keepInBounds = true,
 											layer = {
@@ -878,20 +826,7 @@ main.frame = wt.CreateFrame({
 							return profiles.data[displayType].font
 						end, ns.profileDefault[displayType].font, {
 							canvas = canvas,
-							colors = {
-								percent = {
-									name = ns.strings.options.speedValue.units.list[1].label,
-									index = 1,
-								},
-								yards = {
-									name = ns.strings.options.speedValue.units.list[2].label,
-									index = 2,
-								},
-								coords = {
-									name = ns.strings.options.speedValue.units.list[3].label,
-									index = 3,
-								},
-							},
+							colors = fontColors,
 							dependencies = { { frame = options[displayType].visibility.hidden, evaluate = function(state) return not state end }, },
 							dataManagement = { category = ns.name .. displayName, },
 							onChangeFont = function()
@@ -1105,50 +1040,27 @@ main.frame = wt.CreateFrame({
 						arrange = {},
 						arrangement = {},
 						initialize = function(panel)
-							local colors = {
-								percent = {
-									name = ns.strings.options.speedValue.units.list[1].label,
-									index = 1,
-								},
-								yards = {
-									name = ns.strings.options.speedValue.units.list[2].label,
-									index = 2,
-								},
-								coords = {
-									name = ns.strings.options.speedValue.units.list[3].label,
-									index = 3,
-								},
-								base = {
-									name = "Base",
-									index = 4,
-								}
-							}
-
 							---@type (colormanager|colorpicker)[]
 							options.targetSpeed.font.colors = {}
 
-							for key in pairs(profiles.data.targetSpeed.font.colors) do
-								if type(colors[key]) ~= "table" then colors[key] = {} end
-
-								local name = colors[key].name == "string" and colors[key].name or (key:sub(1,1):upper() .. key:sub(2))
-
-								options.targetSpeed.font.colors[key] = wt.CreateColorpicker({
+							for k, v in pairs(fontColors) do if type(v) == "table" then
+								options.targetSpeed.font.colors[k] = wt.CreateColorpicker({
 									parent = panel,
 									name = "Color",
-									title = wt.strings.font.color.label:gsub("#COLOR_TYPE", name),
-									tooltip = { lines = { { text = wt.strings.font.color.tooltip:gsub("#COLOR_TYPE", name), }, } },
-									arrange = { wrap = false, index = colors[key].index },
+									title = wt.strings.font.color.label:gsub("#COLOR_TYPE", v.name),
+									tooltip = { lines = { { text = wt.strings.font.color.tooltip:gsub("#COLOR_TYPE", v.name), }, } },
+									arrange = { wrap = false, index = v.index },
 									dependencies = { { frame = options.targetSpeed.enabled, }, },
-									getData = function() return profiles.data.targetSpeed.font.colors[key] end,
-									saveData = function(value) profiles.data.targetSpeed.font.colors[key] = value end,
-									default = ns.profileDefault.targetSpeed.font.colors[key],
+									getData = function() return profiles.data.targetSpeed.font.colors[k] end,
+									saveData = function(value) profiles.data.targetSpeed.font.colors[k] = value end,
+									default = ns.profileDefault.targetSpeed.font.colors[k],
 									dataManagement = {
 										category = category,
 										key = keys[1],
 										onChange = function() FormatSpeedText("targetSpeed") end,
 									},
 								})
-							end
+							end end
 						end
 					})
 				end,

@@ -3674,7 +3674,7 @@ end
 
 ---Check & silently repair a color data table
 ---@param color any
----@return boolean|color
+---@return boolean|color ***Default:*** `{ r = 1, g = 1, b = 1, a = 1 }`
 function wt.VerifyColor(color)
 
 	---@class rgbData_optional
@@ -3734,6 +3734,13 @@ function wt.HexToColor(hex) return 1, 1, 1 end
 ---***
 ---@return any color Reference to **color** (it was already updated during the operation, no need for setting it again)
 function wt.AdjustGamma(color, exponent) end
+
+---Turn a color data table into a Blizzard color manager object
+---***
+---@param color color Table containing the color values
+---***
+---@return colorRGB|colorRGBA
+function wt.CreateColor(color) return {} end
 
 
 --[[ FORMATTING ]]
@@ -7911,7 +7918,7 @@ function wt.CreateFontOptions(addon, textline, getData, defaultData, t)
 		---@field base color
 
 	---@class fontManagementCreationData : settingsWidgetPanel_text # t
-	---@field colors? table<string, textColorInfo> If set, use this list of specifications to set the order and displayed name of the colors | ***Default:*** *unspecified order; data management key in Title case*
+	---@field colors? table<string, textColorInfo> Use this list of specifications to dictate what colors appear and how: their order and displayed name | ***Default:*** *none*
 	---@field dataManagement? settingsData_font Register the widgets to settings data management to be linked with the specified key under the specified category
 	---@field onChangeFont? function Function to call after the value of **panel.widgets.path** or **panel.widgets.size** was changed by the user or via settings data management before the base onChange handler is called built-in to the functionality of the settings panel template updating the position of **text**
 	---@field onChangeSize? function Function to call after the value of **panel.widgets.position.keepInBounds** was changed by the user or via settings data management before the base onChange handlers are called built-in to the functionality of the settings panel template updating **text**
@@ -7924,6 +7931,7 @@ function wt.CreateFontOptions(addon, textline, getData, defaultData, t)
 		---@class textColorInfo
 		---@field index? integer Ordering index of the color | ***Default:*** *unspecified*
 		---@field name? string Display name to set their widget and tooltip titles paired to their data management keys | ***Default:*** *data management key in Title case*
+		---@field wrap? boolean If true, wrap the list of colors at this color (stasrting this one in a new row) | ***Default:*** **index** == 1
 
 		---@class settingsData_font : settingsData_base
 		---@field key? string A unique string appended to **category** linking a subset of settings data rules to be handled together | ***Default:*** "Font"

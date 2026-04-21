@@ -4,17 +4,13 @@
 local ns = select(2, ...)
 
 ns.name = ...
-
---Addon display title
 ns.title = select(2, C_AddOns.GetAddOnInfo(ns.name)):gsub("^%s*(.-)%s*$", "%1")
-
---Addon root folder
 ns.root = "Interface/AddOns/" .. ns.name .. "/"
 
 
 --[[ DATA ]]
 
----@type MovementSpeedProfileData
+---@type profileData
 ns.profileDefault = {
 	customPreset = {
 		position = {
@@ -165,7 +161,7 @@ ns.textures = {
 
 ns.changelog = {
 	{
-		"#V_Version 3.3_# #H_(20/4/2026)_#",
+		"#V_Version 3.3_# #H_(21/4/2026)_#",
 		"#N_New:_#",
 		"Added new speed display text coloring options (now also available for the Target Speed feature), now the speed value type coloring can be fully customized (more Font customization options are coming in future updates).",
 		"The previously added right-click menus for settings have been further enhanced with copy & paste functionality to be able to easily move values across similar types of settings.",

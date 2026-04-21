@@ -2484,6 +2484,8 @@ local ruRU = {
 ---Addon namespace table
 ---@class addonNamespace
 ---@field name string Addon namespace name
+---@field title string Addon displayed name
+---@field root string Addon root folder
 ---@field strings strings
 
 	---Localized strings
@@ -2503,12 +2505,12 @@ local ruRU = {
 
 --[[ SAVED VARIABLES ]]
 
----@class MovementSpeedDB : profileStorage
----@field profiles MovementSpeedProfile[]
+---@class database_warband : profileStorage
+---@field profiles addonProfile[]
 
----@class MovementSpeedDBC : characterProfileData
+---@class database_character : characterProfileData
 
----@class MovementSpeedCS : backupboxSettingsData
+---@class variables_warband : backupboxSettingsData
 ---@field playerSpeed positionOptionsSettingsData
 ---@field travelSpeed positionOptionsSettingsData
 ---@field mainDisplay displayType
@@ -2516,14 +2518,14 @@ local ruRU = {
 
 --[[ PROFILE DATA ]]
 
----@class MovementSpeedProfileData
+---@class profileData
 ---@field customPreset positionPresetData
 ---@field playerSpeed displayData
 ---@field travelSpeed displayData
 ---@field targetSpeed targetSpeedData
 
----@class MovementSpeedProfile : profile
----@field data MovementSpeedProfileData
+---@class addonProfile : profile
+---@field data profileData
 
 --[ Categories ]
 
