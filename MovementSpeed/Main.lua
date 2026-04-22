@@ -94,6 +94,9 @@ local timeSinceSpeedUpdate = { playerSpeed = 0, travelSpeed = 0, }
 --Player position at the last Travel Speed update
 local pastPosition = CreateVector2D(0, 0)
 
+---@type Vector2DMixin|nil
+local currentPosition
+
 --Map info
 local map = { size = { w = 0, h = 0 } }
 
@@ -176,27 +179,13 @@ local function GetSpeedText(speed, type)
 	local f = max(profiles.data[type].value.fractionals, 1)
 
 	return speedText[type]:gsub(
-		"#PERCENT", us.Thousands(
-			speed.percent,
-			profiles.data[type].value.fractionals,
-			true,
-			not profiles.data[type].value.zeros
-		)
+		"#PERCENT", us.Thousands(speed.percent, profiles.data[type].value.fractionals, true, not profiles.data[type].value.zeros)
 	):gsub(
-		"#YARDS", us.Thousands(
-			speed.yards,
-			profiles.data[type].value.fractionals,
-			true,
-			not profiles.data[type].value.zeros
-		)
+		"#YARDS", us.Thousands(speed.yards, profiles.data[type].value.fractionals, true, not profiles.data[type].value.zeros)
 	):gsub(
-		"#X", us.Thousands(
-			speed.coords.x, f, true, not profiles.data[type].value.zeros
-		)
+		"#X", us.Thousands(speed.coords.x, f, true, not profiles.data[type].value.zeros)
 	):gsub(
-		"#Y", us.Thousands(
-			speed.coords.y, f, true, not profiles.data[type].value.zeros
-		)
+		"#Y", us.Thousands(speed.coords.y, f, true, not profiles.data[type].value.zeros)
 	)
 end
 
@@ -222,7 +211,7 @@ end
 ---Updates the Travel Speed values since the last sample
 ---@param deltaTime number Time since last update
 function update.travelSpeed(deltaTime)
-	local currentPosition = map.id and C_Map.GetPlayerMapPosition(map.id, "player") or nil --NOTE: this generates memory garbage over time (that eventually gets collected). Using UnitPosition() produces less accurate calculation results.
+	currentPosition = map.id and C_Map.GetPlayerMapPosition(map.id, "player") or nil
 
 	if currentPosition and pastPosition.x then
 		local dX, dY, dT = pastPosition.x - currentPosition.x, pastPosition.y - currentPosition.y, max(deltaTime, 0.01)
@@ -236,11 +225,7 @@ function update.travelSpeed(deltaTime)
 		travelSpeed.coords.x, travelSpeed.coords.y = -1, -1
 	end
 
-	if currentPosition then
-		pastPosition:SetXY(currentPosition:GetXY())
-
-		wipe(currentPosition) --CHECK if needed
-	end
+	if currentPosition then pastPosition:SetXY(currentPosition:GetXY()) end
 
 	--Hide when stationery
 	if profiles.data.travelSpeed.visibility.autoHide and travelSpeed.yards == 0 then
@@ -473,7 +458,9 @@ end
 ---Assemble the text for the mouseover target's speed
 ---@return string
 local function GetTargetSpeedText()
-	return wt.Texture(ns.textures.logo) .. " " .. ns.strings.targetSpeed:gsub("#SPEED", cr(GetSpeedText(targetSpeed, "targetSpeed"), rs.colors.grey[2]))
+	return wt.Texture(ns.textures.logo) .. " " .. ns.strings.targetSpeed:gsub(
+		"#SPEED", cr(GetSpeedText(targetSpeed, "targetSpeed"), profiles.data.targetSpeed.font.colors.base)
+	)
 end
 
 --| Updates
@@ -1439,7 +1426,7 @@ main.frame = wt.CreateFrame({
 									dataManagement = {
 										category = category,
 										key = keys[1],
-										onChange = function() FormatSpeedText("targetSpeed") end,
+										onChange = { UpdateTargetSpeedText = function() FormatSpeedText("targetSpeed") end, },
 									},
 								})
 							end end

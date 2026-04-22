@@ -137,19 +137,9 @@ local function GetSpeedText(speed, type)
 	local f = max(profiles.data[type].value.fractionals, 1)
 
 	return speedText[type]:gsub(
-		"#PERCENT", us.Thousands(
-			speed.percent,
-			profiles.data[type].value.fractionals,
-			true,
-			not profiles.data[type].value.zeros
-		)
+		"#PERCENT", us.Thousands(speed.percent, profiles.data[type].value.fractionals, true, not profiles.data[type].value.zeros)
 	):gsub(
-		"#YARDS", us.Thousands(
-			speed.yards,
-			profiles.data[type].value.fractionals,
-			true,
-			not profiles.data[type].value.zeros
-		)
+		"#YARDS", us.Thousands(speed.yards, profiles.data[type].value.fractionals, true, not profiles.data[type].value.zeros)
 	)
 end
 
@@ -511,7 +501,7 @@ main.frame = wt.CreateFrame({
 					name = ns.strings.options.speedValue.units.list[2].label,
 					index = 2,
 				},
-				base = { name = "Base", } --ADD localizations
+				base = { name = ns.strings.options.speedValue.base, }
 			}
 
 			for type = 1, #displays do
@@ -1057,7 +1047,7 @@ main.frame = wt.CreateFrame({
 									dataManagement = {
 										category = category,
 										key = keys[1],
-										onChange = function() FormatSpeedText("targetSpeed") end,
+										onChange = { UpdateTargetSpeedText = function() FormatSpeedText("targetSpeed") end, },
 									},
 								})
 							end end
@@ -1333,13 +1323,11 @@ main.frame = wt.CreateFrame({
 			---@class speedDisplay
 			local display = speedDisplay[displayType]
 
-			local tooltipUpdater = GetPlayerSpeedTooltipLines --REPLACE with optimized functions
-
 			display.frame = wt.CreateCustomFrame({
 				parent = UIParent,
 				name = name .. displayTypeName,
 				events = { OnUpdate = function(self)
-					if self:IsMouseOver() and tooltip:IsVisible() then wt.UpdateTooltip(self, { lines = tooltipUpdater(), }) end
+					if self:IsMouseOver() and tooltip:IsVisible() then wt.UpdateTooltip(self, { lines = GetPlayerSpeedTooltipLines(), }) end
 				end, },
 				initialize = function(displayFrame, _, height)
 					wt.AddTooltip(displayFrame, {
