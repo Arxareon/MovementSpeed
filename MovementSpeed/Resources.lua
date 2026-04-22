@@ -161,7 +161,7 @@ ns.textures = {
 
 ns.changelog = {
 	{
-		"#V_Version 3.3_# #H_(22/4/2026)_#",
+		"#V_Version 3.3_# #H_(23/4/2026)_#",
 		"#N_New:_#",
 		"Added Midnight 12.0.5 support.",
 		"Added new speed display text coloring options (now also available for the Target Speed feature), now the speed value type coloring can be fully customized (more Font customization options are coming in future updates).",
