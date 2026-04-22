@@ -46,34 +46,8 @@ local targetSpeed = {
 	coords = { x = 0, y = 0 },
 }
 
-local options = {
-	playerSpeed = {
-		visibility = {},
-		update = {},
-		position = {},
-		value = {},
-		font = {},
-		background = {
-			colors = {},
-			size = {},
-		},
-	},
-	travelSpeed = {
-		visibility = {},
-		update = {},
-		position = {},
-		value = {},
-		font = {},
-		background = {
-			colors = {},
-			size = {},
-		},
-	},
-	targetSpeed = {
-		value = {},
-		font = {},
-	},
-}
+---@class options
+local options = {}
 
 ---@type profilemanager|profilesPage|{ data: profileData }
 local profiles
@@ -651,23 +625,6 @@ main.frame = wt.CreateFrame({
 
 			--[[ SETTINGS ]]
 
-			main.settings = wt.CreateAboutPage(ns.name, {
-				register = true,
-				name = "Main",
-				description = ns.strings.options.main.description:gsub("#ADDON", ns.title),
-				changelog = ns.changelog
-			})
-
-			--[ Speed Displays ]
-
-			local valueTypes = {}
-
-			for i = 1, #ns.strings.options.speedValue.units.list do
-				valueTypes[i] = {}
-				valueTypes[i].title = ns.strings.options.speedValue.units.list[i].label
-				valueTypes[i].tooltip = { lines = { { text = ns.strings.options.speedValue.units.list[i].tooltip, }, } }
-			end
-
 			local fontColors = {
 				percent = {
 					name = ns.strings.options.speedValue.units.list[1].label,
@@ -683,6 +640,27 @@ main.frame = wt.CreateFrame({
 				},
 				base = { name = ns.strings.options.speedValue.base, }
 			}
+
+			--| Speed value types
+
+			local valueTypes = {}
+
+			for i = 1, #ns.strings.options.speedValue.units.list do
+				valueTypes[i] = {}
+				valueTypes[i].title = ns.strings.options.speedValue.units.list[i].label
+				valueTypes[i].tooltip = { lines = { { text = ns.strings.options.speedValue.units.list[i].tooltip, }, } }
+			end
+
+			--[ Addon ]
+
+			main.settings = wt.CreateAboutPage(ns.name, {
+				register = true,
+				name = "Main",
+				description = ns.strings.options.main.description:gsub("#ADDON", ns.title),
+				changelog = ns.changelog
+			})
+
+			--[ Speed Displays ]
 
 			for type = 1, #displays do
 				local displayType = displays[type]
@@ -784,6 +762,8 @@ main.frame = wt.CreateFrame({
 					end,
 					arrangement = {},
 					initialize = function(canvas, _, _, category, keys)
+						---@class speedDisplayOptions
+						options[displayType] = {}
 
 
 						--[[ VISIBILITY ]]
@@ -795,62 +775,60 @@ main.frame = wt.CreateFrame({
 							arrange = {},
 							arrangement = {},
 							initialize = function(panel, _, _, key)
-								---@type toggle|checkbox
-								options[displayType].visibility.hidden = wt.CreateCheckbox({
-									parent = panel,
-									name = "Hidden",
-									title = ns.strings.options.speedDisplay.visibility.hidden.label,
-									tooltip = { lines = { { text = ns.strings.options.speedDisplay.visibility.hidden.tooltip:gsub("#ADDON", ns.title), }, } },
-									arrange = {},
-									getData = function() return profiles.data[displayType].visibility.hidden end,
-									saveData = function(state) profiles.data[displayType].visibility.hidden = state end,
-									default = ns.profileDefault[displayType].visibility.hidden,
-									dataManagement = {
-										category = category,
-										key = key,
-										onChange = { DisplayToggle = function()
-											wt.SetVisibility(display.frame, not profiles.data[displayType].visibility.hidden)
-											if profiles.data[displayType].visibility.hidden then
-												StopSpeedDisplayUpdates(displayType)
-											else StartSpeedDisplayUpdates(displayType) end
-										end, },
-									},
-								})
-
-								---@type toggle|checkbox
-								options[displayType].visibility.autoHide = wt.CreateCheckbox({
-									parent = panel,
-									name = "AutoHide",
-									title = ns.strings.options.speedDisplay.visibility.autoHide.label,
-									tooltip = { lines = { { text = ns.strings.options.speedDisplay.visibility.autoHide.tooltip, }, } },
-									arrange = { wrap = false, },
-									dependencies = { { frame = options[displayType].visibility.hidden, evaluate = function(state) return not state end }, },
-									getData = function() return profiles.data[displayType].visibility.autoHide end,
-									saveData = function(state) profiles.data[displayType].visibility.autoHide = state end,
-									default = ns.profileDefault[displayType].visibility.autoHide,
-									dataManagement = {
-										category = category,
-										key = key,
-									},
-								})
-
-								---@type toggle|checkbox
-								options[displayType].visibility.status = wt.CreateCheckbox({
-									parent = panel,
-									name = "StatusNotice",
-									title = ns.strings.options.speedDisplay.visibility.statusNotice.label,
-									tooltip = { lines = { { text = ns.strings.options.speedDisplay.visibility.statusNotice.tooltip, }, } },
-									arrange = { wrap = false, },
-									getData = function() return profiles.data[displayType].visibility.statusNotice end,
-									saveData = function(state)
-										profiles.data[displayType].visibility.statusNotice = state
-									end,
-									default = ns.profileDefault[displayType].visibility.statusNotice,
-									dataManagement = {
-										category = category,
-										key = key,
-									},
-								})
+								---@type speedDisplayOptions_visibility
+								options[displayType].visibility = {
+									hidden = wt.CreateCheckbox({
+										parent = panel,
+										name = "Hidden",
+										title = ns.strings.options.speedDisplay.visibility.hidden.label,
+										tooltip = { lines = { { text = ns.strings.options.speedDisplay.visibility.hidden.tooltip:gsub("#ADDON", ns.title), }, } },
+										arrange = {},
+										getData = function() return profiles.data[displayType].visibility.hidden end,
+										saveData = function(state) profiles.data[displayType].visibility.hidden = state end,
+										default = ns.profileDefault[displayType].visibility.hidden,
+										dataManagement = {
+											category = category,
+											key = key,
+											onChange = { DisplayToggle = function()
+												wt.SetVisibility(display.frame, not profiles.data[displayType].visibility.hidden)
+												if profiles.data[displayType].visibility.hidden then
+													StopSpeedDisplayUpdates(displayType)
+												else StartSpeedDisplayUpdates(displayType) end
+											end, },
+										},
+									}),
+									autoHide = wt.CreateCheckbox({
+										parent = panel,
+										name = "AutoHide",
+										title = ns.strings.options.speedDisplay.visibility.autoHide.label,
+										tooltip = { lines = { { text = ns.strings.options.speedDisplay.visibility.autoHide.tooltip, }, } },
+										arrange = { wrap = false, },
+										dependencies = { { frame = options[displayType].visibility.hidden, evaluate = function(state) return not state end }, },
+										getData = function() return profiles.data[displayType].visibility.autoHide end,
+										saveData = function(state) profiles.data[displayType].visibility.autoHide = state end,
+										default = ns.profileDefault[displayType].visibility.autoHide,
+										dataManagement = {
+											category = category,
+											key = key,
+										}
+									}),
+									status = wt.CreateCheckbox({
+										parent = panel,
+										name = "StatusNotice",
+										title = ns.strings.options.speedDisplay.visibility.statusNotice.label,
+										tooltip = { lines = { { text = ns.strings.options.speedDisplay.visibility.statusNotice.tooltip, }, } },
+										arrange = { wrap = false, },
+										getData = function() return profiles.data[displayType].visibility.statusNotice end,
+										saveData = function(state)
+											profiles.data[displayType].visibility.statusNotice = state
+										end,
+										default = ns.profileDefault[displayType].visibility.statusNotice,
+										dataManagement = {
+											category = category,
+											key = key,
+										},
+									}),
+								}
 
 								wt.CreateCustomButton(us.Fill({
 									parent = panel,
@@ -869,7 +847,7 @@ main.frame = wt.CreateFrame({
 
 						--[[ POSITION ]]
 
-						---@type positionPanel|nil
+						---@type positionPanel
 						options[displayType].position = wt.CreatePositionOptions(ns.name, display.frame, function()
 							return profiles.data[displayType]
 						end, ns.profileDefault[displayType], MovementSpeedCS[displayType], {
@@ -1016,48 +994,48 @@ main.frame = wt.CreateFrame({
 							arrange = {},
 							arrangement = {},
 							initialize = function(panel, _, _, key)
-								---@type toggle|checkbox
-								options[displayType].update.throttle = wt.CreateCheckbox({
-									parent = panel,
-									name = "Throttle",
-									title = ns.strings.options.speedDisplay.update.throttle.label,
-									tooltip = { lines = { { text = ns.strings.options.speedDisplay.update.throttle.tooltip, }, } },
-									arrange = {},
-									dependencies = { { frame = options[displayType].visibility.hidden, evaluate = function(state) return not state end }, },
-									getData = function() return profiles.data[displayType].update.throttle end,
-									saveData = function(state) profiles.data[displayType].update.throttle = state end,
-									default = ns.profileDefault[displayType].update.throttle,
-									dataManagement = {
-										category = category,
-										key = key,
-									},
-								})
-
-								---@type numeric|slider
-								options[displayType].update.frequency = wt.CreateSlider({
-									parent = panel,
-									name = "Frequency",
-									title = ns.strings.options.speedDisplay.update.frequency.label,
-									tooltip = { lines = { { text = ns.strings.options.speedDisplay.update.frequency.tooltip, }, } },
-									arrange = { wrap = false, },
-									min = 0.05,
-									max = 1,
-									step = 0.05,
-									altStep = 0.2,
-									dependencies = {
-										{ frame = options[displayType].visibility.hidden, evaluate = function(state) return not state end },
-										{ frame = options[displayType].update.throttle },
-									},
-									getData = function() return profiles.data[displayType].update.frequency end,
-									saveData = function(value)
-										profiles.data[displayType].update.frequency = us.Round(value, 2)
-									end,
-									default = ns.profileDefault[displayType].update.frequency,
-									dataManagement = {
-										category = category,
-										key = key,
-									},
-								})
+								---@type speedDisplayOptions_update
+								options[displayType].update = {
+									throttle = wt.CreateCheckbox({
+										parent = panel,
+										name = "Throttle",
+										title = ns.strings.options.speedDisplay.update.throttle.label,
+										tooltip = { lines = { { text = ns.strings.options.speedDisplay.update.throttle.tooltip, }, } },
+										arrange = {},
+										dependencies = { { frame = options[displayType].visibility.hidden, evaluate = function(state) return not state end }, },
+										getData = function() return profiles.data[displayType].update.throttle end,
+										saveData = function(state) profiles.data[displayType].update.throttle = state end,
+										default = ns.profileDefault[displayType].update.throttle,
+										dataManagement = {
+											category = category,
+											key = key,
+										},
+									}),
+									frequency = wt.CreateSlider({
+										parent = panel,
+										name = "Frequency",
+										title = ns.strings.options.speedDisplay.update.frequency.label,
+										tooltip = { lines = { { text = ns.strings.options.speedDisplay.update.frequency.tooltip, }, } },
+										arrange = { wrap = false, },
+										min = 0.05,
+										max = 1,
+										step = 0.05,
+										altStep = 0.2,
+										dependencies = {
+											{ frame = options[displayType].visibility.hidden, evaluate = function(state) return not state end },
+											{ frame = options[displayType].update.throttle },
+										},
+										getData = function() return profiles.data[displayType].update.frequency end,
+										saveData = function(value)
+											profiles.data[displayType].update.frequency = us.Round(value, 2)
+										end,
+										default = ns.profileDefault[displayType].update.frequency,
+										dataManagement = {
+											category = category,
+											key = key,
+										},
+									}),
+								}
 
 								wt.CreateCustomButton(us.Fill({
 									parent = panel,
@@ -1083,72 +1061,70 @@ main.frame = wt.CreateFrame({
 							arrange = {},
 							arrangement = {},
 							initialize = function(panel, _, _, key)
-								---@type checkgroup|multiselector
-								options[displayType].value.units = wt.CreateCheckgroup({
-									parent = panel,
-									name = "Units",
-									title = ns.strings.options.speedValue.units.label,
-									tooltip = { lines = { { text = ns.strings.options.speedValue.units.tooltip, }, } },
-									arrange = {},
-									items = valueTypes,
-									limits = { min = 1, },
-									dependencies = { { frame = options[displayType].visibility.hidden, evaluate = function(state) return not state end }, },
-									getData = function() return profiles.data[displayType].value.units end,
-									saveData = function(selections) profiles.data[displayType].value.units = selections end,
-									default = ns.profileDefault[displayType].value.units,
-									dataManagement = {
-										category = category,
-										key = key,
-										onChange = {
-											UpdateDisplaySize = function()
-												SetDisplaySize(display, profiles.data[displayType])
-											end,
-											UpdateSpeedTextTemplate = function() FormatSpeedText(displayType) end,
+								---@type speedValueOptions
+								options[displayType].value = {
+									units = wt.CreateCheckgroup({
+										parent = panel,
+										name = "Units",
+										title = ns.strings.options.speedValue.units.label,
+										tooltip = { lines = { { text = ns.strings.options.speedValue.units.tooltip, }, } },
+										arrange = {},
+										items = valueTypes,
+										limits = { min = 1, },
+										dependencies = { { frame = options[displayType].visibility.hidden, evaluate = function(state) return not state end }, },
+										getData = function() return profiles.data[displayType].value.units end,
+										saveData = function(selections) profiles.data[displayType].value.units = selections end,
+										default = ns.profileDefault[displayType].value.units,
+										dataManagement = {
+											category = category,
+											key = key,
+											onChange = {
+												UpdateDisplaySize = function()
+													SetDisplaySize(display, profiles.data[displayType])
+												end,
+												UpdateSpeedTextTemplate = function() FormatSpeedText(displayType) end,
+											},
 										},
-									},
-								})
-
-								---@type numeric|slider
-								options[displayType].value.fractionals = wt.CreateSlider({
-									parent = panel,
-									name = "Fractionals",
-									title = ns.strings.options.speedValue.fractionals.label,
-									tooltip = { lines = { { text = ns.strings.options.speedValue.fractionals.tooltip, }, } },
-									arrange = { wrap = false, },
-									min = 0,
-									max = 4,
-									step = 1,
-									dependencies = { { frame = options[displayType].visibility.hidden, evaluate = function(state) return not state end }, },
-									getData = function() return profiles.data[displayType].value.fractionals end,
-									saveData = function(value) profiles.data[displayType].value.fractionals = value end,
-									default = ns.profileDefault[displayType].value.fractionals,
-									dataManagement = {
-										category = category,
-										key = key,
-										onChange = { "UpdateDisplaySize", },
-									},
-								})
-
-								---@type toggle|checkbox
-								options[displayType].value.zeros = wt.CreateCheckbox({
-									parent = panel,
-									name = "Zeros",
-									title = ns.strings.options.speedValue.zeros.label,
-									tooltip = { lines = { { text = ns.strings.options.speedValue.zeros.tooltip, }, } },
-									arrange = { wrap = false, },
-									autoOffset = true,
-									dependencies = {
-										{ frame = options[displayType].visibility.hidden, evaluate = function(state) return not state end },
-										{ frame = options[displayType].value.fractionals, evaluate = function(value) return value > 0 end },
-									},
-									getData = function() return profiles.data[displayType].value.zeros end,
-									saveData = function(state) profiles.data[displayType].value.zeros = state end,
-									default = ns.profileDefault[displayType].value.zeros,
-									dataManagement = {
-										category = category,
-										key = key,
-									},
-								})
+									}),
+									fractionals = wt.CreateSlider({
+										parent = panel,
+										name = "Fractionals",
+										title = ns.strings.options.speedValue.fractionals.label,
+										tooltip = { lines = { { text = ns.strings.options.speedValue.fractionals.tooltip, }, } },
+										arrange = { wrap = false, },
+										min = 0,
+										max = 4,
+										step = 1,
+										dependencies = { { frame = options[displayType].visibility.hidden, evaluate = function(state) return not state end }, },
+										getData = function() return profiles.data[displayType].value.fractionals end,
+										saveData = function(value) profiles.data[displayType].value.fractionals = value end,
+										default = ns.profileDefault[displayType].value.fractionals,
+										dataManagement = {
+											category = category,
+											key = key,
+											onChange = { "UpdateDisplaySize", },
+										},
+									}),
+									zeros = wt.CreateCheckbox({
+										parent = panel,
+										name = "Zeros",
+										title = ns.strings.options.speedValue.zeros.label,
+										tooltip = { lines = { { text = ns.strings.options.speedValue.zeros.tooltip, }, } },
+										arrange = { wrap = false, },
+										autoOffset = true,
+										dependencies = {
+											{ frame = options[displayType].visibility.hidden, evaluate = function(state) return not state end },
+											{ frame = options[displayType].value.fractionals, evaluate = function(value) return value > 0 end },
+										},
+										getData = function() return profiles.data[displayType].value.zeros end,
+										saveData = function(state) profiles.data[displayType].value.zeros = state end,
+										default = ns.profileDefault[displayType].value.zeros,
+										dataManagement = {
+											category = category,
+											key = key,
+										},
+									}),
+								}
 
 								wt.CreateCustomButton(us.Fill({
 									parent = panel,
@@ -1167,6 +1143,7 @@ main.frame = wt.CreateFrame({
 
 						--[[ FONT ]]
 
+						---@type fontPanel
 						options[displayType].font = wt.CreateFontOptions(ns.name, display.text, function()
 							return profiles.data[displayType].font
 						end, ns.profileDefault[displayType].font, {
@@ -1207,71 +1184,71 @@ main.frame = wt.CreateFrame({
 							arrange = {},
 							arrangement = {},
 							initialize = function(panel, _, _, key)
-								---@type toggle|checkbox
-								options[displayType].background.visible = wt.CreateCheckbox({
-									parent = panel,
-									name = "Visible",
-									title = ns.strings.options.speedDisplay.background.visible.label,
-									tooltip = { lines = { { text = ns.strings.options.speedDisplay.background.visible.tooltip, }, } },
-									arrange = {},
-									dependencies = { { frame = options[displayType].visibility.hidden, evaluate = function(state) return not state end }, },
-									getData = function() return profiles.data[displayType].background.visible end,
-									saveData = function(state) profiles.data[displayType].background.visible = state end,
-									default = ns.profileDefault[displayType].background.visible,
-									dataManagement = {
-										category = category,
-										key = key,
-										onChange = { ToggleDisplayBackdrops = function()
-											SetDisplayBackdrop(display, profiles.data[displayType].background)
-										end, },
+								---@type speedDisplayOptions_background
+								options[displayType].background = {
+									visible = wt.CreateCheckbox({
+										parent = panel,
+										name = "Visible",
+										title = ns.strings.options.speedDisplay.background.visible.label,
+										tooltip = { lines = { { text = ns.strings.options.speedDisplay.background.visible.tooltip, }, } },
+										arrange = {},
+										dependencies = { { frame = options[displayType].visibility.hidden, evaluate = function(state) return not state end }, },
+										getData = function() return profiles.data[displayType].background.visible end,
+										saveData = function(state) profiles.data[displayType].background.visible = state end,
+										default = ns.profileDefault[displayType].background.visible,
+										dataManagement = {
+											category = category,
+											key = key,
+											onChange = { ToggleDisplayBackdrops = function()
+												SetDisplayBackdrop(display, profiles.data[displayType].background)
+											end, },
+										},
+									}),
+									colors = {
+										bg = wt.CreateColorpicker({
+											parent = panel,
+											name = "Color",
+											title = ns.strings.options.speedDisplay.background.colors.bg.label,
+											tooltip = {},
+											arrange = { wrap = false, },
+											dependencies = {
+												{ frame = options[displayType].visibility.hidden, evaluate = function(state) return not state end },
+												{ frame = options[displayType].background.visible, },
+											},
+											getData = function() return profiles.data[displayType].background.colors.bg end,
+											saveData = function(color) profiles.data[displayType].background.colors.bg = color end,
+											default = ns.profileDefault[displayType].background.colors.bg,
+											dataManagement = {
+												category = category,
+												key = key,
+												onChange = { UpdateDisplayBackgroundColor = function() if display.frame:GetBackdrop() ~= nil then
+													display.frame:SetBackdropColor(wt.UnpackColor(profiles.data[displayType].background.colors.bg))
+												end end },
+											},
+										}),
+										border = wt.CreateColorpicker({
+											parent = panel,
+											name = "BorderColor",
+											title = ns.strings.options.speedDisplay.background.colors.border.label,
+											tooltip = {},
+											arrange = { wrap = false, },
+											dependencies = {
+												{ frame = options[displayType].visibility.hidden, evaluate = function(state) return not state end },
+												{ frame = options[displayType].background.visible, },
+											},
+											getData = function() return profiles.data[displayType].background.colors.border end,
+											saveData = function(color) profiles.data[displayType].background.colors.border = color end,
+											default = ns.profileDefault[displayType].background.colors.border,
+											dataManagement = {
+												category = category,
+												key = key,
+												onChange = { UpdateDisplayBorderColor = function() if display.frame:GetBackdrop() ~= nil then
+													display.frame:SetBackdropBorderColor(wt.UnpackColor(profiles.data[displayType].background.colors.border))
+												end end },
+											},
+										}),
 									},
-								})
-
-								---@type colormanager|colorpicker
-								options[displayType].background.colors.bg = wt.CreateColorpicker({
-									parent = panel,
-									name = "Color",
-									title = ns.strings.options.speedDisplay.background.colors.bg.label,
-									tooltip = {},
-									arrange = { wrap = false, },
-									dependencies = {
-										{ frame = options[displayType].visibility.hidden, evaluate = function(state) return not state end },
-										{ frame = options[displayType].background.visible, },
-									},
-									getData = function() return profiles.data[displayType].background.colors.bg end,
-									saveData = function(color) profiles.data[displayType].background.colors.bg = color end,
-									default = ns.profileDefault[displayType].background.colors.bg,
-									dataManagement = {
-										category = category,
-										key = key,
-										onChange = { UpdateDisplayBackgroundColor = function() if display.frame:GetBackdrop() ~= nil then
-											display.frame:SetBackdropColor(wt.UnpackColor(profiles.data[displayType].background.colors.bg))
-										end end },
-									},
-								})
-
-								---@type colormanager|colorpicker
-								options[displayType].background.colors.border = wt.CreateColorpicker({
-									parent = panel,
-									name = "BorderColor",
-									title = ns.strings.options.speedDisplay.background.colors.border.label,
-									tooltip = {},
-									arrange = { wrap = false, },
-									dependencies = {
-										{ frame = options[displayType].visibility.hidden, evaluate = function(state) return not state end },
-										{ frame = options[displayType].background.visible, },
-									},
-									getData = function() return profiles.data[displayType].background.colors.border end,
-									saveData = function(color) profiles.data[displayType].background.colors.border = color end,
-									default = ns.profileDefault[displayType].background.colors.border,
-									dataManagement = {
-										category = category,
-										key = key,
-										onChange = { UpdateDisplayBorderColor = function() if display.frame:GetBackdrop() ~= nil then
-											display.frame:SetBackdropBorderColor(wt.UnpackColor(profiles.data[displayType].background.colors.border))
-										end end },
-									},
-								})
+								}
 
 								wt.CreateCustomButton(us.Fill({
 									parent = panel,
@@ -1307,32 +1284,33 @@ main.frame = wt.CreateFrame({
 				end,
 				arrangement = {},
 				initialize = function(canvas, _, _, category, keys)
+					---@class targetSpeedOptions
+					options.targetSpeed = {}
+
 					wt.CreatePanel({
 						parent = canvas,
 						name = "Mouseover",
 						title = ns.strings.options.targetSpeed.mouseover.title,
 						arrange = {},
 						arrangement = {},
-						initialize = function(panel)
-							options.targetSpeed.enabled = wt.CreateCheckbox({
-								parent = panel,
-								name = "Enabled",
-								title = ns.strings.options.targetSpeed.mouseover.enabled.label,
-								tooltip = { lines = {
-									{ text = ns.strings.options.targetSpeed.mouseover.enabled.tooltip:gsub("#ADDON", ns.title), },
-									{ text = "\n" .. ns.strings.options.targetSpeed.mouseover.enabled.instance, color = { r = 0.92, g = 0.34, b = 0.23 }, },
-								} },
-								arrange = {},
-								getData = function() return profiles.data.targetSpeed.enabled end,
-								saveData = function(state) profiles.data.targetSpeed.enabled = state end,
-								default = ns.profileDefault.targetSpeed.enabled,
-								dataManagement = {
-									category = category,
-									key = keys[1],
-									onChange = { EnableTargetSpeedUpdates = function() if not targetSpeedEnabled then EnableTargetSpeedUpdates() end end, },
-								},
-							})
-						end,
+						initialize = function(panel) options.targetSpeed.enabled = wt.CreateCheckbox({
+							parent = panel,
+							name = "Enabled",
+							title = ns.strings.options.targetSpeed.mouseover.enabled.label,
+							tooltip = { lines = {
+								{ text = ns.strings.options.targetSpeed.mouseover.enabled.tooltip:gsub("#ADDON", ns.title), },
+								{ text = "\n" .. ns.strings.options.targetSpeed.mouseover.enabled.instance, color = { r = 0.92, g = 0.34, b = 0.23 }, },
+							} },
+							arrange = {},
+							getData = function() return profiles.data.targetSpeed.enabled end,
+							saveData = function(state) profiles.data.targetSpeed.enabled = state end,
+							default = ns.profileDefault.targetSpeed.enabled,
+							dataManagement = {
+								category = category,
+								key = keys[1],
+								onChange = { EnableTargetSpeedUpdates = function() if not targetSpeedEnabled then EnableTargetSpeedUpdates() end end, },
+							},
+						}) end,
 					})
 
 					wt.CreatePanel({
@@ -1341,8 +1319,8 @@ main.frame = wt.CreateFrame({
 						title = ns.strings.options.speedValue.title,
 						arrange = {},
 						arrangement = {},
-						initialize = function(panel)
-							options.targetSpeed.value.units = wt.CreateCheckgroup({
+						initialize = function(panel) options.targetSpeed.value = {
+							units = wt.CreateCheckgroup({
 								parent = panel,
 								name = "Units",
 								title = ns.strings.options.speedValue.units.label,
@@ -1359,9 +1337,8 @@ main.frame = wt.CreateFrame({
 									key = keys[1],
 									onChange = { UpdateTargetSpeedTextTemplate = function() FormatSpeedText("targetSpeed") end, },
 								},
-							})
-
-							options.targetSpeed.value.fractionals = wt.CreateSlider({
+							}),
+							fractionals = wt.CreateSlider({
 								parent = panel,
 								name = "Fractionals",
 								title = ns.strings.options.speedValue.fractionals.label,
@@ -1378,9 +1355,8 @@ main.frame = wt.CreateFrame({
 									category = category,
 									key = keys[1],
 								},
-							})
-
-							options.targetSpeed.value.zeros = wt.CreateCheckbox({
+							}),
+							zeros = wt.CreateCheckbox({
 								parent = panel,
 								name = "Zeros",
 								title = ns.strings.options.speedValue.zeros.label,
@@ -1398,8 +1374,8 @@ main.frame = wt.CreateFrame({
 									category = category,
 									key = keys[1],
 								},
-							})
-						end,
+							}),
+						} end,
 					})
 
 					wt.CreatePanel({
@@ -1409,7 +1385,6 @@ main.frame = wt.CreateFrame({
 						arrange = {},
 						arrangement = {},
 						initialize = function(panel)
-							---@type (colormanager|colorpicker)[]
 							options.targetSpeed.font.colors = {}
 
 							for k, v in pairs(fontColors) do if type(v) == "table" then
@@ -1627,7 +1602,6 @@ main.frame = wt.CreateFrame({
 				onWelcome = function() print(cr(ns.strings.chat.help.move, ns.colors.yellow[2])) end,
 			})
 
-			--Welcome message
 			if profiles.firstLoad then chatCommands.welcome() end
 
 
