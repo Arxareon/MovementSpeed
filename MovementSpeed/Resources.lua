@@ -175,7 +175,7 @@ ns.changelog = {
 		"Further improved the Target Speed feature to stop it generating any errors in Delves or other private gamespaces.",
 		"Many other smaller fixes & translation improvements.",
 		"#O_Note:_# See Widget Tools changelog for further under the hood changes.",
-		"#H_If you encounter any issues, do not hesitate to report them! Try including when & how they occur, and which other addons are you using to give me the best chance of being able to reproduce & fix them. Try proving any Lua script error messages and if you know how, taint logs as well (when relevant). Thanks a lot for helping!_#",
+		"#H_Thank you all for the help, suggestions & bug reports!_# If you encounter any issues, do not hesitate to report them! Try including when & how they occur, and which other addons are you using (when relevant) to give me the best chance of being able to reproduce & fix them. Try proving any Lua script error messages and taint logs (if you know how).",
 	},
 	{
 		"#V_Version 3.2_# #H_(23/2/2026)_#",
