@@ -762,13 +762,13 @@ main.frame = wt.CreateFrame({
 					end,
 					arrangement = {},
 					initialize = function(canvas, _, _, category, keys)
-						local displayHiddenDependency
-
 						---@class speedDisplayOptions
 						options[displayType] = {}
 
 
 						--[[ VISIBILITY ]]
+
+						local displayHiddenDependency
 
 						wt.CreatePanel({
 							parent = canvas,
@@ -1082,7 +1082,7 @@ main.frame = wt.CreateFrame({
 										name = "Units",
 										title = ns.strings.options.speedValue.units.label,
 										tooltip = { lines = { { text = ns.strings.options.speedValue.units.tooltip, }, } },
-										arrange = {},
+										arrange = { index = 1, },
 										items = valueTypes,
 										limits = { min = 1, },
 										dependencies = { displayHiddenDependency, },
@@ -1326,14 +1326,14 @@ main.frame = wt.CreateFrame({
 									key = keys[1],
 								},
 							})
-							
+
 							options.targetSpeed.value = {
 								units = wt.CreateCheckgroup({
 									parent = panel,
 									name = "Units",
 									title = ns.strings.options.speedValue.units.label,
 									tooltip = { lines = { { text = ns.strings.options.speedValue.units.tooltip, }, } },
-									arrange = {},
+									arrange = { index = 1, },
 									items = valueTypes,
 									limits = { min = 1, },
 									dependencies = { { frame = options.targetSpeed.enabled, }, },
