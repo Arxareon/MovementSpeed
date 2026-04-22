@@ -4089,7 +4089,6 @@ function wt.CheckDependencies(rules) end
 ---| tooltipData
 ---| widgetTooltipTextData
 ---| itemTooltipTextData
----| presetTooltipTextData
 ---| addonCompartmentTooltipData
 
 ---Register tooltip data and set up a GameTooltip for a frame to be toggled on hover
@@ -7834,12 +7833,7 @@ function wt.CreatePositionOptions(addon, frame, getData, defaultData, settingsDa
 
 			---@class positionPresetItemData
 			---@field title string Text to represent the item within the dropdown frame
-			---@field tooltip? presetTooltipTextData List of text lines to be added to the tooltip of the item in the dropdown displayed when mousing over it or the menu toggle button
-			---@field onSelect? function The function to be called when the dropdown item is selected before the specific preset is applied
 			---@field data? positionPresetData|table Table containing the preset data to be modified by the position settings widgets and applied to **frame** on demand
-
-				---@class presetTooltipTextData : tooltipTextData
-				---@field title? string Text to be displayed in the title line of the tooltip | ***Default:*** **t.presets.items[*index*].title**
 
 			---@class customPositionPresetData
 			---@field index? integer Index of the custom preset modifiable by the user | ***Default:*** 1

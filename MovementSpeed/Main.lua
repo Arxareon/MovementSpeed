@@ -858,12 +858,7 @@ main.frame = wt.CreateFrame({
 							name = ns.strings.options.speedDisplay.referenceName:gsub("#TYPE", ns.strings.options[displayType].title),
 							presets = {
 								items = {
-									{
-										title = CUSTOM, --Custom
-										onSelect = function()
-											options[displayType].position.presets[1].data.position.relativePoint = options[displayType].position.presets[1].data.position.anchor
-										end,
-									},
+									{ title = CUSTOM, }, --Custom
 									{
 										title = ns.strings.presets[1], --Under the Minimap
 										data = {
