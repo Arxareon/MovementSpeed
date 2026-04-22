@@ -163,10 +163,10 @@ ns.changelog = {
 	{
 		"#V_Version 3.3_# #H_(22/4/2026)_#",
 		"#N_New:_#",
+		"Added Midnight 12.0.5 support.",
 		"Added new speed display text coloring options (now also available for the Target Speed feature), now the speed value type coloring can be fully customized (more Font customization options are coming in future updates).",
 		"The previously added right-click menus for settings have been further enhanced with copy & paste functionality to be able to easily move values across similar types of settings.",
 		"#C_Changes:_#",
-		"Added Midnight 12.0.5 support.",
 		"Font files have been moved to the Widget Tools addon, Movement Speed is built on. The custom font file named #H_The CUSTOM.ttf should now be placed in the main #H_Fonts_# folder right inside the WoW client folder._#",
 		"Removed the Value Coloring toggle option, now value coloring is enabled at all times by default but now each value color can be freely specified.",
 		"The look of settings number sliders have been updated to match the new Blizzard sliders but keeping every enhanced functionality as usual for addons built with Widget Tools Toolboxes.",
@@ -175,7 +175,7 @@ ns.changelog = {
 		"Further improved the Target Speed feature to stop it generating any errors in Delves or other private gamespaces.",
 		"Many other smaller fixes & translation improvements.",
 		"#O_Note:_# See Widget Tools changelog for further under the hood changes.",
-		"#H_If you encounter any issues, do not hesitate to report them! Try including when & how they occur, and which other addons are you using to give me the best chance of being able to reproduce & fix them. Try proving any LUA script error messages and if you know how, taint logs as well (when relevant). Thanks a lot for helping!_#",
+		"#H_If you encounter any issues, do not hesitate to report them! Try including when & how they occur, and which other addons are you using to give me the best chance of being able to reproduce & fix them. Try proving any Lua script error messages and if you know how, taint logs as well (when relevant). Thanks a lot for helping!_#",
 	},
 	{
 		"#V_Version 3.2_# #H_(23/2/2026)_#",
