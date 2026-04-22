@@ -167,7 +167,7 @@ ns.changelog = {
 		"Added new speed display text coloring options (now also available for the Target Speed feature), now the speed value type coloring can be fully customized (more Font customization options are coming in future updates).",
 		"The previously added right-click menus for settings have been further enhanced with copy & paste functionality to be able to easily move values across similar types of settings.",
 		"#C_Changes:_#",
-		"Font files have been moved to the Widget Tools addon, Movement Speed is built on. The custom font file named #H_The CUSTOM.ttf_# should now be placed in the main #H_Fonts_# folder right inside the WoW client folder._#",
+		"Font files have been moved to the Widget Tools addon, Movement Speed is built on. #H_The custom font file named_# #O_CUSTOM.ttf_# #H_should now be placed in the main_# #O_Fonts_# #H_folder right inside the WoW client folder._#",
 		"Removed the Value Coloring toggle option, now value coloring is enabled at all times by default but now each value color can be freely specified.",
 		"The look of settings number sliders have been updated to match the new Blizzard sliders but keeping every enhanced functionality as usual for addons built with Widget Tools Toolboxes.",
 		"Several other under the hood changes & improvements.",
