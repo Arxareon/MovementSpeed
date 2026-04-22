@@ -174,7 +174,8 @@ ns.changelog = {
 		"#F_Hotfix:_#",
 		"Further improved the Target Speed feature to stop it generating any errors in Delves or other private gamespaces.",
 		"Many other smaller fixes & translation improvements.",
-		"#O_Note:_# See Widget Tools changelog for further under the hood changes."
+		"#O_Note:_# See Widget Tools changelog for further under the hood changes.",
+		"#H_If you encounter any issues, do not hesitate to report them! Try including when & how they occur, and which other addons are you using to give me the best chance of being able to reproduce & fix them. Try proving any LUA script error messages and if you know how, taint logs as well (when relevant). Thanks a lot for helping!_#",
 	},
 	{
 		"#V_Version 3.2_# #H_(23/2/2026)_#",
@@ -211,7 +212,6 @@ ns.changelog = {
 		"Welcome messages will no longer be spammed each time the interface loads.",
 		"Widget Tools Lite mode can now be enabled without errors popping up.",
 		"Adjusted the appearance of the Reload notice window.",
-		"#H_If you encounter any issues, do not hesitate to report them! Try including when & how they occur, and which other addons are you using to give me the best chance of being able to reproduce & fix them. Try proving any LUA script error messages and if you know how, taint logs as well (when relevant). Thanks a lot for helping!_#",
 	},
 	{
 		"#V_Version 2.9_# #H_(8/5/2023)_#",
