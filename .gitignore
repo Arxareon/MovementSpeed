@@ -1,2 +1,3 @@
-.install/.config/
+.install/.config
+.annotations/WidgetTools
 WidgetToolbox_*
