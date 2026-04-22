@@ -1,7 +1,6 @@
+--NOTE: Annotations are for development purposes only, providing live documentation via Lua Language Server. This file does not need to be loaded by the game client.
+
 ---@meta core
-
---NOTE: Annotations are for development purposes only, providing documentation for use with Lua Language Server. This file does not need to be loaded by the game client.
-
 
 --[[ NAMESPACE ]]
 
@@ -1624,12 +1623,15 @@ function Clamp(value, min, max) return 0 end
 
 --[[ CLASSIC SUPPORT ]]
 
---***Note:*** C_ColorUtil is partially recreated for Classic.
-C_ColorUtil = { WrapTextInColorCode = C_ColorUtil.WrapTextInColorCode, }
+---Wraps a given string with color code markup while asserting the provided color table is a valid color object
+--- - ***Note:*** This version of this utility is always available in Classic.
+---@param text string
+---@param color { r: number, g: number, b: number, a: number|nil }
+---@return string coloredText
+local function WrapTextInColor_safe(text, color) return "" end
 
-	---Wraps a given string with color code markup while asserting the provided color table is a valid color object
-	--- - ***Note:*** This version of this utility is always available in Classic.
-	---@param text string
-	---@param color { r: number, g: number, b: number, a: number|nil }
-	---@return string coloredText
-	function C_ColorUtil.WrapTextInColor(text, color) return "" end
+--***Note:*** C_ColorUtil is partially recreated for Classic.
+C_ColorUtil = {
+	WrapTextInColorCode = C_ColorUtil.WrapTextInColorCode,
+	WrapTextInColor = WrapTextInColor_safe,
+}

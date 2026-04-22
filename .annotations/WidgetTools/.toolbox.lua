@@ -1,7 +1,6 @@
+--NOTE: Annotations are for development purposes only, providing live documentation via Lua Language Server. This file does not need to be loaded by the game client.
+
 ---@meta toolbox
-
---NOTE: Annotations are for development purposes only, providing documentation for use with Lua Language Server. This file does not need to be loaded by the game client.
-
 
 --[[ TOOLBOX ]]
 
@@ -4341,7 +4340,7 @@ function wt.AddSettingsDataManagementEntry(widget, t)
 		---| customEditbox
 		---| customEditbox
 		---| multilineEditbox
-		---| customSlider
+		---| numericSlider
 		---| colorpicker
 
 end
@@ -4946,7 +4945,7 @@ end
 ---***
 ---@param t? popupMenuCreationData Optional parameters
 ---***
----@return Frame menu Table containing a reference to the root description of the context menu
+---@return Frame|BackdropTemplate trigger Reference to the custom frame used as a menu opener trigger button
 ---@return contextMenu menu Table containing a reference to the root description of the context menu
 function wt.CreatePopupMenu(t)
 
@@ -7199,7 +7198,7 @@ function wt.CreateNumeric(t)
 
 					---@alias NumericType
 				---| numeric
-				---| customSlider
+				---| numericSlider
 
 			---@class numericEventListener_loaded : eventHandlerIndex
 			---@field handler NumericEventHandler_loaded Handler function to register for call
@@ -7439,7 +7438,7 @@ end
 ---@param t? sliderCreationData Optional parameters
 ---@param numeric? numeric Reference to an already existing numeric widget to mutate into a slider instead of creating a new base widget
 ---***
----@return customSlider|numeric # References to the new [Slider](https://warcraft.wiki.gg/wiki/UIOBJECT_Slider), its holder [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame), child widgets, utility functions and more wrapped in a table
+---@return numericSlider|numeric # References to the new [Slider](https://warcraft.wiki.gg/wiki/UIOBJECT_Slider), its holder [Frame](https://warcraft.wiki.gg/wiki/UIOBJECT_Frame), child widgets, utility functions and more wrapped in a table
 function wt.CreateSlider(t, numeric)
 
 	--| Parameters
@@ -7451,7 +7450,7 @@ function wt.CreateSlider(t, numeric)
 
 	--| Return
 
-	---@class customSlider : numeric
+	---@class numericSlider : numeric
 	---@field frame Frame
 	---@field widget MinimalSliderWithSteppers
 	---@field valuebox customEditbox|textbox
@@ -7859,9 +7858,32 @@ function wt.CreatePositionOptions(addon, frame, getData, defaultData, settingsDa
 
 	---@class positionPanel
 	---@field frame panel
-	---@field widgets table
-	---@field presets? table
+	---@field widgets positionPanelWidgets
+	---@field presets? positionPresetItemData[]
 	local _ = {}
+
+		---@class positionPanelWidgets
+		---@field presets positionPanelWidgets_presets|nil
+		---@field position positionPanelWidgets_position
+		---@field layer positionPanelWidgets_layer|nil
+
+			---@class positionPanelWidgets_presets
+			---@field applyButton Frame|BackdropTemplate
+			---@field applyMenu contextMenu
+			---@field save action|actionButton|nil
+			---@field reset action|actionButton|nil
+
+			---@class positionPanelWidgets_position
+			---@field relativePoint specialSelector|specialRadiogroup
+			---@field anchor specialSelector|specialRadiogroup
+			---@field keepInPlace toggle|checkbox
+			---@field offset { x: numeric|numericSlider, y: numeric|numericSlider }
+			---@field keepInBounds toggle|checkbox|nil
+
+			---@class positionPanelWidgets_layer
+			---@field strata specialSelector|specialRadiogroup|nil
+			---@field keepOnTop toggle|checkbox|nil
+			---@field level numeric|numericSlider|nil
 
 		---Returns the type of this object
 		---***
@@ -7938,9 +7960,15 @@ function wt.CreateFontOptions(addon, textline, getData, defaultData, t)
 	--| Returns
 
 	---@class fontPanel
-	---@field widgets table
+	---@field widgets fontPanelWidgets
 	---@field frame Frame|panel
 	local _ = {}
+
+		---@class fontPanelWidgets
+		---@field path selector|dropdownRadiogroup
+		---@field size numeric|numericSlider
+		---@field alignment specialSelector|specialRadiogroup
+		---@field colors (colormanager|colorpicker)[]|nil
 
 		---Returns the type of this object
 		---***
@@ -8263,10 +8291,24 @@ function wt.CreateProfilesPage(addon, accountData, characterData, defaultData, s
 
 	---@class profilesPage : profilemanager
 	---@field settings settingsPage
-	---@field widgets? table Collection of profiles settings widgets
-	---@field backup? table Collection of backup settings widgets
-	---@field backupAll? table Collection of all profiles backup settings widgets
+	---@field widgets? profilesPageWidgets Collection of profiles settings widgets
+	---@field backup? profilesPageBackup Collection of backup settings widgets
+	---@field backupAll? profilesPageBackup Collection of all profiles backup settings widgets
 	local _ = {}
+
+		---@class profilesPageWidgets
+		---@field activate selector|dropdownRadiogroup
+		---@field create action|actionButton
+		---@field duplicate action|actionButton
+		---@field rename action|actionButton
+		---@field delete action|actionButton
+
+		---@class profilesPageBackup
+		---@field refresh function Update the backup box and load profile data of the selected scope to the backup string, formatted based on the compact setting
+		---@field box textbox|multilineEditbox
+		---@field compact toggle|checkbox
+		---@field load action|actionButton
+		---@field reset action|actionButton
 
 		---Returns all object types of this mutated widget
 		---***

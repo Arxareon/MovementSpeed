@@ -1,6 +1,6 @@
----@meta main
+--NOTE: Annotations are for development purposes only, providing live documentation via Lua Language Server. This file does not need to be loaded by the game client.
 
---NOTE: Annotations are for development purposes only, providing documentation for use with Lua Language Server. This file does not need to be loaded by the game client.
+---@meta main
 
 
 --[[ NAMESPACE ]]
@@ -2592,45 +2592,32 @@
 	---| "playerSpeed"
 	---| "travelSpeed"
 
+---@class speedDisplayOptions
+---@field visibility speedDisplayOptions_visibility
+---@field update speedDisplayOptions_update
+---@field position positionPanel
+---@field value speedValueOptions
+---@field font fontPanel
+---@field background speedDisplayOptions_background
 
---[[ SETTINGS ]]
+	---@class speedDisplayOptions_visibility
+	---@field hidden toggle|checkbox
+	---@field autoHide toggle|checkbox
+	---@field status toggle|checkbox
 
----@class options
----@field playerSpeed speedDisplayOptions
----@field travelSpeed speedDisplayOptions
----@field targetSpeed targetSpeedOptions
+	---@class speedDisplayOptions_update
+	---@field throttle toggle|checkbox
+	---@field frequency numeric|numericSlider
 
-	---@class speedDisplayOptions
-	---@field visibility speedDisplayOptions_visibility
-	---@field update speedDisplayOptions_update
-	---@field position positionPanel
-	---@field value speedValueOptions
-	---@field font fontPanel
-	---@field background speedDisplayOptions_background
+	---@class speedValueOptions
+	---@field units multiselector|checkgroup
+	---@field fractionals numeric|numericSlider
+	---@field zeros toggle|checkbox
 
-		---@class speedDisplayOptions_visibility
-		---@field hidden toggle|checkbox
-		---@field autoHide toggle|checkbox
-		---@field status toggle|checkbox
+	---@class speedDisplayOptions_background
+	---@field visible toggle|checkbox
+	---@field colors speedDisplayOptions_background_colors
 
-		---@class speedDisplayOptions_update
-		---@field throttle toggle|checkbox
-		---@field frequency numeric|customSlider
-
-		---@class speedValueOptions
-		---@field units multiselector|checkgroup
-		---@field fractionals numeric|customSlider
-		---@field zeros toggle|checkbox
-
-		---@class speedDisplayOptions_background
-		---@field visible toggle|checkbox
-		---@field colors speedDisplayOptions_background_colors
-
-			---@class speedDisplayOptions_background_colors
-			---@field bg colormanager|colorpicker
-			---@field border colormanager|colorpicker
-
-	---@class targetSpeedOptions
-	---@field enabled toggle|checkbox
-	---@field value speedValueOptions
-	---@field font { colors: table<speedColorType, colormanager|colorpicker>|textColorData_base }
+		---@class speedDisplayOptions_background_colors
+		---@field bg colormanager|colorpicker
+		---@field border colormanager|colorpicker
