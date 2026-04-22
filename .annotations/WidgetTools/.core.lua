@@ -2,6 +2,7 @@
 
 ---@meta core
 
+
 --[[ NAMESPACE ]]
 
 ---Addon namespace table
