@@ -162,6 +162,11 @@ ns.textures = {
 ns.changelog = {
 	{
 		"#V_Version 3.3_# #H_(23/4/2026)_#",
+		"#F_Hotfix (Version 3.0.1):_#",
+		"Fixed a new issue that cropped up in 12.0.5: the Player Speed value is now protected and Movement Speed cannot utilize it while in combat, similarly how Target Speed broke with Midnight. I will see what can be done in future updates. #H_For now, Travel Speed can be used to estimate your speed even in combat, that feature is unaffected._#",
+		"#H_The custom font file support has been reverted to the previous solution (but now handled by Widget Tools) until the next update because an oversight caused critical errors._# I have also removed several fonts to save on disk space. Once the planned custom font support is finished and released, any number of fully custom fonts will be usable to there will be little need to keep so many fonts bundled in. #H_To add a custom font file with this temporary solution, similarly like before, replace_# #O_Interface/Addons/WidgetTools/Fonts/CUSTOM.ttf_# #H_with any TrueTypeFont file, while keeping this exact file name._#",
+		"Several fonts have been removed and will no not be bundled in because I would rather prioritize smaller file sizes, and having large font files that offer little benefit for most is in opposition to that goal.",
+		"Added Wago ID information to help Wago to find and download addon dependencies automatically.",
 		"#N_New:_#",
 		"Added Midnight 12.0.5 support.",
 		"Added new speed display text coloring options (now also available for the Target Speed feature), now the speed value type coloring can be fully customized (more Font customization options are coming in future updates).",
@@ -569,7 +574,6 @@ local localizations = {
 						enabled = {
 							label = "Enable Integration",
 							tooltip = "Enable or disable the #ADDON integration within the mouseover target inspect tooltip.",
-							instance = "Not available for enemy targets while in an instance.",
 						},
 					},
 				},
@@ -657,7 +661,6 @@ local localizations = {
 				description = "Live movement status summary.",
 				playerSpeed = "Calculated based on the type of your current movement activity, modified by the Speed stat and various buffs, debuffs, mounts & other effects.",
 				travelSpeed = "Estimated by tracking your horizontal movement through the current zone, negatively affected by obstacles and the angle of movement during flight.",
-				instanceError = "Not available while in this instance!",
 				text = {
 					"#YARDS yards / second.",
 					"#PERCENT of the base running speed.",
@@ -676,6 +679,10 @@ local localizations = {
 				cps = "#COORDS c/s",
 				coordPair = "(#X, #Y)",
 				separator = " | ",
+			},
+			error = {
+				instance = "Not available in this instance.",
+				combat = "Not available in combat.",
 			},
 			misc = {
 				date = "#MONTH/#DAY/#YEAR",
@@ -799,7 +806,6 @@ local localizations = {
 						enabled = {
 							label = "Ativar Integração",
 							tooltip = "Ative ou desative a integração do #ADDON no tooltip de inspeção do alvo ao passar o mouse.",
-							instance = "Não disponível para alvos inimigos enquanto estiver em uma instância.",
 						},
 					},
 				},
@@ -887,7 +893,6 @@ local localizations = {
 				description = "Resumo do status de movimento ao vivo.",
 				playerSpeed = "Calculado com base no tipo de atividade de movimento atual, modificado pelo atributo Velocidade e por vários bônus, penalidades, montarias e outros efeitos.",
 				travelSpeed = "Estimado rastreando seu movimento horizontal pela zona atual, afetado negativamente por obstáculos e pelo ângulo de movimento durante o voo.",
-				instanceError = "Não disponível nesta instância!",
 				text = {
 					"#YARDS jardas / segundo.",
 					"#PERCENT da velocidade base de corrida.",
@@ -906,6 +911,10 @@ local localizations = {
 				cps = "#COORDS c/s",
 				coordPair = "(#X, #Y)",
 				separator = " | ",
+			},
+			error = {
+				instance = "Não disponível nesta instância.",
+				combat = "Não disponível em combate.",
 			},
 			misc = {
 				date = "#MONTH/#DAY/#YEAR",
@@ -1029,7 +1038,6 @@ local localizations = {
 						enabled = {
 							label = "Integration aktivieren",
 							tooltip = "Aktiviere oder deaktiviere die #ADDON-Integration im Mouseover-Inspektions-Tooltip.",
-							instance = "Für feindliche Ziele in einer Instanz nicht verfügbar.",
 						},
 					},
 				},
@@ -1117,7 +1125,6 @@ local localizations = {
 				description = "Live-Bewegungsstatus-Übersicht.",
 				playerSpeed = "Berechnet basierend auf deiner aktuellen Bewegungsart, beeinflusst durch den Tempo-Wert sowie verschiedene Buffs, Debuffs, Reittiere und andere Effekte.",
 				travelSpeed = "Geschätzt durch Verfolgung deiner horizontalen Bewegung in der aktuellen Zone, negativ beeinflusst durch Hindernisse und den Bewegungswinkel beim Fliegen.",
-				instanceError = "Nicht verfügbar in dieser Instanz!",
 				text = {
 					"#YARDS Meter / Sekunde.",
 					"#PERCENT der Basislaufgeschwindigkeit.",
@@ -1136,6 +1143,10 @@ local localizations = {
 				cps = "#COORDS k/s",
 				coordPair = "(#X, #Y)",
 				separator = " | ",
+			},
+			error = {
+				instance = "In dieser Instanz nicht verfügbar.",
+				combat = "Im Kampf nicht verfügbar.",
 			},
 			misc = {
 				date = "#MONTH/#DAY/#YEAR",
@@ -1259,7 +1270,6 @@ local localizations = {
 						enabled = {
 							label = "Activer l'intégration",
 							tooltip = "Activer ou désactiver l'intégration #ADDON dans le tooltip d'inspection de la cible au survol.",
-							instance = "Indisponible pour les cibles ennemies lorsque vous êtes dans une instance.",
 						},
 					},
 				},
@@ -1347,7 +1357,6 @@ local localizations = {
 				description = "Résumé du statut de mouvement en direct.",
 				playerSpeed = "Calculé selon le type de votre activité de mouvement actuelle, modifié par la statistique de vitesse et divers buffs, debuffs, montures et autres effets.",
 				travelSpeed = "Estimé en suivant votre déplacement horizontal dans la zone actuelle, affecté négativement par les obstacles et l'angle de déplacement en vol.",
-				instanceError = "Non disponible dans cette instance !",
 				text = {
 					"#YARDS yards / seconde.",
 					"#PERCENT de la vitesse de course de base.",
@@ -1366,6 +1375,10 @@ local localizations = {
 				cps = "#COORDS c/s",
 				coordPair = "(#X, #Y)",
 				separator = " | ",
+			},
+			error = {
+				instance = "Non disponible dans cette instance.",
+				combat = "Non disponible en combat.",
 			},
 			misc = {
 				date = "#MONTH/#DAY/#YEAR",
@@ -1489,7 +1502,6 @@ local localizations = {
 						enabled = {
 							label = "Activar integración",
 							tooltip = "Activa o desactiva la integración de #ADDON en el tooltip de inspección del objetivo al pasar el ratón.",
-							instance = "No disponible para objetivos enemigos mientras estés en una instancia.",
 						},
 					},
 				},
@@ -1577,7 +1589,6 @@ local localizations = {
 				description = "Resumen del estado de movimiento en vivo.",
 				playerSpeed = "Calculado según el tipo de actividad de movimiento actual, modificado por la estadística de velocidad y varios beneficios, perjuicios, monturas y otros efectos.",
 				travelSpeed = "Estimado siguiendo tu movimiento horizontal por la zona actual, afectado negativamente por obstáculos y el ángulo de movimiento durante el vuelo.",
-				instanceError = "¡No disponible en esta instancia!",
 				text = {
 					"#YARDS yardas / segundo.",
 					"#PERCENT de la velocidad base de carrera.",
@@ -1596,6 +1607,10 @@ local localizations = {
 				cps = "#COORDS c/s",
 				coordPair = "(#X, #Y)",
 				separator = " | ",
+			},
+			error = {
+				instance = "No disponible en esta instancia.",
+				combat = "No disponible en combate.",
 			},
 			misc = {
 				date = "#MONTH/#DAY/#YEAR",
@@ -1719,7 +1734,6 @@ local localizations = {
 						enabled = {
 							label = "Activar integración",
 							tooltip = "Activa o desactiva la integración de #ADDON en el tooltip de inspección del objetivo al pasar el mouse.",
-							instance = "No disponible para objetivos enemigos mientras estás en una instancia.",
 						},
 					},
 				},
@@ -1807,7 +1821,6 @@ local localizations = {
 				description = "Resumen del estado de movimiento en vivo.",
 				playerSpeed = "Calculado según el tipo de actividad de movimiento actual, modificado por la estadística de velocidad y varios beneficios, perjuicios, monturas y otros efectos.",
 				travelSpeed = "Estimado siguiendo tu movimiento horizontal por la zona actual, afectado negativamente por obstáculos y el ángulo de movimiento durante el vuelo.",
-				instanceError = "¡No disponible en esta instancia!",
 				text = {
 					"#YARDS yardas / segundo.",
 					"#PERCENT de la velocidad base de carrera.",
@@ -1826,6 +1839,10 @@ local localizations = {
 				cps = "#COORDS c/s",
 				coordPair = "(#X, #Y)",
 				separator = " | ",
+			},
+			error = {
+				instance = "No disponible en esta instancia.",
+				combat = "No disponible en combate.",
 			},
 			misc = {
 				date = "#MONTH/#DAY/#YEAR",
@@ -1949,7 +1966,6 @@ local localizations = {
 						enabled = {
 							label = "Abilita Integrazione",
 							tooltip = "Abilita o disabilita l'integrazione di #ADDON nel tooltip di ispezione del bersaglio al passaggio del mouse.",
-							instance = "Non disponibile per i bersagli nemici mentre sei in un'istanza.",
 						},
 					},
 				},
@@ -2037,7 +2053,6 @@ local localizations = {
 				description = "Riepilogo dello stato di movimento in tempo reale.",
 				playerSpeed = "Calcolato in base al tipo di attività di movimento attuale, modificato dalla statistica Velocità e da vari bonus, malus, cavalcature e altri effetti.",
 				travelSpeed = "Stimato tracciando il tuo movimento orizzontale nella zona attuale, influenzato negativamente da ostacoli e dall'angolo di movimento durante il volo.",
-				instanceError = "Non disponibile in questa istanza!",
 				text = {
 					"#YARDS yard / secondo.",
 					"#PERCENT della velocità base di corsa.",
@@ -2056,6 +2071,10 @@ local localizations = {
 				cps = "#COORDS c/s",
 				coordPair = "(#X, #Y)",
 				separator = " | ",
+			},
+			error = {
+				instance = "Non disponibile in questa istanza.",
+				combat = "Non disponibile in combattimento.",
 			},
 			misc = {
 				date = "#MONTH/#DAY/#YEAR",
@@ -2179,7 +2198,6 @@ local localizations = {
 						enabled = {
 							label = "통합 활성화",
 							tooltip = "마우스오버 대상 검사 툴팁에서 #ADDON 통합을 켜거나 끕니다.",
-							instance = "인스턴스 지역에 있는 동안 적 대상에게는 사용할 수 없습니다.",
 						},
 					},
 				},
@@ -2267,7 +2285,6 @@ local localizations = {
 				description = "실시간 이동 상태 요약.",
 				playerSpeed = "현재 이동 방식, 속도 스탯, 다양한 버프/디버프, 탈것 및 기타 효과에 따라 계산됩니다.",
 				travelSpeed = "현재 지역에서 수평 이동을 추적하여 추정하며, 장애물과 비행 시 이동 각도에 따라 감소합니다.",
-				instanceError = "이 인스턴스에서는 사용할 수 없습니다!",
 				text = {
 					"#YARDS 야드 / 초.",
 					"기본 달리기 속도의 #PERCENT.",
@@ -2286,6 +2303,10 @@ local localizations = {
 				cps = "#COORDS 좌표/초",
 				coordPair = "(#X, #Y)",
 				separator = " | ",
+			},
+			error = {
+				instance = "이 인스턴스에서는 사용할 수 없습니다.",
+				combat = "전투 중에는 사용할 수 없습니다.",
 			},
 			misc = {
 				date = "#YEAR년 #MONTH월 #DAY일",
@@ -2409,7 +2430,6 @@ local localizations = {
 						enabled = {
 							label = "啟用整合",
 							tooltip = "啟用或停用#ADDON於滑鼠懸停目標檢查提示的整合。",
-							instance = "在副本中時無法對敵方目標使用。",
 						},
 					},
 				},
@@ -2497,7 +2517,6 @@ local localizations = {
 				description = "即時移動狀態摘要。",
 				playerSpeed = "依據您目前移動類型、速度屬性及各種增益、減益、坐騎和其他效果計算。",
 				travelSpeed = "追蹤您在目前區域的水平移動估算，受障礙物與飛行時移動角度影響。",
-				instanceError = "此副本中無法使用！",
 				text = {
 					"#YARDS碼/秒。",
 					"基礎奔跑速度的#PERCENT。",
@@ -2516,6 +2535,10 @@ local localizations = {
 				cps = "#COORDS座標/秒",
 				coordPair = "(#X, #Y)",
 				separator = " | ",
+			},
+			error = {
+				instance = "在此副本中無法使用。",
+				combat = "戰鬥中無法使用。",
 			},
 			misc = {
 				date = "#MONTH/#DAY/#YEAR",
@@ -2639,7 +2662,6 @@ local localizations = {
 						enabled = {
 							label = "启用集成",
 							tooltip = "启用或禁用#ADDON在鼠标悬停目标检查提示中的集成。",
-							instance = "在副本中时无法对敌方目标使用。",
 						},
 					},
 				},
@@ -2727,7 +2749,6 @@ local localizations = {
 				description = "实时移动状态摘要。",
 				playerSpeed = "根据您当前移动类型、速度属性及各种增益、减益、坐骑和其他效果计算。",
 				travelSpeed = "通过追踪您在当前区域的水平移动估算，受障碍物和飞行时移动角度影响。",
-				instanceError = "在此副本中不可用！",
 				text = {
 					"#YARDS码/秒。",
 					"基础奔跑速度的#PERCENT。",
@@ -2746,6 +2767,10 @@ local localizations = {
 				cps = "#COORDS坐标/秒",
 				coordPair = "(#X, #Y)",
 				separator = " | ",
+			},
+			error = {
+				instance = "在此副本中不可用。",
+				combat = "战斗中不可用。",
 			},
 			misc = {
 				date = "#MONTH/#DAY/#YEAR",
@@ -2869,7 +2894,6 @@ local localizations = {
 						enabled = {
 							label = "Включить интеграцию",
 							tooltip = "Включить или выключить интеграцию #ADDON в подсказке инспекции цели при наведении мыши.",
-							instance = "Недоступно для вражеских целей, пока вы находитесь в подземелье.",
 						},
 					},
 				},
@@ -2957,7 +2981,6 @@ local localizations = {
 				description = "Сводка статуса движения в реальном времени.",
 				playerSpeed = "Рассчитывается на основе типа вашей текущей активности движения, модифицируется характеристикой 'Скорость', а также различными баффами, дебаффами, маунтами и другими эффектами.",
 				travelSpeed = "Оценивается по вашему горизонтальному перемещению по текущей зоне, снижается из-за препятствий и угла движения при полёте.",
-				instanceError = "Недоступно в этом подземелье!",
 				text = {
 					"#YARDS ярдов / секунда.",
 					"#PERCENT от базовой скорости бега.",
@@ -2976,6 +2999,10 @@ local localizations = {
 				cps = "#COORDS к/с",
 				coordPair = "(#X, #Y)",
 				separator = " | ",
+			},
+			error = {
+				instance = "在此副本中不可用。",
+				combat = "战斗中不可用。",
 			},
 			misc = {
 				date = "#DAY.#MONTH.#YEAR",

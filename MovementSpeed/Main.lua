@@ -168,8 +168,15 @@ function update.playerSpeed()
 	local advanced, _, flightSpeed = C_PlayerInfo.GetGlidingInfo()
 	local r = GetPlayerFacing() or 0
 	playerSpeed.yards = advanced and flightSpeed or GetUnitSpeed(UnitInVehicle("player") and "vehicle" or "player")
-	playerSpeed.percent = playerSpeed.yards / BASE_MOVEMENT_SPEED * 100
-	playerSpeed.coords.x, playerSpeed.coords.y = playerSpeed.yards / (map.size.w / 100) * -math.sin(r), playerSpeed.yards / (map.size.h / 100) * math.cos(r)
+
+	if issecretvalue(playerSpeed.yards) then
+		playerSpeed.yards = -1
+		playerSpeed.percent = -1
+		playerSpeed.coords.x, playerSpeed.coords.y = -1, -1
+	else
+		playerSpeed.percent = playerSpeed.yards / BASE_MOVEMENT_SPEED * 100
+		playerSpeed.coords.x, playerSpeed.coords.y = playerSpeed.yards / (map.size.w / 100) * -math.sin(r), playerSpeed.yards / (map.size.h / 100) * math.cos(r)
+	end
 
 	--Hide when stationery
 	if playerSpeed.yards == 0 and profiles.data.playerSpeed.visibility.autoHide then
@@ -179,7 +186,7 @@ function update.playerSpeed()
 	else playerSpeed.frame:Show() end
 
 	--Update the display text
-	playerSpeed.text:SetText(" " .. GetSpeedText(playerSpeed, "playerSpeed"))
+	playerSpeed.text:SetText(" " .. GetSpeedText(playerSpeed, "playerSpeed"):gsub("-1", "X"))
 end
 
 ---Updates the Travel Speed values since the last sample
@@ -209,7 +216,7 @@ function update.travelSpeed(deltaTime)
 	else travelSpeed.frame:Show() end
 
 	--Update the display text
-	travelSpeed.text:SetText(" " .. GetSpeedText(travelSpeed, "travelSpeed"):gsub("-1", not pastPosition.x and GetUnitSpeed("player") ~= 0 and "X" or "0"))
+	travelSpeed.text:SetText(" " .. GetSpeedText(travelSpeed, "travelSpeed"):gsub("-1", "X"))
 end
 
 --[ Speed Displays ]
@@ -285,14 +292,21 @@ local function GetPlayerSpeedTooltipLines()
 		{ text = ns.strings.speedTooltip.description },
 		{ text = "\n" .. ns.strings.speedTooltip.playerSpeed, },
 		{
-			text = "\n" .. ns.strings.speedTooltip.text[1]:gsub("#YARDS", cr(us.Thousands(playerSpeed.yards, 2, true),  ns.colors.yellow[2])),
+			text = "\n" .. (playerSpeed.yards == -1 and (ns.strings.error.combat .. "\n\n") or "") ,
+			font = GameTooltipText,
+			color = { r = 0.92, g = 0.34, b = 0.23 },
+		},
+		{
+			text = ns.strings.speedTooltip.text[1]:gsub(
+				"#YARDS", cr(us.Thousands(playerSpeed.yards, 2, true),  ns.colors.yellow[2])
+			):gsub("-1", "X"),
 			font = GameTooltipText,
 			color = ns.colors.yellow[1],
 		},
 		{
 			text = "\n" .. ns.strings.speedTooltip.text[2]:gsub(
 				"#PERCENT", cr(us.Thousands(playerSpeed.percent, 2, true) .. "%%", ns.colors.green[2])
-			),
+			):gsub("-1", "X"),
 			font = GameTooltipText,
 			color = ns.colors.green[1],
 		},
@@ -303,7 +317,7 @@ local function GetPlayerSpeedTooltipLines()
 				):gsub(
 					"#Y", us.Thousands(playerSpeed.coords.y, 2, true)
 				), ns.colors.blue[2])
-			),
+			):gsub("-1", "X"),
 			font = GameTooltipText,
 			color = ns.colors.blue[1],
 		},
@@ -342,21 +356,21 @@ local function GetTravelSpeedTooltipLines()
 		{ text = ns.strings.speedTooltip.description },
 		{ text = "\n" .. ns.strings.speedTooltip.travelSpeed, },
 		{
-			text = "\n" .. (not pastPosition.x and (ns.strings.speedTooltip.instanceError .. "\n\n") or "") ,
+			text = "\n" .. (not pastPosition.x and (ns.strings.error.instance .. "\n\n") or "") ,
 			font = GameTooltipText,
 			color = { r = 0.92, g = 0.34, b = 0.23 },
 		},
 		{
 			text = ns.strings.speedTooltip.text[1]:gsub(
 				"#YARDS", cr(us.Thousands(travelSpeed.yards, 2, true), ns.colors.yellow[2])
-			):gsub("-1", not pastPosition.x and GetUnitSpeed("player") ~= 0 and "X" or "0"),
+			):gsub("-1", "X"),
 			font = GameTooltipText,
 			color = ns.colors.yellow[1],
 		},
 		{
 			text = "\n" .. ns.strings.speedTooltip.text[2]:gsub(
 				"#PERCENT", cr(us.Thousands(travelSpeed.percent, 2, true) .. "%%", ns.colors.green[2])
-			):gsub("-1", not pastPosition.x and GetUnitSpeed("player") ~= 0 and "X" or "0"),
+			):gsub("-1", "X"),
 			font = GameTooltipText,
 			color = ns.colors.green[1],
 		},
@@ -367,7 +381,7 @@ local function GetTravelSpeedTooltipLines()
 				):gsub(
 					"#Y", us.Thousands(travelSpeed.coords.y, 2, true)
 				), ns.colors.blue[2])
-			):gsub("-1", not pastPosition.x and GetUnitSpeed("player") ~= 0 and "X" or "0"),
+			):gsub("-1", "X"),
 			font = GameTooltipText,
 			color = ns.colors.blue[1],
 		},
@@ -457,6 +471,9 @@ local function EnableTargetSpeedUpdates()
 
 			--Update target speed values
 			targetSpeed.yards = GetUnitSpeed("mouseover")
+
+			if issecretvalue(targetSpeed.yards) then return end
+
 			targetSpeed.percent = targetSpeed.yards / BASE_MOVEMENT_SPEED * 100
 			targetSpeed.coords.x, targetSpeed.coords.y = targetSpeed.yards / (map.size.w / 100), targetSpeed.yards / (map.size.h / 100)
 
@@ -465,7 +482,7 @@ local function EnableTargetSpeedUpdates()
 			for i = 2, tooltip:NumLines() do
 				line = _G["GameTooltipTextLeft" .. i]
 
-				if issecretvalue(line:GetText()) then return end --WATCH temporary failsafe
+				if issecretvalue(line:GetText()) then return end
 
 				if line then if string.match(line:GetText() or "", wt.Texture(ns.textures.logo)) then
 					--Update the speed line
@@ -781,7 +798,10 @@ main.frame = wt.CreateFrame({
 									parent = panel,
 									name = "Hidden",
 									title = ns.strings.options.speedDisplay.visibility.hidden.label,
-									tooltip = { lines = { { text = ns.strings.options.speedDisplay.visibility.hidden.tooltip:gsub("#ADDON", ns.title), }, } },
+									tooltip = { lines = {
+										[1] = { text = ns.strings.options.speedDisplay.visibility.hidden.tooltip:gsub("#ADDON", ns.title), },
+										[2] = displayType == "playerSpeed" and { text = "\n" .. ns.strings.error.combat, color = { r = 0.92, g = 0.34, b = 0.23 }, } or nil,
+									} },
 									arrange = {},
 									getData = function() return profiles.data[displayType].visibility.hidden end,
 									saveData = function(state) profiles.data[displayType].visibility.hidden = state end,
@@ -1287,7 +1307,7 @@ main.frame = wt.CreateFrame({
 							title = ns.strings.options.targetSpeed.mouseover.enabled.label,
 							tooltip = { lines = {
 								{ text = ns.strings.options.targetSpeed.mouseover.enabled.tooltip:gsub("#ADDON", ns.title), },
-								{ text = "\n" .. ns.strings.options.targetSpeed.mouseover.enabled.instance, color = { r = 0.92, g = 0.34, b = 0.23 }, },
+								{ text = "\n" .. ns.strings.error.combat, color = { r = 0.92, g = 0.34, b = 0.23 }, },
 							} },
 							arrange = {},
 							getData = function() return profiles.data.targetSpeed.enabled end,

@@ -1,6 +1,6 @@
 ## Interface: 120005, 50503, 20505, 11508
 ## Title: Movement Speed
-## Version: 3.3
+## Version: 3.3.1
 ## X-Day: 23
 ## X-Month: 4
 ## X-Year: 2026
@@ -10,15 +10,16 @@
 ## IconTexture: Interface/AddOns/MovementSpeed/Textures/Logo.tga
 ## X-Sponsors: Celierra
 ## X-License: All Rights Reserved
-## X-CurseForge: curseforge.com/wow/addons/movement-speed
-## X-Wago: addons.wago.io/addons/movement-speed
 ## X-Repository: github.com/Arxareon/MovementSpeed
 ## X-Issues: github.com/Arxareon/MovementSpeed/issues
+## X-CurseForge: curseforge.com/wow/addons/movement-speed
+## X-Wago: addons.wago.io/addons/movement-speed
+## X-Wago-ID: vEGPDjG1
 ## SavedVariables: MovementSpeedDB, MovementSpeedCS
 ## SavedVariablesPerCharacter: MovementSpeedDBC
 ## LoadSavedVariablesFirst: 1
 ## Dependencies: WidgetTools
-## X-WidgetTools-ToolboxVersion: 3.0
+## X-WidgetTools-ToolboxVersion: 3.0.1
 ## X-WidgetTools-AddToNamespace: wt
 
 Resources.lua
